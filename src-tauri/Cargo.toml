@@ -1,0 +1,25 @@
+[package]
+name = "stoneflow"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# 更多字段与写法参考：https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# `_lib` 后缀看起来多余，但它能保证库名唯一，避免与二进制名称冲突。
+# 这似乎只在 Windows 上会遇到，参考：https://github.com/rust-lang/cargo/issues/8519
+name = "stoneflow_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-store = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+

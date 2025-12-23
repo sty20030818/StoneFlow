@@ -1,0 +1,35 @@
+{
+  "name": "stoneflow",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.3.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/plugin-opener": "^2.5.2",
+    "@tauri-apps/plugin-store": "^2.4.1",
+    "pinia": "^3.0.4",
+    "tailwindcss": "^4.1.18",
+    "vue": "^3.5.26",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.6",
+    "@vitejs/plugin-vue": "^6.0.3",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0-beta.4",
+    "vue-tsc": "^3.2.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "vue-demi"
+    ]
+  }
+}

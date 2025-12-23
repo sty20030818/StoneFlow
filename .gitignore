@@ -1,0 +1,39 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Nuxt UI (Vue + Vite) auto-generated type declarations
+auto-imports.d.ts
+components.d.ts
+
+# Rust / Tauri build artifacts
+src-tauri/target
+src-tauri/.tauri
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+Docs

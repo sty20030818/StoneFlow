@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* 应用级基础样式（保持最小；尽量让 Nuxt UI 主导整体样式） */
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+
+
