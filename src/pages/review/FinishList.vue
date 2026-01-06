@@ -33,20 +33,12 @@
 	import { computed, onMounted, ref } from 'vue'
 	import type { TimelineItem } from '@nuxt/ui'
 
-	import { listProjects, type ProjectDto } from '@/services/api/projects'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 
 	const toast = useToast()
 
 	const loading = ref(false)
 	const tasks = ref<TaskDto[]>([])
-	const projects = ref<ProjectDto[]>([])
-
-	const projectNameById = computed(() => {
-		const map = new Map<string, string>()
-		for (const p of projects.value) map.set(p.id, p.name)
-		return map
-	})
 
 	function formatDate(ts: number): string {
 		const d = new Date(ts)
@@ -70,6 +62,15 @@
 		return `${h}h ${m}m`
 	}
 
+	function spaceLabel(spaceId: string): string {
+		const labels: Record<string, string> = {
+			work: 'Work',
+			personal: 'Personal',
+			study: 'Study',
+		}
+		return labels[spaceId] ?? spaceId
+	}
+
 	const groupedByDate = computed(() => {
 		const groups = new Map<string, TaskDto[]>()
 
@@ -81,7 +82,6 @@
 			groups.set(dateKey, arr)
 		}
 
-		// 按日期倒序排列
 		const sorted = Array.from(groups.entries())
 			.sort((a, b) => b[0].localeCompare(a[0]))
 			.map(([date, items]) => ({
@@ -96,22 +96,19 @@
 		const items: TimelineItem[] = []
 
 		for (const group of groupedByDate.value) {
-			// 日期分隔项
 			items.push({
 				date: group.date,
 				title: `${group.date} · ${group.tasks.length} 个任务`,
 				icon: 'i-lucide-calendar',
 			})
 
-			// 该日期下的任务
 			for (const t of group.tasks) {
-				const projectName = t.project_id ? projectNameById.value.get(t.project_id) : null
 				const leadTime = t.completed_at ? formatDuration(t.completed_at - t.created_at) : '-'
 
 				items.push({
 					date: formatTime(t.completed_at ?? 0),
 					title: t.title,
-					description: `${projectName ? projectName + ' · ' : ''}Lead: ${leadTime}`,
+					description: `${spaceLabel(t.space_id)} · Lead: ${leadTime}`,
 					icon: 'i-lucide-check',
 				})
 			}
@@ -123,9 +120,7 @@
 	async function refresh() {
 		loading.value = true
 		try {
-			const [taskRows, projectRows] = await Promise.all([listTasks({ status: 'done' }), listProjects()])
-			tasks.value = taskRows
-			projects.value = projectRows
+			tasks.value = await listTasks({ status: 'done' })
 		} catch (e) {
 			toast.add({
 				title: '加载失败',

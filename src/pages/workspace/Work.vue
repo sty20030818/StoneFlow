@@ -41,11 +41,6 @@
 						@click="onTaskClick(t)">
 						<div class="min-w-0">
 							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-							<div
-								v-if="projectName(t)"
-								class="text-xs text-muted">
-								{{ projectName(t) }}
-							</div>
 						</div>
 						<UButton
 							size="sm"
@@ -80,11 +75,6 @@
 						@click="onTaskClick(t)">
 						<div class="min-w-0">
 							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-							<div
-								v-if="projectName(t)"
-								class="text-xs text-muted">
-								{{ projectName(t) }}
-							</div>
 						</div>
 						<UButton
 							size="sm"
@@ -119,11 +109,6 @@
 						@click="onTaskClick(t)">
 						<div class="min-w-0">
 							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-							<div
-								v-if="projectName(t)"
-								class="text-xs text-muted">
-								{{ projectName(t) }}
-							</div>
 						</div>
 						<div class="text-xs text-muted shrink-0">
 							{{ new Date(t.completed_at ?? 0).toLocaleTimeString() }}
@@ -136,9 +121,8 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { onMounted, ref } from 'vue'
 
-	import { listProjects, type ProjectDto } from '@/services/api/projects'
 	import { completeTask, listTasks, type TaskDto } from '@/services/api/tasks'
 
 	const SPACE_ID = 'work'
@@ -149,7 +133,6 @@
 	const doing = ref<TaskDto[]>([])
 	const todo = ref<TaskDto[]>([])
 	const doneToday = ref<TaskDto[]>([])
-	const projects = ref<ProjectDto[]>([])
 
 	function isTodayLocal(ts: number | null): boolean {
 		if (!ts) return false
@@ -158,26 +141,18 @@
 		return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
 	}
 
-	const projectNameById = computed(() => {
-		const map = new Map<string, string>()
-		for (const p of projects.value) map.set(p.id, p.name)
-		return map
-	})
-
 	async function refresh() {
 		loading.value = true
 		try {
-			const [doingRows, todoRows, doneRows, projectRows] = await Promise.all([
+			const [doingRows, todoRows, doneRows] = await Promise.all([
 				listTasks({ spaceId: SPACE_ID, status: 'doing' }),
 				listTasks({ spaceId: SPACE_ID, status: 'todo' }),
 				listTasks({ spaceId: SPACE_ID, status: 'done' }),
-				listProjects(SPACE_ID),
 			])
 
 			doing.value = doingRows
 			todo.value = todoRows
 			doneToday.value = doneRows.filter((t) => isTodayLocal(t.completed_at ?? null))
-			projects.value = projectRows
 		} catch (e) {
 			toast.add({
 				title: '加载失败',
@@ -205,10 +180,6 @@
 
 	function onTaskClick(task: TaskDto) {
 		console.log('Task clicked:', task)
-	}
-
-	function projectName(t: TaskDto): string | null {
-		return t.project_id ? (projectNameById.value.get(t.project_id) ?? null) : null
 	}
 
 	onMounted(async () => {
