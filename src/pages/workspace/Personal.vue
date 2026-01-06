@@ -2,8 +2,13 @@
 	<section class="space-y-4">
 		<div class="flex items-center justify-between gap-3">
 			<div class="space-y-1">
-				<div class="text-lg font-semibold">Today</div>
-				<div class="text-sm text-muted">今天的进行中 / 待办 / 已完成（按 Space 过滤）。</div>
+				<div class="flex items-center gap-2 text-lg font-semibold">
+					<UIcon
+						name="i-lucide-user"
+						class="text-purple-500" />
+					<span>Personal</span>
+				</div>
+				<div class="text-sm text-muted">个人相关任务</div>
 			</div>
 			<div
 				v-if="loading"
@@ -32,13 +37,14 @@
 					<div
 						v-for="t in doing"
 						:key="t.id"
-						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3">
+						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3 cursor-pointer hover:bg-elevated transition"
+						@click="onTaskClick(t)">
 						<div class="min-w-0">
 							<div class="text-sm font-medium truncate">{{ t.title }}</div>
 							<div
-								v-if="labelForTask(t)"
+								v-if="projectName(t)"
 								class="text-xs text-muted">
-								{{ labelForTask(t) }}
+								{{ projectName(t) }}
 							</div>
 						</div>
 						<UButton
@@ -46,7 +52,7 @@
 							label="完成"
 							color="success"
 							variant="subtle"
-							@click="onComplete(t.id)" />
+							@click.stop="onComplete(t.id)" />
 					</div>
 				</div>
 			</div>
@@ -70,13 +76,14 @@
 					<div
 						v-for="t in todo"
 						:key="t.id"
-						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3">
+						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3 cursor-pointer hover:bg-elevated transition"
+						@click="onTaskClick(t)">
 						<div class="min-w-0">
 							<div class="text-sm font-medium truncate">{{ t.title }}</div>
 							<div
-								v-if="labelForTask(t)"
+								v-if="projectName(t)"
 								class="text-xs text-muted">
-								{{ labelForTask(t) }}
+								{{ projectName(t) }}
 							</div>
 						</div>
 						<UButton
@@ -84,12 +91,12 @@
 							label="完成"
 							color="success"
 							variant="subtle"
-							@click="onComplete(t.id)" />
+							@click.stop="onComplete(t.id)" />
 					</div>
 				</div>
 			</div>
 
-			<!-- 今日完成 -->
+			<!-- 已完成 -->
 			<div class="rounded-md border border-default bg-elevated p-3 space-y-3">
 				<div class="flex items-center justify-between">
 					<div class="text-sm font-semibold text-default">已完成（今天）</div>
@@ -108,11 +115,14 @@
 					<div
 						v-for="t in doneToday"
 						:key="t.id"
-						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3">
+						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3 cursor-pointer hover:bg-elevated transition"
+						@click="onTaskClick(t)">
 						<div class="min-w-0">
 							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-							<div class="text-xs text-muted">
-								{{ labelForTask(t) }}
+							<div
+								v-if="projectName(t)"
+								class="text-xs text-muted">
+								{{ projectName(t) }}
 							</div>
 						</div>
 						<div class="text-xs text-muted shrink-0">
@@ -126,22 +136,20 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref, watch } from 'vue'
+	import { computed, onMounted, ref } from 'vue'
 
 	import { listProjects, type ProjectDto } from '@/services/api/projects'
 	import { completeTask, listTasks, type TaskDto } from '@/services/api/tasks'
-	import { useSettingsStore } from '@/stores/settings'
+
+	const SPACE_ID = 'personal'
 
 	const toast = useToast()
-	const settingsStore = useSettingsStore()
 
 	const loading = ref(false)
 	const doing = ref<TaskDto[]>([])
 	const todo = ref<TaskDto[]>([])
 	const doneToday = ref<TaskDto[]>([])
 	const projects = ref<ProjectDto[]>([])
-
-	const activeSpaceId = computed(() => settingsStore.settings.activeSpaceId)
 
 	function isTodayLocal(ts: number | null): boolean {
 		if (!ts) return false
@@ -159,13 +167,11 @@
 	async function refresh() {
 		loading.value = true
 		try {
-			const spaceId = activeSpaceId.value === 'all' ? undefined : activeSpaceId.value
-
 			const [doingRows, todoRows, doneRows, projectRows] = await Promise.all([
-				listTasks({ spaceId, status: 'doing' }),
-				listTasks({ spaceId, status: 'todo' }),
-				listTasks({ spaceId, status: 'done' }),
-				listProjects(spaceId),
+				listTasks({ spaceId: SPACE_ID, status: 'doing' }),
+				listTasks({ spaceId: SPACE_ID, status: 'todo' }),
+				listTasks({ spaceId: SPACE_ID, status: 'done' }),
+				listProjects(SPACE_ID),
 			])
 
 			doing.value = doingRows
@@ -197,20 +203,15 @@
 		}
 	}
 
-	function labelForTask(t: TaskDto): string {
-		const project = t.project_id ? projectNameById.value.get(t.project_id) : null
-		const parts: string[] = []
-		if (project) parts.push(project)
-		if (activeSpaceId.value === 'all') parts.push(`Space：${t.space_id}`)
-		return parts.join(' · ')
+	function onTaskClick(task: TaskDto) {
+		console.log('Task clicked:', task)
+	}
+
+	function projectName(t: TaskDto): string | null {
+		return t.project_id ? (projectNameById.value.get(t.project_id) ?? null) : null
 	}
 
 	onMounted(async () => {
-		await settingsStore.load()
-		await refresh()
-	})
-
-	watch(activeSpaceId, async () => {
 		await refresh()
 	})
 </script>
