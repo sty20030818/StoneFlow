@@ -1,18 +1,19 @@
 {
-  "compilerOptions": {
-    "composite": true,
-    "skipLibCheck": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "paths": {
-      "vite": ["./node_modules/vite/dist/node/index.d.ts"],
-      "@vitejs/plugin-vue": [
-        "./node_modules/@vitejs/plugin-vue/dist/index.d.mts"
-      ],
-      "#build/ui": ["./node_modules/@nuxt/ui/.nuxt/ui"]
-    }
-  },
-  "include": ["vite.config.ts"]
+	"compilerOptions": {
+		"composite": true,
+		"skipLibCheck": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"types": ["node"],
+		"baseUrl": ".",
+		"paths": {
+			"vite": ["./node_modules/vite/dist/node/index.d.ts"],
+			"@vitejs/plugin-vue": [
+				"./node_modules/@vitejs/plugin-vue/dist/index.d.mts"
+			],
+			"#build/ui": ["./node_modules/@nuxt/ui/.nuxt/ui"]
+		}
+	},
+	"include": ["vite.config.ts"]
 }

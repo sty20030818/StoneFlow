@@ -33,7 +33,8 @@ StoneFlow 是一款正在开发中的轻量桌面任务管理工具，目标是�
 
 ## 架构概览
 
-- 前端按分层组织：页面（pages）/ 布局（layout）/ 状态（stores）/ Tauri 服务封装（services）
+- 前端按分层组织：页面（pages）/ 布局（layout）/ 状态（stores）/
+  Tauri 服务封装（services）
 - Rust 侧入口保持精简：`main.rs` 仅调用库入口，业务能力以 `commands/*` 方式注册
 - 权限采用最小化能力集（capabilities）：仅开放当前所需能力
 

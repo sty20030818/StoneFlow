@@ -1,0 +1,10 @@
+node_modules
+dist
+.cursor
+.vscode
+auto-imports.d.ts
+components.d.ts
+src-tauri/target
+src-tauri/gen
+src-tauri/icons
+src-tauri/.cargo
