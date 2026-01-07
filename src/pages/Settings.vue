@@ -1,13 +1,13 @@
 <template>
 	<section class="space-y-6 max-w-xl">
-		<div class="space-y-1">
-			<div class="text-lg font-semibold">设置</div>
-			<div class="text-sm text-muted">M0：偏好可持久化（plugin-store）。</div>
-		</div>
+		<PageHeader
+			title="设置"
+			description="M0：偏好可持久化（plugin-store）。" />
 
-		<div class="space-y-4">
-			<div class="grid gap-2">
-				<div class="text-sm font-medium text-default">默认首页模式</div>
+		<UCard class="space-y-4">
+			<UFormField
+				label="默认首页模式"
+				description="启动时默认显示的页面">
 				<USelect
 					:model-value="model.homeView"
 					:items="homeViewItems"
@@ -15,10 +15,11 @@
 					class="w-64"
 					color="neutral"
 					@update:model-value="onHomeViewChange" />
-			</div>
+			</UFormField>
 
-			<div class="grid gap-2">
-				<div class="text-sm font-medium text-default">信息密度</div>
+			<UFormField
+				label="信息密度"
+				description="界面布局的紧凑程度">
 				<USelect
 					:model-value="model.density"
 					:items="densityItems"
@@ -26,7 +27,7 @@
 					class="w-64"
 					color="neutral"
 					@update:model-value="onDensityChange" />
-			</div>
+			</UFormField>
 
 			<USwitch
 				:model-value="model.autoStart"
@@ -34,35 +35,40 @@
 				description="默认开启（M0 只存值，M1 再接时间线规则）。"
 				color="neutral"
 				@update:model-value="onAutoStartChange" />
-		</div>
+		</UCard>
 
-		<div class="flex items-center gap-2">
-			<UModal
-				v-model:open="open"
-				title="Nuxt UI Modal（M0 验收项）">
-				<UButton
-					label="打开 Modal"
-					color="neutral"
-					variant="subtle" />
+		<UCard>
+			<template #header>
+				<div class="text-sm font-medium">组件验证</div>
+			</template>
+			<div class="flex items-center gap-2">
+				<UModal
+					v-model:open="open"
+					title="Nuxt UI Modal（M0 验收项）">
+					<UButton
+						label="打开 Modal"
+						color="neutral"
+						variant="subtle" />
 
-				<template #body>
-					<div class="space-y-3">
-						<div class="text-sm text-muted">这里用来验证 Nuxt UI 组件与 overlay 能正常工作。</div>
-						<UInput placeholder="随便输入点什么…" />
-					</div>
-				</template>
+					<template #body>
+						<div class="space-y-3">
+							<div class="text-sm text-muted">这里用来验证 Nuxt UI 组件与 overlay 能正常工作。</div>
+							<UInput placeholder="随便输入点什么…" />
+						</div>
+					</template>
 
-				<template #footer>
-					<div class="flex justify-end gap-2">
-						<UButton
-							label="关闭"
-							color="neutral"
-							variant="outline"
-							@click="open = false" />
-					</div>
-				</template>
-			</UModal>
-		</div>
+					<template #footer>
+						<div class="flex justify-end gap-2">
+							<UButton
+								label="关闭"
+								color="neutral"
+								variant="outline"
+								@click="open = false" />
+						</div>
+					</template>
+				</UModal>
+			</div>
+		</UCard>
 	</section>
 </template>
 

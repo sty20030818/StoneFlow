@@ -1,109 +1,169 @@
 <template>
 	<section class="space-y-6">
-		<div class="space-y-1">
-			<div class="text-lg font-semibold">📊 Dashboard</div>
-			<div class="text-sm text-muted">任务概览与统计</div>
-		</div>
+		<PageHeader
+			title="📊 Dashboard"
+			description="任务概览与统计" />
 
 		<!-- 统计卡片 -->
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-			<div class="rounded-lg border border-default bg-elevated p-4 space-y-2">
-				<div class="flex items-center gap-2 text-sm text-muted">
+			<UCard>
+				<div class="flex items-center gap-2 text-sm text-muted mb-2">
 					<UIcon
 						name="i-lucide-loader"
 						class="text-blue-500" />
 					<span>进行中</span>
 				</div>
-				<div class="text-3xl font-bold">{{ stats.doing }}</div>
-			</div>
+				<template v-if="loading">
+					<USkeleton class="h-9 w-12" />
+				</template>
+				<div
+					v-else
+					class="text-3xl font-bold">
+					{{ stats.doing }}
+				</div>
+			</UCard>
 
-			<div class="rounded-lg border border-default bg-elevated p-4 space-y-2">
-				<div class="flex items-center gap-2 text-sm text-muted">
+			<UCard>
+				<div class="flex items-center gap-2 text-sm text-muted mb-2">
 					<UIcon
 						name="i-lucide-list-todo"
 						class="text-orange-500" />
 					<span>待办</span>
 				</div>
-				<div class="text-3xl font-bold">{{ stats.todo }}</div>
-			</div>
+				<template v-if="loading">
+					<USkeleton class="h-9 w-12" />
+				</template>
+				<div
+					v-else
+					class="text-3xl font-bold">
+					{{ stats.todo }}
+				</div>
+			</UCard>
 
-			<div class="rounded-lg border border-default bg-elevated p-4 space-y-2">
-				<div class="flex items-center gap-2 text-sm text-muted">
+			<UCard>
+				<div class="flex items-center gap-2 text-sm text-muted mb-2">
 					<UIcon
 						name="i-lucide-check-circle"
 						class="text-green-500" />
 					<span>今日完成</span>
 				</div>
-				<div class="text-3xl font-bold">{{ stats.doneToday }}</div>
-			</div>
+				<template v-if="loading">
+					<USkeleton class="h-9 w-12" />
+				</template>
+				<div
+					v-else
+					class="text-3xl font-bold">
+					{{ stats.doneToday }}
+				</div>
+			</UCard>
 		</div>
 
 		<!-- Space 概览 -->
 		<div class="space-y-3">
 			<div class="text-sm font-semibold text-default">Space 概览</div>
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-				<RouterLink
-					to="/work"
-					class="rounded-lg border border-default bg-elevated p-4 hover:bg-default transition space-y-2">
-					<div class="flex items-center gap-2">
+				<UCard
+					as="a"
+					href="/work"
+					class="hover:bg-elevated transition cursor-pointer">
+					<div class="flex items-center gap-2 mb-2">
 						<UIcon
 							name="i-lucide-briefcase"
 							class="text-blue-500" />
 						<span class="font-medium">Work</span>
 					</div>
-					<div class="text-sm text-muted">{{ spaceStats.work }} 个任务</div>
-				</RouterLink>
+					<template v-if="loading">
+						<USkeleton class="h-5 w-20" />
+					</template>
+					<div
+						v-else
+						class="text-sm text-muted">
+						{{ spaceStats.work }} 个任务
+					</div>
+				</UCard>
 
-				<RouterLink
-					to="/personal"
-					class="rounded-lg border border-default bg-elevated p-4 hover:bg-default transition space-y-2">
-					<div class="flex items-center gap-2">
+				<UCard
+					as="a"
+					href="/personal"
+					class="hover:bg-elevated transition cursor-pointer">
+					<div class="flex items-center gap-2 mb-2">
 						<UIcon
 							name="i-lucide-user"
 							class="text-purple-500" />
 						<span class="font-medium">Personal</span>
 					</div>
-					<div class="text-sm text-muted">{{ spaceStats.personal }} 个任务</div>
-				</RouterLink>
+					<template v-if="loading">
+						<USkeleton class="h-5 w-20" />
+					</template>
+					<div
+						v-else
+						class="text-sm text-muted">
+						{{ spaceStats.personal }} 个任务
+					</div>
+				</UCard>
 
-				<RouterLink
-					to="/study"
-					class="rounded-lg border border-default bg-elevated p-4 hover:bg-default transition space-y-2">
-					<div class="flex items-center gap-2">
+				<UCard
+					as="a"
+					href="/study"
+					class="hover:bg-elevated transition cursor-pointer">
+					<div class="flex items-center gap-2 mb-2">
 						<UIcon
 							name="i-lucide-book-open"
 							class="text-green-500" />
 						<span class="font-medium">Study</span>
 					</div>
-					<div class="text-sm text-muted">{{ spaceStats.study }} 个任务</div>
-				</RouterLink>
+					<template v-if="loading">
+						<USkeleton class="h-5 w-20" />
+					</template>
+					<div
+						v-else
+						class="text-sm text-muted">
+						{{ spaceStats.study }} 个任务
+					</div>
+				</UCard>
 			</div>
 		</div>
 
 		<!-- 最近完成 -->
 		<div class="space-y-3">
 			<div class="text-sm font-semibold text-default">最近完成</div>
-			<div
-				v-if="recentDone.length === 0"
-				class="text-sm text-muted">
-				暂无完成记录
-			</div>
-			<div
-				v-else
-				class="space-y-2">
+			<template v-if="loading">
+				<UCard class="space-y-3">
+					<div
+						v-for="i in 3"
+						:key="i"
+						class="flex items-center justify-between gap-3 py-2">
+						<div class="space-y-2">
+							<USkeleton class="h-4 w-48" />
+							<USkeleton class="h-3 w-20" />
+						</div>
+						<USkeleton class="h-3 w-16" />
+					</div>
+				</UCard>
+			</template>
+			<template v-else>
 				<div
-					v-for="t in recentDone"
-					:key="t.id"
-					class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3">
-					<div class="min-w-0">
-						<div class="text-sm font-medium truncate">{{ t.title }}</div>
-						<div class="text-xs text-muted">{{ spaceLabel(t.space_id) }}</div>
-					</div>
-					<div class="text-xs text-muted shrink-0">
-						{{ timeAgo(t.completed_at) }}
-					</div>
+					v-if="recentDone.length === 0"
+					class="text-sm text-muted">
+					暂无完成记录
 				</div>
-			</div>
+				<UCard
+					v-else
+					class="space-y-2">
+					<div
+						v-for="t in recentDone"
+						:key="t.id"
+						class="flex items-center justify-between gap-3 py-2 border-b border-default last:border-0">
+						<div class="min-w-0">
+							<div class="text-sm font-medium truncate">{{ t.title }}</div>
+							<div class="text-xs text-muted">{{ spaceLabel(t.space_id) }}</div>
+						</div>
+						<div class="text-xs text-muted shrink-0">
+							{{ timeAgo(t.completed_at) }}
+						</div>
+					</div>
+				</UCard>
+			</template>
 		</div>
 	</section>
 </template>

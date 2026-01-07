@@ -6,19 +6,29 @@
 
 		<div class="flex items-center gap-2">
 			<UButton
-				size="sm"
 				color="neutral"
-				variant="subtle"
-				label="⌘K"
-				disabled />
+				variant="ghost"
+				size="sm"
+				class="gap-1"
+				@click="openCommandPalette">
+				<UKbd value="meta" />
+				<UKbd value="K" />
+			</UButton>
 		</div>
 	</header>
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { computed, inject } from 'vue'
 	import { useRoute } from 'vue-router'
 
 	const route = useRoute()
 	const title = computed(() => String(route.meta.title ?? ''))
+
+	// 注入命令面板控制
+	const commandPalette = inject<{ open: () => void }>('commandPalette')
+
+	function openCommandPalette() {
+		commandPalette?.open()
+	}
 </script>

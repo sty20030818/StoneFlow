@@ -1,121 +1,188 @@
 <template>
 	<section class="space-y-4">
-		<div class="flex items-center justify-between gap-3">
-			<div class="space-y-1">
-				<div class="flex items-center gap-2 text-lg font-semibold">
-					<UIcon
-						name="i-lucide-user"
-						class="text-purple-500" />
-					<span>Personal</span>
-				</div>
-				<div class="text-sm text-muted">个人相关任务</div>
-			</div>
-			<div
-				v-if="loading"
-				class="text-xs text-muted">
-				加载中…
-			</div>
-		</div>
+		<PageHeader
+			title="Personal"
+			description="个人相关任务"
+			icon="i-lucide-user"
+			icon-class="text-purple-500" />
 
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<!-- 进行中 -->
-			<div class="rounded-md border border-default bg-elevated p-3 space-y-3">
-				<div class="flex items-center justify-between">
-					<div class="text-sm font-semibold text-default">进行中</div>
-					<div class="text-xs text-muted">({{ doing.length }})</div>
-				</div>
-
-				<div
-					v-if="doing.length === 0"
-					class="text-sm text-muted">
-					暂无进行中任务。
-				</div>
-
-				<div
-					v-else
-					class="space-y-2">
-					<div
-						v-for="t in doing"
-						:key="t.id"
-						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3 cursor-pointer hover:bg-elevated transition"
-						@click="onTaskClick(t)">
-						<div class="min-w-0">
-							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-						</div>
-						<UButton
-							size="sm"
-							label="完成"
-							color="success"
+			<UCard>
+				<template #header>
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-semibold text-default">进行中</div>
+						<template v-if="loading">
+							<USkeleton class="h-5 w-6 rounded-full" />
+						</template>
+						<UBadge
+							v-else
+							color="neutral"
 							variant="subtle"
-							@click.stop="onComplete(t.id)" />
+							size="sm">
+							{{ doing.length }}
+						</UBadge>
 					</div>
-				</div>
-			</div>
+				</template>
+
+				<template v-if="loading">
+					<div class="space-y-2">
+						<div
+							v-for="i in 2"
+							:key="i"
+							class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3">
+							<div class="space-y-2 flex-1">
+								<USkeleton class="h-4 w-3/4" />
+							</div>
+							<USkeleton class="h-8 w-14 rounded-md" />
+						</div>
+					</div>
+				</template>
+				<template v-else>
+					<div
+						v-if="doing.length === 0"
+						class="text-sm text-muted py-4 text-center">
+						暂无进行中任务
+					</div>
+
+					<div
+						v-else
+						class="space-y-2">
+						<div
+							v-for="t in doing"
+							:key="t.id"
+							class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3 cursor-pointer hover:bg-default transition"
+							@click="onTaskClick(t)">
+							<div class="min-w-0">
+								<div class="text-sm font-medium truncate">{{ t.title }}</div>
+							</div>
+							<UButton
+								size="sm"
+								label="完成"
+								color="success"
+								variant="subtle"
+								@click.stop="onComplete(t.id)" />
+						</div>
+					</div>
+				</template>
+			</UCard>
 
 			<!-- 待办 -->
-			<div class="rounded-md border border-default bg-elevated p-3 space-y-3">
-				<div class="flex items-center justify-between">
-					<div class="text-sm font-semibold text-default">待办</div>
-					<div class="text-xs text-muted">({{ todo.length }})</div>
-				</div>
-
-				<div
-					v-if="todo.length === 0"
-					class="text-sm text-muted">
-					暂无待办任务。
-				</div>
-
-				<div
-					v-else
-					class="space-y-2">
-					<div
-						v-for="t in todo"
-						:key="t.id"
-						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3 cursor-pointer hover:bg-elevated transition"
-						@click="onTaskClick(t)">
-						<div class="min-w-0">
-							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-						</div>
-						<UButton
-							size="sm"
-							label="完成"
-							color="success"
+			<UCard>
+				<template #header>
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-semibold text-default">待办</div>
+						<template v-if="loading">
+							<USkeleton class="h-5 w-6 rounded-full" />
+						</template>
+						<UBadge
+							v-else
+							color="neutral"
 							variant="subtle"
-							@click.stop="onComplete(t.id)" />
+							size="sm">
+							{{ todo.length }}
+						</UBadge>
 					</div>
-				</div>
-			</div>
+				</template>
+
+				<template v-if="loading">
+					<div class="space-y-2">
+						<div
+							v-for="i in 2"
+							:key="i"
+							class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3">
+							<div class="space-y-2 flex-1">
+								<USkeleton class="h-4 w-3/4" />
+							</div>
+							<USkeleton class="h-8 w-14 rounded-md" />
+						</div>
+					</div>
+				</template>
+				<template v-else>
+					<div
+						v-if="todo.length === 0"
+						class="text-sm text-muted py-4 text-center">
+						暂无待办任务
+					</div>
+
+					<div
+						v-else
+						class="space-y-2">
+						<div
+							v-for="t in todo"
+							:key="t.id"
+							class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3 cursor-pointer hover:bg-default transition"
+							@click="onTaskClick(t)">
+							<div class="min-w-0">
+								<div class="text-sm font-medium truncate">{{ t.title }}</div>
+							</div>
+							<UButton
+								size="sm"
+								label="完成"
+								color="success"
+								variant="subtle"
+								@click.stop="onComplete(t.id)" />
+						</div>
+					</div>
+				</template>
+			</UCard>
 
 			<!-- 已完成 -->
-			<div class="rounded-md border border-default bg-elevated p-3 space-y-3">
-				<div class="flex items-center justify-between">
-					<div class="text-sm font-semibold text-default">已完成（今天）</div>
-					<div class="text-xs text-muted">({{ doneToday.length }})</div>
-				</div>
+			<UCard>
+				<template #header>
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-semibold text-default">已完成（今天）</div>
+						<template v-if="loading">
+							<USkeleton class="h-5 w-6 rounded-full" />
+						</template>
+						<UBadge
+							v-else
+							color="neutral"
+							variant="subtle"
+							size="sm">
+							{{ doneToday.length }}
+						</UBadge>
+					</div>
+				</template>
 
-				<div
-					v-if="doneToday.length === 0"
-					class="text-sm text-muted">
-					今天还没有完成记录。
-				</div>
-
-				<div
-					v-else
-					class="space-y-2">
-					<div
-						v-for="t in doneToday"
-						:key="t.id"
-						class="p-3 rounded-md border border-default bg-default flex items-center justify-between gap-3 cursor-pointer hover:bg-elevated transition"
-						@click="onTaskClick(t)">
-						<div class="min-w-0">
-							<div class="text-sm font-medium truncate">{{ t.title }}</div>
-						</div>
-						<div class="text-xs text-muted shrink-0">
-							{{ new Date(t.completed_at ?? 0).toLocaleTimeString() }}
+				<template v-if="loading">
+					<div class="space-y-2">
+						<div
+							v-for="i in 2"
+							:key="i"
+							class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3">
+							<div class="space-y-2 flex-1">
+								<USkeleton class="h-4 w-3/4" />
+							</div>
+							<USkeleton class="h-3 w-12" />
 						</div>
 					</div>
-				</div>
-			</div>
+				</template>
+				<template v-else>
+					<div
+						v-if="doneToday.length === 0"
+						class="text-sm text-muted py-4 text-center">
+						今天还没有完成记录
+					</div>
+
+					<div
+						v-else
+						class="space-y-2">
+						<div
+							v-for="t in doneToday"
+							:key="t.id"
+							class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3 cursor-pointer hover:bg-default transition"
+							@click="onTaskClick(t)">
+							<div class="min-w-0">
+								<div class="text-sm font-medium truncate">{{ t.title }}</div>
+							</div>
+							<div class="text-xs text-muted shrink-0">
+								{{ new Date(t.completed_at ?? 0).toLocaleTimeString() }}
+							</div>
+						</div>
+					</div>
+				</template>
+			</UCard>
 		</div>
 	</section>
 </template>

@@ -1,5 +1,5 @@
 <template>
-	<aside class="w-60 shrink-0 border-r border-default px-3 py-3 flex flex-col gap-4 overflow-y-auto">
+	<aside class="w-60 shrink-0 border-r border-default px-3 py-3 flex flex-col gap-2 overflow-y-auto">
 		<!-- Workspace -->
 		<div>
 			<div class="px-2 text-xs font-medium text-muted mb-2">Workspace</div>
