@@ -1,25 +1,23 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 // Workspace
-import Dashboard from '@/pages/workspace/Dashboard.vue'
-import AllTasks from '@/pages/workspace/AllTasks.vue'
-import Work from '@/pages/workspace/Work.vue'
-import Personal from '@/pages/workspace/Personal.vue'
-import Study from '@/pages/workspace/Study.vue'
+import Dashboard from '@/pages/workspace/Dashboard/index.vue'
+import AllTasks from '@/pages/workspace/AllTasks/index.vue'
+import Space from '@/pages/workspace/Space/index.vue'
 
 // Review
-import FinishList from '@/pages/review/FinishList.vue'
-import Stats from '@/pages/review/Stats.vue'
-import Logs from '@/pages/review/Logs.vue'
+import FinishList from '@/pages/review/FinishList/index.vue'
+import Stats from '@/pages/review/Stats/index.vue'
+import Logs from '@/pages/review/Logs/index.vue'
 
 // Assets Library
-import Snippets from '@/pages/assets/Snippets.vue'
-import Vault from '@/pages/assets/Vault.vue'
-import Notes from '@/pages/assets/Notes.vue'
-import Toolbox from '@/pages/assets/Toolbox.vue'
+import Snippets from '@/pages/assets/Snippets/index.vue'
+import Vault from '@/pages/assets/Vault/index.vue'
+import Notes from '@/pages/assets/Notes/index.vue'
+import Toolbox from '@/pages/assets/Toolbox/index.vue'
 
 // Settings
-import Settings from '@/pages/Settings.vue'
+import Settings from '@/pages/Settings/index.vue'
 
 export const routes = [
 	{ path: '/', redirect: '/dashboard' },
@@ -27,9 +25,11 @@ export const routes = [
 	// Workspace
 	{ path: '/dashboard', component: Dashboard, meta: { title: 'Dashboard' } },
 	{ path: '/all-tasks', component: AllTasks, meta: { title: 'All Tasks' } },
-	{ path: '/work', component: Work, meta: { title: 'Work' } },
-	{ path: '/personal', component: Personal, meta: { title: 'Personal' } },
-	{ path: '/study', component: Study, meta: { title: 'Study' } },
+	{ path: '/space/:spaceId', component: Space, meta: { title: 'Space' } },
+	// 兼容旧路由
+	{ path: '/work', redirect: '/space/work' },
+	{ path: '/personal', redirect: '/space/personal' },
+	{ path: '/study', redirect: '/space/study' },
 
 	// Review
 	{ path: '/finish-list', component: FinishList, meta: { title: 'Finish List' } },

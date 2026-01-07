@@ -80,9 +80,9 @@
 	const workspaceNav = [
 		{ to: '/dashboard', label: 'Dashboard', icon: 'i-lucide-layout-dashboard', iconColor: 'text-primary' },
 		{ to: '/all-tasks', label: 'All Tasks', icon: 'i-lucide-list-checks', iconColor: 'text-gray-500' },
-		{ to: '/work', label: 'Work', icon: 'i-lucide-briefcase', iconColor: 'text-blue-500' },
-		{ to: '/personal', label: 'Personal', icon: 'i-lucide-user', iconColor: 'text-purple-500' },
-		{ to: '/study', label: 'Study', icon: 'i-lucide-book-open', iconColor: 'text-green-500' },
+		{ to: '/space/work', label: 'Work', icon: 'i-lucide-briefcase', iconColor: 'text-blue-500' },
+		{ to: '/space/personal', label: 'Personal', icon: 'i-lucide-user', iconColor: 'text-purple-500' },
+		{ to: '/space/study', label: 'Study', icon: 'i-lucide-book-open', iconColor: 'text-green-500' },
 	]
 
 	const reviewNav = [

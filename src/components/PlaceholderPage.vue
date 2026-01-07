@@ -1,10 +1,10 @@
 <template>
 	<section class="space-y-4">
 		<PageHeader
-			title="Vault"
-			description="密钥保险箱"
-			icon="i-lucide-lock"
-			icon-class="text-yellow-500" />
+			:title="title"
+			:description="description"
+			:icon="icon"
+			:icon-class="iconClass" />
 
 		<UCard class="py-12">
 			<div class="flex flex-col items-center justify-center gap-3">
@@ -16,3 +16,12 @@
 		</UCard>
 	</section>
 </template>
+
+<script setup lang="ts">
+	defineProps<{
+		title: string
+		description: string
+		icon: string
+		iconClass: string
+	}>()
+</script>
