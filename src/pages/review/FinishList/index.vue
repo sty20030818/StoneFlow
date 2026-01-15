@@ -2,12 +2,12 @@
 	<section class="space-y-4">
 		<div class="flex items-center justify-between gap-3">
 			<div class="space-y-1">
-				<div class="flex items-center gap-2 text-lg font-semibold">
+				<!-- <div class="flex items-center gap-2 text-lg font-semibold">
 					<UIcon
 						name="i-lucide-check-circle"
 						class="text-green-500" />
 					<span>Finish List</span>
-				</div>
+				</div> -->
 				<div class="text-sm text-muted">已完成任务时间线</div>
 			</div>
 			<div

@@ -1,7 +1,5 @@
 <template>
 	<section class="space-y-4">
-		<SpaceHeader :space-id="spaceId" />
-
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<TaskColumn
 				title="进行中"
@@ -42,8 +40,6 @@
 	import TaskColumn from '@/components/TaskColumn.vue'
 	import { useSpaceTasks } from '@/composables/useSpaceTasks'
 	import type { TaskDto } from '@/services/api/tasks'
-
-	import SpaceHeader from './components/SpaceHeader.vue'
 
 	const route = useRoute()
 	const spaceId = computed(() => route.params.spaceId as string)

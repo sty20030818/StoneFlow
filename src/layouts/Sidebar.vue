@@ -1,71 +1,72 @@
 <template>
-	<aside class="w-60 shrink-0 border-r border-default px-3 py-3 flex flex-col gap-2 overflow-y-auto">
-		<!-- Workspace -->
-		<div>
-			<div class="px-2 text-xs font-medium text-muted mb-2">Workspace</div>
-			<nav class="flex flex-col gap-0.5">
-				<RouterLink
-					v-for="item in workspaceNav"
-					:key="item.to"
-					:to="item.to"
-					class="px-2 py-2 rounded-md text-sm hover:bg-elevated transition flex items-center gap-2"
-					:class="currentPath === item.to ? 'bg-elevated text-default' : 'text-muted'">
-					<UIcon
-						:name="item.icon"
-						:class="item.iconColor" />
-					<span>{{ item.label }}</span>
-				</RouterLink>
-			</nav>
+	<aside class="w-60 shrink-0 border-r border-default flex flex-col">
+		<!-- 顶部固定：Brand Logo -->
+		<div class="p-3 pb-0">
+			<BrandLogo />
 		</div>
 
-		<!-- Review -->
-		<div>
-			<div class="px-2 text-xs font-medium text-muted mb-2">Review</div>
-			<nav class="flex flex-col gap-0.5">
-				<RouterLink
-					v-for="item in reviewNav"
-					:key="item.to"
-					:to="item.to"
-					class="px-2 py-2 rounded-md text-sm hover:bg-elevated transition flex items-center gap-2"
-					:class="currentPath === item.to ? 'bg-elevated text-default' : 'text-muted'">
-					<UIcon
-						:name="item.icon"
-						:class="item.iconColor" />
-					<span>{{ item.label }}</span>
-				</RouterLink>
-			</nav>
+		<!-- 中间滚动区：导航列表 -->
+		<div class="flex-1 overflow-y-auto p-3 space-y-4">
+			<!-- Workspace -->
+			<div>
+				<div class="px-2 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Workspace</div>
+				<nav class="flex flex-col gap-0.5">
+					<RouterLink
+						v-for="item in workspaceNav"
+						:key="item.to"
+						:to="item.to"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
+						<UIcon
+							:name="item.icon"
+							:class="item.iconColor" />
+						<span>{{ item.label }}</span>
+					</RouterLink>
+				</nav>
+			</div>
+
+			<!-- Review -->
+			<div>
+				<div class="px-2 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Review</div>
+				<nav class="flex flex-col gap-0.5">
+					<RouterLink
+						v-for="item in reviewNav"
+						:key="item.to"
+						:to="item.to"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
+						<UIcon
+							:name="item.icon"
+							:class="item.iconColor" />
+						<span>{{ item.label }}</span>
+					</RouterLink>
+				</nav>
+			</div>
+
+			<!-- Assets Library -->
+			<div>
+				<div class="px-2 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Assets Library</div>
+				<nav class="flex flex-col gap-0.5">
+					<RouterLink
+						v-for="item in assetsNav"
+						:key="item.to"
+						:to="item.to"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
+						<UIcon
+							:name="item.icon"
+							:class="item.iconColor" />
+						<span>{{ item.label }}</span>
+					</RouterLink>
+				</nav>
+			</div>
 		</div>
 
-		<!-- Assets Library -->
-		<div>
-			<div class="px-2 text-xs font-medium text-muted mb-2">Assets Library</div>
-			<nav class="flex flex-col gap-0.5">
-				<RouterLink
-					v-for="item in assetsNav"
-					:key="item.to"
-					:to="item.to"
-					class="px-2 py-2 rounded-md text-sm hover:bg-elevated transition flex items-center gap-2"
-					:class="currentPath === item.to ? 'bg-elevated text-default' : 'text-muted'">
-					<UIcon
-						:name="item.icon"
-						:class="item.iconColor" />
-					<span>{{ item.label }}</span>
-				</RouterLink>
-			</nav>
-		</div>
-
-		<!-- Settings -->
-		<div class="mt-auto">
-			<RouterLink
-				to="/settings"
-				class="px-2 py-2 rounded-md text-sm hover:bg-elevated transition flex items-center gap-2"
-				:class="currentPath === '/settings' ? 'bg-elevated text-default' : 'text-muted'">
-				<UIcon
-					name="i-lucide-settings"
-					class="text-gray-500" />
-				<span>Settings</span>
-			</RouterLink>
-			<div class="px-2 pt-3 text-xs text-muted">StoneFlow · M0</div>
+		<!-- 底部固定：User Card -->
+		<div class="p-3 pt-0 border-t border-default">
+			<div class="pt-3">
+				<UserCard />
+			</div>
 		</div>
 	</aside>
 </template>
@@ -74,12 +75,15 @@
 	import { computed } from 'vue'
 	import { useRoute } from 'vue-router'
 
+	import BrandLogo from '@/components/BrandLogo.vue'
+	import UserCard from '@/components/UserCard.vue'
+
 	const route = useRoute()
 	const currentPath = computed(() => route.path)
 
 	const workspaceNav = [
 		{ to: '/dashboard', label: 'Dashboard', icon: 'i-lucide-layout-dashboard', iconColor: 'text-primary' },
-		{ to: '/all-tasks', label: 'All Tasks', icon: 'i-lucide-list-checks', iconColor: 'text-gray-500' },
+		{ to: '/all-tasks', label: 'All Tasks', icon: 'i-lucide-list-checks', iconColor: 'text-pink-500' },
 		{ to: '/space/work', label: 'Work', icon: 'i-lucide-briefcase', iconColor: 'text-blue-500' },
 		{ to: '/space/personal', label: 'Personal', icon: 'i-lucide-user', iconColor: 'text-purple-500' },
 		{ to: '/space/study', label: 'Study', icon: 'i-lucide-book-open', iconColor: 'text-green-500' },

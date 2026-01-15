@@ -1,9 +1,5 @@
 <template>
 	<section class="space-y-6 max-w-xl">
-		<PageHeader
-			title="设置"
-			description="M0：偏好可持久化（plugin-store）。" />
-
 		<PreferenceCard
 			:model="model"
 			@update:home-view="onHomeViewChange"

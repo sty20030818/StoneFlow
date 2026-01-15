@@ -1,11 +1,5 @@
 <template>
 	<section class="space-y-4">
-		<PageHeader
-			title="All Tasks"
-			description="所有任务的进行中 / 待办 / 已完成"
-			icon="i-lucide-list-checks"
-			icon-class="text-primary" />
-
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<TaskColumn
 				title="进行中"

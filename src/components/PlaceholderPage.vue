@@ -1,11 +1,5 @@
 <template>
 	<section class="space-y-4">
-		<PageHeader
-			:title="title"
-			:description="description"
-			:icon="icon"
-			:icon-class="iconClass" />
-
 		<UCard class="py-12">
 			<div class="flex flex-col items-center justify-center gap-3">
 				<UIcon

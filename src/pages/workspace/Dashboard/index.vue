@@ -1,9 +1,5 @@
 <template>
 	<section class="space-y-6">
-		<PageHeader
-			title="📊 Dashboard"
-			description="任务概览与统计" />
-
 		<StatsCards
 			:stats="stats"
 			:loading="loading" />

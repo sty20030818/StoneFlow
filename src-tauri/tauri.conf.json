@@ -1,6 +1,6 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "stoneflow",
+	"productName": "StoneFlow",
 	"version": "0.1.0",
 	"identifier": "com.sty.stoneflow",
 	"build": {
@@ -13,9 +13,9 @@
 		"windows": [
 			{
 				"label": "main",
-				"title": "stoneflow",
-				"width": 1200,
-				"height": 800,
+				"title": "StoneFlow",
+				"width": 1360,
+				"height": 960,
 				"minWidth": 800,
 				"minHeight": 600
 			}
