@@ -4,6 +4,7 @@ mod repos;
 mod types;
 
 use commands::hello::hello;
+use commands::projects::list_projects;
 use commands::spaces::list_spaces;
 use commands::tasks::{complete_task, create_task, list_tasks, update_task};
 use tauri::Manager;
@@ -21,6 +22,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             hello,
+            list_projects,
             list_spaces,
             list_tasks,
             create_task,

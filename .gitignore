@@ -37,3 +37,6 @@ src-tauri/.tauri
 *.sw?
 
 Docs
+
+# UI-UX-PRO-MAX
+.shared 

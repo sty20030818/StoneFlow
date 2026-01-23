@@ -10,6 +10,20 @@ pub struct SpaceDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectDto {
+  pub id: String,
+  pub space_id: String,
+  pub parent_id: Option<String>,
+  pub path: String,
+  pub name: String,
+  pub note: Option<String>,
+  pub status: String,
+  pub created_at: i64,
+  pub updated_at: i64,
+  pub archived_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskDto {
     pub id: String,
     pub space_id: String,

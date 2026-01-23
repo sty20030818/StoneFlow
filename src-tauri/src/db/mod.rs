@@ -11,74 +11,156 @@ pub mod migrations;
 ///
 /// 说明：`rusqlite::Connection` 不是并发安全的；通过 Mutex 保证串行访问即可。
 pub struct DbState {
-  pub conn: std::sync::Mutex<Connection>,
+    pub conn: std::sync::Mutex<Connection>,
 }
 
 /// Unix 毫秒时间戳（i64）。
 pub fn now_ms() -> i64 {
-  let dur = SystemTime::now()
-    .duration_since(SystemTime::UNIX_EPOCH)
-    .unwrap_or_default();
-  dur.as_millis() as i64
+    let dur = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default();
+    dur.as_millis() as i64
 }
 
 fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, AppError> {
-  app
-    .path()
-    .resolve("stoneflow/stoneflow.db", BaseDirectory::AppData)
-    .map_err(|e| AppError::Path(e.to_string()))
+    app.path()
+        .resolve("stoneflow/stoneflow.db", BaseDirectory::AppData)
+        .map_err(|e| AppError::Path(e.to_string()))
 }
 
 /// 初始化数据库（创建目录、打开连接、设置 PRAGMA、跑 migrations、seed 默认 spaces）。
 pub fn init_db(app: &AppHandle) -> Result<DbState, AppError> {
-  let db_path = resolve_db_path(app)?;
+    let db_path = resolve_db_path(app)?;
 
-  if let Some(parent) = db_path.parent() {
-    std::fs::create_dir_all(parent)?;
-  }
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut conn = Connection::open(db_path)?;
 
-  let mut conn = Connection::open(db_path)?;
-
-  // PRAGMA：M1 先固定做，减少“锁/一致性”类问题。
-  conn.execute_batch(
-    r#"
+    // PRAGMA：M1 先固定做，减少“锁/一致性”类问题。
+    conn.execute_batch(
+        r#"
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA busy_timeout = 2000;
 "#,
-  )?;
+    )?;
 
-  migrations::run_migrations(&mut conn)?;
-  seed_default_spaces_if_empty(&mut conn)?;
+    migrations::run_migrations(&mut conn)?;
+    seed_default_spaces_if_empty(&mut conn)?;
+    seed_default_projects_and_backfill_tasks(&mut conn)?;
 
-  Ok(DbState {
-    conn: std::sync::Mutex::new(conn),
-  })
+    Ok(DbState {
+        conn: std::sync::Mutex::new(conn),
+    })
 }
 
 fn seed_default_spaces_if_empty(conn: &mut Connection) -> Result<(), AppError> {
-  let count: i64 = conn.query_row("SELECT COUNT(1) FROM spaces", (), |row| row.get(0))?;
-  if count > 0 {
-    return Ok(());
-  }
+    let count: i64 = conn.query_row("SELECT COUNT(1) FROM spaces", (), |row| row.get(0))?;
+    if count > 0 {
+        return Ok(());
+    }
 
-  let now = now_ms();
-  let tx = conn.transaction()?;
+    let now = now_ms();
+    let tx = conn.transaction()?;
 
-  // 固定 id：与前端选择器一致，减少映射复杂度。
-  // order：用于默认排序。
-  let spaces = [("work", "工作", 1_i64), ("study", "学习", 2_i64), ("personal", "个人", 3_i64)];
+    // 固定 id：与前端选择器一致，减少映射复杂度。
+    // order：用于默认排序。
+    let spaces = [
+        ("work", "工作", 1_i64),
+        ("study", "学习", 2_i64),
+        ("personal", "个人", 3_i64),
+    ];
 
-  for (id, name, order) in spaces {
-    tx.execute(
+    for (id, name, order) in spaces {
+        tx.execute(
       "INSERT INTO spaces(id, name, \"order\", created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)",
       (id, name, order, now, now),
     )?;
-  }
+    }
 
-  tx.commit()?;
-  Ok(())
+    tx.commit()?;
+    Ok(())
 }
 
+/// 为每个已存在的 Space 创建一个 Default Project，并将缺少 project_id 的任务挂到该默认 Project 上。
+fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(), AppError> {
+    // 检查 projects 表是否存在；如果不存在说明迁移尚未生效，直接跳过。
+    let has_projects_table: i64 = conn
+        .query_row(
+            "SELECT COUNT(1) FROM sqlite_master WHERE type = 'table' AND name = 'projects'",
+            (),
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if has_projects_table == 0 {
+        return Ok(());
+    }
 
+    // 如果已经有 Project 且存在非空 project_id 的任务，认为已经完成过初始化，避免重复写入。
+    let existing_projects: i64 =
+        conn.query_row("SELECT COUNT(1) FROM projects", (), |row| row.get(0))?;
+    let existing_project_tasks: i64 = conn
+        .query_row(
+            "SELECT COUNT(1) FROM tasks WHERE project_id IS NOT NULL",
+            (),
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if existing_projects > 0 && existing_project_tasks > 0 {
+        return Ok(());
+    }
+
+    let now = now_ms();
+
+    let tx = conn.transaction()?;
+
+    // 1. 为每个 space 创建一个 Default Project
+    let mut stmt = tx.prepare("SELECT id, name FROM spaces ORDER BY \"order\" ASC")?;
+    let rows = stmt.query_map((), |row| {
+        let id: String = row.get(0)?;
+        let name: String = row.get(1)?;
+        Ok((id, name))
+    })?;
+
+    // 收集所有 space 数据，避免在借用 tx 的同时使用它
+    let spaces: Vec<(String, String)> = rows.collect::<Result<Vec<_>, _>>()?;
+    drop(stmt); // 显式释放 stmt，释放对 tx 的借用
+
+    for (space_id, space_name) in spaces {
+        // Default Project 命名规则："{SpaceName} · Default"
+        let project_name = format!("{space_name} · Default");
+        let project_id = format!("{space_id}_default");
+        let path = format!("/{project_name}");
+
+        tx.execute(
+            r#"
+INSERT OR IGNORE INTO projects(
+  id, space_id, parent_id, path,
+  name, note, status,
+  created_at, updated_at, archived_at
+) VALUES (
+  ?1, ?2, NULL, ?3,
+  ?4, NULL, 'active',
+  ?5, ?5, NULL
+)
+"#,
+            (project_id.clone(), space_id.clone(), path, project_name, now),
+        )?;
+
+        // 2. 将该 space 下尚未关联 project_id 的任务，全部挂到对应的 Default Project。
+        tx.execute(
+            r#"
+UPDATE tasks
+SET project_id = ?1
+WHERE space_id = ?2
+  AND project_id IS NULL
+"#,
+            (project_id, space_id),
+        )?;
+    }
+
+    tx.commit()?;
+    Ok(())
+}
