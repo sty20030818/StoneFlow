@@ -14,6 +14,7 @@ import Logs from '@/pages/review/Logs/index.vue'
 import Snippets from '@/pages/assets/Snippets/index.vue'
 import Vault from '@/pages/assets/Vault/index.vue'
 import Notes from '@/pages/assets/Notes/index.vue'
+import Diary from '@/pages/assets/Diary/index.vue'
 import Toolbox from '@/pages/assets/Toolbox/index.vue'
 
 // Settings
@@ -85,6 +86,11 @@ export const routes = [
 		path: '/notes',
 		component: Notes,
 		meta: { title: 'Notes', icon: 'i-lucide-notebook', iconClass: 'text-pink-500', description: '笔记本' },
+	},
+	{
+		path: '/diary',
+		component: Diary,
+		meta: { title: 'Diary', icon: 'i-lucide-book-open-text', iconClass: 'text-indigo-500', description: '工作日志' },
 	},
 	{
 		path: '/toolbox',

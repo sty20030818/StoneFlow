@@ -1,11 +1,314 @@
 <template>
-	<PlaceholderPage
-		title="Stats"
-		description="统计分析"
-		icon="i-lucide-bar-chart-3"
-		icon-class="text-blue-500" />
+	<section class="space-y-4">
+		<!-- 顶部标题 -->
+		<header class="flex flex-col gap-1">
+			<div class="flex items-center gap-2 text-sm font-semibold">
+				<UIcon
+					name="i-lucide-bar-chart-3"
+					class="text-blue-500" />
+				<span>Stats</span>
+			</div>
+			<div class="text-xs text-muted">Space 关键指标 · 完成趋势 · 状态分布</div>
+		</header>
+
+		<!-- 关键指标卡片：每个 Space 的「本周完成数 / 活跃 Project 数」 -->
+		<section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+			<UCard
+				v-for="s in spaceCards"
+				:key="s.id"
+				class="cursor-pointer hover:bg-default transition"
+				@click="goToFinishList(s.id)">
+				<template #header>
+					<div class="flex items-center justify-between gap-2">
+						<div class="flex items-center gap-2">
+							<UIcon
+								:name="s.icon"
+								:class="s.iconClass" />
+							<div class="text-sm font-semibold">{{ s.label }}</div>
+						</div>
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="2xs"
+							icon="i-lucide-arrow-right"
+							@click.stop="goToLogs(s.id)">
+							<span class="ml-1 text-[11px]">Logs</span>
+						</UButton>
+					</div>
+				</template>
+
+				<template v-if="loading">
+					<USkeleton class="h-7 w-20" />
+				</template>
+				<div
+					v-else
+					class="flex items-end justify-between gap-2">
+					<div>
+						<div class="text-xs text-muted mb-0.5">本周完成</div>
+						<div class="text-2xl font-bold">{{ s.thisWeekDone }}</div>
+					</div>
+					<div class="text-right">
+						<div class="text-xs text-muted mb-0.5">活跃 Project</div>
+						<div class="text-lg font-semibold">{{ s.activeProjects }}</div>
+					</div>
+				</div>
+			</UCard>
+		</section>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+			<!-- 最近 7 天完成数折线图（简化为条形趋势） -->
+			<UCard class="lg:col-span-2">
+				<template #header>
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<UIcon
+								name="i-lucide-line-chart"
+								class="size-4 text-emerald-500" />
+							<div class="text-sm font-semibold">最近 7 天完成趋势</div>
+						</div>
+					</div>
+				</template>
+
+				<div
+					v-if="loading"
+					class="space-y-2">
+					<USkeleton
+						v-for="i in 4"
+						:key="i"
+						class="h-4 w-full" />
+				</div>
+				<div
+					v-else
+					class="space-y-1">
+					<div
+						v-for="d in last7d"
+						:key="d.date"
+						class="flex items-center gap-2 text-xs">
+						<div class="w-16 text-muted">{{ d.date }}</div>
+						<div class="flex-1 h-3 rounded-full bg-default/60 overflow-hidden">
+							<div
+								class="h-full rounded-full bg-emerald-500/80"
+								:style="{ width: `${d.percent}%` }" />
+						</div>
+						<div class="w-8 text-right text-muted">{{ d.count }}</div>
+					</div>
+				</div>
+			</UCard>
+
+			<!-- 状态分布 -->
+			<UCard>
+				<template #header>
+					<div class="flex items-center gap-2">
+						<UIcon
+							name="i-lucide-pie-chart"
+							class="size-4 text-purple-500" />
+						<div class="text-sm font-semibold">状态分布</div>
+					</div>
+				</template>
+
+				<div
+					v-if="loading"
+					class="space-y-2">
+					<USkeleton class="h-24 w-24 rounded-full mx-auto" />
+					<USkeleton class="h-4 w-full" />
+					<USkeleton class="h-4 w-full" />
+					<USkeleton class="h-4 w-full" />
+				</div>
+				<div
+					v-else
+					class="space-y-3">
+					<div class="relative w-28 h-28 mx-auto">
+						<svg
+							viewBox="0 0 36 36"
+							class="w-full h-full -rotate-90 text-muted/20">
+							<circle
+								cx="18"
+								cy="18"
+								r="15.9155"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3" />
+							<circle
+								v-for="slice in statusSlices"
+								:key="slice.key"
+								cx="18"
+								cy="18"
+								r="15.9155"
+								fill="none"
+								:stroke="slice.color"
+								stroke-width="3"
+								stroke-linecap="round"
+								:stroke-dasharray="`${slice.percent} ${100 - slice.percent}`"
+								:stroke-dashoffset="slice.offset" />
+						</svg>
+						<div class="absolute inset-0 flex items-center justify-center">
+							<div class="text-xs text-muted text-center">
+								<div class="text-[11px]">总任务</div>
+								<div class="text-base font-semibold">{{ statusTotal }}</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="space-y-1">
+						<div
+							v-for="s in statusSlices"
+							:key="s.key"
+							class="flex items-center justify-between text-xs">
+							<div class="flex items-center gap-2">
+								<span
+									class="inline-flex w-2.5 h-2.5 rounded-full"
+									:style="{ backgroundColor: s.color }" />
+								<span>{{ s.label }}</span>
+							</div>
+							<div class="text-muted">
+								{{ s.count }} · {{ s.percent }}%
+							</div>
+						</div>
+					</div>
+				</div>
+			</UCard>
+		</div>
+	</section>
 </template>
 
 <script setup lang="ts">
-	import PlaceholderPage from '@/components/PlaceholderPage.vue'
+	import { computed, onMounted, ref } from 'vue'
+	import { useRouter } from 'vue-router'
+
+	import { listTasks, type TaskDto } from '@/services/api/tasks'
+
+	const toast = useToast()
+	const router = useRouter()
+
+	const loading = ref(false)
+	const tasks = ref<TaskDto[]>([])
+
+	const spaceCards = computed(() => {
+		const ids = ['work', 'personal', 'study'] as const
+		const meta: Record<
+			typeof ids[number],
+			{ id: string; label: string; icon: string; iconClass: string }
+		> = {
+			work: { id: 'work', label: 'Work', icon: 'i-lucide-briefcase', iconClass: 'text-blue-500' },
+			personal: { id: 'personal', label: 'Personal', icon: 'i-lucide-user', iconClass: 'text-purple-500' },
+			study: { id: 'study', label: 'Study', icon: 'i-lucide-book-open', iconClass: 'text-green-500' },
+		}
+
+		const now = new Date()
+		const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime()
+
+		return ids.map((id) => {
+			const info = meta[id]
+			const scoped = tasks.value.filter((t) => t.space_id === id)
+
+			const thisWeekDone = scoped.filter((t) => t.completed_at && t.completed_at >= startOfWeek).length
+
+			const activeProjectIds = new Set<string>()
+			for (const t of scoped) {
+				if (t.status !== 'done') {
+					activeProjectIds.add('default')
+				}
+			}
+
+			return {
+				...info,
+				thisWeekDone,
+				activeProjects: activeProjectIds.size,
+			}
+		})
+	})
+
+	const last7d = computed(() => {
+		const days: { date: string; count: number; percent: number }[] = []
+		const now = new Date()
+
+		for (let i = 6; i >= 0; i--) {
+			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
+			const key = `${d.getMonth() + 1}/${d.getDate()}`
+			const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+			const end = start + 24 * 60 * 60 * 1000
+
+			const count = tasks.value.filter((t) => t.completed_at && t.completed_at >= start && t.completed_at < end).length
+			days.push({ date: key, count, percent: 0 })
+		}
+
+		const max = days.reduce((m, d) => (d.count > m ? d.count : m), 0)
+		for (const d of days) {
+			d.percent = max > 0 ? Math.max(6, Math.round((d.count / max) * 100)) : 0
+		}
+		return days
+	})
+
+	const statusTotal = computed(() => tasks.value.length)
+
+	type Slice = {
+		key: string
+		label: string
+		color: string
+		count: number
+		percent: number
+		offset: number
+	}
+
+	const statusSlices = computed<Slice[]>(() => {
+		const buckets: { key: string; label: string; color: string; match: (t: TaskDto) => boolean }[] = [
+			{ key: 'done', label: '已完成', color: '#22c55e', match: (t) => t.status === 'done' },
+			{ key: 'doing', label: '进行中', color: '#3b82f6', match: (t) => t.status === 'doing' },
+			{ key: 'todo', label: '待办', color: '#f97316', match: (t) => t.status === 'todo' },
+		]
+
+		const total = tasks.value.length || 1
+		let offset = 25
+		const slices: Slice[] = []
+
+		for (const b of buckets) {
+			const count = tasks.value.filter(b.match).length
+			const percent = Math.round((count / total) * 100)
+			if (percent <= 0) continue
+			const slice: Slice = {
+				key: b.key,
+				label: b.label,
+				color: b.color,
+				count,
+				percent,
+				offset,
+			}
+			offset -= (percent / 100) * 100
+			slices.push(slice)
+		}
+
+		return slices
+	})
+
+	async function refresh() {
+		loading.value = true
+		try {
+			const [doing, todo, done] = await Promise.all([
+				listTasks({ status: 'doing' }),
+				listTasks({ status: 'todo' }),
+				listTasks({ status: 'done' }),
+			])
+			tasks.value = [...doing, ...todo, ...done]
+		} catch (e) {
+			toast.add({
+				title: '加载统计失败',
+				description: e instanceof Error ? e.message : '未知错误',
+				color: 'error',
+			})
+		} finally {
+			loading.value = false
+		}
+	}
+
+	function goToFinishList(_spaceId: string) {
+		router.push({ path: '/finish-list' })
+	}
+
+	function goToLogs(_spaceId: string) {
+		router.push({ path: '/logs' })
+	}
+
+	onMounted(async () => {
+		await refresh()
+	})
 </script>
