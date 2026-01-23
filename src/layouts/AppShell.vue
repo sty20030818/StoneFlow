@@ -1,5 +1,5 @@
 <template>
-	<div class="h-full flex bg-default text-default">
+	<div class="h-full flex bg-default text-default relative overflow-hidden">
 		<Sidebar v-model:space="space" />
 
 		<div class="flex-1 min-w-0 flex flex-col">
@@ -16,14 +16,19 @@
 				</div>
 			</main>
 		</div>
+
+		<!-- 右侧 Task Inspector Drawer，全局挂载在 Workspace Shell 上 -->
+		<TaskInspectorDrawer />
 	</div>
 </template>
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 
-	import Sidebar from './Sidebar.vue'
-	import Topbar from './Topbar.vue'
+import Sidebar from './Sidebar.vue'
+import Topbar from './Topbar.vue'
+
+import TaskInspectorDrawer from '@/components/TaskInspectorDrawer.vue'
 
 	import { useSettingsStore } from '@/stores/settings'
 	import { useSpacesStore } from '@/stores/spaces'

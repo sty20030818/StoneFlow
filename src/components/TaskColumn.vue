@@ -47,38 +47,22 @@
 			<div
 				v-else
 				class="space-y-2">
-				<div
+				<TaskCard
 					v-for="t in tasks"
 					:key="t.id"
-					class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3 cursor-pointer hover:bg-default transition"
-					@click="$emit('task-click', t)">
-					<div class="min-w-0">
-						<div class="text-sm font-medium truncate">{{ t.title }}</div>
-						<div
-							v-if="showSpaceLabel"
-							class="text-xs text-muted">
-							{{ spaceLabel(t.space_id) }}
-						</div>
-					</div>
-					<UButton
-						v-if="showCompleteButton"
-						size="sm"
-						label="完成"
-						color="success"
-						variant="subtle"
-						@click.stop="$emit('complete', t.id)" />
-					<div
-						v-if="showTime && t.completed_at"
-						class="text-xs text-muted shrink-0">
-						{{ new Date(t.completed_at).toLocaleTimeString() }}
-					</div>
-				</div>
+					:task="t"
+					:show-complete-button="showCompleteButton"
+					:show-time="showTime"
+					:show-space-label="showSpaceLabel"
+					@click="$emit('task-click', t)"
+					@complete="$emit('complete', t.id)" />
 			</div>
 		</template>
 	</UCard>
 </template>
 
 <script setup lang="ts">
+	import TaskCard from '@/components/TaskCard.vue'
 	import type { TaskDto } from '@/services/api/tasks'
 
 	defineProps<{
@@ -96,13 +80,4 @@
 		complete: [taskId: string]
 		'task-click': [task: TaskDto]
 	}>()
-
-	function spaceLabel(spaceId: string): string {
-		const labels: Record<string, string> = {
-			work: 'Work',
-			personal: 'Personal',
-			study: 'Study',
-		}
-		return labels[spaceId] ?? spaceId
-	}
 </script>
