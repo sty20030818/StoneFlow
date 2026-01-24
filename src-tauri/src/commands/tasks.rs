@@ -10,6 +10,7 @@ use crate::types::{dto::TaskDto, error::ApiError};
 pub struct ListTasksArgs {
     pub space_id: Option<String>,
     pub status: Option<String>,
+    pub project_id: Option<String>,
 }
 
 #[tauri::command]
@@ -22,7 +23,13 @@ pub fn list_tasks(
         .lock()
         .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
 
-    TaskRepo::list(&conn, args.space_id.as_deref(), args.status.as_deref()).map_err(ApiError::from)
+    TaskRepo::list(
+        &conn,
+        args.space_id.as_deref(),
+        args.status.as_deref(),
+        args.project_id.as_deref(),
+    )
+    .map_err(ApiError::from)
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,6 +39,8 @@ pub struct CreateTaskArgs {
     pub title: String,
     /// 前端 settings.autoStart 的值；不传默认 true
     pub auto_start: Option<bool>,
+    /// 项目 ID（可选，如果不提供则关联到默认项目）
+    pub project_id: Option<String>,
 }
 
 #[tauri::command]
@@ -42,7 +51,14 @@ pub fn create_task(state: State<'_, DbState>, args: CreateTaskArgs) -> Result<Ta
         .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
 
     let auto_start = args.auto_start.unwrap_or(true);
-    TaskRepo::create(&conn, &args.space_id, &args.title, auto_start).map_err(ApiError::from)
+    TaskRepo::create(
+        &conn,
+        &args.space_id,
+        &args.title,
+        auto_start,
+        args.project_id.as_deref(),
+    )
+    .map_err(ApiError::from)
 }
 
 #[derive(Debug, Deserialize)]

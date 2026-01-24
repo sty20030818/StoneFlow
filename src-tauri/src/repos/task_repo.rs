@@ -11,6 +11,7 @@ impl TaskRepo {
         conn: &Connection,
         space_id: Option<&str>,
         status: Option<&str>,
+        project_id: Option<&str>,
     ) -> Result<Vec<TaskDto>, AppError> {
         let mut sql = String::from(
             r#"
@@ -31,6 +32,11 @@ WHERE 1=1
         if let Some(status) = status {
             sql.push_str(" AND status = ?\n");
             ps.push(Value::Text(status.to_string()));
+        }
+
+        if let Some(project_id) = project_id {
+            sql.push_str(" AND project_id = ?\n");
+            ps.push(Value::Text(project_id.to_string()));
         }
 
         sql.push_str(" ORDER BY created_at DESC\n");
@@ -61,6 +67,7 @@ WHERE 1=1
         space_id: &str,
         title: &str,
         auto_start: bool,
+        project_id: Option<&str>,
     ) -> Result<TaskDto, AppError> {
         let title = title.trim();
         if title.is_empty() {
@@ -77,13 +84,13 @@ WHERE 1=1
             r#"
 INSERT INTO tasks(
   id, space_id, title, status,
-  order_in_list, created_at, started_at, completed_at
+  order_in_list, created_at, started_at, completed_at, project_id
 ) VALUES (
   ?1, ?2, ?3, ?4,
-  ?5, ?6, ?7, NULL
+  ?5, ?6, ?7, NULL, ?8
 )
 "#,
-            params![id, space_id, title, status, order_in_list, now, started_at],
+            params![id, space_id, title, status, order_in_list, now, started_at, project_id],
         )?;
 
         Ok(TaskDto {

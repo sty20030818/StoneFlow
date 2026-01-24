@@ -17,14 +17,43 @@ export type ListProjectsArgs = {
 	spaceId: string
 }
 
+export type CreateProjectArgs = {
+	spaceId: string
+	name: string
+	parentId?: string | null
+	note?: string | null
+}
+
 /**
  * Project API（封装 Tauri command 名，页面不直接写字符串）。
  */
 export async function listProjects(args: ListProjectsArgs): Promise<ProjectDto[]> {
 	// Rust: commands/projects.rs -> list_projects
+	// Tauri 会自动将 camelCase 转换为 snake_case
 	return await tauriInvoke<ProjectDto[]>('list_projects', {
 		args: {
 			spaceId: args.spaceId,
 		},
+	})
+}
+
+export async function createProject(args: CreateProjectArgs): Promise<ProjectDto> {
+	// Rust: commands/projects.rs -> create_project
+	// Tauri 会自动将 camelCase 转换为 snake_case
+	return await tauriInvoke<ProjectDto>('create_project', {
+		args: {
+			spaceId: args.spaceId,
+			name: args.name,
+			parentId: args.parentId ?? null,
+			note: args.note ?? null,
+		},
+	})
+}
+
+export async function getOrCreateDefaultProject(spaceId: string): Promise<ProjectDto> {
+	// Rust: commands/projects.rs -> get_or_create_default_project
+	// Tauri 会自动将 camelCase 转换为 snake_case
+	return await tauriInvoke<ProjectDto>('get_or_create_default_project', {
+		spaceId,
 	})
 }

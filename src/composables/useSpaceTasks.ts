@@ -5,8 +5,12 @@ import { completeTask, listTasks, type TaskDto } from '@/services/api/tasks'
 /**
  * Space 任务数据加载与操作逻辑
  * @param spaceId 可选的 Space ID，传入则按 Space 筛选，不传则获取所有
+ * @param projectId 可选的 Project ID，传入则按 Project 筛选
  */
-export function useSpaceTasks(spaceId?: MaybeRefOrGetter<string | undefined>) {
+export function useSpaceTasks(
+	spaceId?: MaybeRefOrGetter<string | undefined>,
+	projectId?: MaybeRefOrGetter<string | null | undefined>,
+) {
 	const toast = useToast()
 
 	const loading = ref(false)
@@ -21,11 +25,18 @@ export function useSpaceTasks(spaceId?: MaybeRefOrGetter<string | undefined>) {
 		return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
 	}
 
-	async function refresh() {
-		loading.value = true
+	/**
+	 * 刷新任务列表。
+	 * @param silent 为 true 时不置 loading，避免切换 project/space 时三列框闪 skeleton
+	 */
+	async function refresh(silent = false) {
+		if (!silent) loading.value = true
 		try {
 			const sid = toValue(spaceId)
-			const params = sid ? { spaceId: sid } : {}
+			const pid = toValue(projectId)
+			const params: { spaceId?: string; projectId?: string | null } = {}
+			if (sid) params.spaceId = sid
+			if (pid !== undefined && pid !== null) params.projectId = pid
 
 			const [doingRows, todoRows, doneRows] = await Promise.all([
 				listTasks({ ...params, status: 'doing' }),
@@ -43,7 +54,7 @@ export function useSpaceTasks(spaceId?: MaybeRefOrGetter<string | undefined>) {
 				color: 'error',
 			})
 		} finally {
-			loading.value = false
+			if (!silent) loading.value = false
 		}
 	}
 
@@ -61,11 +72,11 @@ export function useSpaceTasks(spaceId?: MaybeRefOrGetter<string | undefined>) {
 		}
 	}
 
-	// 监听 spaceId 变化时自动刷新
+	// 监听 spaceId 和 projectId 变化时自动刷新（静默，不闪 skeleton）
 	watch(
-		() => toValue(spaceId),
+		() => [toValue(spaceId), toValue(projectId)],
 		() => {
-			refresh()
+			refresh(true)
 		},
 	)
 

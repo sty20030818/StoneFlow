@@ -16,6 +16,7 @@ export type TaskDto = {
 export type ListTasksArgs = {
 	spaceId?: string
 	status?: TaskStatus
+	projectId?: string | null
 }
 
 export async function listTasks(args: ListTasksArgs): Promise<TaskDto[]> {
@@ -26,10 +27,19 @@ export type CreateTaskArgs = {
 	spaceId: string
 	title: string
 	autoStart?: boolean
+	projectId?: string | null
 }
 
 export async function createTask(args: CreateTaskArgs): Promise<TaskDto> {
-	return await tauriInvoke<TaskDto>('create_task', { args })
+	// Tauri 会自动将 camelCase 转换为 snake_case
+	return await tauriInvoke<TaskDto>('create_task', {
+		args: {
+			spaceId: args.spaceId,
+			title: args.title,
+			autoStart: args.autoStart,
+			projectId: args.projectId ?? null,
+		},
+	})
 }
 
 export type UpdateTaskPatch = {

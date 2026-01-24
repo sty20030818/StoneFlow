@@ -8,8 +8,8 @@ export const useProjectsStore = defineStore('projects', () => {
 	const loadedSpaceIds = ref<Set<string>>(new Set())
 	const projects = ref<ProjectDto[]>([])
 
-	async function loadForSpace(spaceId: string) {
-		if (loadedSpaceIds.value.has(spaceId)) return
+	async function loadForSpace(spaceId: string, force = false) {
+		if (!force && loadedSpaceIds.value.has(spaceId)) return
 		const data = await listProjects({ spaceId })
 		projects.value = projects.value.filter((p) => p.space_id !== spaceId).concat(data)
 		loadedSpaceIds.value.add(spaceId)

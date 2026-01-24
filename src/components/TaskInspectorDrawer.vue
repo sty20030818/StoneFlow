@@ -1,131 +1,156 @@
 <template>
 	<USlideover
 		v-if="currentTask"
-		:model-value="isOpen"
+		v-model:open="isOpen"
 		side="right"
-		:ui="slideoverUi"
-		@update:model-value="onToggle">
-		<template #backdrop>
-			<div class="fixed inset-0 bg-black/30 backdrop-blur-sm" />
-		</template>
-
-		<div class="flex flex-col h-full">
-			<!-- Header -->
-			<header class="px-4 py-3 border-b border-default flex items-center justify-between gap-3">
-				<div class="flex items-center gap-2 min-w-0">
-					<UBadge
-						size="xs"
-						color="primary"
-						variant="soft">
-						{{ currentSpaceLabel }}
-					</UBadge>
-					<div class="flex items-center gap-1 text-xs text-muted">
-						<UIcon
-							name="i-lucide-folder"
-							class="size-3.5 text-muted" />
-						<span class="truncate">
-							{{ projectPathPlaceholder }}
-						</span>
-					</div>
-				</div>
-
-				<div class="flex items-center gap-1.5">
-					<USelectMenu
-						v-model="statusLocal"
-						:options="statusOptions"
-						size="xs"
-						color="primary"
-						variant="soft"
-						@update:model-value="onStatusChange" />
-
-					<UButton
-						color="neutral"
-						variant="ghost"
-						icon="i-lucide-more-horizontal"
-						size="xs" />
-
-					<UButton
-						color="neutral"
-						variant="ghost"
-						icon="i-lucide-x"
-						size="xs"
-						@click="close">
-						<span class="sr-only">关闭</span>
-					</UButton>
-				</div>
-			</header>
-
-			<!-- Body -->
-			<div class="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-4">
-				<section class="space-y-2">
-					<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标题</label>
-					<UTextarea
-						v-model="titleLocal"
-						placeholder="输入任务标题…"
-						autoresize
-						:maxrows="3"
-						@blur="onTitleBlur" />
-				</section>
-
-				<section class="space-y-2">
-					<label class="text-[11px] font-medium text-muted uppercase tracking-wide">属性</label>
-					<div class="grid grid-cols-2 gap-2">
-						<UCard class="py-2 px-3 bg-elevated/60 border-default/70">
-							<div class="text-[11px] text-muted mb-0.5">Priority</div>
-							<div class="flex items-center gap-1.5">
-								<UIcon
-									name="i-lucide-flag"
-									class="size-3 text-amber-400" />
-								<span class="text-xs text-default">未设定</span>
-							</div>
-						</UCard>
-
-						<UCard class="py-2 px-3 bg-elevated/60 border-default/70">
-							<div class="text-[11px] text-muted mb-0.5">Due Date</div>
-							<div class="flex items-center gap-1.5">
-								<UIcon
-									name="i-lucide-calendar"
-									class="size-3 text-sky-400" />
-								<span class="text-xs text-default">未设定</span>
-							</div>
-						</UCard>
-
-						<UCard class="py-2 px-3 bg-elevated/60 border-default/70 col-span-2">
-							<div class="text-[11px] text-muted mb-1">Tags</div>
-							<div class="flex flex-wrap gap-1.5">
-								<UBadge
-									color="neutral"
-									variant="soft"
-									size="xs">
-									暂无标签
-								</UBadge>
-							</div>
-						</UCard>
-					</div>
-				</section>
-
-				<section class="space-y-2">
-					<label class="text-[11px] font-medium text-muted uppercase tracking-wide">备注</label>
-					<UTextarea
-						placeholder="记录一些背景信息、想法或链接…"
-						:rows="4" />
-				</section>
-
-				<section class="space-y-2">
-					<div class="flex items-center justify-between">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">时间线</label>
+		:ui="{
+			content: 'w-[360px] sm:w-[400px] h-full flex flex-col bg-default/90 backdrop-blur-xl border-l border-default',
+		}"
+		:close="false">
+		<template #content>
+			<div class="flex flex-col h-full">
+				<!-- Header -->
+				<header class="px-4 py-3.5 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
+					<div class="flex items-center gap-2.5 min-w-0 flex-1">
 						<UBadge
 							size="xs"
-							color="neutral"
+							color="primary"
 							variant="soft">
-							mock 数据
+							{{ currentSpaceLabel }}
 						</UBadge>
+						<div class="flex items-center gap-1.5 text-xs text-muted min-w-0">
+							<UIcon
+								name="i-lucide-folder"
+								class="size-3.5 shrink-0" />
+							<span class="truncate">
+								{{ projectPathPlaceholder }}
+							</span>
+						</div>
 					</div>
 
-					<UTimeline :items="timelineItems" />
-				</section>
+					<div class="flex items-center gap-1 shrink-0">
+						<USelectMenu
+							v-model="statusLocal"
+							:items="statusOptions"
+							value-key="value"
+							label-key="label"
+							size="xs"
+							color="primary"
+							variant="soft"
+							@update:model-value="onStatusChange" />
+
+						<UButton
+							color="neutral"
+							variant="ghost"
+							icon="i-lucide-more-horizontal"
+							size="xs" />
+
+						<UButton
+							color="neutral"
+							variant="ghost"
+							icon="i-lucide-x"
+							size="xs"
+							@click="close">
+							<span class="sr-only">关闭</span>
+						</UButton>
+					</div>
+				</header>
+
+				<!-- Body -->
+				<div class="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
+					<!-- 标题 -->
+					<section class="space-y-2">
+						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标题</label>
+						<UTextarea
+							v-model="titleLocal"
+							placeholder="输入任务标题…"
+							autoresize
+							:maxrows="3"
+							size="sm"
+							:ui="{
+								rounded: 'rounded-xl',
+							}"
+							@blur="onTitleBlur" />
+					</section>
+
+					<!-- 属性 -->
+					<section class="space-y-2.5">
+						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">属性</label>
+						<div class="grid grid-cols-2 gap-2.5">
+							<button
+								type="button"
+								class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left">
+								<div class="flex items-center gap-2.5">
+									<UIcon
+										name="i-lucide-flag"
+										class="size-4 text-amber-400 shrink-0" />
+									<div class="min-w-0 flex-1">
+										<div class="text-[11px] text-muted mb-1">Priority</div>
+										<div class="text-xs font-medium text-default">未设定</div>
+									</div>
+								</div>
+							</button>
+
+							<button
+								type="button"
+								class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left">
+								<div class="flex items-center gap-2.5">
+									<UIcon
+										name="i-lucide-calendar"
+										class="size-4 text-sky-400 shrink-0" />
+									<div class="min-w-0 flex-1">
+										<div class="text-[11px] text-muted mb-1">Due Date</div>
+										<div class="text-xs font-medium text-default">未设定</div>
+									</div>
+								</div>
+							</button>
+
+							<button
+								type="button"
+								class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left col-span-2">
+								<div class="space-y-2">
+									<div class="text-[11px] text-muted">Tags</div>
+									<div class="flex flex-wrap gap-1.5">
+										<UBadge
+											color="neutral"
+											variant="soft"
+											size="xs">
+											暂无标签
+										</UBadge>
+									</div>
+								</div>
+							</button>
+						</div>
+					</section>
+
+					<!-- 备注 -->
+					<section class="space-y-2">
+						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">备注</label>
+						<UTextarea
+							placeholder="记录一些背景信息、想法或链接…"
+							:rows="4"
+							size="sm"
+							:ui="{
+								rounded: 'rounded-xl',
+							}" />
+					</section>
+
+					<!-- 时间线 -->
+					<section class="space-y-2.5">
+						<div class="flex items-center justify-between">
+							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">时间线</label>
+							<UBadge
+								size="xs"
+								color="neutral"
+								variant="soft">
+								mock 数据
+							</UBadge>
+						</div>
+						<UTimeline :items="timelineItems" />
+					</section>
+				</div>
 			</div>
-		</div>
+		</template>
 	</USlideover>
 </template>
 
@@ -137,11 +162,10 @@
 
 	const store = useTaskInspectorStore()
 
-	const isOpen = computed(() => store.isOpen as boolean)
 	const currentTask = computed(() => store.task)
 
 	const titleLocal = ref('')
-	const statusLocal = ref<string | null>(null)
+	const statusLocal = ref<string | undefined>(undefined)
 
 	const statusOptions = [
 		{ label: '待办', value: 'todo' },
@@ -199,22 +223,17 @@
 		return items
 	})
 
-	const slideoverUi = {
-		base: 'fixed inset-y-0 right-0 flex max-w-full outline-none',
-		width: 'w-[360px] sm:w-[400px]',
-		overlay: 'pointer-events-auto',
-		container: 'pointer-events-auto',
-		background: 'bg-default/90 backdrop-blur-xl border-l border-default',
-	}
+	const isOpen = computed({
+		get: () => store.isOpen as boolean,
+		set: (value) => {
+			if (!value) {
+				store.close()
+			}
+		},
+	})
 
 	function close() {
 		store.close()
-	}
-
-	function onToggle(value: boolean) {
-		if (!value) {
-			close()
-		}
 	}
 
 	async function onTitleBlur() {
@@ -237,7 +256,7 @@
 		const t = currentTask.value
 		if (!t) return
 		titleLocal.value = t.title
-		statusLocal.value = t.status ?? 'todo'
+		statusLocal.value = t.status ?? undefined
 	}
 
 	watch(

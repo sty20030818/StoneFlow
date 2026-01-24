@@ -20,19 +20,74 @@
 					@update:model-value="onCommandSelect" />
 			</template>
 		</UModal>
+
+		<!-- 创建任务弹窗 -->
+		<CreateTaskModal
+			v-model="createTaskModalOpen"
+			:space-id="currentSpaceId"
+			:projects="currentProjects"
+			@created="onTaskCreated" />
+
+		<!-- 创建项目弹窗 -->
+		<CreateProjectModal
+			v-model="createProjectModalOpen"
+			:space-id="createProjectModalSpaceId"
+			:projects="currentProjects"
+			@created="onProjectCreated" />
 	</UApp>
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 	import { useRouter } from 'vue-router'
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
+
+	import CreateProjectModal from './components/CreateProjectModal.vue'
+	import CreateTaskModal from './components/CreateTaskModal.vue'
+	import type { ProjectDto } from './services/api/projects'
+	import type { TaskDto } from './services/api/tasks'
+	import { useProjectsStore } from './stores/projects'
+	import { useSettingsStore } from './stores/settings'
 
 	import AppShell from './layouts/AppShell.vue'
 
 	const router = useRouter()
 	const commandPaletteOpen = ref(false)
+	const createTaskModalOpen = ref(false)
+	const createProjectModalOpen = ref(false)
+	const createProjectModalSpaceId = ref<string>('work')
+
+	const settingsStore = useSettingsStore()
+	const projectsStore = useProjectsStore()
+
+	const currentSpaceId = computed(() => {
+		if (!settingsStore.loaded) return 'work'
+		return settingsStore.settings.activeSpaceId ?? 'work'
+	})
+
+	const currentProjects = computed<ProjectDto[]>(() => {
+		return projectsStore.getProjectsOfSpace(currentSpaceId.value)
+	})
+
+	// 初始化时加载 settings 和项目
+	onMounted(async () => {
+		await settingsStore.load()
+		const spaceId = currentSpaceId.value
+		if (spaceId) {
+			await projectsStore.loadForSpace(spaceId)
+		}
+	})
+
+	// 监听 space 变化，自动加载项目
+	watch(
+		currentSpaceId,
+		async (spaceId) => {
+			if (spaceId && settingsStore.loaded) {
+				await projectsStore.loadForSpace(spaceId)
+			}
+		},
+	)
 
 	// 定义命令组
 	const commandGroups = computed(() => [
@@ -80,13 +135,45 @@
 		}
 	}
 
-	// 监听 ⌘K 快捷键
+	// 监听快捷键
 	function handleKeydown(e: KeyboardEvent) {
+		// ⌘K / Ctrl+K: 打开命令面板
 		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
 			e.preventDefault()
 			commandPaletteOpen.value = !commandPaletteOpen.value
 		}
+		// ⌘N / Ctrl+N: 创建任务
+		if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+			// 避免在输入框中触发
+			if (
+				e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement ||
+				(e.target as HTMLElement)?.isContentEditable
+			) {
+				return
+			}
+			e.preventDefault()
+			createTaskModalOpen.value = true
+		}
 	}
+
+	function onTaskCreated(task: TaskDto) {
+		// 任务创建成功，可以在这里添加后续处理（如刷新列表、显示提示等）
+		console.log('任务创建成功:', task)
+	}
+
+	async function onProjectCreated(project: ProjectDto) {
+		// 项目创建成功，强制刷新项目列表
+		await projectsStore.loadForSpace(project.space_id, true)
+	}
+
+	// 提供全局的创建项目弹窗控制函数
+	function handleOpenCreateProjectModal(spaceId?: string) {
+		createProjectModalSpaceId.value = spaceId ?? currentSpaceId.value
+		createProjectModalOpen.value = true
+	}
+
+	provide('openCreateProjectModal', handleOpenCreateProjectModal)
 
 	onMounted(() => {
 		window.addEventListener('keydown', handleKeydown)
