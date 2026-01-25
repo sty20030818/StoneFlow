@@ -1,8 +1,5 @@
 <template>
-	<WorkspaceLayout
-		:breadcrumb-items="breadcrumbItems"
-		:view-mode="viewMode"
-		@update:viewMode="onViewModeChange">
+	<WorkspaceLayout>
 		<template #in-progress>
 			<TaskColumn
 				title="进行中"
@@ -41,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, ref, watch } from 'vue'
+	import { computed, inject, provide, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
 	import TaskColumn from '@/components/TaskColumn.vue'
@@ -104,15 +101,7 @@
 
 	const breadcrumbItems = computed(() => {
 		const sid = spaceId.value
-		const labelMap: Record<string, string> = {
-			work: 'Work',
-			personal: 'Personal',
-			study: 'Study',
-		}
-		const base: { label: string; to?: string }[] = [
-			{ label: 'Space', to: '/all-tasks' },
-			{ label: labelMap[sid] ?? sid, to: `/space/${sid}` },
-		]
+		const base: { label: string; to?: string }[] = []
 		const pid = projectId.value
 		if (!pid) return base
 		if (route.query.project) {
@@ -133,11 +122,14 @@
 		return base
 	})
 
-	function onViewModeChange(mode: 'list' | 'board') {
-		viewMode.value = mode
-	}
-
 	const inspectorStore = useTaskInspectorStore()
+
+	// 通过 provide 传递 viewMode 和 breadcrumbItems 给 Header
+	provide('workspaceViewMode', viewMode)
+	provide('workspaceBreadcrumbItems', breadcrumbItems)
+	provide('headerViewModeUpdate', (mode: 'list' | 'board') => {
+		viewMode.value = mode
+	})
 
 	function onTaskClick(task: TaskDto) {
 		inspectorStore.open(task)

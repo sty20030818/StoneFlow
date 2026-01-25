@@ -175,6 +175,12 @@
 
 	provide('openCreateProjectModal', handleOpenCreateProjectModal)
 
+	// 提供全局的创建任务弹窗控制函数
+	function handleOpenCreateTaskModal(spaceId?: string) {
+		createTaskModalOpen.value = true
+	}
+	provide('openCreateTaskModal', handleOpenCreateTaskModal)
+
 	onMounted(() => {
 		window.addEventListener('keydown', handleKeydown)
 	})

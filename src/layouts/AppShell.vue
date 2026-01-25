@@ -3,7 +3,7 @@
 		<Sidebar v-model:space="space" />
 
 		<div class="flex-1 min-w-0 flex flex-col">
-			<Topbar />
+			<Header />
 
 			<main class="flex-1 min-h-0 overflow-auto">
 				<div class="p-4">
@@ -23,25 +23,48 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
+	import { useRoute, useRouter } from 'vue-router'
 
-import Sidebar from './Sidebar.vue'
-import Topbar from './Topbar.vue'
+	import Sidebar from './Sidebar.vue'
+	import Header from './Header.vue'
 
-import TaskInspectorDrawer from '@/components/TaskInspectorDrawer.vue'
+	import TaskInspectorDrawer from '@/components/TaskInspectorDrawer.vue'
 
 	import { useSettingsStore } from '@/stores/settings'
 	import { useSpacesStore } from '@/stores/spaces'
 
 	const toast = useToast()
+	const route = useRoute()
+	const router = useRouter()
 	const settingsStore = useSettingsStore()
 	const spacesStore = useSpacesStore()
 
 	const space = computed({
 		get: () => settingsStore.settings.activeSpaceId,
-		set: (v) => {
-			// computed setter 不能 async，这里 fire-and-forget 即可
-			void settingsStore.update({ activeSpaceId: v })
+		set: async (v) => {
+			// 保存当前 space 的页面状态
+			const currentSpaceId = settingsStore.settings.activeSpaceId
+			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
+				const projectId = typeof route.query.project === 'string' ? route.query.project : null
+				spacesStore.savePageState(currentSpaceId, {
+					route: route.path,
+					projectId,
+				})
+			}
+
+			// 更新 activeSpaceId
+			await settingsStore.update({ activeSpaceId: v })
+
+			// 恢复目标 space 的页面状态
+			const targetState = spacesStore.getPageState(v)
+			if (targetState.route.startsWith('/space/')) {
+				// 使用新的 spaceId，但保留 projectId（如果存在）
+				const query = targetState.projectId ? { project: targetState.projectId } : {}
+				await router.push({ path: `/space/${v}`, query })
+			} else {
+				await router.push(targetState.route)
+			}
 		},
 	})
 
@@ -52,6 +75,16 @@ import TaskInspectorDrawer from '@/components/TaskInspectorDrawer.vue'
 			loading.value = true
 			await settingsStore.load()
 			await spacesStore.load()
+
+			// 初始化时，如果当前路由是 space 页面，保存状态
+			const currentSpaceId = settingsStore.settings.activeSpaceId
+			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
+				const projectId = typeof route.query.project === 'string' ? route.query.project : null
+				spacesStore.savePageState(currentSpaceId, {
+					route: route.path,
+					projectId,
+				})
+			}
 		} catch (e) {
 			toast.add({
 				title: '初始化失败',
@@ -62,4 +95,19 @@ import TaskInspectorDrawer from '@/components/TaskInspectorDrawer.vue'
 			loading.value = false
 		}
 	})
+
+	// 监听路由变化，自动保存当前 space 的页面状态
+	watch(
+		() => [route.path, route.query.project],
+		() => {
+			const currentSpaceId = settingsStore.settings.activeSpaceId
+			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
+				const projectId = typeof route.query.project === 'string' ? route.query.project : null
+				spacesStore.savePageState(currentSpaceId, {
+					route: route.path,
+					projectId,
+				})
+			}
+		},
+	)
 </script>

@@ -1,17 +1,24 @@
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import { completeTask, listTasks, type TaskDto } from '@/services/api/tasks'
+import { useSettingsStore } from '@/stores/settings'
 
 /**
  * AllTasks 任务数据加载与操作逻辑
  */
 export function useAllTasks() {
 	const toast = useToast()
+	const settingsStore = useSettingsStore()
 
 	const loading = ref(false)
 	const doing = ref<TaskDto[]>([])
 	const todo = ref<TaskDto[]>([])
 	const doneToday = ref<TaskDto[]>([])
+
+	const currentSpaceId = computed(() => {
+		if (!settingsStore.loaded) return 'work'
+		return settingsStore.settings.activeSpaceId ?? 'work'
+	})
 
 	function isTodayLocal(ts: number | null): boolean {
 		if (!ts) return false
@@ -32,10 +39,11 @@ export function useAllTasks() {
 	async function refresh() {
 		loading.value = true
 		try {
+			const spaceId = currentSpaceId.value
 			const [doingRows, todoRows, doneRows] = await Promise.all([
-				listTasks({ status: 'doing' }),
-				listTasks({ status: 'todo' }),
-				listTasks({ status: 'done' }),
+				listTasks({ spaceId, status: 'doing' }),
+				listTasks({ spaceId, status: 'todo' }),
+				listTasks({ spaceId, status: 'done' }),
 			])
 
 			doing.value = doingRows
@@ -69,6 +77,15 @@ export function useAllTasks() {
 	onMounted(async () => {
 		await refresh()
 	})
+
+	// 监听 space 切换，自动刷新任务列表
+	watch(
+		currentSpaceId,
+		async () => {
+			await refresh()
+		},
+		{ immediate: false },
+	)
 
 	return {
 		loading,

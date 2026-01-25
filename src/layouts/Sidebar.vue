@@ -1,5 +1,5 @@
 <template>
-	<aside class="w-64 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl">
+	<aside class="w-64 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative">
 		<!-- 顶部：Brand + Space Segmented Control -->
 		<div class="px-3 pt-3">
 			<div class="mb-2">
