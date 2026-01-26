@@ -1,16 +1,16 @@
 <template>
-	<aside class="w-64 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative">
+	<aside class="w-72 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative">
 		<!-- 顶部：Brand + Space Segmented Control -->
 		<div class="px-3 pt-3">
 			<div class="mb-2">
 				<BrandLogo />
 			</div>
-			<div class="rounded-xl bg-elevated/70 border border-default/80 p-0.5 flex gap-0.5">
+			<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
 				<button
 					v-for="s in spaces"
 					:key="s.id"
 					type="button"
-					class="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-[9px] text-[11px] font-medium transition-all duration-150"
+					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-[1px]"
 					:class="spaceValue === s.id ? 'bg-default text-default shadow-sm' : 'text-muted hover:text-default hover:bg-default/40' "
 					@click="onSpaceClick(s.id)">
 					<UIcon

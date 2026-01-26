@@ -4,41 +4,52 @@
 		v-model:open="isOpen"
 		side="right"
 		:ui="{
-			content: 'w-[360px] sm:w-[400px] h-full flex flex-col bg-default/90 backdrop-blur-xl border-l border-default z-50',
+			content: 'w-[560px] h-full flex flex-col bg-default/90 backdrop-blur-2xl border-l border-default z-50',
 			wrapper: 'z-50',
 		}"
 		:close="false">
 		<template #content>
 			<div class="flex flex-col h-full">
 				<!-- Header -->
-				<header class="px-4 py-3.5 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
-					<div class="flex items-center gap-2.5 min-w-0 flex-1">
-						<UBadge
-							size="xs"
-							color="primary"
-							variant="soft">
-							{{ currentSpaceLabel }}
-						</UBadge>
-						<div class="flex items-center gap-1.5 text-xs text-muted min-w-0">
+				<header class="px-5 py-4 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
+					<div class="flex items-center gap-1.5 min-w-0 flex-1 leading-tight">
+						<span
+							class="px-2.5 py-1 rounded-full text-[12px] font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+							:class="spacePillClass">
 							<UIcon
-								name="i-lucide-folder"
-								class="size-3.5 shrink-0" />
-							<span class="truncate">
-								{{ projectPath }}
-							</span>
-						</div>
+								:name="currentSpaceIcon"
+								class="size-3.5 shrink-0 text-white" />
+							<span>{{ currentSpaceLabel }}</span>
+						</span>
+
+						<template v-if="projectTrail.length">
+							<template v-for="(item, index) in projectTrail" :key="`${item}-${index}`">
+								<span class="text-muted/70 text-[12px] shrink-0">/</span>
+								<span
+									v-if="index < projectTrail.length - 1"
+									class="text-[12px] font-medium text-muted/80 shrink-0 truncate max-w-[140px]">
+									{{ item }}
+								</span>
+								<span
+									v-else
+									class="text-[14px] font-extrabold text-default truncate min-w-0 flex-1">
+									{{ item }}
+								</span>
+							</template>
+						</template>
 					</div>
 
-					<div class="flex items-center gap-1 shrink-0">
-						<USelectMenu
-							v-model="statusLocal"
-							:items="statusOptionsArray"
-							value-key="value"
-							label-key="label"
-							size="xs"
-							color="primary"
-							variant="soft"
-							@update:model-value="onStatusChange" />
+					<div class="flex items-center gap-2 shrink-0">
+						<div
+							v-if="saveState !== 'idle'"
+							class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all"
+							:class="saveStateClass">
+							<span
+								class="size-1.5 rounded-full"
+								:class="saveStateDotClass"></span>
+							<span>{{ saveStateLabel }}</span>
+						</div>
+						<div class="h-4 w-px bg-default/70"></div>
 
 						<UButton
 							color="neutral"
@@ -58,31 +69,59 @@
 				</header>
 
 				<!-- Body -->
-				<div class="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
+				<div class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
+					<!-- 状态切换 -->
+					<section class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">状态</label>
+						<div class="flex items-center gap-2.5">
+							<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1 flex-1">
+								<button
+									v-for="opt in statusSegmentOptions"
+									:key="opt.value"
+									type="button"
+									class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-[1px]"
+									:class="statusLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'"
+									@click="onStatusSegmentClick(opt.value)">
+									<UIcon
+										:name="opt.icon"
+										class="size-3.5"
+										:class="statusLocal === opt.value ? opt.iconClass : 'text-muted'" />
+									<span>{{ opt.label }}</span>
+								</button>
+							</div>
+							<UBadge
+								v-if="statusSubLabel"
+								size="xs"
+								color="neutral"
+								variant="soft">
+								{{ statusSubLabel }}
+							</UBadge>
+						</div>
+					</section>
+
 					<!-- 标题 -->
 					<section class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标题</label>
-						<UTextarea
+						<UInput
 							v-model="titleLocal"
-							placeholder="输入任务标题…"
-							autoresize
-							:maxrows="3"
-							size="sm"
+							placeholder="任务标题..."
+							size="xl"
+							variant="none"
 							:ui="{
-								rounded: 'rounded-xl',
+								root: 'w-full',
+								base: 'px-0 py-0 text-2xl font-semibold leading-tight bg-transparent border-none focus:ring-0 placeholder:text-muted/40',
 							}"
 							@blur="onTitleBlur" />
 					</section>
 
 					<!-- 属性 -->
-					<section class="space-y-2.5">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">属性</label>
-						<div class="grid grid-cols-2 gap-2.5">
+					<section class="space-y-3">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">属性</label>
+						<div class="grid grid-cols-2 gap-3">
 							<!-- Priority -->
 							<UPopover>
 								<button
 									type="button"
-									class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left w-full">
+									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left w-full">
 									<div class="flex items-center gap-2.5">
 										<UIcon
 											name="i-lucide-flag"
@@ -121,7 +160,7 @@
 							<UPopover>
 								<button
 									type="button"
-									class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left w-full">
+									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left w-full">
 									<div class="flex items-center gap-2.5">
 										<UIcon
 											name="i-lucide-calendar-days"
@@ -159,7 +198,7 @@
 							<UPopover>
 								<button
 									type="button"
-									class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left w-full">
+									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left w-full">
 									<div class="flex items-center gap-2.5">
 										<UIcon
 											name="i-lucide-calendar"
@@ -197,7 +236,7 @@
 							<UPopover>
 								<button
 									type="button"
-									class="p-3 rounded-xl bg-elevated/50 border border-default/50 hover:bg-elevated/70 hover:border-default/70 transition-all text-left col-span-2">
+									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left col-span-2">
 									<div class="space-y-2">
 										<div class="text-[11px] text-muted">Tags</div>
 										<div
@@ -252,31 +291,44 @@
 
 					<!-- 备注 -->
 					<section class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">备注</label>
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Note</label>
 						<UTextarea
 							v-model="noteLocal"
 							placeholder="记录一些背景信息、想法或链接…"
-							:rows="4"
+							:rows="6"
 							size="sm"
 							autoresize
+							variant="none"
 							:ui="{
-								rounded: 'rounded-xl',
+								root: 'w-full',
+								base: 'min-h-[160px] px-4 py-3 text-sm leading-relaxed rounded-2xl bg-elevated/40 border border-transparent focus:border-primary/20 focus:ring-4 focus:ring-primary/10 placeholder:text-muted/40',
 							}"
 							@blur="onNoteBlur" />
 					</section>
 
 					<!-- 时间线 -->
-					<section class="space-y-2.5">
-						<div class="flex items-center justify-between">
-							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">时间线</label>
-							<UBadge
-								size="xs"
-								color="neutral"
-								variant="soft">
-								mock 数据
-							</UBadge>
+					<section class="space-y-3">
+						<button
+							type="button"
+							class="flex items-center justify-between w-full"
+							@click="toggleTimeline">
+							<div class="flex items-center gap-2">
+								<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">时间线</label>
+								<UBadge
+									size="xs"
+									color="neutral"
+									variant="soft">
+									{{ timelineItems.length }}
+								</UBadge>
+							</div>
+							<UIcon
+								name="i-lucide-chevron-down"
+								class="size-4 text-muted transition-transform duration-200"
+								:class="timelineCollapsed ? '' : 'rotate-180'" />
+						</button>
+						<div v-show="!timelineCollapsed">
+							<UTimeline :items="timelineItems" />
 						</div>
-						<UTimeline :items="timelineItems" />
 					</section>
 				</div>
 			</div>
@@ -287,16 +339,39 @@
 <script setup lang="ts">
 	import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
-	import { updateTask } from '@/services/api/tasks'
+	import { updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
 	import {
-		statusOptions,
 		getDisplayStatus,
 		mapDisplayStatusToBackend,
+		isPaused,
+		isAbandoned,
 	} from '@/utils/task'
 
-	const statusOptionsArray = [...statusOptions]
+	const statusSegmentOptions = [
+		{
+			value: 'todo',
+			label: '待办',
+			icon: 'i-lucide-list-todo',
+			iconClass: 'text-orange-500',
+			activeClass: 'bg-orange-50 text-orange-700 shadow-sm',
+		},
+		{
+			value: 'doing',
+			label: '进行中',
+			icon: 'i-lucide-loader',
+			iconClass: 'text-blue-500',
+			activeClass: 'bg-blue-50 text-blue-700 shadow-sm',
+		},
+		{
+			value: 'done',
+			label: '已完成',
+			icon: 'i-lucide-check-circle',
+			iconClass: 'text-emerald-500',
+			activeClass: 'bg-emerald-50 text-emerald-700 shadow-sm',
+		},
+	] as const
 
 	const store = useTaskInspectorStore()
 	const projectsStore = useProjectsStore()
@@ -311,6 +386,10 @@
 	const noteLocal = ref<string>('')
 	const tagsLocal = ref<string[]>([])
 	const tagInput = ref('')
+	const timelineCollapsed = ref(true)
+	const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+	const pendingSaves = ref(0)
+	let saveStateTimer: ReturnType<typeof setTimeout> | null = null
 
 	const priorityOptions = [
 		{
@@ -373,6 +452,25 @@
 		return map[sid] ?? sid
 	})
 
+	const currentSpaceIcon = computed(() => {
+		const sid = currentTask.value?.space_id
+		if (!sid) return 'i-lucide-folder'
+		const map: Record<string, string> = {
+			work: 'i-lucide-briefcase',
+			personal: 'i-lucide-user',
+			study: 'i-lucide-book-open',
+		}
+		return map[sid] ?? 'i-lucide-folder'
+	})
+
+	const spacePillClass = computed(() => {
+		const sid = currentTask.value?.space_id
+		if (sid === 'work') return 'bg-blue-500'
+		if (sid === 'personal') return 'bg-purple-500'
+		if (sid === 'study') return 'bg-emerald-500'
+		return 'bg-slate-500'
+	})
+
 	const projectPath = computed(() => {
 		const task = currentTask.value
 		if (!task?.project_id) return '未分类'
@@ -381,6 +479,47 @@
 		if (!project) return '未知项目'
 		// 使用 path 字段，格式类似 "/与光/Pro/可灵2.6"
 		return project.path || project.name
+	})
+
+	const projectTrail = computed(() => {
+		const raw = projectPath.value?.trim()
+		if (!raw) return []
+		if (raw === '未分类' || raw === '未知项目') return [raw]
+		const parts = raw.split('/').map((item) => item.trim()).filter(Boolean)
+		return parts.length ? parts : [raw]
+	})
+
+	const levelPalette = ['bg-amber-500', 'bg-sky-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500']
+
+	const projectPillClass = (index: number) => levelPalette[index % levelPalette.length]
+
+	const statusSubLabel = computed(() => {
+		const status = currentTask.value?.status
+		if (!status) return null
+		if (isPaused(status)) return '已暂停'
+		if (isAbandoned(status)) return '已放弃'
+		return null
+	})
+
+	const saveStateLabel = computed(() => {
+		if (saveState.value === 'saving') return '保存中'
+		if (saveState.value === 'saved') return '已保存'
+		if (saveState.value === 'error') return '保存失败'
+		return ''
+	})
+
+	const saveStateClass = computed(() => {
+		if (saveState.value === 'saving') return 'text-blue-500'
+		if (saveState.value === 'saved') return 'text-emerald-500'
+		if (saveState.value === 'error') return 'text-rose-500'
+		return 'text-muted'
+	})
+
+	const saveStateDotClass = computed(() => {
+		if (saveState.value === 'saving') return 'bg-blue-500 animate-pulse'
+		if (saveState.value === 'saved') return 'bg-emerald-500'
+		if (saveState.value === 'error') return 'bg-rose-500'
+		return 'bg-muted'
 	})
 
 	const timelineItems = computed(() => {
@@ -431,12 +570,54 @@
 		store.close()
 	}
 
+	function clearSaveStateTimer() {
+		if (saveStateTimer) {
+			clearTimeout(saveStateTimer)
+			saveStateTimer = null
+		}
+	}
+
+	function beginSave() {
+		pendingSaves.value += 1
+		saveState.value = 'saving'
+		clearSaveStateTimer()
+	}
+
+	function endSave(ok: boolean) {
+		pendingSaves.value = Math.max(0, pendingSaves.value - 1)
+		if (pendingSaves.value > 0) return
+		clearSaveStateTimer()
+		if (ok) {
+			saveState.value = 'saved'
+			saveStateTimer = setTimeout(() => {
+				saveState.value = 'idle'
+			}, 1200)
+			return
+		}
+		saveState.value = 'error'
+		saveStateTimer = setTimeout(() => {
+			saveState.value = 'idle'
+		}, 3000)
+	}
+
+	async function commitUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
+		if (!currentTask.value) return
+		beginSave()
+		try {
+			await updateTask(currentTask.value.id, patch)
+			if (Object.keys(storePatch).length > 0) store.patchTask(storePatch)
+			endSave(true)
+		} catch (error) {
+			console.error('更新任务失败:', error)
+			endSave(false)
+		}
+	}
+
 	async function onTitleBlur() {
 		if (!currentTask.value) return
 		const nextTitle = titleLocal.value.trim()
 		if (!nextTitle || nextTitle === currentTask.value.title) return
-		await updateTask(currentTask.value.id, { title: nextTitle })
-		store.patchTask({ title: nextTitle })
+		await commitUpdate({ title: nextTitle }, { title: nextTitle })
 	}
 
 	async function onStatusChange(value: unknown) {
@@ -452,15 +633,18 @@
 		const backendStatus = mapDisplayStatusToBackend(displayStatus, currentTask.value.status)
 		if (backendStatus === currentTask.value.status) return
 
-		await updateTask(currentTask.value.id, { status: backendStatus })
-		store.patchTask({ status: backendStatus })
+		await commitUpdate({ status: backendStatus }, { status: backendStatus })
 		statusLocal.value = displayStatus
+	}
+
+	function onStatusSegmentClick(value: string) {
+		if (statusLocal.value === value) return
+		onStatusChange(value)
 	}
 
 	async function onPriorityChange(value: string) {
 		if (!currentTask.value || value === priorityLocal.value) return
-		await updateTask(currentTask.value.id, { priority: value })
-		store.patchTask({ priority: value })
+		await commitUpdate({ priority: value }, { priority: value })
 		priorityLocal.value = value
 	}
 
@@ -472,15 +656,13 @@
 			date.setHours(0, 0, 0, 0)
 			plannedStartAt = date.getTime()
 		}
-		await updateTask(currentTask.value.id, { plannedStartAt })
-		store.patchTask({ planned_start_at: plannedStartAt })
+		await commitUpdate({ plannedStartAt }, { planned_start_at: plannedStartAt })
 	}
 
 	async function onPlannedStartDateClear() {
 		plannedStartDateLocal.value = ''
 		if (!currentTask.value) return
-		await updateTask(currentTask.value.id, { plannedStartAt: null })
-		store.patchTask({ planned_start_at: null })
+		await commitUpdate({ plannedStartAt: null }, { planned_start_at: null })
 	}
 
 	async function onPlannedEndDateChange() {
@@ -491,15 +673,13 @@
 			date.setHours(23, 59, 59, 999)
 			plannedEndAt = date.getTime()
 		}
-		await updateTask(currentTask.value.id, { plannedEndAt })
-		store.patchTask({ planned_end_at: plannedEndAt })
+		await commitUpdate({ plannedEndAt }, { planned_end_at: plannedEndAt })
 	}
 
 	async function onPlannedEndDateClear() {
 		plannedEndDateLocal.value = ''
 		if (!currentTask.value) return
-		await updateTask(currentTask.value.id, { plannedEndAt: null })
-		store.patchTask({ planned_end_at: null })
+		await commitUpdate({ plannedEndAt: null }, { planned_end_at: null })
 	}
 
 	function addTag() {
@@ -518,16 +698,14 @@
 
 	async function onTagsChange() {
 		if (!currentTask.value) return
-		await updateTask(currentTask.value.id, { tags: tagsLocal.value })
-		store.patchTask({ tags: tagsLocal.value })
+		await commitUpdate({ tags: tagsLocal.value }, { tags: tagsLocal.value })
 	}
 
 	async function onNoteBlur() {
 		if (!currentTask.value) return
 		const nextNote = noteLocal.value.trim() || null
 		if (nextNote === (currentTask.value.note || null)) return
-		await updateTask(currentTask.value.id, { note: nextNote })
-		store.patchTask({ note: nextNote })
+		await commitUpdate({ note: nextNote }, { note: nextNote })
 	}
 
 	function syncFromTask() {
@@ -540,6 +718,7 @@
 		noteLocal.value = t.note || ''
 		tagsLocal.value = t.tags || []
 		tagInput.value = ''
+		timelineCollapsed.value = true
 
 		// 处理计划开始时间
 		if (t.planned_start_at) {
@@ -584,4 +763,8 @@
 	onUnmounted(() => {
 		window.removeEventListener('keydown', onKeydown)
 	})
+
+	function toggleTimeline() {
+		timelineCollapsed.value = !timelineCollapsed.value
+	}
 </script>
