@@ -6,7 +6,7 @@
 			<TaskStatusIcon :status="getStatusFromTitle(title)" />
 			<h3
 				class="text-base font-extrabold"
-				:class="title === '进行中' ? 'text-default' : title === '待办' ? 'text-muted' : 'text-muted'">
+				:class="getStatusFromTitle(title) === 'doing' ? 'text-default' : 'text-muted'">
 				{{ title }}
 			</h3>
 		</div>
@@ -62,9 +62,9 @@
 	import type { TaskDto } from '@/services/api/tasks'
 
 	function getStatusFromTitle(title: string): string {
-		if (title === '进行中') return 'doing'
-		if (title === '待办') return 'todo'
-		if (title.includes('已完成')) return 'done'
+		if (title === '进行中' || title === 'Doing') return 'doing'
+		if (title === '待办' || title === 'Todo') return 'todo'
+		if (title.includes('已完成') || title === 'Done') return 'done'
 		return 'todo'
 	}
 

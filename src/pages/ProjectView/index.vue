@@ -8,7 +8,7 @@
 		<WorkspaceLayout>
 			<template #in-progress>
 				<TaskColumn
-					title="进行中"
+					title="Doing"
 					:tasks="doing"
 					:loading="loading"
 					empty-text="暂无进行中任务"
@@ -21,7 +21,7 @@
 
 			<template #todo>
 				<TaskColumn
-					title="待办"
+					title="Todo"
 					:tasks="todo"
 					:loading="loading"
 					empty-text="暂无待办任务"
@@ -34,10 +34,10 @@
 
 			<template #done>
 				<TaskColumn
-					title="已完成（今天）"
-					:tasks="doneToday"
+					title="Done"
+					:tasks="doneAll"
 					:loading="loading"
-					empty-text="今天还没有完成记录"
+					empty-text="暂无完成记录"
 					:show-time="true"
 					:show-space-label="showSpaceLabel"
 					:skeleton-count="2"
@@ -88,7 +88,7 @@
 	})
 
 	// 统一使用 useProjectTasks composable
-	const { loading, doing, todo, doneToday, onComplete } = useProjectTasks(taskSpaceId, projectId)
+	const { loading, doing, todo, doneAll, onComplete } = useProjectTasks(taskSpaceId, projectId)
 
 	// 当前项目数据（仅在 project 模式下有值）
 	const currentProject = computed(() => {

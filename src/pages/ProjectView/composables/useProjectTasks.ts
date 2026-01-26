@@ -21,7 +21,7 @@ export function useProjectTasks(
 	const loading = ref(false)
 	const doing = ref<TaskDto[]>([])
 	const todo = ref<TaskDto[]>([])
-	const doneToday = ref<TaskDto[]>([])
+	const doneAll = ref<TaskDto[]>([])
 
 	function isTodayLocal(ts: number | null): boolean {
 		if (!ts) return false
@@ -51,7 +51,7 @@ export function useProjectTasks(
 
 			doing.value = doingRows
 			todo.value = todoRows
-			doneToday.value = doneRows.filter((t) => isTodayLocal(t.completed_at ?? null))
+			doneAll.value = doneRows
 		} catch (e) {
 			toast.add({
 				title: '加载失败',
@@ -88,7 +88,7 @@ export function useProjectTasks(
 		loading,
 		doing,
 		todo,
-		doneToday,
+		doneAll,
 		refresh,
 		onComplete,
 	}

@@ -10,7 +10,7 @@
 		<div class="relative z-0 space-y-3">
 			<div class="flex items-start justify-between gap-4">
 				<div class="min-w-0 pl-3">
-					<h1 class="text-3xl font-black text-slate-900 tracking-tight truncate">
+					<h1 class="text-3xl font-semibold text-slate-900 tracking-tight truncate">
 						{{ project.name }}
 					</h1>
 				</div>
