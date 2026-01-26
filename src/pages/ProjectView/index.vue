@@ -1,11 +1,9 @@
 <template>
 	<div class="space-y-8">
-		<!-- Project Header Card（仅在 project 模式下显示，包括 default project） -->
+		<!-- Project Header Card（仅在 project 模式下显示） -->
 		<ProjectHeaderCard
 			v-if="currentProject"
-			:project="currentProject"
-			:progress-percent="progressPercent"
-			:total-tasks="totalTasks" />
+			:project="currentProject" />
 
 		<WorkspaceLayout>
 			<template #in-progress>
@@ -58,38 +56,39 @@
 	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
 	import WorkspaceLayout from './components/WorkspaceLayout.vue'
 	import { useProjectTasks } from './composables/useProjectTasks'
-	import type { ProjectDto } from '@/services/api/projects'
-	import { getDefaultProject } from '@/services/api/projects'
 	import type { TaskDto } from '@/services/api/tasks'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
 	import { useProjectsStore } from '@/stores/projects'
+	import { useSettingsStore } from '@/stores/settings'
 
 	const route = useRoute()
 	const projectsStore = useProjectsStore()
+	const settingsStore = useSettingsStore()
 
 	// 从路由参数获取 spaceId 和 projectId
 	// All Tasks 模式：spaceId=undefined, projectId=undefined
-	// Project 模式：spaceId 有值, projectId 有值（包括 default project）
+	// Project 模式：spaceId 有值, projectId 有值
 	const spaceId = computed(() => {
 		const sid = route.params.spaceId
 		return typeof sid === 'string' ? sid : undefined
 	})
 
-	const defaultProject = ref<ProjectDto | null>(null)
-
 	const projectId = computed(() => {
 		// 如果路由有 project 参数，使用它
 		const pid = route.query.project
 		if (typeof pid === 'string') return pid
-		// 如果没有 project 参数但有 spaceId，使用 default project
-		if (spaceId.value && defaultProject.value) {
-			return defaultProject.value.id
-		}
 		return null
 	})
 
+	const taskSpaceId = computed(() => {
+		if (route.path === '/all-tasks') {
+			return settingsStore.settings.activeSpaceId
+		}
+		return spaceId.value
+	})
+
 	// 统一使用 useProjectTasks composable
-	const { loading, doing, todo, doneToday, onComplete } = useProjectTasks(spaceId, projectId)
+	const { loading, doing, todo, doneToday, onComplete } = useProjectTasks(taskSpaceId, projectId)
 
 	// 当前项目数据（仅在 project 模式下有值）
 	const currentProject = computed(() => {
@@ -99,39 +98,15 @@
 		return list.find((p) => p.id === pid) ?? null
 	})
 
-	// 进度统计（仅在 project 模式下计算）
-	const totalTasks = computed(() => doing.value.length + todo.value.length)
-	const progressPercent = computed(() => {
-		if (!currentProject.value) return 0
-		const total = totalTasks.value + doneToday.value.length
-		if (total === 0) return 0
-		return Math.round((doneToday.value.length / total) * 100)
-	})
-
 	// 是否显示 Space 标签（All Tasks 模式显示）
 	const showSpaceLabel = computed(() => !spaceId.value)
 
-	// 加载 default project（当有 spaceId 但没有 project 参数时）
-	async function loadDefaultProject() {
-		if (spaceId.value && !route.query.project) {
-			try {
-				const project = await getDefaultProject(spaceId.value)
-				defaultProject.value = project
-			} catch (error) {
-				console.error('加载默认项目失败:', error)
-			}
-		} else {
-			defaultProject.value = null
-		}
-	}
-
-	// 监听路由变化，加载项目和 default project
+	// 监听路由变化，加载项目列表
 	watch(
 		() => [route.params.spaceId, route.query.project],
 		async () => {
 			if (spaceId.value) {
 				await projectsStore.loadForSpace(spaceId.value)
-				await loadDefaultProject()
 			}
 		},
 		{ immediate: true },
@@ -145,9 +120,7 @@
 		return projectsStore.getProjectsOfSpace(spaceId.value)
 	})
 
-	const hasExplicitProject = computed(() => !!route.query.project)
-
-	const breadcrumbItems = useProjectBreadcrumb(spaceId, projectId, defaultProject, projectsList, hasExplicitProject)
+	const breadcrumbItems = useProjectBreadcrumb(spaceId, projectId, projectsList)
 
 	const inspectorStore = useTaskInspectorStore()
 

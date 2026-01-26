@@ -19,6 +19,7 @@ SELECT
   name,
   note,
   status,
+  priority,
   created_at,
   updated_at,
   archived_at
@@ -37,9 +38,10 @@ ORDER BY path ASC
                 name: row.get(4)?,
                 note: row.get(5)?,
                 status: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-                archived_at: row.get(9)?,
+                priority: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+                archived_at: row.get(10)?,
             })
         })?;
 
@@ -58,7 +60,7 @@ ORDER BY path ASC
         conn.query_row(
             r#"
 SELECT
-  id, space_id, parent_id, path, name, note, status,
+  id, space_id, parent_id, path, name, note, status, priority,
   created_at, updated_at, archived_at
 FROM projects
 WHERE id = ?1
@@ -73,9 +75,10 @@ WHERE id = ?1
                     name: row.get(4)?,
                     note: row.get(5)?,
                     status: row.get(6)?,
-                    created_at: row.get(7)?,
-                    updated_at: row.get(8)?,
-                    archived_at: row.get(9)?,
+                    priority: row.get(7)?,
+                    created_at: row.get(8)?,
+                    updated_at: row.get(9)?,
+                    archived_at: row.get(10)?,
                 })
             },
         )
@@ -98,10 +101,16 @@ WHERE id = ?1
         name: &str,
         parent_id: Option<&str>,
         note: Option<&str>,
+        priority: Option<&str>,
     ) -> Result<ProjectDto, AppError> {
         let name = name.trim();
         if name.is_empty() {
             return Err(AppError::Validation("项目名称不能为空".to_string()));
+        }
+
+        let priority = priority.unwrap_or("P1").trim().to_uppercase();
+        if !matches!(priority.as_str(), "P0" | "P1" | "P2" | "P3") {
+            return Err(AppError::Validation("项目优先级不合法（应为 P0-P3）".to_string()));
         }
 
         // 计算 path：如果有 parent，需要获取 parent 的 path
@@ -109,7 +118,7 @@ WHERE id = ?1
             // 验证 parent 是否存在且属于同一个 space
             let parent: ProjectDto = conn.query_row(
                 r#"
-SELECT id, space_id, parent_id, path, name, note, status,
+SELECT id, space_id, parent_id, path, name, note, status, priority,
   created_at, updated_at, archived_at
 FROM projects
 WHERE id = ?1 AND space_id = ?2
@@ -124,9 +133,10 @@ WHERE id = ?1 AND space_id = ?2
                         name: row.get(4)?,
                         note: row.get(5)?,
                         status: row.get(6)?,
-                        created_at: row.get(7)?,
-                        updated_at: row.get(8)?,
-                        archived_at: row.get(9)?,
+                        priority: row.get(7)?,
+                        created_at: row.get(8)?,
+                        updated_at: row.get(9)?,
+                        archived_at: row.get(10)?,
                     })
                 },
             )?;
@@ -142,15 +152,15 @@ WHERE id = ?1 AND space_id = ?2
             r#"
 INSERT INTO projects(
   id, space_id, parent_id, path,
-  name, note, status,
+  name, note, status, priority,
   created_at, updated_at, archived_at
 ) VALUES (
   ?1, ?2, ?3, ?4,
-  ?5, ?6, 'active',
-  ?7, ?7, NULL
+  ?5, ?6, 'active', ?7,
+  ?8, ?8, NULL
 )
 "#,
-            params![id, space_id, parent_id, path, name, note, now],
+            params![id, space_id, parent_id, path, name, note, priority, now],
         )?;
 
         Ok(ProjectDto {
@@ -161,6 +171,7 @@ INSERT INTO projects(
             name: name.to_string(),
             note: note.map(|s| s.to_string()),
             status: "active".to_string(),
+            priority,
             created_at: now,
             updated_at: now,
             archived_at: None,

@@ -29,22 +29,20 @@
 				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Execution</div>
 				<nav class="flex flex-col gap-0.5">
 					<RouterLink
-						v-for="item in executionNav"
-						:key="item.to"
-						:to="item.to"
+						:to="allTasksPath"
 						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
-						:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
+						:class="isAllTasksActive ? 'bg-elevated text-default' : ''">
 						<UIcon
-							:name="item.icon"
-							:class="item.iconColor" />
-						<span>{{ item.label }}</span>
+							name="i-lucide-list-checks"
+							class="text-pink-500" />
+						<span>All Tasks</span>
 					</RouterLink>
 					<!-- 默认 Project 入口 -->
 					<RouterLink
 						v-if="defaultProject"
-						:to="`/space/${spaceValue}`"
+						:to="`/space/${spaceValue}?project=${defaultProject.id}`"
 						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
-						:class="currentPath === `/space/${spaceValue}` && !route.query.project ? 'bg-elevated text-default' : ''">
+						:class="isActiveProject(defaultProject.id) ? 'bg-elevated text-default' : ''">
 						<UIcon
 							name="i-lucide-folder"
 							class="size-3.5 text-amber-500" />
@@ -73,19 +71,48 @@
 						class="text-[12px] text-muted px-2.5 py-1.5 rounded-md bg-elevated/60 border border-dashed border-default/70">
 						当前 Space 暂无项目
 					</div>
-					<RouterLink
-						v-for="node in projectsTree"
-						:key="node.id"
-						:to="`/space/${spaceValue}?project=${node.id}`"
-						class="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
-						:class="currentPath === `/space/${spaceValue}` && route.query.project === node.id ? 'bg-elevated text-default' : ''"
-						:style="{ paddingLeft: `${10 + node.depth * 12}px` }">
-						<UIcon
-							:name="node.icon"
-							class="size-3.5"
-							:class="node.iconClass" />
-						<span class="truncate">{{ node.name }}</span>
-					</RouterLink>
+					<UTree
+						v-else
+						v-model:expanded="expandedKeys"
+						:nested="false"
+						:items="projectsTree"
+						:get-key="(item) => item.id"
+						:on-toggle="preventTreeToggle"
+						:ui="{
+							root: 'space-y-0.5',
+							item: 'p-0',
+							itemWithChildren: 'p-0',
+							link: 'p-0',
+							listWithChildren: 'mt-0',
+						}">
+						<template #item-wrapper="{ item, level, expanded, handleToggle }">
+							<div
+								class="group relative rounded-lg text-[13px] transition-all duration-150"
+								:class="isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'">
+								<RouterLink
+									:to="`/space/${spaceValue}?project=${item.id}`"
+									class="flex w-full items-center gap-2.5 py-1.5 pr-8"
+									:style="{ paddingLeft: `${10 + (level - 1) * 12}px` }"
+									@click.stop>
+									<UIcon
+										:name="item.icon"
+										class="size-3.5"
+										:class="item.iconClass" />
+									<span class="truncate">{{ item.label }}</span>
+								</RouterLink>
+								<button
+									v-if="item.children?.length"
+									type="button"
+									class="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:text-default"
+									:class="expanded ? 'rotate-90' : ''"
+									@click.stop="handleToggle">
+									<UIcon
+										name="i-lucide-chevron-right"
+										class="size-3.5" />
+								</button>
+							</div>
+						</template>
+					</UTree>
 				</div>
 			</section>
 		</div>
@@ -131,6 +158,7 @@
 	import UserCard from '@/components/UserCard.vue'
 	import { getDefaultProject } from '@/services/api/projects'
 	import type { ProjectDto } from '@/services/api/projects'
+	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
 
 	const props = defineProps<{
@@ -175,9 +203,11 @@
 		emit('update:space', id)
 	}
 
-	const executionNav = [
-		{ to: '/all-tasks', label: 'All Tasks', icon: 'i-lucide-list-checks', iconColor: 'text-pink-500' },
-	]
+	const allTasksPath = computed(() => `/space/${spaceValue.value}`)
+	const isAllTasksActive = computed(() => {
+		if (route.path === '/all-tasks') return true
+		return currentPath.value === `/space/${spaceValue.value}` && !route.query.project
+	})
 
 	const libraryNav = [
 		{ to: '/finish-list', label: 'Finish List', icon: 'i-lucide-check-circle', iconColor: 'text-green-500' },
@@ -196,18 +226,20 @@
 	// 通过 inject 获取全局的创建项目弹窗控制函数
 	const openCreateProjectModal = inject<(spaceId?: string) => void>('openCreateProjectModal')
 
-	type ProjectNode = {
+	type ProjectTreeItem = {
 		id: string
-		name: string
-		depth: number
+		label: string
 		icon: string
 		iconClass: string
+		children?: ProjectTreeItem[]
 	}
 
-	const projectsTree = computed<ProjectNode[]>(() => {
+	const projectsTree = computed<ProjectTreeItem[]>(() => {
 		const spaceId = spaceValue.value
 		const list = projectsStore.getProjectsOfSpace(spaceId)
 		if (!list.length) return []
+
+		const levelColors = ['text-amber-400', 'text-sky-400', 'text-violet-400', 'text-emerald-400', 'text-rose-400']
 
 		// 过滤掉默认项目（ID 以 _default 结尾）
 		const filtered = list.filter((p) => !p.id.endsWith('_default'))
@@ -220,26 +252,43 @@
 			byParent.set(key, bucket)
 		}
 
-		const out: ProjectNode[] = []
-
-		function walk(parentId: string | null, depth: number) {
-			const children = byParent.get(parentId)
-			if (!children) return
-			for (const p of children) {
-				out.push({
+		function build(parentId: string | null, depth: number): ProjectTreeItem[] {
+			const children = byParent.get(parentId) ?? []
+			return children.map((p) => {
+				const next = build(p.id, depth + 1)
+				return {
 					id: p.id,
-					name: p.name,
-					depth,
-					icon: depth === 0 ? 'i-lucide-folder' : 'i-lucide-circle',
-					iconClass: depth === 0 ? 'text-amber-500' : 'text-muted',
-				})
-				walk(p.id, depth + 1)
-			}
+					label: p.name,
+					icon: 'i-lucide-folder',
+					iconClass: levelColors[depth % levelColors.length],
+					children: next.length ? next : undefined,
+				}
+			})
 		}
 
-		walk(null, 0)
-		return out
+		return build(null, 0)
 	})
+
+	const projectTreeStore = useProjectTreeStore()
+
+	const expandedKeys = computed<string[]>({
+		get: () => projectTreeStore.getExpanded(spaceValue.value),
+		set: (val) => {
+			projectTreeStore.setExpanded(spaceValue.value, val)
+		},
+	})
+
+	const activeProjectId = computed(() => (typeof route.query.project === 'string' ? route.query.project : null))
+
+	function preventTreeToggle(event: CustomEvent<{ originalEvent?: Event }>) {
+		if (event.detail?.originalEvent?.type === 'click') {
+			event.preventDefault()
+		}
+	}
+
+	function isActiveProject(projectId: string) {
+		return currentPath.value === `/space/${spaceValue.value}` && activeProjectId.value === projectId
+	}
 
 	async function loadDefaultProject() {
 		try {
@@ -266,6 +315,7 @@
 	})
 
 	onMounted(() => {
+		projectTreeStore.load()
 		loadProjects()
 	})
 </script>

@@ -6,8 +6,8 @@ import { listTasks, type TaskDto } from '@/services/api/tasks'
 /**
  * 统一的项目任务数据加载与操作逻辑
  * 支持两种模式：
- * 1. All Tasks: spaceId=undefined, projectId=undefined
- * 2. Project: spaceId 有值, projectId 有值（包括 default project，id 为 {spaceId}_default）
+ * 1. All Tasks: projectId=undefined（可选 spaceId，用于按 Space 过滤）
+ * 2. Project: spaceId 有值, projectId 有值
  *
  * @param spaceId 可选的 Space ID，传入则按 Space 筛选，不传则获取所有
  * @param projectId 可选的 Project ID，传入则按 Project 筛选

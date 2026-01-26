@@ -6,7 +6,7 @@ import { listSpaces } from '@/services/api/spaces'
 
 /**
  * 每个 Space 的页面状态
- * - route: 路由路径（如 '/space/work', '/all-tasks'）
+ * - route: 路由路径（如 '/space/work'）
  * - projectId: 当前所在的 project ID（如果有）
  */
 export type SpacePageState = {
@@ -36,7 +36,7 @@ export const useSpacesStore = defineStore('spaces', () => {
 	 * 获取指定 space 的页面状态，如果没有则返回默认值
 	 */
 	function getPageState(spaceId: string): SpacePageState {
-		return spacePageStates.value.get(spaceId) ?? { route: '/all-tasks', projectId: null }
+		return spacePageStates.value.get(spaceId) ?? { route: `/space/${spaceId}`, projectId: null }
 	}
 
 	return {

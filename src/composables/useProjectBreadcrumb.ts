@@ -20,49 +20,41 @@ function projectPath(list: ProjectDto[], targetId: string): ProjectDto[] {
  * 生成项目面包屑导航项
  * @param spaceId Space ID（可选，All Tasks 模式为 undefined）
  * @param projectId Project ID（可选）
- * @param defaultProject Default Project（可选）
  * @param projectsList 项目列表
- * @param hasExplicitProject 是否有明确的 project 查询参数
  */
 export function useProjectBreadcrumb(
 	spaceId: ComputedRef<string | undefined>,
 	projectId: ComputedRef<string | null>,
-	defaultProject: { value: ProjectDto | null },
 	projectsList: ComputedRef<ProjectDto[]>,
-	hasExplicitProject: ComputedRef<boolean>,
 ): ComputedRef<Array<{ label: string; to?: string }>> {
 	return computed(() => {
 		const base: { label: string; to?: string }[] = []
 
 		// All Tasks 模式
-		if (!spaceId.value) {
+		if (!projectId.value) {
 			base.push({ label: 'All Tasks' })
 			return base
 		}
 
-		// Project 模式
-		const pid = projectId.value
-		if (!pid) return base
+		if (!spaceId.value) {
+			base.push({ label: '…' })
+			return base
+		}
 
-		if (hasExplicitProject.value) {
-			// 有明确的 project 参数，构建完整路径
-			const list = projectsList.value
-			const path = projectPath(list, pid)
-			if (path.length) {
-				for (let i = 0; i < path.length; i++) {
-					const p = path[i]
-					const isLast = i === path.length - 1
-					base.push({
-						label: p.name,
-						...(isLast ? {} : { to: `/space/${spaceId.value}?project=${p.id}` }),
-					})
-				}
-			} else {
-				base.push({ label: '…' })
+		// Project 模式：构建完整路径
+		const list = projectsList.value
+		const path = projectPath(list, projectId.value)
+		if (path.length) {
+			for (let i = 0; i < path.length; i++) {
+				const p = path[i]
+				const isLast = i === path.length - 1
+				base.push({
+					label: p.name,
+					...(isLast ? {} : { to: `/space/${spaceId.value}?project=${p.id}` }),
+				})
 			}
 		} else {
-			// 使用 default project
-			base.push({ label: defaultProject.value?.name ?? '…' })
+			base.push({ label: '…' })
 		}
 		return base
 	})

@@ -11,7 +11,11 @@ export const useSettingsStore = defineStore('settings', () => {
 	async function load() {
 		const val = await settingsStore.get<SettingsModel>('settings')
 		if (val) {
-			Object.assign(state, val)
+			const next = { ...val }
+			if (!['work', 'study', 'personal'].includes(next.activeSpaceId)) {
+				next.activeSpaceId = 'work'
+			}
+			Object.assign(state, next)
 		}
 		loaded.value = true
 	}

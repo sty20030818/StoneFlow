@@ -40,6 +40,11 @@
 	const settingsStore = useSettingsStore()
 	const spacesStore = useSpacesStore()
 
+	function normalizeSpaceRoute(spaceId: string, path: string) {
+		if (path === '/all-tasks') return `/space/${spaceId}`
+		return path
+	}
+
 	const space = computed({
 		get: () => settingsStore.settings.activeSpaceId,
 		set: async (v) => {
@@ -47,8 +52,9 @@
 			const currentSpaceId = settingsStore.settings.activeSpaceId
 			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
 				const projectId = typeof route.query.project === 'string' ? route.query.project : null
+				const normalizedRoute = normalizeSpaceRoute(currentSpaceId, route.path)
 				spacesStore.savePageState(currentSpaceId, {
-					route: route.path,
+					route: normalizedRoute,
 					projectId,
 				})
 			}
@@ -58,7 +64,9 @@
 
 			// 恢复目标 space 的页面状态
 			const targetState = spacesStore.getPageState(v)
-			if (targetState.route.startsWith('/space/')) {
+			if (targetState.route === '/all-tasks') {
+				await router.push({ path: `/space/${v}` })
+			} else if (targetState.route.startsWith('/space/')) {
 				// 使用新的 spaceId，但保留 projectId（如果存在）
 				const query = targetState.projectId ? { project: targetState.projectId } : {}
 				await router.push({ path: `/space/${v}`, query })
@@ -80,8 +88,9 @@
 			const currentSpaceId = settingsStore.settings.activeSpaceId
 			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
 				const projectId = typeof route.query.project === 'string' ? route.query.project : null
+				const normalizedRoute = normalizeSpaceRoute(currentSpaceId, route.path)
 				spacesStore.savePageState(currentSpaceId, {
-					route: route.path,
+					route: normalizedRoute,
 					projectId,
 				})
 			}
@@ -103,8 +112,9 @@
 			const currentSpaceId = settingsStore.settings.activeSpaceId
 			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
 				const projectId = typeof route.query.project === 'string' ? route.query.project : null
+				const normalizedRoute = normalizeSpaceRoute(currentSpaceId, route.path)
 				spacesStore.savePageState(currentSpaceId, {
-					route: route.path,
+					route: normalizedRoute,
 					projectId,
 				})
 			}

@@ -137,6 +137,7 @@
 		spaceId: props.spaceId ?? 'work',
 		parentId: null as string | null,
 		note: null as string | null,
+		priority: 'P1',
 	})
 
 	const canSubmit = computed(() => {
@@ -221,6 +222,7 @@
 			form.value.name = ''
 			form.value.parentId = null
 			form.value.note = null
+			form.value.priority = 'P1'
 			if (props.spaceId) {
 				form.value.spaceId = props.spaceId
 			}
@@ -237,6 +239,7 @@
 				name: form.value.name.trim(),
 				parentId: form.value.parentId,
 				note: form.value.note?.trim() || null,
+				priority: form.value.priority,
 			})
 
 			// 刷新项目列表

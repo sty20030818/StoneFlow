@@ -8,6 +8,7 @@ export type ProjectDto = {
 	name: string
 	note: string | null
 	status: string
+	priority: string
 	created_at: number
 	updated_at: number
 	archived_at: number | null
@@ -22,6 +23,7 @@ export type CreateProjectArgs = {
 	name: string
 	parentId?: string | null
 	note?: string | null
+	priority?: string | null
 }
 
 /**
@@ -46,6 +48,7 @@ export async function createProject(args: CreateProjectArgs): Promise<ProjectDto
 			name: args.name,
 			parentId: args.parentId ?? null,
 			note: args.note ?? null,
+			priority: args.priority ?? null,
 		},
 	})
 }

@@ -19,13 +19,9 @@ import Toolbox from '@/pages/assets/Toolbox/index.vue'
 import Settings from '@/pages/Settings/index.vue'
 
 export const routes = [
-	{ path: '/', redirect: '/dashboard' },
+	{ path: '/', redirect: '/space/work' },
 
 	// ProjectView (统一的项目视图)
-	{
-		path: '/dashboard',
-		redirect: '/all-tasks',
-	},
 	{
 		path: '/all-tasks',
 		component: ProjectView,
@@ -36,10 +32,6 @@ export const routes = [
 		component: ProjectView,
 		meta: { title: 'Space', icon: 'i-lucide-folder', iconClass: 'text-gray-500', description: '任务空间' },
 	},
-	// 兼容旧路由
-	{ path: '/work', redirect: '/space/work' },
-	{ path: '/personal', redirect: '/space/personal' },
-	{ path: '/study', redirect: '/space/study' },
 
 	// Review
 	{

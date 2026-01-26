@@ -18,6 +18,7 @@ pub struct ProjectDto {
   pub name: String,
   pub note: Option<String>,
   pub status: String,
+  pub priority: String,
   pub created_at: i64,
   pub updated_at: i64,
   pub archived_at: Option<i64>,

@@ -95,11 +95,10 @@
 			id: 'workspace',
 			label: 'Workspace',
 			items: [
-				{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/dashboard' },
-				{ label: 'All Tasks', icon: 'i-lucide-list-checks', to: '/all-tasks' },
-				{ label: 'Work', icon: 'i-lucide-briefcase', to: '/work' },
-				{ label: 'Personal', icon: 'i-lucide-user', to: '/personal' },
-				{ label: 'Study', icon: 'i-lucide-book-open', to: '/study' },
+				{ label: 'All Tasks', icon: 'i-lucide-list-checks', to: `/space/${currentSpaceId.value}` },
+				{ label: 'Work', icon: 'i-lucide-briefcase', to: '/space/work' },
+				{ label: 'Personal', icon: 'i-lucide-user', to: '/space/personal' },
+				{ label: 'Study', icon: 'i-lucide-book-open', to: '/space/study' },
 			],
 		},
 		{

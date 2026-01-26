@@ -32,6 +32,7 @@ pub struct CreateProjectArgs {
   pub name: String,
   pub parent_id: Option<String>,
   pub note: Option<String>,
+  pub priority: Option<String>,
 }
 
 /// 创建新项目。
@@ -51,6 +52,7 @@ pub fn create_project(
     &args.name,
     args.parent_id.as_deref(),
     args.note.as_deref(),
+    args.priority.as_deref(),
   )
   .map_err(ApiError::from)
 }

@@ -20,6 +20,14 @@ const MIGRATIONS: &[Migration] = &[
     version: 3,
     sql: include_str!("migrations/0003_add_task_fields.sql"),
   },
+  Migration {
+    version: 4,
+    sql: include_str!("migrations/0004_add_project_priority.sql"),
+  },
+  Migration {
+    version: 5,
+    sql: include_str!("migrations/0005_rename_default_projects.sql"),
+  },
 ];
 
 /// 执行所有未执行的迁移。
@@ -50,5 +58,3 @@ pub fn run_migrations(conn: &mut Connection) -> Result<(), AppError> {
 
   Ok(())
 }
-
-

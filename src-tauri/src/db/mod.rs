@@ -114,7 +114,7 @@ fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(),
     let spaces: Vec<(String, String)> = rows.collect::<Result<Vec<_>, _>>()?;
     drop(stmt); // 显式释放 stmt，释放对 tx 的借用
 
-    for (space_id, space_name) in spaces {
+    for (space_id, _space_name) in spaces {
         let project_id = format!("{space_id}_default");
 
         // 检查该 space 的 default project 是否已存在
@@ -128,18 +128,18 @@ fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(),
 
         // 如果不存在，创建 default project
         if exists == 0 {
-            let project_name = format!("{space_name} · Default");
-            let path = format!("/{project_name}");
+            let project_name = "Default Project".to_string();
+            let path = "/Default Project".to_string();
 
             tx.execute(
                 r#"
 INSERT INTO projects(
   id, space_id, parent_id, path,
-  name, note, status,
+  name, note, status, priority,
   created_at, updated_at, archived_at
 ) VALUES (
   ?1, ?2, NULL, ?3,
-  ?4, NULL, 'active',
+  ?4, NULL, 'active', 'P1',
   ?5, ?5, NULL
 )
 "#,
