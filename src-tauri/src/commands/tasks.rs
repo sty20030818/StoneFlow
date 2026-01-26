@@ -73,6 +73,9 @@ pub struct UpdateTaskArgs {
 pub struct UpdateTaskPatch {
     pub title: Option<String>,
     pub status: Option<String>,
+    pub priority: Option<String>,
+    pub note: Option<String>,
+    pub planned_end_at: Option<i64>,
 }
 
 #[tauri::command]
@@ -82,11 +85,14 @@ pub fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<()
         .lock()
         .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
 
-    TaskRepo::update_basic(
+    TaskRepo::update(
         &conn,
         &args.id,
         args.patch.title.as_deref(),
         args.patch.status.as_deref(),
+        args.patch.priority.as_deref(),
+        args.patch.note.as_deref(),
+        args.patch.planned_end_at,
     )
     .map_err(ApiError::from)
 }

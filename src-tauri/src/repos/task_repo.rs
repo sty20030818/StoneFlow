@@ -146,11 +146,14 @@ INSERT INTO tasks(
         Ok(())
     }
 
-    pub fn update_basic(
+    pub fn update(
         conn: &Connection,
         id: &str,
         title: Option<&str>,
         status: Option<&str>,
+        priority: Option<&str>,
+        note: Option<&str>,
+        planned_end_at: Option<i64>,
     ) -> Result<(), AppError> {
         let mut sets: Vec<&str> = Vec::new();
         let mut ps: Vec<Value> = Vec::new();
@@ -167,6 +170,24 @@ INSERT INTO tasks(
         if let Some(status) = status {
             sets.push("status = ?");
             ps.push(Value::Text(status.to_string()));
+        }
+
+        if let Some(priority) = priority {
+            if !["P0", "P1", "P2", "P3"].contains(&priority) {
+                return Err(AppError::Validation("优先级必须是 P0, P1, P2 或 P3".to_string()));
+            }
+            sets.push("priority = ?");
+            ps.push(Value::Text(priority.to_string()));
+        }
+
+        if let Some(note) = note {
+            sets.push("note = ?");
+            ps.push(Value::Text(note.to_string()));
+        }
+
+        if let Some(planned_end_at) = planned_end_at {
+            sets.push("planned_end_at = ?");
+            ps.push(Value::Integer(planned_end_at));
         }
 
         if sets.is_empty() {

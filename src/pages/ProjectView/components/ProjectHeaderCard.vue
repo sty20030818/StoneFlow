@@ -1,13 +1,13 @@
 <template>
 	<div
 		v-if="project"
-		class="mb-8 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+		class="mb-8 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm relative overflow-hidden group z-0">
 		<!-- 彩色模糊背景 -->
 		<div
 			class="absolute -top-10 -right-10 w-64 h-64 bg-blue-100/50 rounded-full blur-3xl opacity-60"></div>
 		<div class="absolute top-20 right-20 w-32 h-32 bg-purple-100/50 rounded-full blur-2xl opacity-60"></div>
 
-		<div class="relative z-10 flex justify-between items-start">
+		<div class="relative z-0 flex justify-between items-start">
 			<div class="max-w-2xl">
 				<div class="flex items-center gap-3 mb-3">
 					<h1 class="text-3xl font-black text-slate-900 tracking-tight">{{ project.name }}</h1>

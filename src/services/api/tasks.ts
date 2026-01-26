@@ -51,6 +51,11 @@ export async function createTask(args: CreateTaskArgs): Promise<TaskDto> {
 export type UpdateTaskPatch = {
 	title?: string
 	status?: TaskStatus
+	priority?: string
+	note?: string | null
+	plannedStartAt?: number | null
+	plannedEndAt?: number | null
+	tags?: string[]
 }
 
 export async function updateTask(id: string, patch: UpdateTaskPatch): Promise<void> {
