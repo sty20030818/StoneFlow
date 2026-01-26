@@ -55,9 +55,10 @@ pub fn create_project(
   .map_err(ApiError::from)
 }
 
-/// 获取或创建默认 Project。
+/// 获取默认 Project。
+/// 注意：Default Project 应该在数据库初始化时创建，如果不存在则返回错误。
 #[tauri::command]
-pub fn get_or_create_default_project(
+pub fn get_default_project(
   state: State<'_, DbState>,
   space_id: String,
 ) -> Result<ProjectDto, ApiError> {
@@ -66,6 +67,6 @@ pub fn get_or_create_default_project(
     .lock()
     .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
 
-  ProjectRepo::get_or_create_default_project(&conn, &space_id).map_err(ApiError::from)
+  ProjectRepo::get_default_project(&conn, &space_id).map_err(ApiError::from)
 }
 

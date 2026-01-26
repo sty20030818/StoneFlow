@@ -99,7 +99,7 @@
 	import { computed, ref, watch } from 'vue'
 
 	import type { ProjectDto } from '@/services/api/projects'
-	import { getOrCreateDefaultProject } from '@/services/api/projects'
+	import { getDefaultProject } from '@/services/api/projects'
 	import type { TaskDto } from '@/services/api/tasks'
 	import { createTask } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
@@ -204,7 +204,7 @@
 				form.value.spaceId = newSpaceId
 				// 加载默认项目
 				try {
-					const defaultProject = await getOrCreateDefaultProject(newSpaceId)
+					const defaultProject = await getDefaultProject(newSpaceId)
 					defaultProjectId.value = defaultProject.id
 					form.value.projectId = defaultProject.id
 				} catch (error) {
@@ -222,7 +222,7 @@
 				form.value.spaceId = props.spaceId
 				// 加载默认项目
 				try {
-					const defaultProject = await getOrCreateDefaultProject(form.value.spaceId)
+					const defaultProject = await getDefaultProject(form.value.spaceId)
 					defaultProjectId.value = defaultProject.id
 					form.value.projectId = defaultProject.id
 				} catch (error) {

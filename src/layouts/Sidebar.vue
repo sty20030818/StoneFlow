@@ -129,7 +129,7 @@
 
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import UserCard from '@/components/UserCard.vue'
-	import { getOrCreateDefaultProject } from '@/services/api/projects'
+	import { getDefaultProject } from '@/services/api/projects'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { useProjectsStore } from '@/stores/projects'
 
@@ -243,7 +243,7 @@
 
 	async function loadDefaultProject() {
 		try {
-			const project = await getOrCreateDefaultProject(spaceValue.value)
+			const project = await getDefaultProject(spaceValue.value)
 			defaultProject.value = project
 		} catch (error) {
 			console.error('加载默认项目失败:', error)

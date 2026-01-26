@@ -1,9 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-// Workspace
-import Dashboard from '@/pages/workspace/Dashboard/index.vue'
-import AllTasks from '@/pages/workspace/AllTasks/index.vue'
-import Space from '@/pages/workspace/Space/index.vue'
+// ProjectView
+import ProjectView from '@/pages/ProjectView/index.vue'
 
 // Review
 import FinishList from '@/pages/review/FinishList/index.vue'
@@ -23,25 +21,19 @@ import Settings from '@/pages/Settings/index.vue'
 export const routes = [
 	{ path: '/', redirect: '/dashboard' },
 
-	// Workspace
+	// ProjectView (统一的项目视图)
 	{
 		path: '/dashboard',
-		component: Dashboard,
-		meta: {
-			title: 'Dashboard',
-			icon: 'i-lucide-layout-dashboard',
-			iconClass: 'text-primary',
-			description: '任务概览与统计',
-		},
+		redirect: '/all-tasks',
 	},
 	{
 		path: '/all-tasks',
-		component: AllTasks,
+		component: ProjectView,
 		meta: { title: 'All Tasks', icon: 'i-lucide-list-checks', iconClass: 'text-pink-500', description: '所有任务列表' },
 	},
 	{
 		path: '/space/:spaceId',
-		component: Space,
+		component: ProjectView,
 		meta: { title: 'Space', icon: 'i-lucide-folder', iconClass: 'text-gray-500', description: '任务空间' },
 	},
 	// 兼容旧路由

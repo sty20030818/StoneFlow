@@ -4,7 +4,7 @@ mod repos;
 mod types;
 
 use commands::hello::hello;
-use commands::projects::{create_project, get_or_create_default_project, list_projects};
+use commands::projects::{create_project, get_default_project, list_projects};
 use commands::spaces::list_spaces;
 use commands::tasks::{complete_task, create_task, list_tasks, update_task};
 use tauri::Manager;
@@ -24,7 +24,7 @@ pub fn run() {
             hello,
             list_projects,
             create_project,
-            get_or_create_default_project,
+            get_default_project,
             list_spaces,
             list_tasks,
             create_task,

@@ -50,15 +50,12 @@ ORDER BY path ASC
         Ok(out)
     }
 
-    /// 获取或创建默认 Project（每个 Space 都有一个名为 "{SpaceName} · Default" 的默认项目）。
-    pub fn get_or_create_default_project(
-        conn: &Connection,
-        space_id: &str,
-    ) -> Result<ProjectDto, AppError> {
+    /// 获取默认 Project（每个 Space 都有一个名为 "{SpaceName} · Default" 的默认项目）。
+    /// 注意：Default Project 应该在数据库初始化时创建，如果不存在则返回错误。
+    pub fn get_default_project(conn: &Connection, space_id: &str) -> Result<ProjectDto, AppError> {
         let default_id = format!("{space_id}_default");
 
-        // 尝试获取已存在的默认项目
-        if let Ok(project) = conn.query_row(
+        conn.query_row(
             r#"
 SELECT
   id, space_id, parent_id, path, name, note, status,
@@ -81,47 +78,16 @@ WHERE id = ?1
                     archived_at: row.get(9)?,
                 })
             },
-        ) {
-            return Ok(project);
-        }
-
-        // 如果不存在，需要获取 space 名称来创建
-        let space_name: String = conn.query_row(
-            "SELECT name FROM spaces WHERE id = ?1",
-            (space_id,),
-            |row| row.get(0),
-        )?;
-
-        let project_name = format!("{space_name} · Default");
-        let path = format!("/{project_name}");
-        let now = now_ms();
-
-        conn.execute(
-            r#"
-INSERT INTO projects(
-  id, space_id, parent_id, path,
-  name, note, status,
-  created_at, updated_at, archived_at
-) VALUES (
-  ?1, ?2, NULL, ?3,
-  ?4, NULL, 'active',
-  ?5, ?5, NULL
-)
-"#,
-            params![default_id, space_id, path, project_name, now],
-        )?;
-
-        Ok(ProjectDto {
-            id: default_id,
-            space_id: space_id.to_string(),
-            parent_id: None,
-            path,
-            name: project_name,
-            note: None,
-            status: "active".to_string(),
-            created_at: now,
-            updated_at: now,
-            archived_at: None,
+        )
+        .map_err(|e| {
+            if let rusqlite::Error::QueryReturnedNoRows = e {
+                AppError::Validation(format!(
+                    "Default project for space '{}' not found. Please ensure database is properly initialized.",
+                    space_id
+                ))
+            } else {
+                AppError::from(e)
+            }
         })
     }
 

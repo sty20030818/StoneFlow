@@ -84,7 +84,8 @@ fn seed_default_spaces_if_empty(conn: &mut Connection) -> Result<(), AppError> {
     Ok(())
 }
 
-/// 为每个已存在的 Space 创建一个 Default Project，并将缺少 project_id 的任务挂到该默认 Project 上。
+/// 为每个已存在的 Space 确保有一个 Default Project，并将缺少 project_id 的任务挂到该默认 Project 上。
+/// 每次初始化时都会检查并创建缺失的 default project（不只是首次）。
 fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(), AppError> {
     // 检查 projects 表是否存在；如果不存在说明迁移尚未生效，直接跳过。
     let has_projects_table: i64 = conn
@@ -98,25 +99,10 @@ fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(),
         return Ok(());
     }
 
-    // 如果已经有 Project 且存在非空 project_id 的任务，认为已经完成过初始化，避免重复写入。
-    let existing_projects: i64 =
-        conn.query_row("SELECT COUNT(1) FROM projects", (), |row| row.get(0))?;
-    let existing_project_tasks: i64 = conn
-        .query_row(
-            "SELECT COUNT(1) FROM tasks WHERE project_id IS NOT NULL",
-            (),
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-    if existing_projects > 0 && existing_project_tasks > 0 {
-        return Ok(());
-    }
-
     let now = now_ms();
-
     let tx = conn.transaction()?;
 
-    // 1. 为每个 space 创建一个 Default Project
+    // 获取所有 space
     let mut stmt = tx.prepare("SELECT id, name FROM spaces ORDER BY \"order\" ASC")?;
     let rows = stmt.query_map((), |row| {
         let id: String = row.get(0)?;
@@ -129,14 +115,25 @@ fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(),
     drop(stmt); // 显式释放 stmt，释放对 tx 的借用
 
     for (space_id, space_name) in spaces {
-        // Default Project 命名规则："{SpaceName} · Default"
-        let project_name = format!("{space_name} · Default");
         let project_id = format!("{space_id}_default");
-        let path = format!("/{project_name}");
 
-        tx.execute(
-            r#"
-INSERT OR IGNORE INTO projects(
+        // 检查该 space 的 default project 是否已存在
+        let exists: i64 = tx
+            .query_row(
+                "SELECT COUNT(1) FROM projects WHERE id = ?1",
+                (&project_id,),
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+
+        // 如果不存在，创建 default project
+        if exists == 0 {
+            let project_name = format!("{space_name} · Default");
+            let path = format!("/{project_name}");
+
+            tx.execute(
+                r#"
+INSERT INTO projects(
   id, space_id, parent_id, path,
   name, note, status,
   created_at, updated_at, archived_at
@@ -146,10 +143,11 @@ INSERT OR IGNORE INTO projects(
   ?5, ?5, NULL
 )
 "#,
-            (project_id.clone(), space_id.clone(), path, project_name, now),
-        )?;
+                (project_id.clone(), space_id.clone(), path, project_name, now),
+            )?;
+        }
 
-        // 2. 将该 space 下尚未关联 project_id 的任务，全部挂到对应的 Default Project。
+        // 将该 space 下尚未关联 project_id 的任务，全部挂到对应的 Default Project。
         tx.execute(
             r#"
 UPDATE tasks

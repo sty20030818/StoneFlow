@@ -6,4 +6,3 @@
 		<slot name="done" />
 	</div>
 </template>
-

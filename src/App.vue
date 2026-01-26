@@ -176,7 +176,8 @@
 	provide('openCreateProjectModal', handleOpenCreateProjectModal)
 
 	// 提供全局的创建任务弹窗控制函数
-	function handleOpenCreateTaskModal(spaceId?: string) {
+	function handleOpenCreateTaskModal(_spaceId?: string) {
+		// spaceId 参数预留，将来可用于设置默认 space
 		createTaskModalOpen.value = true
 	}
 	provide('openCreateTaskModal', handleOpenCreateTaskModal)

@@ -2,20 +2,8 @@
 	<section>
 		<!-- 简单的标题（不带 Card 包裹） -->
 		<div class="flex items-center gap-3 mb-4 px-2">
-			<!-- 动画指示器（根据状态不同） -->
-			<span
-				v-if="title === '进行中'"
-				class="flex h-3 w-3 relative">
-				<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-				<span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-			</span>
-			<div
-				v-else-if="title === '待办'"
-				class="w-2 h-2 rounded-full bg-muted"></div>
-			<UIcon
-				v-else-if="title.includes('已完成')"
-				name="i-lucide-check-circle"
-				class="size-4 text-green-500" />
+			<!-- 图标指示器（根据状态不同） -->
+			<TaskStatusIcon :status="getStatusFromTitle(title)" />
 			<h3
 				class="text-base font-extrabold"
 				:class="title === '进行中' ? 'text-default' : title === '待办' ? 'text-muted' : 'text-muted'">
@@ -46,14 +34,9 @@
 			</div>
 		</template>
 		<template v-else>
-			<div
+			<EmptyState
 				v-if="tasks.length === 0"
-				class="py-12 flex flex-col items-center justify-center text-muted border-2 border-dashed border-default/60 rounded-3xl">
-				<UIcon
-					name="i-lucide-coffee"
-					class="size-10 mb-2" />
-				<span class="font-medium">{{ emptyText }}</span>
-			</div>
+				:text="emptyText" />
 
 			<div
 				v-else
@@ -73,8 +56,17 @@
 </template>
 
 <script setup lang="ts">
+	import EmptyState from '@/components/EmptyState.vue'
 	import TaskCard from '@/components/TaskCard.vue'
+	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
 	import type { TaskDto } from '@/services/api/tasks'
+
+	function getStatusFromTitle(title: string): string {
+		if (title === '进行中') return 'doing'
+		if (title === '待办') return 'todo'
+		if (title.includes('已完成')) return 'done'
+		return 'todo'
+	}
 
 	defineProps<{
 		title: string

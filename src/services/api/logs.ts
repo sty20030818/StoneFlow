@@ -1,4 +1,4 @@
-import { listTasks, type TaskDto } from '@/services/api/tasks'
+import { listTasks } from '@/services/api/tasks'
 
 export type ActivityLogEntityType = 'task' | 'project'
 

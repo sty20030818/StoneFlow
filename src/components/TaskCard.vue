@@ -19,11 +19,9 @@
 					<h4 class="text-base font-bold text-default leading-tight group-hover:text-blue-600 transition-colors">
 						{{ task.title }}
 					</h4>
-					<span
-						class="ml-2 px-2 py-1 rounded-lg text-xs font-bold shrink-0"
-						:class="getPriorityClass(task.priority)">
-						{{ task.priority || 'P1' }}
-					</span>
+					<PriorityBadge
+						:priority="task.priority"
+						variant="doing" />
 				</div>
 
 				<!-- 第二行：Note -->
@@ -35,14 +33,9 @@
 
 				<!-- 第三行：Meta Tags -->
 				<div class="flex items-center flex-wrap gap-2 mt-auto pt-2 border-t border-default/50">
-					<span
+					<SpaceLabel
 						v-if="showSpaceLabel"
-						class="px-2 py-1 rounded-md bg-elevated text-muted text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-						<UIcon
-							name="i-lucide-folder"
-							class="size-3" />
-						{{ spaceLabel(task.space_id) }}
-					</span>
+						:space-id="task.space_id" />
 					<span
 						v-for="tag in task.tags"
 						:key="tag"
@@ -55,7 +48,7 @@
 						<UIcon
 							name="i-lucide-clock"
 							class="size-3" />
-						<span class="text-xs font-bold">{{ formatTime(task.completed_at) }}</span>
+						<TimeDisplay :timestamp="task.completed_at" />
 					</div>
 				</div>
 			</div>
@@ -77,11 +70,9 @@
 				<span class="font-bold text-default text-base group-hover:text-default transition-colors">
 					{{ task.title }}
 				</span>
-				<span
-					class="text-xs font-bold bg-elevated px-2 py-1 rounded-lg shrink-0"
-					:class="getPriorityTextClass(task.priority)">
-					{{ task.priority || 'P1' }}
-				</span>
+				<PriorityBadge
+					:priority="task.priority"
+					variant="todo" />
 			</div>
 
 			<p
@@ -93,22 +84,19 @@
 			<div
 				class="flex items-center gap-2 mt-3"
 				v-if="showSpaceLabel || task.tags.length > 0 || (showTime && task.completed_at)">
-				<span
+				<SpaceLabel
 					v-if="showSpaceLabel"
-					class="text-[10px] font-bold text-muted bg-elevated px-1.5 py-0.5 rounded">
-					{{ spaceLabel(task.space_id) }}
-				</span>
+					:space-id="task.space_id" />
 				<span
 					v-for="tag in task.tags"
 					:key="tag"
 					class="text-[10px] font-bold text-muted bg-elevated px-1.5 py-0.5 rounded">
 					#{{ tag }}
 				</span>
-				<span
+				<TimeDisplay
 					v-if="showTime && task.completed_at"
-					class="text-[10px] font-bold text-muted ml-auto">
-					{{ formatTime(task.completed_at) }}
-				</span>
+					:timestamp="task.completed_at"
+					text-class="text-[10px] font-bold text-muted ml-auto" />
 			</div>
 		</div>
 	</div>
@@ -124,18 +112,20 @@
 				class="size-3" />
 		</div>
 		<span class="text-muted font-medium line-through">{{ task.title }}</span>
-		<div
+		<TimeDisplay
 			v-if="showTime && task.completed_at"
-			class="ml-auto text-xs text-muted shrink-0">
-			{{ formatTime(task.completed_at) }}
-		</div>
+			:timestamp="task.completed_at"
+			text-class="ml-auto text-xs text-muted shrink-0" />
 	</div>
 </template>
 
 <script setup lang="ts">
+	import PriorityBadge from '@/components/PriorityBadge.vue'
+	import SpaceLabel from '@/components/SpaceLabel.vue'
+	import TimeDisplay from '@/components/TimeDisplay.vue'
 	import type { TaskDto } from '@/services/api/tasks'
 
-	const props = defineProps<{
+	defineProps<{
 		task: TaskDto
 		showCompleteButton?: boolean
 		showTime?: boolean
@@ -146,40 +136,5 @@
 		click: [task: TaskDto]
 		complete: [taskId: string]
 	}>()
-
-	function spaceLabel(spaceId: string): string {
-		const labels: Record<string, string> = {
-			work: 'Work',
-			personal: 'Personal',
-			study: 'Study',
-		}
-		return labels[spaceId] ?? spaceId
-	}
-
-	function formatTime(timestamp: number): string {
-		const date = new Date(timestamp)
-		const now = new Date()
-		const diff = now.getTime() - date.getTime()
-		const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-		if (days === 0) return 'Today'
-		if (days === 1) return 'Yesterday'
-		if (days < 7) return `${days} days ago`
-		return date.toLocaleDateString()
-	}
-
-	function getPriorityClass(priority: string | undefined): string {
-		const p = priority || 'P1'
-		if (p === 'P0') return 'bg-red-100 text-red-600'
-		if (p === 'P2') return 'bg-blue-100 text-blue-600'
-		return 'bg-amber-100 text-amber-600' // P1 default
-	}
-
-	function getPriorityTextClass(priority: string | undefined): string {
-		const p = priority || 'P1'
-		if (p === 'P0') return 'text-red-600'
-		if (p === 'P2') return 'text-blue-600'
-		return 'text-muted' // P1 default
-	}
 </script>
 

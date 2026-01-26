@@ -1,0 +1,18 @@
+refactor(项目视图): 统一 workspace 页面架构为 ProjectView，优化组件组织和 UI 设计
+
+- 优化数据库初始化逻辑，确保每次初始化都检查并创建缺失的 default project
+- 移除 get_or_create_default_project，改为 get_default_project（仅查询）
+- 更新后端命令和前端 API，统一使用 getDefaultProject
+- 创建统一的 ProjectView 页面组件，整合 AllTasks、Default Project 和 Project 页面
+- 创建统一的 useProjectTasks composable，整合 useAllTasks 和 useSpaceTasks 逻辑
+- 迁移 ProjectHeaderCard 和 WorkspaceLayout 到 ProjectView/components/ 目录
+- 创建通用组件：PriorityBadge、TimeDisplay、SpaceLabel、TaskStatusIcon、EmptyState
+- 创建 ProjectView 专用组件：ProjectBreadcrumb、ProgressIndicator、ProjectStats
+- 创建工具函数：utils/time.ts、utils/space.ts、utils/priority.ts、utils/constants.ts
+- 创建 composables：useProjectBreadcrumb、useTaskActions（统一任务操作和错误处理）
+- 重构 TaskCard 和 TaskColumn 使用新组件和工具函数
+- 优化 ProjectHeaderCard UI，参考 v3.html 设计（白色背景、圆形进度条、Material You 风格）
+- 更新路由配置，所有 workspace 相关路由指向统一的 ProjectView 组件
+- 删除旧的 workspace/AllTasks、workspace/Space 和 workspace/Dashboard 页面文件
+- 删除全局的 WorkspaceLayout 组件（已迁移到 ProjectView/components/）
+- 更新所有组件引用路径，确保功能正常

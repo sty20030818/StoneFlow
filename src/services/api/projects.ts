@@ -50,10 +50,11 @@ export async function createProject(args: CreateProjectArgs): Promise<ProjectDto
 	})
 }
 
-export async function getOrCreateDefaultProject(spaceId: string): Promise<ProjectDto> {
-	// Rust: commands/projects.rs -> get_or_create_default_project
+export async function getDefaultProject(spaceId: string): Promise<ProjectDto> {
+	// Rust: commands/projects.rs -> get_default_project
 	// Tauri 会自动将 camelCase 转换为 snake_case
-	return await tauriInvoke<ProjectDto>('get_or_create_default_project', {
+	// 注意：Default Project 应该在数据库初始化时创建，如果不存在则返回错误
+	return await tauriInvoke<ProjectDto>('get_default_project', {
 		spaceId,
 	})
 }
