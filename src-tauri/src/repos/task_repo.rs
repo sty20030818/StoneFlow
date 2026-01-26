@@ -16,42 +16,63 @@ impl TaskRepo {
         let mut sql = String::from(
             r#"
 SELECT
-  id, space_id, title, status,
-  order_in_list, created_at, started_at, completed_at
-FROM tasks
+  t.id, t.space_id, t.project_id, t.title, t.note, t.status, t.priority,
+  t.order_in_list, t.created_at, t.started_at, t.completed_at,
+  t.planned_start_at, t.planned_end_at,
+  GROUP_CONCAT(tag.name, ',') as tags
+FROM tasks t
+LEFT JOIN task_tags tt ON t.id = tt.task_id
+LEFT JOIN tags tag ON tt.tag_id = tag.id
 WHERE 1=1
 "#,
         );
         let mut ps: Vec<Value> = Vec::new();
 
         if let Some(space_id) = space_id {
-            sql.push_str(" AND space_id = ?\n");
+            sql.push_str(" AND t.space_id = ?\n");
             ps.push(Value::Text(space_id.to_string()));
         }
 
         if let Some(status) = status {
-            sql.push_str(" AND status = ?\n");
+            sql.push_str(" AND t.status = ?\n");
             ps.push(Value::Text(status.to_string()));
         }
 
         if let Some(project_id) = project_id {
-            sql.push_str(" AND project_id = ?\n");
+            sql.push_str(" AND t.project_id = ?\n");
             ps.push(Value::Text(project_id.to_string()));
         }
 
-        sql.push_str(" ORDER BY created_at DESC\n");
+        sql.push_str(" GROUP BY t.id ORDER BY t.created_at DESC\n");
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(rusqlite::params_from_iter(ps), |row| {
+            let tags_str: Option<String> = row.get(13)?;
+            let tags = if let Some(s) = tags_str {
+                if s.is_empty() {
+                    Vec::new()
+                } else {
+                    s.split(',').map(|s| s.to_string()).collect()
+                }
+            } else {
+                Vec::new()
+            };
+
             Ok(TaskDto {
                 id: row.get(0)?,
                 space_id: row.get(1)?,
-                title: row.get(2)?,
-                status: row.get(3)?,
-                order_in_list: row.get(4)?,
-                created_at: row.get(5)?,
-                started_at: row.get(6)?,
-                completed_at: row.get(7)?,
+                project_id: row.get(2)?,
+                title: row.get(3)?,
+                note: row.get(4)?,
+                status: row.get(5)?,
+                priority: row.get(6)?,
+                tags,
+                order_in_list: row.get(7)?,
+                created_at: row.get(8)?,
+                started_at: row.get(9)?,
+                completed_at: row.get(10)?,
+                planned_start_at: row.get(11)?,
+                planned_end_at: row.get(12)?,
             })
         })?;
 
@@ -83,25 +104,33 @@ WHERE 1=1
         conn.execute(
             r#"
 INSERT INTO tasks(
-  id, space_id, title, status,
-  order_in_list, created_at, started_at, completed_at, project_id
+  id, space_id, project_id, title, note, status, priority,
+  order_in_list, created_at, started_at, completed_at,
+  planned_start_at, planned_end_at
 ) VALUES (
-  ?1, ?2, ?3, ?4,
-  ?5, ?6, ?7, NULL, ?8
+  ?1, ?2, ?3, ?4, NULL, ?5, 'P1',
+  ?6, ?7, ?8, NULL,
+  NULL, NULL
 )
 "#,
-            params![id, space_id, title, status, order_in_list, now, started_at, project_id],
+            params![id, space_id, project_id, title, status, order_in_list, now, started_at],
         )?;
 
         Ok(TaskDto {
             id,
             space_id: space_id.to_string(),
+            project_id: project_id.map(|s| s.to_string()),
             title: title.to_string(),
+            note: None,
             status: status.to_string(),
+            priority: "P1".to_string(),
+            tags: Vec::new(),
             order_in_list,
             created_at: now,
             started_at,
             completed_at: None,
+            planned_start_at: None,
+            planned_end_at: None,
         })
     }
 

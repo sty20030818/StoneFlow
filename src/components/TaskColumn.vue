@@ -1,23 +1,31 @@
 <template>
-	<UCard>
-		<template #header>
-			<div class="flex items-center justify-between">
-				<div class="text-sm font-semibold text-default">{{ title }}</div>
-				<template v-if="loading">
-					<USkeleton class="h-5 w-6 rounded-full" />
-				</template>
-				<UBadge
-					v-else
-					color="neutral"
-					variant="subtle"
-					size="sm">
-					{{ tasks.length }}
-				</UBadge>
-			</div>
-		</template>
+	<section>
+		<!-- 简单的标题（不带 Card 包裹） -->
+		<div class="flex items-center gap-3 mb-4 px-2">
+			<!-- 动画指示器（根据状态不同） -->
+			<span
+				v-if="title === '进行中'"
+				class="flex h-3 w-3 relative">
+				<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+				<span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+			</span>
+			<div
+				v-else-if="title === '待办'"
+				class="w-2 h-2 rounded-full bg-muted"></div>
+			<UIcon
+				v-else-if="title.includes('已完成')"
+				name="i-lucide-check-circle"
+				class="size-4 text-green-500" />
+			<h3
+				class="text-base font-extrabold"
+				:class="title === '进行中' ? 'text-default' : title === '待办' ? 'text-muted' : 'text-muted'">
+				{{ title }}
+			</h3>
+		</div>
 
+		<!-- 任务列表 -->
 		<template v-if="loading">
-			<div class="space-y-2">
+			<div class="space-y-3">
 				<div
 					v-for="i in skeletonCount"
 					:key="i"
@@ -40,13 +48,16 @@
 		<template v-else>
 			<div
 				v-if="tasks.length === 0"
-				class="text-sm text-muted py-4 text-center">
-				{{ emptyText }}
+				class="py-12 flex flex-col items-center justify-center text-muted border-2 border-dashed border-default/60 rounded-3xl">
+				<UIcon
+					name="i-lucide-coffee"
+					class="size-10 mb-2" />
+				<span class="font-medium">{{ emptyText }}</span>
 			</div>
 
 			<div
 				v-else
-				class="space-y-2">
+				class="space-y-3">
 				<TaskCard
 					v-for="t in tasks"
 					:key="t.id"
@@ -58,7 +69,7 @@
 					@complete="$emit('complete', t.id)" />
 			</div>
 		</template>
-	</UCard>
+	</section>
 </template>
 
 <script setup lang="ts">

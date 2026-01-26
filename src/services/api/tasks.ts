@@ -5,12 +5,18 @@ export type TaskStatus = 'todo' | 'doing' | 'done' | 'archived' | string
 export type TaskDto = {
 	id: string
 	space_id: string
+	project_id: string | null
 	title: string
+	note: string | null
 	status: TaskStatus
+	priority: string // P0, P1, P2, P3
+	tags: string[]
 	order_in_list: number
 	created_at: number
 	started_at: number | null
 	completed_at: number | null
+	planned_start_at: number | null
+	planned_end_at: number | null
 }
 
 export type ListTasksArgs = {

@@ -16,6 +16,10 @@ const MIGRATIONS: &[Migration] = &[
     version: 2,
     sql: include_str!("migrations/0002_projects_and_activity.sql"),
   },
+  Migration {
+    version: 3,
+    sql: include_str!("migrations/0003_add_task_fields.sql"),
+  },
 ];
 
 /// 执行所有未执行的迁移。
