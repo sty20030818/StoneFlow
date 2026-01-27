@@ -1,86 +1,122 @@
 <template>
-	<header
-		class="h-16 shrink-0 px-6 flex items-center justify-between sticky top-0 bg-default/85 backdrop-blur-xl border-b border-default/80">
-		<!-- 左侧：面包屑 -->
-		<div class="flex items-center gap-2 min-w-0 flex-1">
-			<RouterLink
-				v-if="currentSpaceLabel && currentSpaceIcon && currentSpaceId"
-				:to="`/space/${currentSpaceId}`"
-				class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-				:class="spacePillClass">
-				<UIcon
-					:name="currentSpaceIcon"
-					class="size-3.5 shrink-0 text-white" />
-				<span>{{ currentSpaceLabel }}</span>
-			</RouterLink>
-
-			<template v-if="projectTrail.length">
-				<template
-					v-for="(item, index) in projectTrail"
-					:key="`${item.label}-${index}`">
+	<header class="shrink-0 px-6 sticky top-0 z-40 bg-default/85 backdrop-blur-xl border-b border-default/80">
+		<div class="h-16 flex items-center justify-between">
+			<!-- 左侧：面包屑 -->
+			<div class="flex items-center gap-2 min-w-0 flex-1">
+				<RouterLink
+					v-if="currentSpaceLabel && currentSpaceIcon && currentSpaceId"
+					:to="`/space/${currentSpaceId}`"
+					class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+					:class="spacePillClass">
 					<UIcon
-						name="i-lucide-chevron-right"
-						class="size-3.5 text-muted shrink-0" />
-					<RouterLink
-						v-if="index < projectTrail.length - 1 && item.to"
-						:to="item.to"
-						class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-						:class="projectPillClass(index)">
-						<UIcon
-							name="i-lucide-folder"
-							class="size-3.5 shrink-0 text-white" />
-						<span class="truncate max-w-[160px]">{{ item.label }}</span>
-					</RouterLink>
-					<span
-						v-else-if="index < projectTrail.length - 1"
-						class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-						:class="projectPillClass(index)">
-						<UIcon
-							name="i-lucide-folder"
-							class="size-3.5 shrink-0 text-white" />
-						<span class="truncate max-w-[160px]">{{ item.label }}</span>
-					</span>
-					<span
-						v-else
-						class="text-base font-bold text-default truncate max-w-[240px]">
-						{{ item.label }}
-					</span>
-				</template>
-			</template>
-		</div>
+						:name="currentSpaceIcon"
+						class="size-3.5 shrink-0 text-white" />
+					<span>{{ currentSpaceLabel }}</span>
+				</RouterLink>
 
-		<!-- 右侧：搜索框胶囊 + 操作按钮 -->
-		<div class="flex items-center gap-2 shrink-0">
-			<!-- 搜索框（胶囊样式） -->
-			<div class="relative shrink-0">
-				<UInput
-					v-model="searchQuery"
-					placeholder="搜索任务..."
-					icon="i-lucide-search"
-					size="sm"
-					:ui="{
-						width: 'w-64',
-					}"
-					class="rounded-full! [&>div]:rounded-full! [&_input]:rounded-full!" />
+				<template v-if="projectTrail.length">
+					<template
+						v-for="(item, index) in projectTrail"
+						:key="`${item.label}-${index}`">
+						<UIcon
+							name="i-lucide-chevron-right"
+							class="size-3.5 text-muted shrink-0" />
+						<RouterLink
+							v-if="index < projectTrail.length - 1 && item.to"
+							:to="item.to"
+							class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+							:class="projectPillClass(index)">
+							<UIcon
+								name="i-lucide-folder"
+								class="size-3.5 shrink-0 text-white" />
+							<span class="truncate max-w-[160px]">{{ item.label }}</span>
+						</RouterLink>
+						<span
+							v-else-if="index < projectTrail.length - 1"
+							class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+							:class="projectPillClass(index)">
+							<UIcon
+								name="i-lucide-folder"
+								class="size-3.5 shrink-0 text-white" />
+							<span class="truncate max-w-[160px]">{{ item.label }}</span>
+						</span>
+						<span
+							v-else
+							class="text-base font-bold text-default truncate max-w-[240px]">
+							{{ item.label }}
+						</span>
+					</template>
+				</template>
 			</div>
 
-			<!-- Filter/Sort 独立按钮 -->
-			<template v-if="isWorkspacePage">
-				<UButton
-					color="neutral"
-					variant="ghost"
-					size="xs"
-					icon="i-lucide-filter">
-					<span class="ml-1 text-[11px]">Filter</span>
-				</UButton>
-				<UButton
-					color="neutral"
-					variant="ghost"
-					size="xs"
-					icon="i-lucide-arrow-up-down">
-					<span class="ml-1 text-[11px]">Sort</span>
-				</UButton>
-			</template>
+			<!-- 右侧：搜索框胶囊 + 操作按钮 -->
+			<div class="flex items-center gap-2 shrink-0">
+				<!-- 搜索框（胶囊样式） -->
+				<div class="relative shrink-0">
+					<UInput
+						v-model="searchQuery"
+						placeholder="搜索任务..."
+						icon="i-lucide-search"
+						size="sm"
+						:ui="{
+							width: 'w-64',
+						}"
+						class="rounded-full! [&>div]:rounded-full! [&_input]:rounded-full!" />
+				</div>
+
+				<!-- Filter/Sort 独立按钮 -->
+				<template v-if="isWorkspacePage">
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="xs"
+						icon="i-lucide-filter">
+						<span class="ml-1 text-[11px]">Filter</span>
+					</UButton>
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="xs"
+						icon="i-lucide-arrow-up-down">
+						<span class="ml-1 text-[11px]">Sort</span>
+					</UButton>
+
+					<template v-if="hasEditBridge">
+						<button
+							type="button"
+							class="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold shadow-sm transition-all"
+							:class="editButtonClass"
+							@click="onToggleEditMode">
+							<UIcon
+								:name="editButtonIcon"
+								class="size-3.5"
+								:class="editButtonIconClass" />
+							<span>{{ editButtonLabel }}</span>
+						</button>
+					</template>
+				</template>
+			</div>
+		</div>
+
+		<div
+			v-if="hasEditBridge && isEditMode"
+			class="pointer-events-none absolute inset-x-0 top-full -mt-px">
+			<div class="pointer-events-auto mt-0">
+				<button
+					type="button"
+					class="inline-flex h-12 w-full items-center justify-center gap-2 bg-linear-to-b from-error/95 to-error/10 px-5 text-sm font-semibold text-white transition-all hover:from-error/95 hover:to-error/55 disabled:cursor-not-allowed disabled:opacity-60"
+					:class="deleteGlowClass"
+					:disabled="editSelectedCount === 0"
+					@click="onOpenDeleteConfirm">
+					<UIcon
+						name="i-lucide-trash-2"
+						class="size-4" />
+					<span>删除</span>
+					<span class="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white">
+						{{ editSelectedCount }}
+					</span>
+				</button>
+			</div>
 		</div>
 	</header>
 </template>
@@ -92,16 +128,52 @@
 	import type { ProjectDto } from '@/services/api/projects'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useSettingsStore } from '@/stores/settings'
+	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
 	const route = useRoute()
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
+	const workspaceEditStore = useWorkspaceEditStore()
 
 	const searchQuery = ref('')
 
 	const isWorkspacePage = computed(() => {
 		return route.path.startsWith('/space/') || route.path === '/all-tasks'
 	})
+
+	const hasEditBridge = computed(() => isWorkspacePage.value && workspaceEditStore.hasHandlers)
+	const isEditMode = computed(() => workspaceEditStore.isEditMode)
+	const editSelectedCount = computed(() => workspaceEditStore.selectedCount)
+	const editButtonLabel = computed(() => (isEditMode.value ? '取消' : '编辑'))
+	const editButtonIcon = computed(() => (isEditMode.value ? 'i-lucide-x' : 'i-lucide-pencil'))
+	const editButtonClass = computed(() => {
+		if (isEditMode.value) {
+			return 'bg-zinc-200 text-default hover:bg-zinc-300'
+		}
+		return 'bg-error text-white shadow-error/40 hover:bg-error/90'
+	})
+	const editButtonIconClass = computed(() => (isEditMode.value ? 'text-default' : 'text-white'))
+	const deleteGlowClass = computed(() => 'shadow-[0_18px_36px_-20px_rgba(239,68,68,0.85)]')
+
+	function onEnterEditMode() {
+		workspaceEditStore.triggerEnterEditMode()
+	}
+
+	function onExitEditMode() {
+		workspaceEditStore.triggerExitEditMode()
+	}
+
+	function onOpenDeleteConfirm() {
+		workspaceEditStore.triggerOpenDeleteConfirm()
+	}
+
+	function onToggleEditMode() {
+		if (isEditMode.value) {
+			onExitEditMode()
+			return
+		}
+		onEnterEditMode()
+	}
 
 	const currentSpaceId = computed(() => {
 		const sid = route.params.spaceId

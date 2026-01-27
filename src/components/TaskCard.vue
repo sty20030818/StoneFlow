@@ -2,12 +2,33 @@
 	<!-- Doing/Paused 状态：左侧蓝色边框，大卡片 -->
 	<div
 		v-if="isDoingGroup"
-		class="bg-default rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group border-t border-b border-r border-default/80 border-l-4"
-		:class="isPausedStatus ? 'border-l-slate-400' : 'border-l-blue-500'"
-		@click="$emit('click', task)">
+		class="relative bg-default rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group border-t border-b border-r border-default/80 border-l-4"
+		:class="[
+			isPausedStatus ? 'border-l-slate-400' : 'border-l-blue-500',
+			isEditMode && selected ? 'border-error/60 border-l-error/70 bg-error/5' : '',
+		]"
+		@click="onCardClick">
+		<div
+			v-if="isEditMode && selected"
+			class="pointer-events-none absolute inset-0 z-10 rounded-2xl bg-error/10"></div>
 		<div class="flex gap-4">
-			<!-- 左侧：已选中的圆形复选框 -->
+			<!-- 左侧：完成按钮或选择圈 -->
 			<div
+				v-if="isEditMode"
+				class="mt-1">
+				<button
+					type="button"
+					class="size-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
+					:class="selectRingClass"
+					@click.stop="onToggleSelect">
+					<UIcon
+						v-if="selected"
+						name="i-lucide-x"
+						class="size-3.5" />
+				</button>
+			</div>
+			<div
+				v-else
 				@click.stop="$emit('complete', task.id)"
 				class="mt-1 w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer"
 				:class="
@@ -42,9 +63,20 @@
 							已暂停
 						</UBadge>
 					</div>
-					<PriorityBadge
-						:priority="task.priority"
-						variant="doing" />
+					<div class="flex items-center gap-2 shrink-0">
+						<PriorityBadge
+							:priority="task.priority"
+							variant="doing" />
+						<button
+							v-if="isEditMode"
+							type="button"
+							class="inline-flex size-8 items-center justify-center rounded-full text-error transition-colors hover:bg-error/10"
+							@click.stop="onRequestDelete">
+							<UIcon
+								name="i-lucide-trash-2"
+								class="size-4" />
+						</button>
+					</div>
 				</div>
 
 				<!-- 第二行：Note -->
@@ -66,13 +98,13 @@
 						#{{ tag }}
 					</span>
 					<div
-						v-if="task.planned_end_at"
+						v-if="task.planned_end_date"
 						class="flex items-center gap-1.5 text-sky-600 bg-sky-50 px-2 py-1 rounded-lg">
 						<UIcon
 							name="i-lucide-calendar"
 							class="size-3" />
 						<span class="text-[10px] font-medium">
-							{{ formatDueDate(task.planned_end_at) }}
+							{{ formatDueDate(task.planned_end_date) }}
 						</span>
 					</div>
 					<div
@@ -91,21 +123,50 @@
 	<!-- Todo 状态：简洁设计，未选中复选框 -->
 	<div
 		v-else-if="displayStatus === 'todo'"
-		class="bg-default rounded-2xl p-4 border border-default/80 hover:border-default hover:shadow-md transition-all cursor-pointer group flex gap-4 items-start"
-		@click="$emit('click', task)">
-		<!-- 复选框 -->
+		class="relative bg-default rounded-2xl p-4 border border-default/70 hover:border-default/90 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group flex gap-4 items-start"
+		:class="isEditMode && selected ? 'border-error/60 hover:border-error/70 bg-error/5 shadow-sm' : ''"
+		@click="onCardClick">
 		<div
-			@click.stop="$emit('complete', task.id)"
-			class="mt-1 w-6 h-6 rounded-full border-2 border-default/60 hover:border-default transition-colors shrink-0 cursor-pointer"></div>
+			v-if="isEditMode && selected"
+			class="pointer-events-none absolute inset-0 z-10 rounded-2xl bg-error/10"></div>
+		<!-- 左侧：完成按钮或选择圈 -->
+		<div class="mt-1">
+			<button
+				v-if="isEditMode"
+				type="button"
+				class="size-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
+				:class="selectRingClass"
+				@click.stop="onToggleSelect">
+				<UIcon
+					v-if="selected"
+					name="i-lucide-x"
+					class="size-3.5" />
+			</button>
+			<div
+				v-else
+				@click.stop="$emit('complete', task.id)"
+				class="size-6 rounded-full border-2 border-default/60 hover:border-default transition-colors shrink-0 cursor-pointer"></div>
+		</div>
 
 		<div class="flex-1 min-w-0">
 			<div class="flex justify-between items-start">
 				<span class="font-bold text-default text-base group-hover:text-default transition-colors">
 					{{ task.title }}
 				</span>
-				<PriorityBadge
-					:priority="task.priority"
-					variant="todo" />
+				<div class="flex items-center gap-2 shrink-0">
+					<PriorityBadge
+						:priority="task.priority"
+						variant="todo" />
+					<button
+						v-if="isEditMode"
+						type="button"
+						class="inline-flex size-8 items-center justify-center rounded-full text-error transition-colors hover:bg-error/10"
+						@click.stop="onRequestDelete">
+						<UIcon
+							name="i-lucide-trash-2"
+							class="size-4" />
+					</button>
+				</div>
 			</div>
 
 			<p
@@ -116,7 +177,7 @@
 
 			<div
 				class="flex items-center gap-2 mt-3"
-				v-if="showSpaceLabel || task.tags.length > 0 || task.planned_end_at || (showTime && task.completed_at)">
+				v-if="showSpaceLabel || task.tags.length > 0 || task.planned_end_date || (showTime && task.completed_at)">
 				<SpaceLabel
 					v-if="showSpaceLabel"
 					:space-id="task.space_id" />
@@ -127,13 +188,13 @@
 					#{{ tag }}
 				</span>
 				<div
-					v-if="task.planned_end_at"
+					v-if="task.planned_end_date"
 					class="flex items-center gap-1 text-sky-600 text-[10px]">
 					<UIcon
 						name="i-lucide-calendar"
 						class="size-3" />
 					<span class="font-medium">
-						{{ formatDueDate(task.planned_end_at) }}
+						{{ formatDueDate(task.planned_end_date) }}
 					</span>
 				</div>
 				<TimeDisplay
@@ -147,14 +208,32 @@
 	<!-- Done/Abandoned 状态：最简洁，绿色勾选，删除线 -->
 	<div
 		v-else-if="isDoneGroup"
-		class="flex items-center gap-4 p-4 bg-elevated rounded-2xl border border-transparent hover:border-default/80 transition-colors opacity-50 hover:opacity-100"
-		@click="$emit('click', task)">
+		class="relative flex items-center gap-4 p-4 bg-elevated rounded-2xl border border-transparent hover:border-default/80 transition-colors opacity-50 hover:opacity-100"
+		:class="isEditMode && selected ? 'border-error/60 bg-error/5 opacity-100 shadow-sm' : ''"
+		@click="onCardClick">
 		<div
-			class="w-6 h-6 shrink-0 flex items-center justify-center rounded-full"
-			:class="isAbandonedStatus ? 'bg-slate-100 text-slate-500' : 'bg-green-100 text-green-600'">
-			<UIcon
-				:name="isAbandonedStatus ? 'i-lucide-x-circle' : 'i-lucide-check'"
-				class="size-3" />
+			v-if="isEditMode && selected"
+			class="pointer-events-none absolute inset-0 z-10 rounded-2xl bg-error/10"></div>
+		<div class="shrink-0">
+			<button
+				v-if="isEditMode"
+				type="button"
+				class="size-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
+				:class="selectRingClass"
+				@click.stop="onToggleSelect">
+				<UIcon
+					v-if="selected"
+					name="i-lucide-x"
+					class="size-3.5" />
+			</button>
+			<div
+				v-else
+				class="w-6 h-6 flex items-center justify-center rounded-full"
+				:class="isAbandonedStatus ? 'bg-slate-100 text-slate-500' : 'bg-green-100 text-green-600'">
+				<UIcon
+					:name="isAbandonedStatus ? 'i-lucide-x-circle' : 'i-lucide-check'"
+					class="size-3" />
+			</div>
 		</div>
 		<div class="flex items-center gap-2 min-w-0 flex-1">
 			<span class="text-muted font-medium line-through">{{ task.title }}</span>
@@ -166,10 +245,21 @@
 				已放弃
 			</UBadge>
 		</div>
-		<TimeDisplay
-			v-if="showTime && task.completed_at"
-			:timestamp="task.completed_at"
-			text-class="ml-auto text-xs text-muted shrink-0" />
+		<div class="ml-auto flex items-center gap-2 shrink-0">
+			<button
+				v-if="isEditMode"
+				type="button"
+				class="inline-flex size-8 items-center justify-center rounded-full text-error transition-colors hover:bg-error/10"
+				@click.stop="onRequestDelete">
+				<UIcon
+					name="i-lucide-trash-2"
+					class="size-4" />
+			</button>
+			<TimeDisplay
+				v-if="showTime && task.completed_at"
+				:timestamp="task.completed_at"
+				text-class="text-xs text-muted" />
+		</div>
 	</div>
 </template>
 
@@ -187,11 +277,15 @@
 		showCompleteButton?: boolean
 		showTime?: boolean
 		showSpaceLabel?: boolean
+		isEditMode?: boolean
+		selected?: boolean
 	}>()
 
-	defineEmits<{
+	const emit = defineEmits<{
 		click: [task: TaskDto]
 		complete: [taskId: string]
+		'toggle-select': [taskId: string]
+		'request-delete': [taskId: string]
 	}>()
 
 	const displayStatus = computed(() => getDisplayStatus(props.task.status))
@@ -199,6 +293,28 @@
 	const isDoneGroup = computed(() => displayStatus.value === 'done')
 	const isPausedStatus = computed(() => isPaused(props.task.status))
 	const isAbandonedStatus = computed(() => isAbandoned(props.task.status))
+
+	const selectRingClass = computed(() => {
+		if (props.selected) return 'border-error/70 bg-error/15 text-error shadow-sm'
+		return 'border-default/60 bg-default hover:border-default text-transparent'
+	})
+
+	function onToggleSelect() {
+		emit('toggle-select', props.task.id)
+	}
+
+	function onCardClick() {
+		if (props.isEditMode) {
+			onToggleSelect()
+			return
+		}
+		emit('click', props.task)
+	}
+
+	function onRequestDelete() {
+		if (!props.isEditMode) return
+		emit('request-delete', props.task.id)
+	}
 
 	function formatDueDate(timestamp: number): string {
 		const date = new Date(timestamp)

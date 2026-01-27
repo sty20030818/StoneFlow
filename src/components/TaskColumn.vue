@@ -2,6 +2,21 @@
 	<section>
 		<!-- 简单的标题（不带 Card 包裹） -->
 		<div class="flex items-center gap-3 mb-4 px-2">
+			<button
+				v-if="isEditMode"
+				type="button"
+				class="inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+				:class="columnSelectClass"
+				:aria-label="`选择列 ${title}`"
+				@click="$emit('toggle-column-select')">
+				<span
+					v-if="allSelected"
+					class="size-3.5 rounded-full bg-error/80"></span>
+				<UIcon
+					v-else-if="indeterminate"
+					name="i-lucide-minus"
+					class="size-3.5 text-error" />
+			</button>
 			<!-- 图标指示器（根据状态不同） -->
 			<TaskStatusIcon :status="getStatusFromTitle(title)" />
 			<h3
@@ -36,7 +51,7 @@
 		<template v-else>
 			<div class="space-y-3">
 				<InlineTaskCreator
-					v-if="showInlineCreator"
+					v-if="showInlineCreator && !isEditMode"
 					:space-id="spaceId"
 					:project-id="projectId"
 					:disabled="!spaceId" />
@@ -54,11 +69,15 @@
 						v-for="t in tasks"
 						:key="t.id"
 						:task="t"
+						:is-edit-mode="isEditMode"
+						:selected="isTaskSelected(t.id)"
 						:show-complete-button="showCompleteButton"
 						:show-time="showTime"
 						:show-space-label="showSpaceLabel"
 						@click="$emit('task-click', t)"
-						@complete="$emit('complete', t.id)" />
+						@complete="$emit('complete', t.id)"
+						@toggle-select="$emit('toggle-task-select', t.id)"
+						@request-delete="$emit('request-task-delete', t.id)" />
 				</TransitionGroup>
 			</div>
 		</template>
@@ -66,6 +85,8 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
+
 	import EmptyState from '@/components/EmptyState.vue'
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
 	import TaskCard from '@/components/TaskCard.vue'
@@ -79,7 +100,7 @@
 		return 'todo'
 	}
 
-	defineProps<{
+	const props = defineProps<{
 		title: string
 		tasks: TaskDto[]
 		loading: boolean
@@ -91,12 +112,35 @@
 		showInlineCreator?: boolean
 		spaceId?: string
 		projectId?: string | null
+		isEditMode?: boolean
+		selectedTaskIdSet?: Set<string>
 	}>()
 
 	defineEmits<{
 		complete: [taskId: string]
 		'task-click': [task: TaskDto]
+		'toggle-task-select': [taskId: string]
+		'toggle-column-select': []
+		'request-task-delete': [taskId: string]
 	}>()
+
+	const selectedCount = computed(() => {
+		if (!props.selectedTaskIdSet) return 0
+		return props.tasks.reduce((acc, t) => acc + (props.selectedTaskIdSet?.has(t.id) ? 1 : 0), 0)
+	})
+
+	const allSelected = computed(() => props.tasks.length > 0 && selectedCount.value === props.tasks.length)
+	const indeterminate = computed(() => selectedCount.value > 0 && !allSelected.value)
+
+	const columnSelectClass = computed(() => {
+		if (allSelected.value) return 'border-error/80 bg-error/10'
+		if (indeterminate.value) return 'border-error/70 bg-error/10'
+		return 'border-default/60 bg-transparent hover:border-default'
+	})
+
+	function isTaskSelected(taskId: string) {
+		return props.selectedTaskIdSet?.has(taskId) ?? false
+	}
 </script>
 
 <style scoped>

@@ -126,3 +126,19 @@ pub fn complete_task(state: State<'_, DbState>, args: CompleteTaskArgs) -> Resul
 
     TaskRepo::complete(&conn, &args.id).map_err(ApiError::from)
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteTasksArgs {
+    pub ids: Vec<String>,
+}
+
+#[tauri::command]
+pub fn delete_tasks(state: State<'_, DbState>, args: DeleteTasksArgs) -> Result<usize, ApiError> {
+    let mut conn = state
+        .conn
+        .lock()
+        .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
+
+    TaskRepo::delete_many(&mut conn, &args.ids).map_err(ApiError::from)
+}

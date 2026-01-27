@@ -154,6 +154,30 @@ INSERT INTO tasks(
         Ok(())
     }
 
+    pub fn delete_many(conn: &mut Connection, ids: &[String]) -> Result<usize, AppError> {
+        if ids.is_empty() {
+            return Err(AppError::Validation("请选择要删除的任务".to_string()));
+        }
+
+        let tx = conn.transaction()?;
+
+        let mut placeholders = String::new();
+        let mut params: Vec<Value> = Vec::with_capacity(ids.len());
+        for (idx, id) in ids.iter().enumerate() {
+            if idx > 0 {
+                placeholders.push_str(", ");
+            }
+            placeholders.push('?');
+            params.push(Value::Text(id.to_string()));
+        }
+
+        let sql = format!("DELETE FROM tasks WHERE id IN ({})", placeholders);
+        let changed = tx.execute(&sql, rusqlite::params_from_iter(params))?;
+
+        tx.commit()?;
+        Ok(changed)
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn update(
         conn: &mut Connection,

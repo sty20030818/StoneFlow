@@ -124,7 +124,8 @@
 							<!-- Priority -->
 							<UPopover
 								:mode="'click'"
-								:popper="{ strategy: 'fixed', placement: 'bottom-start' }">
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+								:ui="{ content: 'z-100' }">
 								<button
 									type="button"
 									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -169,7 +170,8 @@
 							<!-- Deadline (截止时间) -->
 							<UPopover
 								:mode="'click'"
-								:popper="{ strategy: 'fixed', placement: 'bottom-start' }">
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+								:ui="{ content: 'z-100' }">
 								<button
 									type="button"
 									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -278,7 +280,8 @@
 							<!-- Space -->
 							<UPopover
 								:mode="'click'"
-								:popper="{ strategy: 'fixed', placement: 'bottom-start' }">
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+								:ui="{ content: 'z-100' }">
 								<button
 									type="button"
 									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -325,7 +328,8 @@
 							<!-- Project -->
 							<UPopover
 								:mode="'click'"
-								:popper="{ strategy: 'fixed', placement: 'bottom-end' }">
+								:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
+								:ui="{ content: 'z-100' }">
 								<button
 									type="button"
 									class="p-4 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 transition-all text-left w-full cursor-pointer">

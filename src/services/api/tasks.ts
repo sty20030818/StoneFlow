@@ -69,3 +69,10 @@ export async function updateTask(id: string, patch: UpdateTaskPatch): Promise<vo
 export async function completeTask(id: string): Promise<void> {
 	await tauriInvoke<void>('complete_task', { args: { id } })
 }
+
+export async function deleteTasks(ids: string[]): Promise<number> {
+	if (ids.length === 0) return 0
+	return await tauriInvoke<number>('delete_tasks', {
+		args: { ids },
+	})
+}
