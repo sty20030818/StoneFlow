@@ -19,9 +19,8 @@ impl TaskRepo {
             r#"
 SELECT
   t.id, t.space_id, t.project_id, t.title, t.note, t.status, t.priority,
-  t.order_in_list, t.created_at, t.started_at, t.completed_at,
-  t.planned_start_at, t.planned_end_at,
-  GROUP_CONCAT(tag.name, ',') as tags
+  t.order_in_list, t.created_at, t.started_at, t.completed_at, t.project_path,
+  GROUP_CONCAT(tag.name, ',') as tags, t.planned_end_date
 FROM tasks t
 LEFT JOIN task_tags tt ON t.id = tt.task_id
 LEFT JOIN tags tag ON tt.tag_id = tag.id
@@ -49,7 +48,7 @@ WHERE 1=1
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(rusqlite::params_from_iter(ps), |row| {
-            let tags_str: Option<String> = row.get(13)?;
+            let tags_str: Option<String> = row.get(12)?;
             let tags = if let Some(s) = tags_str {
                 if s.is_empty() {
                     Vec::new()
@@ -73,8 +72,8 @@ WHERE 1=1
                 created_at: row.get(8)?,
                 started_at: row.get(9)?,
                 completed_at: row.get(10)?,
-                planned_start_at: row.get(11)?,
-                planned_end_at: row.get(12)?,
+                project_path: row.get(11)?,
+                planned_end_date: row.get(13)?,
             })
         })?;
 
@@ -107,15 +106,22 @@ WHERE 1=1
             r#"
 INSERT INTO tasks(
   id, space_id, project_id, title, note, status, priority,
-  order_in_list, created_at, started_at, completed_at,
-  planned_start_at, planned_end_at
+  order_in_list, created_at, started_at, completed_at, planned_end_date
 ) VALUES (
   ?1, ?2, ?3, ?4, NULL, ?5, 'P1',
-  ?6, ?7, ?8, NULL,
-  NULL, NULL
+  ?6, ?7, ?8, NULL, NULL
 )
 "#,
-            params![id, space_id, project_id, title, status, order_in_list, now, started_at],
+            params![
+                id,
+                space_id,
+                project_id,
+                title,
+                status,
+                order_in_list,
+                now,
+                started_at
+            ],
         )?;
 
         Ok(TaskDto {
@@ -131,8 +137,8 @@ INSERT INTO tasks(
             created_at: now,
             started_at,
             completed_at: None,
-            planned_start_at: None,
-            planned_end_at: None,
+            project_path: None,
+            planned_end_date: None,
         })
     }
 
@@ -148,6 +154,7 @@ INSERT INTO tasks(
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update(
         conn: &mut Connection,
         id: &str,
@@ -155,9 +162,11 @@ INSERT INTO tasks(
         status: Option<&str>,
         priority: Option<&str>,
         note: Option<Option<&str>>,
-        planned_start_at: Option<Option<i64>>,
-        planned_end_at: Option<Option<i64>>,
         tags: Option<Vec<String>>,
+        project_path: Option<Option<&str>>,
+        space_id: Option<&str>,
+        project_id: Option<Option<&str>>,
+        planned_end_date: Option<Option<i64>>,
     ) -> Result<(), AppError> {
         let tx = conn.transaction()?;
 
@@ -185,7 +194,9 @@ INSERT INTO tasks(
 
         if let Some(priority) = priority {
             if !["P0", "P1", "P2", "P3"].contains(&priority) {
-                return Err(AppError::Validation("优先级必须是 P0, P1, P2 或 P3".to_string()));
+                return Err(AppError::Validation(
+                    "优先级必须是 P0, P1, P2 或 P3".to_string(),
+                ));
             }
             sets.push("priority = ?");
             ps.push(Value::Text(priority.to_string()));
@@ -203,23 +214,44 @@ INSERT INTO tasks(
             }
         }
 
-        if let Some(planned_start_at) = planned_start_at {
-            match planned_start_at {
+        if let Some(project_path) = project_path {
+            match project_path.map(str::trim).filter(|v| !v.is_empty()) {
                 Some(value) => {
-                    sets.push("planned_start_at = ?");
-                    ps.push(Value::Integer(value));
+                    sets.push("project_path = ?");
+                    ps.push(Value::Text(value.to_string()));
                 }
-                None => sets.push("planned_start_at = NULL"),
+                None => {
+                    sets.push("project_path = NULL");
+                }
             }
         }
 
-        if let Some(planned_end_at) = planned_end_at {
-            match planned_end_at {
+        if let Some(space_id) = space_id {
+            sets.push("space_id = ?");
+            ps.push(Value::Text(space_id.to_string()));
+        }
+
+        if let Some(project_id) = project_id {
+            match project_id {
                 Some(value) => {
-                    sets.push("planned_end_at = ?");
+                    sets.push("project_id = ?");
+                    ps.push(Value::Text(value.to_string()));
+                }
+                None => {
+                    sets.push("project_id = NULL");
+                }
+            }
+        }
+
+        if let Some(planned_end_date) = planned_end_date {
+            match planned_end_date {
+                Some(value) => {
+                    sets.push("planned_end_date = ?");
                     ps.push(Value::Integer(value));
                 }
-                None => sets.push("planned_end_at = NULL"),
+                None => {
+                    sets.push("planned_end_date = NULL");
+                }
             }
         }
 
@@ -281,9 +313,17 @@ INSERT INTO tasks(
         Ok(())
     }
 
-    fn ensure_tag(conn: &Connection, name: &str, color: &str, created_at: i64) -> Result<String, AppError> {
-        let existing: Result<String, rusqlite::Error> =
-            conn.query_row("SELECT id FROM tags WHERE name = ?1 LIMIT 1", params![name], |row| row.get(0));
+    fn ensure_tag(
+        conn: &Connection,
+        name: &str,
+        color: &str,
+        created_at: i64,
+    ) -> Result<String, AppError> {
+        let existing: Result<String, rusqlite::Error> = conn.query_row(
+            "SELECT id FROM tags WHERE name = ?1 LIMIT 1",
+            params![name],
+            |row| row.get(0),
+        );
 
         match existing {
             Ok(id) => Ok(id),

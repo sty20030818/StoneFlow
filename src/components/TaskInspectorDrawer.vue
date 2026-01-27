@@ -81,7 +81,7 @@
 									v-for="opt in statusSegmentOptions"
 									:key="opt.value"
 									type="button"
-									class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-[1px]"
+									class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
 									:class="
 										statusLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'
 									"
@@ -117,22 +117,28 @@
 							@blur="onTitleBlur" />
 					</section>
 
-					<!-- 属性 -->
+					<!-- 属性行 1：优先级 + 截止时间 -->
 					<section class="space-y-3">
 						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">属性</label>
 						<div class="grid grid-cols-2 gap-3">
 							<!-- Priority -->
-							<UPopover>
+							<UPopover
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }">
 								<button
 									type="button"
-									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left w-full">
+									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
+									:class="priorityCardClass">
 									<div class="flex items-center gap-2.5">
 										<UIcon
 											name="i-lucide-flag"
-											class="size-4 text-amber-400 shrink-0" />
+											class="size-4 shrink-0"
+											:class="priorityIconClass" />
 										<div class="min-w-0 flex-1">
 											<div class="text-[11px] text-muted mb-1">Priority</div>
-											<div class="text-xs font-medium text-default">
+											<div
+												class="text-xs font-semibold"
+												:class="priorityTextClass">
 												{{ priorityLabel }}
 											</div>
 										</div>
@@ -160,56 +166,28 @@
 								</template>
 							</UPopover>
 
-							<!-- Planned Start Date -->
-							<UPopover>
+							<!-- Deadline (截止时间) -->
+							<UPopover
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }">
 								<button
 									type="button"
-									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left w-full">
+									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
+									:class="
+										plannedEndDateLocal
+											? 'bg-indigo-50/40 border-indigo-200 hover:bg-indigo-50/60'
+											: 'bg-elevated/50 border-default/60 hover:bg-elevated/80'
+									">
 									<div class="flex items-center gap-2.5">
 										<UIcon
-											name="i-lucide-calendar-days"
-											class="size-4 text-emerald-400 shrink-0" />
+											name="i-lucide-alarm-clock"
+											class="size-4 shrink-0"
+											:class="plannedEndDateLocal ? 'text-indigo-500' : 'text-muted'" />
 										<div class="min-w-0 flex-1">
-											<div class="text-[11px] text-muted mb-1">开始时间</div>
-											<div class="text-xs font-medium text-default">
-												{{ plannedStartDateLabel }}
-											</div>
-										</div>
-									</div>
-								</button>
-								<template #content>
-									<div class="p-2">
-										<UInput
-											v-model="plannedStartDateLocal"
-											type="date"
-											size="sm"
-											:ui="{ rounded: 'rounded-lg' }"
-											@update:model-value="onPlannedStartDateChange" />
-										<div class="mt-2 flex gap-2">
-											<UButton
-												color="neutral"
-												variant="ghost"
-												size="xs"
-												@click="onPlannedStartDateClear">
-												清除
-											</UButton>
-										</div>
-									</div>
-								</template>
-							</UPopover>
-
-							<!-- Planned End Date -->
-							<UPopover>
-								<button
-									type="button"
-									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left w-full">
-									<div class="flex items-center gap-2.5">
-										<UIcon
-											name="i-lucide-calendar"
-											class="size-4 text-sky-400 shrink-0" />
-										<div class="min-w-0 flex-1">
-											<div class="text-[11px] text-muted mb-1">结束时间</div>
-											<div class="text-xs font-medium text-default">
+											<div class="text-[11px] text-muted mb-1">DeadLine</div>
+											<div
+												class="text-xs font-semibold"
+												:class="plannedEndDateLocal ? 'text-indigo-600' : 'text-muted'">
 												{{ plannedEndDateLabel }}
 											</div>
 										</div>
@@ -235,58 +213,151 @@
 									</div>
 								</template>
 							</UPopover>
+						</div>
+					</section>
 
-							<!-- Tags -->
-							<UPopover>
+					<!-- 项目路径 -->
+					<section class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">项目路径</label>
+						<div class="p-4 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 transition-all">
+							<div class="flex items-center gap-2.5">
+								<UIcon
+									name="i-lucide-folder-open"
+									class="size-4 text-amber-400 shrink-0" />
+								<UInput
+									v-model="projectPathLocal"
+									placeholder="输入本地项目路径..."
+									size="sm"
+									variant="none"
+									:ui="{
+										root: 'flex-1',
+										base: 'px-2 py-0 text-xs font-mono bg-transparent border-none focus:ring-0 placeholder:text-muted/40 rounded-none',
+										rounded: 'rounded-none',
+									}"
+									@blur="onProjectPathBlur" />
+							</div>
+						</div>
+					</section>
+
+					<!-- Tags -->
+					<section class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Tags</label>
+						<div class="flex flex-wrap gap-2 items-center">
+							<div
+								v-for="tag in tagsLocal"
+								:key="tag"
+								class="group relative px-3 py-1.5 bg-white rounded-lg text-xs font-bold shadow-sm border border-default/40 text-default flex items-center justify-center cursor-default hover:border-primary/50 transition-colors overflow-hidden">
+								<span>#{{ tag }}</span>
+								<!-- Overlay Delete Button -->
+								<div
+									class="hidden group-hover:flex absolute inset-0 bg-white/95 items-center justify-center cursor-pointer transition-opacity"
+									@click="removeTag(tag)">
+									<UIcon
+										name="i-lucide-x"
+										class="size-3 text-red-500" />
+								</div>
+							</div>
+
+							<!-- Inline Input -->
+							<div class="flex items-center">
+								<input
+									v-model="tagInput"
+									type="text"
+									placeholder="+ New Tag"
+									class="bg-transparent border-none text-xs font-medium placeholder:text-muted/60 focus:ring-0 focus:outline-none w-[100px] h-8 px-2"
+									@keydown.enter.prevent="addTag"
+									@blur="onTagInputBlur" />
+							</div>
+						</div>
+					</section>
+
+					<!-- 所属 Space + Project -->
+					<section class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">位置分类</label>
+						<div class="grid grid-cols-2 gap-3">
+							<!-- Space -->
+							<UPopover
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }">
 								<button
 									type="button"
-									class="p-3.5 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 hover:border-default/80 transition-all text-left col-span-2">
-									<div class="space-y-2">
-										<div class="text-[11px] text-muted">Tags</div>
-										<div
-											v-if="tagsLocal.length > 0"
-											class="flex flex-wrap gap-1.5">
-											<UBadge
-												v-for="tag in tagsLocal"
-												:key="tag"
-												color="neutral"
-												variant="soft"
-												size="xs">
-												#{{ tag }}
-											</UBadge>
+									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
+									:class="spaceCardClass">
+									<div class="flex items-center justify-between">
+										<div class="flex flex-col gap-1">
+											<span
+												class="text-[10px] font-bold uppercase tracking-wider"
+												:class="spaceCardLabelClass">
+												所属 Space
+											</span>
+											<span
+												class="text-sm font-bold"
+												:class="spaceCardValueClass">
+												{{ currentSpaceLabel }}
+											</span>
 										</div>
-										<div
-											v-else
-											class="text-xs text-muted">
-											暂无标签
-										</div>
+										<UIcon
+											name="i-lucide-chevron-right"
+											class="size-4"
+											:class="spaceCardLabelClass" />
 									</div>
 								</button>
 								<template #content>
-									<div class="p-3 min-w-[280px] space-y-3">
-										<div class="flex flex-wrap gap-1.5">
-											<UBadge
-												v-for="tag in tagsLocal"
-												:key="tag"
-												color="neutral"
-												variant="soft"
-												size="sm"
-												class="cursor-pointer"
-												@click="removeTag(tag)">
-												#{{ tag }}
-												<template #trailing>
-													<UIcon
-														name="i-lucide-x"
-														class="size-3 ml-1" />
-												</template>
-											</UBadge>
+									<div class="p-2 min-w-[180px]">
+										<div
+											v-for="space in spaceOptions"
+											:key="space.value"
+											class="px-3 py-2 rounded-lg hover:bg-elevated cursor-pointer transition-colors"
+											:class="{ 'bg-elevated': spaceIdLocal === space.value }"
+											@click="onSpaceChange(space.value)">
+											<div class="flex items-center gap-2">
+												<UIcon
+													:name="space.icon"
+													class="size-4 shrink-0"
+													:class="space.iconClass" />
+												<span class="text-sm font-medium">{{ space.label }}</span>
+											</div>
 										</div>
-										<UInput
-											v-model="tagInput"
-											placeholder="输入标签后按回车添加"
-											size="sm"
-											:ui="{ rounded: 'rounded-lg' }"
-											@keydown.enter.prevent="addTag" />
+									</div>
+								</template>
+							</UPopover>
+
+							<!-- Project -->
+							<UPopover
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-end' }">
+								<button
+									type="button"
+									class="p-4 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 transition-all text-left w-full cursor-pointer">
+									<div class="flex items-center justify-between">
+										<div class="flex flex-col gap-1">
+											<span class="text-[10px] font-bold text-muted uppercase tracking-wider">所属 Project</span>
+											<span class="text-sm font-bold text-default truncate max-w-[120px]">
+												{{ currentProjectLabel }}
+											</span>
+										</div>
+										<UIcon
+											name="i-lucide-chevron-right"
+											class="size-4 text-muted" />
+									</div>
+								</button>
+								<template #content>
+									<div class="p-2 min-w-[220px] max-h-[300px] overflow-y-auto">
+										<div
+											v-for="project in projectOptions"
+											:key="project.value ?? 'uncategorized'"
+											class="px-3 py-2 rounded-lg hover:bg-elevated cursor-pointer transition-colors"
+											:class="{ 'bg-elevated': projectIdLocal === project.value }"
+											:style="{ paddingLeft: `${12 + project.depth * 12}px` }"
+											@click="onProjectChange(project.value)">
+											<div class="flex items-center gap-2">
+												<UIcon
+													:name="project.icon"
+													class="size-4 shrink-0"
+													:class="project.iconClass" />
+												<span class="text-sm truncate">{{ project.label }}</span>
+											</div>
+										</div>
 									</div>
 								</template>
 							</UPopover>
@@ -296,18 +367,20 @@
 					<!-- 备注 -->
 					<section class="space-y-2">
 						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Note</label>
-						<UTextarea
-							v-model="noteLocal"
-							placeholder="记录一些背景信息、想法或链接…"
-							:rows="6"
-							size="sm"
-							autoresize
-							variant="none"
-							:ui="{
-								root: 'w-full',
-								base: 'min-h-[160px] px-4 py-3 text-sm leading-relaxed rounded-2xl bg-elevated/40 border border-transparent focus:border-primary/20 focus:ring-4 focus:ring-primary/10 placeholder:text-muted/40',
-							}"
-							@blur="onNoteBlur" />
+						<div class="p-4 rounded-2xl border bg-elevated/50 border-default/60 hover:bg-elevated/80 transition-all">
+							<UTextarea
+								v-model="noteLocal"
+								placeholder="记录一些背景信息、想法或链接…"
+								:rows="6"
+								size="sm"
+								autoresize
+								variant="none"
+								:ui="{
+									root: 'w-full',
+									base: 'p-0 text-sm leading-relaxed bg-transparent border-none focus:ring-0 placeholder:text-muted/40',
+								}"
+								@blur="onNoteBlur" />
+						</div>
 					</section>
 
 					<!-- 时间线 -->
@@ -377,12 +450,11 @@
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
-	const currentTask = computed(() => store.task)
+	const currentTask = computed<TaskDto | null>(() => store.task ?? null)
 
 	const titleLocal = ref('')
 	const statusLocal = ref<'todo' | 'doing' | 'done'>('todo')
 	const priorityLocal = ref<string>('P1')
-	const plannedStartDateLocal = ref<string>('')
 	const plannedEndDateLocal = ref<string>('')
 	const noteLocal = ref<string>('')
 	const tagsLocal = ref<string[]>([])
@@ -391,6 +463,17 @@
 	const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 	const pendingSaves = ref(0)
 	let saveStateTimer: ReturnType<typeof setTimeout> | null = null
+
+	// 新增：项目路径、Space、Project 本地状态
+	const projectPathLocal = ref<string>('')
+	const spaceIdLocal = ref<string>('')
+	const projectIdLocal = ref<string | null>(null)
+
+	function onTagInputBlur() {
+		if (tagInput.value.trim()) {
+			addTag()
+		}
+	}
 
 	const priorityOptions = [
 		{
@@ -424,13 +507,109 @@
 		return opt ? opt.label : '未设定'
 	})
 
-	const plannedStartDateLabel = computed(() => {
-		if (!plannedStartDateLocal.value) return '未设定'
-		const date = new Date(plannedStartDateLocal.value)
-		return date.toLocaleDateString('zh-CN', {
-			month: 'short',
-			day: 'numeric',
+	// Priority 卡片样式
+	const priorityCardClass = computed(() => {
+		const p = priorityLocal.value
+		if (p === 'P0') return 'bg-red-50/50 border-red-200 hover:bg-red-50/80'
+		if (p === 'P1') return 'bg-amber-50/50 border-amber-200 hover:bg-amber-50/80'
+		if (p === 'P2') return 'bg-blue-50/50 border-blue-200 hover:bg-blue-50/80'
+		return 'bg-elevated/50 border-default/60 hover:bg-elevated/80'
+	})
+
+	const priorityIconClass = computed(() => {
+		const p = priorityLocal.value
+		if (p === 'P0') return 'text-red-500'
+		if (p === 'P1') return 'text-amber-500'
+		if (p === 'P2') return 'text-blue-500'
+		return 'text-muted'
+	})
+
+	const priorityTextClass = computed(() => {
+		const p = priorityLocal.value
+		if (p === 'P0') return 'text-red-600'
+		if (p === 'P1') return 'text-amber-600'
+		if (p === 'P2') return 'text-blue-600'
+		return 'text-default'
+	})
+
+	// Space 选项
+	const spaceOptions = computed(() => {
+		// 简化版：硬编码常用 Space
+		return [
+			{ value: 'work', label: 'Work', icon: 'i-lucide-briefcase', iconClass: 'text-blue-500' },
+			{ value: 'personal', label: 'Personal', icon: 'i-lucide-user', iconClass: 'text-purple-500' },
+			{ value: 'study', label: 'Study', icon: 'i-lucide-book-open', iconClass: 'text-emerald-500' },
+		]
+	})
+
+	// Space 卡片样式
+	const spaceCardClass = computed(() => {
+		const sid = spaceIdLocal.value
+		if (sid === 'work') return 'bg-blue-50/50 border-blue-200'
+		if (sid === 'personal') return 'bg-purple-50/50 border-purple-200'
+		if (sid === 'study') return 'bg-emerald-50/50 border-emerald-200'
+		return 'bg-elevated/50 border-default/60'
+	})
+
+	const spaceCardLabelClass = computed(() => {
+		const sid = spaceIdLocal.value
+		if (sid === 'work') return 'text-blue-400'
+		if (sid === 'personal') return 'text-purple-400'
+		if (sid === 'study') return 'text-emerald-400'
+		return 'text-muted'
+	})
+
+	const spaceCardValueClass = computed(() => {
+		const sid = spaceIdLocal.value
+		if (sid === 'work') return 'text-blue-600'
+		if (sid === 'personal') return 'text-purple-600'
+		if (sid === 'study') return 'text-emerald-600'
+		return 'text-default'
+	})
+
+	// Project 选项（基于当前 Space 的项目树）
+	const projectOptions = computed(() => {
+		const sid = spaceIdLocal.value
+		if (!sid) return []
+		const projects = projectsStore.getProjectsOfSpace(sid)
+		const levelColors = ['text-slate-400', 'text-blue-400', 'text-purple-400', 'text-pink-400']
+
+		const options: Array<{ value: string | null; label: string; icon: string; iconClass: string; depth: number }> = []
+
+		// 添加"未分类"选项
+		options.push({
+			value: null,
+			label: '未分类',
+			icon: 'i-lucide-inbox',
+			iconClass: 'text-slate-400',
+			depth: 0,
 		})
+
+		// 递归添加项目
+		function addProjects(parentId: string | null, depth: number) {
+			const children = projects.filter((p) => p.parent_id === parentId)
+			for (const proj of children) {
+				options.push({
+					value: proj.id,
+					label: proj.name,
+					icon: 'i-lucide-folder',
+					iconClass: levelColors[Math.min(depth, levelColors.length - 1)],
+					depth,
+				})
+				addProjects(proj.id, depth + 1)
+			}
+		}
+		addProjects(null, 0)
+
+		return options
+	})
+
+	// 当前 Project 标签
+	const currentProjectLabel = computed(() => {
+		if (!projectIdLocal.value) return '未分类'
+		const projects = projectsStore.getProjectsOfSpace(spaceIdLocal.value)
+		const proj = projects.find((p) => p.id === projectIdLocal.value)
+		return proj?.name ?? '未知项目'
 	})
 
 	const plannedEndDateLabel = computed(() => {
@@ -646,38 +825,23 @@
 		priorityLocal.value = value
 	}
 
-	async function onPlannedStartDateChange() {
-		if (!currentTask.value) return
-		let plannedStartAt: number | null = null
-		if (plannedStartDateLocal.value) {
-			const date = new Date(plannedStartDateLocal.value)
-			date.setHours(0, 0, 0, 0)
-			plannedStartAt = date.getTime()
-		}
-		await commitUpdate({ plannedStartAt }, { planned_start_at: plannedStartAt })
-	}
-
-	async function onPlannedStartDateClear() {
-		plannedStartDateLocal.value = ''
-		if (!currentTask.value) return
-		await commitUpdate({ plannedStartAt: null }, { planned_start_at: null })
-	}
-
+	// DeadLine 功能
 	async function onPlannedEndDateChange() {
 		if (!currentTask.value) return
-		let plannedEndAt: number | null = null
-		if (plannedEndDateLocal.value) {
-			const date = new Date(plannedEndDateLocal.value)
-			date.setHours(23, 59, 59, 999)
-			plannedEndAt = date.getTime()
+		const val = plannedEndDateLocal.value
+		if (!val) {
+			await commitUpdate({ plannedEndDate: null }, { planned_end_date: null })
+			return
 		}
-		await commitUpdate({ plannedEndAt }, { planned_end_at: plannedEndAt })
+		// web date string yyyy-mm-dd -> timestamp (local midnight)
+		const date = new Date(val)
+		const ts = date.getTime()
+		await commitUpdate({ plannedEndDate: ts }, { planned_end_date: ts })
 	}
 
 	async function onPlannedEndDateClear() {
 		plannedEndDateLocal.value = ''
-		if (!currentTask.value) return
-		await commitUpdate({ plannedEndAt: null }, { planned_end_at: null })
+		await onPlannedEndDateChange()
 	}
 
 	function addTag() {
@@ -699,6 +863,32 @@
 		await commitUpdate({ tags: tagsLocal.value }, { tags: tagsLocal.value })
 	}
 
+	// 项目路径变更
+	async function onProjectPathBlur() {
+		if (!currentTask.value) return
+		const nextPath = projectPathLocal.value.trim() || null
+		if (nextPath === (currentTask.value.project_path || null)) return
+		await commitUpdate({ projectPath: nextPath }, { project_path: nextPath })
+	}
+
+	// Space 切换
+	async function onSpaceChange(value: string) {
+		if (!currentTask.value || value === spaceIdLocal.value) return
+		spaceIdLocal.value = value
+		// 切换 Space 后，清空 Project 选择
+		projectIdLocal.value = null
+
+		await commitUpdate({ spaceId: value, projectId: null }, { space_id: value, project_id: null })
+	}
+
+	// Project 切换
+	async function onProjectChange(value: string | null) {
+		if (!currentTask.value || value === projectIdLocal.value) return
+		projectIdLocal.value = value
+
+		await commitUpdate({ projectId: value }, { project_id: value })
+	}
+
 	async function onNoteBlur() {
 		if (!currentTask.value) return
 		const nextNote = noteLocal.value.trim() || null
@@ -718,21 +908,21 @@
 		tagInput.value = ''
 		timelineCollapsed.value = true
 
-		// 处理计划开始时间
-		if (t.planned_start_at) {
-			const date = new Date(t.planned_start_at)
-			plannedStartDateLocal.value = date.toISOString().split('T')[0]
-		} else {
-			plannedStartDateLocal.value = ''
-		}
-
-		// 处理计划结束时间
-		if (t.planned_end_at) {
-			const date = new Date(t.planned_end_at)
-			plannedEndDateLocal.value = date.toISOString().split('T')[0]
+		// 处理截止日期
+		if (t.planned_end_date) {
+			const d = new Date(t.planned_end_date)
+			const year = d.getFullYear()
+			const month = String(d.getMonth() + 1).padStart(2, '0')
+			const day = String(d.getDate()).padStart(2, '0')
+			plannedEndDateLocal.value = `${year}-${month}-${day}`
 		} else {
 			plannedEndDateLocal.value = ''
 		}
+
+		// 同步项目路径、Space、Project
+		projectPathLocal.value = t.project_path || ''
+		spaceIdLocal.value = t.space_id
+		projectIdLocal.value = t.project_id
 	}
 
 	watch(

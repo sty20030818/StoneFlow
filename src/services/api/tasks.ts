@@ -15,8 +15,8 @@ export type TaskDto = {
 	created_at: number
 	started_at: number | null
 	completed_at: number | null
-	planned_start_at: number | null
-	planned_end_at: number | null
+	project_path: string | null
+	planned_end_date: number | null
 }
 
 export type ListTasksArgs = {
@@ -53,9 +53,11 @@ export type UpdateTaskPatch = {
 	status?: TaskStatus
 	priority?: string
 	note?: string | null
-	plannedStartAt?: number | null
-	plannedEndAt?: number | null
 	tags?: string[]
+	projectPath?: string | null
+	spaceId?: string
+	projectId?: string | null
+	plannedEndDate?: number | null
 }
 
 export async function updateTask(id: string, patch: UpdateTaskPatch): Promise<void> {

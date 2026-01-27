@@ -76,12 +76,16 @@ pub struct UpdateTaskPatch {
     pub priority: Option<String>,
     /// Some(None) 表示清空 note
     pub note: Option<Option<String>>,
-    /// Some(None) 表示清空 planned_start_at
-    pub planned_start_at: Option<Option<i64>>,
-    /// Some(None) 表示清空 planned_end_at
-    pub planned_end_at: Option<Option<i64>>,
     /// 标签名数组（传空数组表示清空）
     pub tags: Option<Vec<String>>,
+    /// Some(None) 表示清空 project_path
+    pub project_path: Option<Option<String>>,
+    /// 切换所属 Space
+    pub space_id: Option<String>,
+    /// Some(None) 表示设为未分类
+    pub project_id: Option<Option<String>>,
+    /// Some(None) 表示清空截止日期
+    pub planned_end_date: Option<Option<i64>>,
 }
 
 #[tauri::command]
@@ -98,9 +102,11 @@ pub fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<()
         args.patch.status.as_deref(),
         args.patch.priority.as_deref(),
         args.patch.note.as_ref().map(|v| v.as_deref()),
-        args.patch.planned_start_at,
-        args.patch.planned_end_at,
         args.patch.tags,
+        args.patch.project_path.as_ref().map(|v| v.as_deref()),
+        args.patch.space_id.as_deref(),
+        args.patch.project_id.as_ref().map(|v| v.as_deref()),
+        args.patch.planned_end_date.as_ref().cloned(),
     )
     .map_err(ApiError::from)
 }
