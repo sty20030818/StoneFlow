@@ -10,8 +10,12 @@
 					v-for="s in spaces"
 					:key="s.id"
 					type="button"
-					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-[1px]"
-					:class="spaceValue === s.id ? 'bg-default text-default shadow-sm' : 'text-muted hover:text-default hover:bg-default/40' "
+					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
+					:class="
+						spaceValue === s.id
+							? 'bg-default text-default shadow-sm'
+							: 'text-muted hover:text-default hover:bg-default/40'
+					"
 					@click="onSpaceClick(s.id)">
 					<UIcon
 						:name="s.icon"
@@ -88,7 +92,11 @@
 						<template #item-wrapper="{ item, level, expanded, handleToggle }">
 							<div
 								class="group relative rounded-lg text-[13px] transition-all duration-150"
-								:class="isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'">
+								:class="
+									isActiveProject(item.id)
+										? 'bg-elevated text-default'
+										: 'text-muted hover:bg-elevated hover:text-default'
+								">
 								<RouterLink
 									:to="`/space/${spaceValue}?project=${item.id}`"
 									class="flex w-full items-center gap-2.5 py-1.5 pr-8"

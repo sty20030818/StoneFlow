@@ -160,9 +160,7 @@
 									:style="{ backgroundColor: s.color }" />
 								<span>{{ s.label }}</span>
 							</div>
-							<div class="text-muted">
-								{{ s.count }} · {{ s.percent }}%
-							</div>
+							<div class="text-muted">{{ s.count }} · {{ s.percent }}%</div>
 						</div>
 					</div>
 				</div>
@@ -185,10 +183,7 @@
 
 	const spaceCards = computed(() => {
 		const ids = ['work', 'personal', 'study'] as const
-		const meta: Record<
-			typeof ids[number],
-			{ id: string; label: string; icon: string; iconClass: string }
-		> = {
+		const meta: Record<(typeof ids)[number], { id: string; label: string; icon: string; iconClass: string }> = {
 			work: { id: 'work', label: 'Work', icon: 'i-lucide-briefcase', iconClass: 'text-blue-500' },
 			personal: { id: 'personal', label: 'Personal', icon: 'i-lucide-user', iconClass: 'text-purple-500' },
 			study: { id: 'study', label: 'Study', icon: 'i-lucide-book-open', iconClass: 'text-green-500' },

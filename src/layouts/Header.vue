@@ -15,7 +15,9 @@
 			</RouterLink>
 
 			<template v-if="projectTrail.length">
-				<template v-for="(item, index) in projectTrail" :key="`${item.label}-${index}`">
+				<template
+					v-for="(item, index) in projectTrail"
+					:key="`${item.label}-${index}`">
 					<UIcon
 						name="i-lucide-chevron-right"
 						class="size-3.5 text-muted shrink-0" />
@@ -150,7 +152,10 @@
 	})
 
 	// 从 inject 获取 workspace 页面的 breadcrumbItems
-	const workspaceBreadcrumbItems = inject<ComputedRef<{ label: string; to?: string }[]>>('workspaceBreadcrumbItems', computed(() => []))
+	const workspaceBreadcrumbItems = inject<ComputedRef<{ label: string; to?: string }[]>>(
+		'workspaceBreadcrumbItems',
+		computed(() => []),
+	)
 
 	const breadcrumbItems = computed(() => {
 		// 优先使用 inject 的 breadcrumbItems（来自 workspace 页面），但需要过滤掉 Space 相关的项
@@ -185,7 +190,6 @@
 	})
 
 	const projectTrail = computed(() => breadcrumbItems.value)
-
 
 	const levelPalette = ['bg-amber-500', 'bg-sky-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500']
 

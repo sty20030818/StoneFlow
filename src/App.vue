@@ -80,14 +80,11 @@
 	})
 
 	// 监听 space 变化，自动加载项目
-	watch(
-		currentSpaceId,
-		async (spaceId) => {
-			if (spaceId && settingsStore.loaded) {
-				await projectsStore.loadForSpace(spaceId)
-			}
-		},
-	)
+	watch(currentSpaceId, async (spaceId) => {
+		if (spaceId && settingsStore.loaded) {
+			await projectsStore.loadForSpace(spaceId)
+		}
+	})
 
 	// 定义命令组
 	const commandGroups = computed(() => [

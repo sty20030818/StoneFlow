@@ -23,7 +23,9 @@
 						</span>
 
 						<template v-if="projectTrail.length">
-							<template v-for="(item, index) in projectTrail" :key="`${item}-${index}`">
+							<template
+								v-for="(item, index) in projectTrail"
+								:key="`${item}-${index}`">
 								<span class="text-muted/70 text-[12px] shrink-0">/</span>
 								<span
 									v-if="index < projectTrail.length - 1"
@@ -80,7 +82,9 @@
 									:key="opt.value"
 									type="button"
 									class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-[1px]"
-									:class="statusLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'"
+									:class="
+										statusLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'
+									"
 									@click="onStatusSegmentClick(opt.value)">
 									<UIcon
 										:name="opt.icon"
@@ -342,12 +346,7 @@
 	import { updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
-	import {
-		getDisplayStatus,
-		mapDisplayStatusToBackend,
-		isPaused,
-		isAbandoned,
-	} from '@/utils/task'
+	import { getDisplayStatus, mapDisplayStatusToBackend, isPaused, isAbandoned } from '@/utils/task'
 
 	const statusSegmentOptions = [
 		{
@@ -485,7 +484,10 @@
 		const raw = projectPath.value?.trim()
 		if (!raw) return []
 		if (raw === '未分类' || raw === '未知项目') return [raw]
-		const parts = raw.split('/').map((item) => item.trim()).filter(Boolean)
+		const parts = raw
+			.split('/')
+			.map((item) => item.trim())
+			.filter(Boolean)
 		return parts.length ? parts : [raw]
 	})
 
@@ -622,11 +624,7 @@
 
 	async function onStatusChange(value: unknown) {
 		const record = value as { value?: string } | null
-		const displayStatus = (typeof value === 'string' ? value : record?.value) as
-			| 'todo'
-			| 'doing'
-			| 'done'
-			| undefined
+		const displayStatus = (typeof value === 'string' ? value : record?.value) as 'todo' | 'doing' | 'done' | undefined
 		if (!currentTask.value || !displayStatus) return
 
 		// 映射显示状态到后端状态

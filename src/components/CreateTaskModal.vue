@@ -344,9 +344,7 @@
 
 		// 构建树形选项（排除默认项目）
 		function buildTree(parentId: string | null, depth: number) {
-			const children = projectsList.filter(
-				(p) => p.parent_id === parentId && !p.id.endsWith('_default'),
-			)
+			const children = projectsList.filter((p) => p.parent_id === parentId && !p.id.endsWith('_default'))
 			for (const project of children) {
 				options.push({
 					value: project.id,

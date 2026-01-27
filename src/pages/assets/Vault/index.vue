@@ -38,7 +38,7 @@
 					<button
 						type="button"
 						class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition"
-						:class="selectedFolder === null ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60' "
+						:class="selectedFolder === null ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60'"
 						@click="selectedFolder = null">
 						<div class="flex items-center gap-2">
 							<UIcon
@@ -55,7 +55,7 @@
 						<button
 							type="button"
 							class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition"
-							:class="selectedFolder === folder ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60' "
+							:class="selectedFolder === folder ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60'"
 							@click="selectedFolder = folder">
 							<div class="flex items-center gap-2">
 								<UIcon

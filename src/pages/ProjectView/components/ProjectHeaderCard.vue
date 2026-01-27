@@ -21,7 +21,9 @@
 					class="rounded-full px-[14px] py-[7px] text-[12px] font-bold tracking-widest"
 					:color="statusColor">
 					<span class="inline-flex items-center gap-2">
-						<span class="size-1.5 rounded-full" :class="statusDotClass"></span>
+						<span
+							class="size-1.5 rounded-full"
+							:class="statusDotClass"></span>
 						{{ statusLabel }}
 					</span>
 				</UBadge>
@@ -173,7 +175,8 @@
 		border-radius: inherit;
 		background: linear-gradient(135deg, var(--glow-color) 0%, transparent 35%);
 		opacity: 0.16;
-		mask-image: linear-gradient(to bottom, black 0%, transparent 55%), linear-gradient(to right, black 0%, transparent 35%);
+		mask-image:
+			linear-gradient(to bottom, black 0%, transparent 55%), linear-gradient(to right, black 0%, transparent 35%);
 		-webkit-mask-composite: source-in;
 		mask-composite: intersect;
 	}

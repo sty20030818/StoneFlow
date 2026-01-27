@@ -10,7 +10,11 @@
 			<div
 				@click.stop="$emit('complete', task.id)"
 				class="mt-1 w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer"
-				:class="isPausedStatus ? 'border-slate-400 text-slate-400 hover:bg-slate-50' : 'border-blue-500 text-blue-500 hover:bg-blue-50'">
+				:class="
+					isPausedStatus
+						? 'border-slate-400 text-slate-400 hover:bg-slate-50'
+						: 'border-blue-500 text-blue-500 hover:bg-blue-50'
+				">
 				<div
 					v-if="!isPausedStatus"
 					class="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -176,11 +180,7 @@
 	import SpaceLabel from '@/components/SpaceLabel.vue'
 	import TimeDisplay from '@/components/TimeDisplay.vue'
 	import type { TaskDto } from '@/services/api/tasks'
-	import {
-		getDisplayStatus,
-		isPaused,
-		isAbandoned,
-	} from '@/utils/task'
+	import { getDisplayStatus, isPaused, isAbandoned } from '@/utils/task'
 
 	const props = defineProps<{
 		task: TaskDto
@@ -220,4 +220,3 @@
 		})
 	}
 </script>
-
