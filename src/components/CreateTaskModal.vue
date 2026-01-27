@@ -9,7 +9,7 @@
 		}">
 		<template #body>
 			<div class="space-y-4">
-				<!-- Title -->
+				<!-- Title (占满一行) -->
 				<UFormField
 					label="Title"
 					required>
@@ -17,6 +17,7 @@
 						v-model="form.title"
 						placeholder="输入任务标题..."
 						size="md"
+						class="w-full"
 						:ui="{
 							rounded: 'rounded-xl',
 						}"
@@ -24,54 +25,57 @@
 						@keydown.enter="handleSubmit" />
 				</UFormField>
 
-				<!-- Space -->
-				<UFormField label="Space">
-					<USelectMenu
-						v-model="form.spaceId"
-						:items="spaceOptions"
-						value-key="value"
-						label-key="label"
-						size="md"
-						:search-input="false"
-						:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
-						<template #item="{ item }">
-							<div class="flex items-center gap-2">
-								<UIcon
-									:name="item.icon"
-									class="size-3.5 shrink-0"
-									:class="item.iconClass" />
-								<span class="truncate">{{ item.label }}</span>
-							</div>
-						</template>
-					</USelectMenu>
-				</UFormField>
+				<!-- Space + Project (两列) -->
+				<div class="grid grid-cols-2 gap-4">
+					<UFormField label="Space">
+						<USelectMenu
+							v-model="form.spaceId"
+							:items="spaceOptions"
+							value-key="value"
+							label-key="label"
+							size="md"
+							class="w-full"
+							:search-input="false"
+							:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+							<template #item="{ item }">
+								<div class="flex items-center gap-2 py-0.5">
+									<UIcon
+										:name="item.icon"
+										class="size-4 shrink-0"
+										:class="item.iconClass" />
+									<span class="truncate">{{ item.label }}</span>
+								</div>
+							</template>
+						</USelectMenu>
+					</UFormField>
 
-				<!-- Project -->
-				<UFormField label="Project">
-					<USelectMenu
-						v-model="form.projectId"
-						:items="projectOptions"
-						value-key="value"
-						label-key="label"
-						size="md"
-						placeholder="未分类"
-						:search-input="false"
-						:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
-						<template #item="{ item }">
-							<div
-								class="flex items-center gap-2"
-								:style="{ paddingLeft: `${(item.depth ?? 0) * 12}px` }">
-								<UIcon
-									:name="item.icon"
-									class="size-3.5 shrink-0"
-									:class="item.iconClass" />
-								<span class="truncate">{{ item.label }}</span>
-							</div>
-						</template>
-					</USelectMenu>
-				</UFormField>
+					<UFormField label="Project">
+						<USelectMenu
+							v-model="form.projectId"
+							:items="projectOptions"
+							value-key="value"
+							label-key="label"
+							size="md"
+							class="w-full"
+							placeholder="未分类"
+							:search-input="false"
+							:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+							<template #item="{ item }">
+								<div
+									class="flex items-center gap-2 py-1"
+									:style="{ paddingLeft: `${(item.depth ?? 0) * 16}px` }">
+									<UIcon
+										:name="item.icon"
+										class="size-4 shrink-0"
+										:class="item.iconClass" />
+									<span class="truncate">{{ item.label }}</span>
+								</div>
+							</template>
+						</USelectMenu>
+					</UFormField>
+				</div>
 
-				<!-- Status & Priority -->
+				<!-- Status + Priority (两列) -->
 				<div class="grid grid-cols-2 gap-4">
 					<UFormField label="Status">
 						<USelectMenu
@@ -80,15 +84,16 @@
 							value-key="value"
 							label-key="label"
 							size="md"
+							class="w-full"
 							:search-input="false"
 							:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
 							<template #item="{ item }">
 								<div
 									v-if="item"
-									class="flex items-center gap-2">
+									class="flex items-center gap-2 py-0.5">
 									<UIcon
 										:name="item.icon"
-										class="size-3.5 shrink-0"
+										class="size-4 shrink-0"
 										:class="item.iconClass" />
 									<span>{{ item.label }}</span>
 								</div>
@@ -103,13 +108,14 @@
 							value-key="value"
 							label-key="label"
 							size="md"
+							class="w-full"
 							:search-input="false"
 							:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
 							<template #item="{ item }">
-								<div class="flex items-center gap-2">
+								<div class="flex items-center gap-2 py-0.5">
 									<UIcon
 										:name="item.icon"
-										class="size-3.5 shrink-0"
+										class="size-4 shrink-0"
 										:class="item.iconClass" />
 									<span>{{ item.label }}</span>
 								</div>
@@ -118,13 +124,14 @@
 					</UFormField>
 				</div>
 
-				<!-- Planned Start & End Date -->
+				<!-- Planned Start & End Date (两列) -->
 				<div class="grid grid-cols-2 gap-4">
 					<UFormField label="计划开始时间">
 						<UInput
 							v-model="form.plannedStartDate"
 							type="date"
 							size="md"
+							class="w-full"
 							:ui="{
 								rounded: 'rounded-xl',
 							}"
@@ -136,6 +143,7 @@
 							v-model="form.plannedEndDate"
 							type="date"
 							size="md"
+							class="w-full"
 							:ui="{
 								rounded: 'rounded-xl',
 							}"
@@ -143,7 +151,7 @@
 					</UFormField>
 				</div>
 
-				<!-- Tags -->
+				<!-- Tags (占满一行) -->
 				<UFormField label="Tags (可选)">
 					<div class="space-y-2">
 						<div class="flex flex-wrap gap-2">
@@ -167,6 +175,7 @@
 							v-model="tagInput"
 							placeholder="输入标签后按回车添加"
 							size="md"
+							class="w-full"
 							:ui="{
 								rounded: 'rounded-xl',
 							}"
@@ -174,13 +183,14 @@
 					</div>
 				</UFormField>
 
-				<!-- Note -->
+				<!-- Note (占满一行) -->
 				<UFormField label="Note (可选)">
 					<UTextarea
 						v-model="form.note"
 						placeholder="记录一些背景信息、想法或链接…"
 						:rows="3"
 						size="md"
+						class="w-full"
 						autoresize
 						:ui="{
 							rounded: 'rounded-xl',
@@ -226,6 +236,7 @@
 	const props = defineProps<{
 		modelValue: boolean
 		spaceId?: string
+		projectId?: string
 		projects?: ProjectDto[]
 	}>()
 
@@ -309,6 +320,9 @@
 		},
 	]
 
+	// 层级颜色（与 Sidebar / CreateProject 保持一致）
+	const levelColors = ['text-amber-400', 'text-sky-400', 'text-violet-400', 'text-emerald-400', 'text-rose-400']
+
 	function addTag() {
 		const tag = tagInput.value.trim()
 		if (tag && !form.value.tags.includes(tag)) {
@@ -333,13 +347,15 @@
 				value: null,
 				label: '未分类',
 				icon: 'i-lucide-folder',
-				iconClass: 'text-amber-500',
+				iconClass: 'text-slate-400',
 				depth: 0,
 			},
 		]
 
-		// 优先使用 props.projects，否则从 store 获取
-		const projectsList = props.projects ?? projectsStore.getProjectsOfSpace(form.value.spaceId)
+		// 以 store 为准，props 仅作为兜底且按 space 过滤，避免切换 space 后仍使用旧数据
+		const storeProjects = projectsStore.getProjectsOfSpace(form.value.spaceId)
+		const fallbackProjects = (props.projects ?? []).filter((p) => p.space_id === form.value.spaceId)
+		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
 		if (!projectsList.length) return options
 
 		// 构建树形选项（排除默认项目）
@@ -349,9 +365,9 @@
 				options.push({
 					value: project.id,
 					label: project.name,
-					icon: depth === 0 ? 'i-lucide-folder' : 'i-lucide-circle',
-					iconClass: depth === 0 ? 'text-amber-500' : 'text-muted',
-					depth: depth + 1,
+					icon: 'i-lucide-folder',
+					iconClass: levelColors[depth % levelColors.length],
+					depth,
 				})
 				buildTree(project.id, depth + 1)
 			}
@@ -361,19 +377,33 @@
 		return options
 	})
 
+	// 监听用户手动切换 Space 时重置 Project 选择
+	watch(
+		() => form.value.spaceId,
+		async (newSpaceId, oldSpaceId) => {
+			// 只有当 spaceId 实际变化时才重置（排除初始化）
+			if (oldSpaceId && newSpaceId !== oldSpaceId) {
+				form.value.projectId = null
+			}
+			// 加载对应 Space 的项目，确保下拉项及时刷新
+			await projectsStore.loadForSpace(newSpaceId)
+			// 加载对应 Space 的默认项目
+			try {
+				const defaultProject = await getDefaultProject(newSpaceId)
+				defaultProjectId.value = defaultProject.id
+				form.value.projectId = defaultProject.id
+			} catch (error) {
+				console.error('加载默认项目失败:', error)
+			}
+		},
+	)
+
+	// 监听 props.spaceId 变化，同步到 form
 	watch(
 		() => props.spaceId,
-		async (newSpaceId) => {
+		(newSpaceId) => {
 			if (newSpaceId) {
 				form.value.spaceId = newSpaceId
-				// 加载默认项目
-				try {
-					const defaultProject = await getDefaultProject(newSpaceId)
-					defaultProjectId.value = defaultProject.id
-					form.value.projectId = defaultProject.id
-				} catch (error) {
-					console.error('加载默认项目失败:', error)
-				}
 			}
 		},
 		{ immediate: true },
@@ -391,16 +421,21 @@
 			tagInput.value = ''
 			if (props.spaceId) {
 				form.value.spaceId = props.spaceId
-				// 加载默认项目
-				try {
-					const defaultProject = await getDefaultProject(form.value.spaceId)
-					defaultProjectId.value = defaultProject.id
-					form.value.projectId = defaultProject.id
-				} catch (error) {
-					console.error('加载默认项目失败:', error)
-				}
-			} else {
-				form.value.projectId = defaultProjectId.value
+			}
+			// 打开弹窗时确保当前 Space 的项目已加载
+			await projectsStore.loadForSpace(form.value.spaceId)
+			// 加载默认项目
+			try {
+				const defaultProject = await getDefaultProject(form.value.spaceId)
+				defaultProjectId.value = defaultProject.id
+
+				// 如果当前页面处于某个 project，优先使用该 project 作为默认值
+				const candidateProjectId = props.projectId ?? null
+				const projectsOfSpace = projectsStore.getProjectsOfSpace(form.value.spaceId)
+				const hasCandidate = !!candidateProjectId && projectsOfSpace.some((p) => p.id === candidateProjectId)
+				form.value.projectId = hasCandidate ? candidateProjectId : defaultProjectId.value
+			} catch (error) {
+				console.error('加载默认项目失败:', error)
 			}
 		}
 	})

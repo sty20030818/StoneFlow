@@ -74,25 +74,33 @@ pub struct UpdateTaskPatch {
     pub title: Option<String>,
     pub status: Option<String>,
     pub priority: Option<String>,
-    pub note: Option<String>,
-    pub planned_end_at: Option<i64>,
+    /// Some(None) 表示清空 note
+    pub note: Option<Option<String>>,
+    /// Some(None) 表示清空 planned_start_at
+    pub planned_start_at: Option<Option<i64>>,
+    /// Some(None) 表示清空 planned_end_at
+    pub planned_end_at: Option<Option<i64>>,
+    /// 标签名数组（传空数组表示清空）
+    pub tags: Option<Vec<String>>,
 }
 
 #[tauri::command]
 pub fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
-    let conn = state
+    let mut conn = state
         .conn
         .lock()
         .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
 
     TaskRepo::update(
-        &conn,
+        &mut conn,
         &args.id,
         args.patch.title.as_deref(),
         args.patch.status.as_deref(),
         args.patch.priority.as_deref(),
-        args.patch.note.as_deref(),
+        args.patch.note.as_ref().map(|v| v.as_deref()),
+        args.patch.planned_start_at,
         args.patch.planned_end_at,
+        args.patch.tags,
     )
     .map_err(ApiError::from)
 }

@@ -25,6 +25,7 @@
 		<CreateTaskModal
 			v-model="createTaskModalOpen"
 			:space-id="currentSpaceId"
+			:project-id="currentRouteProjectId"
 			:projects="currentProjects"
 			@created="onTaskCreated" />
 
@@ -39,7 +40,7 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-	import { useRouter } from 'vue-router'
+	import { useRoute, useRouter } from 'vue-router'
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
 
@@ -53,6 +54,7 @@
 	import AppShell from './layouts/AppShell.vue'
 
 	const router = useRouter()
+	const route = useRoute()
 	const commandPaletteOpen = ref(false)
 	const createTaskModalOpen = ref(false)
 	const createProjectModalOpen = ref(false)
@@ -68,6 +70,11 @@
 
 	const currentProjects = computed<ProjectDto[]>(() => {
 		return projectsStore.getProjectsOfSpace(currentSpaceId.value)
+	})
+
+	const currentRouteProjectId = computed<string | undefined>(() => {
+		const pid = route.query.project
+		return typeof pid === 'string' ? pid : undefined
 	})
 
 	// 初始化时加载 settings 和项目

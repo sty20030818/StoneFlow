@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use rusqlite::{params, types::Value, Connection};
 use uuid::Uuid;
 
@@ -147,16 +149,25 @@ INSERT INTO tasks(
     }
 
     pub fn update(
-        conn: &Connection,
+        conn: &mut Connection,
         id: &str,
         title: Option<&str>,
         status: Option<&str>,
         priority: Option<&str>,
-        note: Option<&str>,
-        planned_end_at: Option<i64>,
+        note: Option<Option<&str>>,
+        planned_start_at: Option<Option<i64>>,
+        planned_end_at: Option<Option<i64>>,
+        tags: Option<Vec<String>>,
     ) -> Result<(), AppError> {
+        let tx = conn.transaction()?;
+
+        if !Self::task_exists(&tx, id)? {
+            return Err(AppError::Validation("任务不存在".to_string()));
+        }
+
         let mut sets: Vec<&str> = Vec::new();
         let mut ps: Vec<Value> = Vec::new();
+        let mut changed_any = false;
 
         if let Some(title) = title {
             let title = title.trim();
@@ -181,28 +192,110 @@ INSERT INTO tasks(
         }
 
         if let Some(note) = note {
-            sets.push("note = ?");
-            ps.push(Value::Text(note.to_string()));
+            match note.map(str::trim).filter(|v| !v.is_empty()) {
+                Some(value) => {
+                    sets.push("note = ?");
+                    ps.push(Value::Text(value.to_string()));
+                }
+                None => {
+                    sets.push("note = NULL");
+                }
+            }
+        }
+
+        if let Some(planned_start_at) = planned_start_at {
+            match planned_start_at {
+                Some(value) => {
+                    sets.push("planned_start_at = ?");
+                    ps.push(Value::Integer(value));
+                }
+                None => sets.push("planned_start_at = NULL"),
+            }
         }
 
         if let Some(planned_end_at) = planned_end_at {
-            sets.push("planned_end_at = ?");
-            ps.push(Value::Integer(planned_end_at));
+            match planned_end_at {
+                Some(value) => {
+                    sets.push("planned_end_at = ?");
+                    ps.push(Value::Integer(value));
+                }
+                None => sets.push("planned_end_at = NULL"),
+            }
         }
 
-        if sets.is_empty() {
+        if !sets.is_empty() {
+            let mut sql = String::from("UPDATE tasks SET ");
+            sql.push_str(&sets.join(", "));
+            sql.push_str(" WHERE id = ?\n");
+            ps.push(Value::Text(id.to_string()));
+
+            let changed = tx.execute(&sql, rusqlite::params_from_iter(ps))?;
+            if changed == 0 {
+                return Err(AppError::Validation("任务不存在".to_string()));
+            }
+            changed_any = true;
+        }
+
+        if let Some(tags) = tags {
+            Self::sync_tags(&tx, id, &tags)?;
+            changed_any = true;
+        }
+
+        if !changed_any {
             return Err(AppError::Validation("没有可更新的字段".to_string()));
         }
 
-        let mut sql = String::from("UPDATE tasks SET ");
-        sql.push_str(&sets.join(", "));
-        sql.push_str(" WHERE id = ?\n");
-        ps.push(Value::Text(id.to_string()));
-
-        let changed = conn.execute(&sql, rusqlite::params_from_iter(ps))?;
-        if changed == 0 {
-            return Err(AppError::Validation("任务不存在".to_string()));
-        }
+        tx.commit()?;
         Ok(())
+    }
+
+    fn task_exists(conn: &Connection, id: &str) -> Result<bool, AppError> {
+        let mut stmt = conn.prepare("SELECT 1 FROM tasks WHERE id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query(params![id])?;
+        Ok(rows.next()?.is_some())
+    }
+
+    fn sync_tags(conn: &Connection, task_id: &str, tags: &[String]) -> Result<(), AppError> {
+        let now = now_ms();
+        let default_color = "#94a3b8";
+
+        let mut seen = HashSet::new();
+        let normalized: Vec<String> = tags
+            .iter()
+            .map(|t| t.trim())
+            .filter(|t| !t.is_empty())
+            .filter(|t| seen.insert(t.to_string()))
+            .map(|t| t.to_string())
+            .collect();
+
+        conn.execute("DELETE FROM task_tags WHERE task_id = ?1", params![task_id])?;
+
+        for name in normalized {
+            let tag_id = Self::ensure_tag(conn, &name, default_color, now)?;
+            conn.execute(
+                "INSERT OR IGNORE INTO task_tags(task_id, tag_id) VALUES (?1, ?2)",
+                params![task_id, tag_id],
+            )?;
+        }
+
+        Ok(())
+    }
+
+    fn ensure_tag(conn: &Connection, name: &str, color: &str, created_at: i64) -> Result<String, AppError> {
+        let existing: Result<String, rusqlite::Error> =
+            conn.query_row("SELECT id FROM tags WHERE name = ?1 LIMIT 1", params![name], |row| row.get(0));
+
+        match existing {
+            Ok(id) => Ok(id),
+            Err(rusqlite::Error::QueryReturnedNoRows) => {
+                let id = Uuid::new_v4().to_string();
+                conn.execute(
+                    "INSERT INTO tags(id, name, color, created_at) VALUES (?1, ?2, ?3, ?4)",
+                    params![id, name, color, created_at],
+                )?;
+                Ok(id)
+            }
+            Err(err) => Err(err.into()),
+        }
     }
 }

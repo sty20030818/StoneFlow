@@ -23,13 +23,6 @@ export function useProjectTasks(
 	const todo = ref<TaskDto[]>([])
 	const doneAll = ref<TaskDto[]>([])
 
-	function isTodayLocal(ts: number | null): boolean {
-		if (!ts) return false
-		const d = new Date(ts)
-		const now = new Date()
-		return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
-	}
-
 	/**
 	 * 刷新任务列表。
 	 * @param silent 为 true 时不置 loading，避免切换 project/space 时三列框闪 skeleton

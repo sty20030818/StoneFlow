@@ -6,7 +6,7 @@
 			<RouterLink
 				v-if="currentSpaceLabel && currentSpaceIcon && currentSpaceId"
 				:to="`/space/${currentSpaceId}`"
-				class="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+				class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 				:class="spacePillClass">
 				<UIcon
 					:name="currentSpaceIcon"
@@ -24,7 +24,7 @@
 					<RouterLink
 						v-if="index < projectTrail.length - 1 && item.to"
 						:to="item.to"
-						class="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+						class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 						:class="projectPillClass(index)">
 						<UIcon
 							name="i-lucide-folder"
@@ -33,7 +33,7 @@
 					</RouterLink>
 					<span
 						v-else-if="index < projectTrail.length - 1"
-						class="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+						class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 						:class="projectPillClass(index)">
 						<UIcon
 							name="i-lucide-folder"
@@ -130,17 +130,6 @@
 			study: 'i-lucide-book-open',
 		}
 		return iconMap[spaceId] ?? 'i-lucide-folder'
-	})
-
-	const currentSpaceIconClass = computed(() => {
-		const spaceId = currentSpaceId.value
-		if (!spaceId) return ''
-		const classMap: Record<string, string> = {
-			work: 'text-blue-500',
-			personal: 'text-purple-500',
-			study: 'text-green-500',
-		}
-		return classMap[spaceId] ?? 'text-gray-500'
 	})
 
 	const spacePillClass = computed(() => {

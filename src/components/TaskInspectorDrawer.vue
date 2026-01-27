@@ -491,10 +491,6 @@
 		return parts.length ? parts : [raw]
 	})
 
-	const levelPalette = ['bg-amber-500', 'bg-sky-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500']
-
-	const projectPillClass = (index: number) => levelPalette[index % levelPalette.length]
-
 	const statusSubLabel = computed(() => {
 		const status = currentTask.value?.status
 		if (!status) return null
