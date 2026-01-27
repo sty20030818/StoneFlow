@@ -34,22 +34,32 @@
 			</div>
 		</template>
 		<template v-else>
-			<EmptyState
-				v-if="tasks.length === 0"
-				:text="emptyText" />
+			<div class="space-y-3">
+				<InlineTaskCreator
+					v-if="showInlineCreator"
+					:space-id="spaceId"
+					:project-id="projectId"
+					:disabled="!spaceId" />
 
-			<div
-				v-else
-				class="space-y-3">
-				<TaskCard
-					v-for="t in tasks"
-					:key="t.id"
-					:task="t"
-					:show-complete-button="showCompleteButton"
-					:show-time="showTime"
-					:show-space-label="showSpaceLabel"
-					@click="$emit('task-click', t)"
-					@complete="$emit('complete', t.id)" />
+				<EmptyState
+					v-if="tasks.length === 0"
+					:text="emptyText" />
+
+				<TransitionGroup
+					v-else
+					name="task-list"
+					tag="div"
+					class="space-y-3">
+					<TaskCard
+						v-for="t in tasks"
+						:key="t.id"
+						:task="t"
+						:show-complete-button="showCompleteButton"
+						:show-time="showTime"
+						:show-space-label="showSpaceLabel"
+						@click="$emit('task-click', t)"
+						@complete="$emit('complete', t.id)" />
+				</TransitionGroup>
 			</div>
 		</template>
 	</section>
@@ -57,6 +67,7 @@
 
 <script setup lang="ts">
 	import EmptyState from '@/components/EmptyState.vue'
+	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
 	import TaskCard from '@/components/TaskCard.vue'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
 	import type { TaskDto } from '@/services/api/tasks'
@@ -77,6 +88,9 @@
 		showTime?: boolean
 		showSpaceLabel?: boolean
 		skeletonCount?: number
+		showInlineCreator?: boolean
+		spaceId?: string
+		projectId?: string | null
 	}>()
 
 	defineEmits<{
@@ -84,3 +98,21 @@
 		'task-click': [task: TaskDto]
 	}>()
 </script>
+
+<style scoped>
+	.task-list-move,
+	.task-list-enter-active,
+	.task-list-leave-active {
+		transition: all 160ms ease;
+	}
+
+	.task-list-enter-from,
+	.task-list-leave-to {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+
+	.task-list-leave-active {
+		position: relative;
+	}
+</style>

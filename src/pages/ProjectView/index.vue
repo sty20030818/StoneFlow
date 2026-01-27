@@ -27,6 +27,9 @@
 					empty-text="暂无待办任务"
 					:show-complete-button="true"
 					:show-space-label="showSpaceLabel"
+					:show-inline-creator="true"
+					:space-id="taskSpaceId"
+					:project-id="projectId"
 					:skeleton-count="2"
 					@complete="onComplete"
 					@task-click="onTaskClick" />

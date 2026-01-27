@@ -48,6 +48,7 @@
 	import CreateTaskModal from './components/CreateTaskModal.vue'
 	import type { ProjectDto } from './services/api/projects'
 	import type { TaskDto } from './services/api/tasks'
+	import { useInlineCreateFocusStore } from './stores/inline-create-focus'
 	import { useProjectsStore } from './stores/projects'
 	import { useSettingsStore } from './stores/settings'
 
@@ -62,6 +63,7 @@
 
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
+	const inlineCreateFocusStore = useInlineCreateFocusStore()
 
 	const currentSpaceId = computed(() => {
 		if (!settingsStore.loaded) return 'work'
@@ -145,7 +147,6 @@
 			e.preventDefault()
 			commandPaletteOpen.value = !commandPaletteOpen.value
 		}
-		// ⌘N / Ctrl+N: 创建任务
 		if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
 			// 避免在输入框中触发
 			if (
@@ -155,6 +156,23 @@
 			) {
 				return
 			}
+
+			// ⌘⇧N / Ctrl+Shift+N: 全局创建任务（弹窗）
+			if (e.shiftKey) {
+				e.preventDefault()
+				createTaskModalOpen.value = true
+				return
+			}
+
+			// ⌘N / Ctrl+N: 页面内联创建聚焦（Workspace/Project 视图优先）
+			const isWorkspaceRoute = route.path === '/all-tasks' || route.path.startsWith('/space/')
+			if (isWorkspaceRoute) {
+				e.preventDefault()
+				inlineCreateFocusStore.bumpTodoFocus()
+				return
+			}
+
+			// 回退策略：非 Workspace 页面仍可用弹窗创建
 			e.preventDefault()
 			createTaskModalOpen.value = true
 		}
