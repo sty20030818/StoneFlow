@@ -345,6 +345,7 @@
 
 	import { updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
 	import { getDisplayStatus, mapDisplayStatusToBackend, isPaused, isAbandoned } from '@/utils/task'
 
@@ -374,6 +375,7 @@
 
 	const store = useTaskInspectorStore()
 	const projectsStore = useProjectsStore()
+	const refreshSignals = useRefreshSignalsStore()
 
 	const currentTask = computed(() => store.task)
 
@@ -604,6 +606,8 @@
 		try {
 			await updateTask(currentTask.value.id, patch)
 			if (Object.keys(storePatch).length > 0) store.patchTask(storePatch)
+			// 发布刷新信号，确保主视图列与筛选结果一致
+			refreshSignals.bumpTask()
 			endSave(true)
 		} catch (error) {
 			console.error('更新任务失败:', error)

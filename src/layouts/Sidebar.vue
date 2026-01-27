@@ -168,6 +168,7 @@
 	import type { ProjectDto } from '@/services/api/projects'
 	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
 	const props = defineProps<{
 		space?: string | null
@@ -228,6 +229,7 @@
 	]
 
 	const projectsStore = useProjectsStore()
+	const refreshSignals = useRefreshSignalsStore()
 
 	const defaultProject = ref<ProjectDto | null>(null)
 
@@ -321,6 +323,14 @@
 	watch(spaceValue, () => {
 		loadProjects()
 	})
+
+	// 监听项目刷新信号，强制刷新当前 Space 的项目树与默认项目
+	watch(
+		() => refreshSignals.projectTick,
+		() => {
+			loadProjects(true)
+		},
+	)
 
 	onMounted(() => {
 		projectTreeStore.load()

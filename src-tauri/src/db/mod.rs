@@ -143,7 +143,13 @@ INSERT INTO projects(
   ?5, ?5, NULL
 )
 "#,
-                (project_id.clone(), space_id.clone(), path, project_name, now),
+                (
+                    project_id.clone(),
+                    space_id.clone(),
+                    path,
+                    project_name,
+                    now,
+                ),
             )?;
         }
 

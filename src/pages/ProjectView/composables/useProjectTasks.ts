@@ -1,7 +1,8 @@
 import { onMounted, ref, watch, type MaybeRefOrGetter, toValue } from 'vue'
 
-import { useTaskActions } from '@/composables/useTaskActions'
-import { listTasks, type TaskDto } from '@/services/api/tasks'
+	import { useTaskActions } from '@/composables/useTaskActions'
+	import { listTasks, type TaskDto } from '@/services/api/tasks'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
 /**
  * 统一的项目任务数据加载与操作逻辑
@@ -17,6 +18,7 @@ export function useProjectTasks(
 	projectId?: MaybeRefOrGetter<string | null | undefined>,
 ) {
 	const toast = useToast()
+	const refreshSignals = useRefreshSignalsStore()
 
 	const loading = ref(false)
 	const doing = ref<TaskDto[]>([])
@@ -68,6 +70,14 @@ export function useProjectTasks(
 	// 监听 spaceId 和 projectId 变化时自动刷新（静默，不闪 skeleton）
 	watch(
 		() => [toValue(spaceId), toValue(projectId)],
+		() => {
+			refresh(true)
+		},
+	)
+
+	// 监听任务刷新信号，确保创建/更新后列数据一致（静默刷新）
+	watch(
+		() => refreshSignals.taskTick,
 		() => {
 			refresh(true)
 		},

@@ -164,6 +164,7 @@
 	import type { ProjectDto } from '@/services/api/projects'
 	import { createProject } from '@/services/api/projects'
 	import { useProjectsStore } from '@/stores/projects'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
 	// ============ Props & Emits ============
 	const props = defineProps<{
@@ -179,6 +180,7 @@
 
 	// ============ Store ============
 	const projectsStore = useProjectsStore()
+	const refreshSignals = useRefreshSignalsStore()
 
 	// ============ State ============
 	const loading = ref(false)
@@ -363,6 +365,8 @@
 			// 强制刷新项目列表
 			await projectsStore.loadForSpace(form.spaceId, true)
 
+			// 发布刷新信号，驱动 Sidebar 与详情头部一致
+			refreshSignals.bumpProject()
 			emit('created', project)
 			close()
 		} catch (error) {

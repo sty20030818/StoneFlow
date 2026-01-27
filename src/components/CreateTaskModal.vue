@@ -229,6 +229,7 @@
 	import type { TaskDto } from '@/services/api/tasks'
 	import { createTask, updateTask } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { statusOptions, mapDisplayStatusToBackend } from '@/utils/task'
 
 	const statusOptionsArray = [...statusOptions]
@@ -246,6 +247,7 @@
 	}>()
 
 	const projectsStore = useProjectsStore()
+	const refreshSignals = useRefreshSignalsStore()
 
 	const loading = ref(false)
 	const defaultProjectId = ref<string | null>(null)
@@ -504,6 +506,8 @@
 				Object.assign(task, updatePatch)
 			}
 
+			// 发布刷新信号，驱动列表重新拉取
+			refreshSignals.bumpTask()
 			emit('created', task)
 			close()
 		} catch (error) {
