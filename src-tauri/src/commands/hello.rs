@@ -7,5 +7,3 @@ pub fn hello(name: Option<String>) -> String {
 
     format!("Hello, {}! 来自 Rust", name)
 }
-
-

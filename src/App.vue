@@ -35,6 +35,9 @@
 			:space-id="createProjectModalSpaceId"
 			:projects="currentProjects"
 			@created="onProjectCreated" />
+
+		<!-- 更新通知 -->
+		<UpdateNotification />
 	</UApp>
 </template>
 
@@ -46,6 +49,7 @@
 
 	import CreateProjectModal from './components/CreateProjectModal.vue'
 	import CreateTaskModal from './components/CreateTaskModal.vue'
+	import UpdateNotification from './components/UpdateNotification.vue'
 	import type { ProjectDto } from './services/api/projects'
 	import type { TaskDto } from './services/api/tasks'
 	import { useInlineCreateFocusStore } from './stores/inline-create-focus'

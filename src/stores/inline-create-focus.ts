@@ -18,4 +18,3 @@ export const useInlineCreateFocusStore = defineStore('inlineCreateFocus', () => 
 		bumpTodoFocus,
 	}
 })
-

@@ -14,6 +14,9 @@ export default defineConfig(async () => ({
 			'@': fileURLToPath(new URL('./src', import.meta.url)),
 		},
 	},
+	build: {
+		chunkSizeWarningLimit: 1000, // 把警告阈值提高到 1MB
+	},
 
 	// 仅在 `tauri dev` / `tauri build` 下生效的 Vite 配置（为 Tauri 开发体验做优化）
 	// 1) 避免 Vite 清屏导致 Rust 错误被覆盖

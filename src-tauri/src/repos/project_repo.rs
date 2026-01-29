@@ -110,7 +110,9 @@ WHERE id = ?1
 
         let priority = priority.unwrap_or("P1").trim().to_uppercase();
         if !matches!(priority.as_str(), "P0" | "P1" | "P2" | "P3") {
-            return Err(AppError::Validation("项目优先级不合法（应为 P0-P3）".to_string()));
+            return Err(AppError::Validation(
+                "项目优先级不合法（应为 P0-P3）".to_string(),
+            ));
         }
 
         // 计算 path：如果有 parent，需要获取 parent 的 path

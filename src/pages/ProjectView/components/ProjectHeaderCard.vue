@@ -222,6 +222,9 @@
 		border-radius: inherit;
 		border: 1.5px solid transparent;
 		background: linear-gradient(135deg, var(--priority-color-border), transparent 40%) border-box;
+		mask:
+			linear-gradient(#fff 0 0) padding-box,
+			linear-gradient(#fff 0 0);
 		-webkit-mask:
 			linear-gradient(#fff 0 0) padding-box,
 			linear-gradient(#fff 0 0);
@@ -230,27 +233,27 @@
 		z-index: 1;
 	}
 
-		.edge-glow {
-			position: absolute;
-			inset: 0;
-			pointer-events: none;
-			border-radius: inherit;
-			background: linear-gradient(135deg, var(--glow-color) 0%, transparent 35%);
-			opacity: 0.14;
-			mask-image:
-				linear-gradient(to bottom, black 0%, transparent 55%), linear-gradient(to right, black 0%, transparent 45%);
-			-webkit-mask-composite: source-in;
-			mask-composite: intersect;
-			z-index: 2;
-		}
+	.edge-glow {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		border-radius: inherit;
+		background: linear-gradient(135deg, var(--glow-color) 0%, transparent 35%);
+		opacity: 0.14;
+		mask-image:
+			linear-gradient(to bottom, black 0%, transparent 55%), linear-gradient(to right, black 0%, transparent 45%);
+		-webkit-mask-composite: source-in;
+		mask-composite: intersect;
+		z-index: 2;
+	}
 
-		.top-rim {
-			position: absolute;
-			top: 0;
-			left: 24px;
-			right: 24px;
-			height: 1px;
-			background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.7), transparent);
-			z-index: 10;
-		}
-	</style>
+	.top-rim {
+		position: absolute;
+		top: 0;
+		left: 24px;
+		right: 24px;
+		height: 1px;
+		background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.7), transparent);
+		z-index: 10;
+	}
+</style>

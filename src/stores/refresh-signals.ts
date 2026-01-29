@@ -25,4 +25,3 @@ export const useRefreshSignalsStore = defineStore('refreshSignals', () => {
 		bumpProject,
 	}
 })
-

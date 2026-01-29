@@ -67,11 +67,13 @@ export async function listActivityLogs(args: ListActivityLogsArgs = {}): Promise
 	}
 
 	if (args.from !== undefined) {
-		filtered = filtered.filter((e) => e.created_at >= args.from!)
+		const from = args.from
+		filtered = filtered.filter((e) => e.created_at >= from)
 	}
 
 	if (args.to !== undefined) {
-		filtered = filtered.filter((e) => e.created_at <= args.to!)
+		const to = args.to
+		filtered = filtered.filter((e) => e.created_at <= to)
 	}
 
 	filtered.sort((a, b) => b.created_at - a.created_at)
