@@ -1,4 +1,5 @@
-import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS, type PriorityValue } from '@/config/priority'
+import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS } from '@/config/priority'
+import type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/project'
 
 export const PROJECT_ICON = 'i-lucide-folder'
 export const PROJECT_ROOT_LABEL = 'None (Top Level)'
@@ -24,8 +25,6 @@ export const PROJECT_LEVEL_PILL_CLASSES = [
 
 export const UNCATEGORIZED_LABEL = '未分类'
 export const UNKNOWN_PROJECT_LABEL = '未知项目'
-
-export type ProjectPriorityValue = PriorityValue
 
 export const PROJECT_PRIORITY_OPTIONS = PRIORITY_OPTIONS
 
@@ -84,8 +83,6 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 	},
 }
 
-export type ProjectStatusValue = 'active' | 'paused' | 'done'
-
 export const PROJECT_STATUS_OPTIONS = [
 	{ value: 'active', label: 'Active', icon: 'i-lucide-play-circle', iconClass: 'text-emerald-500' },
 	{ value: 'paused', label: 'Paused', icon: 'i-lucide-pause-circle', iconClass: 'text-amber-500' },
@@ -100,3 +97,5 @@ export const PROJECT_STATUS_DISPLAY: Record<
 	paused: { label: 'Paused', color: 'warning', dot: 'bg-amber-500' },
 	done: { label: 'Done', color: 'info', dot: 'bg-blue-500' },
 }
+
+export type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/project'

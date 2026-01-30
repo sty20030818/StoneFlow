@@ -1,8 +1,5 @@
-import { PRIORITY_OPTIONS, type PriorityOption, type PriorityValue } from '@/config/priority'
-
-export type TaskStatusValue = 'todo' | 'done'
-export type TaskDoneReasonValue = 'completed' | 'cancelled'
-export type TaskPriorityValue = PriorityValue
+import { PRIORITY_OPTIONS, type PriorityOption } from '@/config/priority'
+import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/types/domain/task'
 
 export type StatusOption = {
 	value: TaskStatusValue
@@ -168,3 +165,5 @@ export const TASK_PRIORITY_BADGE_STYLES: Record<
 		textOnlyClass: 'text-muted',
 	},
 }
+
+export type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/types/domain/task'

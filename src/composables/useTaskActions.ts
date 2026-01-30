@@ -1,4 +1,5 @@
 import { completeTask, updateTask } from '@/services/api/tasks'
+import type { UpdateTaskPatch } from '@/services/api/tasks'
 
 /**
  * 统一的任务操作逻辑（complete, update 等，统一错误处理）
@@ -21,7 +22,10 @@ export function useTaskActions() {
 		}
 	}
 
-	async function update(taskId: string, patch: { title?: string; status?: string }): Promise<boolean> {
+	async function update(
+		taskId: string,
+		patch: Pick<UpdateTaskPatch, 'title' | 'status'>,
+	): Promise<boolean> {
 		try {
 			await updateTask(taskId, patch)
 			toast.add({ title: '更新成功', color: 'success' })

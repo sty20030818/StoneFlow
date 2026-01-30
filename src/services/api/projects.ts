@@ -1,4 +1,5 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
+import type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/project'
 
 export type ProjectDto = {
 	id: string
@@ -7,8 +8,8 @@ export type ProjectDto = {
 	path: string
 	name: string
 	note: string | null
-	status: string
-	priority: string
+	status: ProjectStatusValue
+	priority: ProjectPriorityValue
 	created_at: number
 	updated_at: number
 	archived_at: number | null
@@ -23,8 +24,8 @@ export type CreateProjectArgs = {
 	name: string
 	parentId?: string | null
 	note?: string | null
-	status?: string | null
-	priority?: string | null
+	status?: ProjectStatusValue | null
+	priority?: ProjectPriorityValue | null
 }
 
 /**

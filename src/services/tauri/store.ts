@@ -1,21 +1,10 @@
 import { LazyStore } from '@tauri-apps/plugin-store'
 
-import type { SpaceId } from '@/config/space'
+import type { SettingsModel, UiState } from '@/types/shared/settings'
 
-export type HomeView = 'today' | 'projects' | 'focus' | 'inbox'
-export type InfoDensity = 'comfortable' | 'compact'
-export type ActiveSpaceId = SpaceId
+export type ActiveSpaceId = SettingsModel['activeSpaceId']
 
-export type SettingsModel = {
-	homeView: HomeView
-	density: InfoDensity
-	autoStart: boolean
-	activeSpaceId: ActiveSpaceId
-}
-
-export type UiState = {
-	projectTreeExpanded: Record<string, string[]>
-}
+export type { HomeView, InfoDensity, SettingsModel, UiState } from '@/types/shared/settings'
 
 export const DEFAULT_SETTINGS: SettingsModel = {
 	homeView: 'today',

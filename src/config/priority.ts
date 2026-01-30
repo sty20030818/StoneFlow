@@ -1,5 +1,6 @@
-export const PRIORITY_VALUES = ['P0', 'P1', 'P2', 'P3'] as const
-export type PriorityValue = (typeof PRIORITY_VALUES)[number]
+import type { PriorityValue } from '@/types/shared/priority'
+
+export const PRIORITY_VALUES = ['P0', 'P1', 'P2', 'P3'] as const satisfies readonly PriorityValue[]
 
 export type PriorityOption = {
 	value: PriorityValue

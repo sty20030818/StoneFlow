@@ -80,7 +80,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	const canSubmit = computed(() => form.name.trim().length > 0)
 
 	const spaceOptions: SpaceOption[] = SPACE_OPTIONS
-	const statusOptions: StatusOption[] = PROJECT_STATUS_OPTIONS
+	const statusOptions: StatusOption[] = [...PROJECT_STATUS_OPTIONS]
 	const priorityOptions: PriorityOption[] = PROJECT_PRIORITY_OPTIONS
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES

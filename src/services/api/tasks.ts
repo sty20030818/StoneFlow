@@ -1,7 +1,7 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
+import type { TaskDoneReason, TaskPriorityValue, TaskStatus } from '@/types/domain/task'
 
-export type TaskStatus = 'todo' | 'done'
-export type TaskDoneReason = 'completed' | 'cancelled'
+export type { TaskDoneReason, TaskPriorityValue, TaskStatus } from '@/types/domain/task'
 
 export type CustomFieldItem = {
 	key: string
@@ -21,7 +21,7 @@ export type TaskDto = {
 	note: string | null
 	status: TaskStatus
 	done_reason: TaskDoneReason | null
-	priority: string // P0, P1, P2, P3
+	priority: TaskPriorityValue
 	tags: string[]
 	rank: number
 	created_at: number
@@ -68,7 +68,7 @@ export type UpdateTaskPatch = {
 	title?: string
 	status?: TaskStatus
 	doneReason?: TaskDoneReason | null
-	priority?: string
+	priority?: TaskPriorityValue
 	note?: string | null
 	tags?: string[]
 	spaceId?: string

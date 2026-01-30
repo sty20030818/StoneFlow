@@ -1,5 +1,6 @@
-export const SPACE_IDS = ['work', 'personal', 'study'] as const
-export type SpaceId = (typeof SPACE_IDS)[number]
+import type { SpaceId } from '@/types/domain/space'
+
+export const SPACE_IDS = ['work', 'personal', 'study'] as const satisfies readonly SpaceId[]
 
 export type SpaceDisplay = {
 	id: SpaceId | 'unknown'
@@ -78,3 +79,5 @@ export const SPACE_LABELS: Record<SpaceId, string> = {
 	personal: SPACE_DISPLAY.personal.label,
 	study: SPACE_DISPLAY.study.label,
 }
+
+export type { SpaceId } from '@/types/domain/space'

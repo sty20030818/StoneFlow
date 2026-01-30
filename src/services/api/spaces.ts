@@ -1,7 +1,8 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
+import type { SpaceId } from '@/types/domain/space'
 
 export type SpaceDto = {
-	id: string
+	id: SpaceId
 	name: string
 	order: number
 	created_at: number
