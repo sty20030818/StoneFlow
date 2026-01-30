@@ -22,10 +22,7 @@ export function useTaskActions() {
 		}
 	}
 
-	async function update(
-		taskId: string,
-		patch: Pick<UpdateTaskPatch, 'title' | 'status'>,
-	): Promise<boolean> {
+	async function update(taskId: string, patch: Pick<UpdateTaskPatch, 'title' | 'status'>): Promise<boolean> {
 		try {
 			await updateTask(taskId, patch)
 			toast.add({ title: '更新成功', color: 'success' })

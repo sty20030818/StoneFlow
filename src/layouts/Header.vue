@@ -126,7 +126,7 @@
 	import { useRoute } from 'vue-router'
 
 	import type { ProjectDto } from '@/services/api/projects'
-import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
+	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useSettingsStore } from '@/stores/settings'
@@ -211,9 +211,7 @@ import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	const breadcrumbItems = computed(() => {
 		// 优先使用 inject 的 breadcrumbItems（来自 workspace 页面），但需要过滤掉 Space 相关的项
 		if (workspaceBreadcrumbItems.value.length > 0) {
-			const spaceLabelSet = new Set(
-				Object.values(SPACE_DISPLAY).map((item) => item.label.toLowerCase()),
-			)
+			const spaceLabelSet = new Set(Object.values(SPACE_DISPLAY).map((item) => item.label.toLowerCase()))
 			// 过滤掉 'Space' 和 space label（如 'Work'），只保留 project 路径
 			return workspaceBreadcrumbItems.value.filter((item) => {
 				const label = item.label.toLowerCase()

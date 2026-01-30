@@ -37,9 +37,7 @@ export function getStatusSortOrder(status: string | undefined | null): number {
 /**
  * 状态选项配置（用于 UI 选择器）
  */
-export const statusOptions = [
-	...TASK_STATUS_OPTIONS,
-] as const
+export const statusOptions = [...TASK_STATUS_OPTIONS] as const
 
 /**
  * 根据显示状态选择器选择的值，映射到实际的后端状态值

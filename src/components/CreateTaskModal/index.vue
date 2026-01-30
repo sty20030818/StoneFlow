@@ -35,7 +35,11 @@
 <script setup lang="ts">
 	import TaskModalBody from './components/TaskModalBody.vue'
 	import TaskModalFooter from './components/TaskModalFooter.vue'
-	import { useCreateTaskModal, type CreateTaskModalEmits, type CreateTaskModalProps } from './composables/useCreateTaskModal'
+	import {
+		useCreateTaskModal,
+		type CreateTaskModalEmits,
+		type CreateTaskModalProps,
+	} from './composables/useCreateTaskModal'
 
 	const props = defineProps<CreateTaskModalProps>()
 	const emit = defineEmits<CreateTaskModalEmits>()

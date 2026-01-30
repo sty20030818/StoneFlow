@@ -228,11 +228,7 @@
 			const end = start + 24 * 60 * 60 * 1000
 
 			const count = tasks.value.filter(
-				(t) =>
-					t.completed_at &&
-					t.completed_at >= start &&
-					t.completed_at < end &&
-					t.done_reason !== 'cancelled',
+				(t) => t.completed_at && t.completed_at >= start && t.completed_at < end && t.done_reason !== 'cancelled',
 			).length
 			days.push({ date: key, count, percent: 0 })
 		}

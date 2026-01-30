@@ -86,7 +86,12 @@
 	import { computed } from 'vue'
 
 	import type { ProjectDto } from '@/services/api/projects'
-	import { PROJECT_PRIORITY_DISPLAY, PROJECT_STATUS_DISPLAY, type ProjectPriorityValue, type ProjectStatusValue } from '@/config/project'
+	import {
+		PROJECT_PRIORITY_DISPLAY,
+		PROJECT_STATUS_DISPLAY,
+		type ProjectPriorityValue,
+		type ProjectStatusValue,
+	} from '@/config/project'
 
 	const props = defineProps<{
 		project: ProjectDto | null

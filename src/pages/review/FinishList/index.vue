@@ -202,7 +202,10 @@
 	const reflectionTask = ref<TaskDto | null>(null)
 	const reflectionText = ref('')
 
-	const spaceOptions = [{ label: '所有 Space', value: 'all' }, ...SPACE_IDS.map((id) => ({ label: SPACE_DISPLAY[id].label, value: id }))]
+	const spaceOptions = [
+		{ label: '所有 Space', value: 'all' },
+		...SPACE_IDS.map((id) => ({ label: SPACE_DISPLAY[id].label, value: id })),
+	]
 
 	const dateRangeOptions = [
 		{ label: '最近 7 天', value: 'this-week' },

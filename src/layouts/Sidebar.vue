@@ -42,17 +42,17 @@
 						<span>All Tasks</span>
 					</RouterLink>
 					<!-- 默认 Project 入口 -->
-						<RouterLink
-							v-if="defaultProject"
-							:to="`/space/${spaceValue}?project=${defaultProject.id}`"
-							class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
-							:class="isActiveProject(defaultProject.id) ? 'bg-elevated text-default' : ''">
-							<UIcon
-								:name="projectIcon"
-								class="size-3.5"
-								:class="defaultProjectIconClass" />
-							<span class="truncate">{{ defaultProject.name }}</span>
-						</RouterLink>
+					<RouterLink
+						v-if="defaultProject"
+						:to="`/space/${spaceValue}?project=${defaultProject.id}`"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						:class="isActiveProject(defaultProject.id) ? 'bg-elevated text-default' : ''">
+						<UIcon
+							:name="projectIcon"
+							class="size-3.5"
+							:class="defaultProjectIconClass" />
+						<span class="truncate">{{ defaultProject.name }}</span>
+					</RouterLink>
 				</nav>
 			</section>
 
