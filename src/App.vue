@@ -47,8 +47,8 @@
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
 
-	import CreateProjectModal from './components/CreateProjectModal.vue'
-	import CreateTaskModal from './components/CreateTaskModal.vue'
+	import CreateProjectModal from '@/components/CreateProjectModal'
+	import CreateTaskModal from '@/components/CreateTaskModal'
 	import UpdateNotification from './components/UpdateNotification.vue'
 	import type { ProjectDto } from './services/api/projects'
 	import type { TaskDto } from './services/api/tasks'

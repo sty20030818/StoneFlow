@@ -18,7 +18,7 @@
 	import { computed, nextTick, ref, watch } from 'vue'
 
 	import { getDefaultProject } from '@/services/api/projects'
-	import { createTask, updateTask, type TaskDto } from '@/services/api/tasks'
+	import { createTask, updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
 	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
@@ -98,7 +98,7 @@
 			})
 
 			// 兜底保证 priority/status 符合约定（默认 P1 / todo）
-			const patch: { priority?: string; status?: string } = {}
+			const patch: UpdateTaskPatch = {}
 			if (task.priority !== 'P1') patch.priority = 'P1'
 			if (task.status !== 'todo') patch.status = 'todo'
 			if (Object.keys(patch).length > 0) {

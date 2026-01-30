@@ -89,7 +89,7 @@
 
 	import EmptyState from '@/components/EmptyState.vue'
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
-	import TaskCard from '@/components/TaskCard.vue'
+import TaskCard from '@/components/TaskCard'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
 	import { TASK_DONE_REASON_LABELS, TASK_STATUS_LABELS } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
