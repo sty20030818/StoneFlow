@@ -124,32 +124,43 @@
 					</UFormField>
 				</div>
 
-				<!-- Planned Start & End Date (两列) -->
-				<div class="grid grid-cols-2 gap-4">
-					<UFormField label="计划开始时间">
-						<UInput
-							v-model="form.plannedStartDate"
-							type="date"
-							size="md"
-							class="w-full"
-							:ui="{
-								rounded: 'rounded-xl',
-							}"
-							placeholder="选择开始日期" />
-					</UFormField>
+				<!-- Done Reason（仅已完成） -->
+				<UFormField
+					v-if="form.status === 'done'"
+					label="完成类型">
+					<USelectMenu
+						v-model="form.doneReason"
+						:items="doneReasonOptions"
+						value-key="value"
+						label-key="label"
+						size="md"
+						class="w-full"
+						:search-input="false"
+						:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+						<template #item="{ item }">
+							<div class="flex items-center gap-2 py-0.5">
+								<UIcon
+									:name="item.icon"
+									class="size-4 shrink-0"
+									:class="item.iconClass" />
+								<span>{{ item.label }}</span>
+							</div>
+						</template>
+					</USelectMenu>
+				</UFormField>
 
-					<UFormField label="计划结束时间">
-						<UInput
-							v-model="form.plannedEndDate"
-							type="date"
-							size="md"
-							class="w-full"
-							:ui="{
-								rounded: 'rounded-xl',
-							}"
-							placeholder="选择截止日期" />
-					</UFormField>
-				</div>
+				<!-- Deadline -->
+				<UFormField label="截止时间">
+					<UInput
+						v-model="form.deadlineDate"
+						type="date"
+						size="md"
+						class="w-full"
+						:ui="{
+							rounded: 'rounded-xl',
+						}"
+						placeholder="选择截止日期" />
+				</UFormField>
 
 				<!-- Tags (占满一行) -->
 				<UFormField label="Tags (可选)">
@@ -226,11 +237,11 @@
 
 	import type { ProjectDto } from '@/services/api/projects'
 	import { getDefaultProject } from '@/services/api/projects'
-	import type { TaskDto } from '@/services/api/tasks'
+	import type { TaskDoneReason, TaskDto } from '@/services/api/tasks'
 	import { createTask, updateTask } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
-	import { statusOptions, mapDisplayStatusToBackend } from '@/utils/task'
+	import { statusOptions } from '@/utils/task'
 
 	const statusOptionsArray = [...statusOptions]
 
@@ -260,10 +271,10 @@
 		title: '',
 		spaceId: props.spaceId ?? 'work',
 		projectId: null as string | null,
-		status: 'todo' as 'todo' | 'doing' | 'done',
+		status: 'todo' as 'todo' | 'done',
+		doneReason: 'completed' as TaskDoneReason,
 		priority: 'P1' as string,
-		plannedStartDate: '' as string,
-		plannedEndDate: '' as string,
+		deadlineDate: '' as string,
 		tags: [] as string[],
 		note: '' as string,
 	})
@@ -321,6 +332,11 @@
 			iconClass: 'text-muted',
 		},
 	]
+
+	const doneReasonOptions = [
+		{ value: 'completed', label: '完成', icon: 'i-lucide-check-circle', iconClass: 'text-emerald-500' },
+		{ value: 'cancelled', label: '取消', icon: 'i-lucide-x-circle', iconClass: 'text-red-500' },
+	] as const
 
 	// 层级颜色（与 Sidebar / CreateProject 保持一致）
 	const levelColors = ['text-amber-400', 'text-sky-400', 'text-violet-400', 'text-emerald-400', 'text-rose-400']
@@ -415,9 +431,9 @@
 		if (open) {
 			form.value.title = ''
 			form.value.status = 'todo'
+			form.value.doneReason = 'completed'
 			form.value.priority = 'P1'
-			form.value.plannedStartDate = ''
-			form.value.plannedEndDate = ''
+			form.value.deadlineDate = ''
 			form.value.tags = []
 			form.value.note = ''
 			tagInput.value = ''
@@ -461,17 +477,16 @@
 			// 如果有额外的字段，更新任务
 			const updatePatch: {
 				status?: string
+				doneReason?: TaskDoneReason | null
 				priority?: string
 				note?: string | null
-				plannedStartAt?: number | null
-				plannedEndAt?: number | null
+				deadlineAt?: number | null
 				tags?: string[]
 			} = {}
 
-			// 映射显示状态到后端状态
-			const backendStatus = mapDisplayStatusToBackend(form.value.status, task.status)
-			if (backendStatus !== task.status) {
-				updatePatch.status = backendStatus
+			if (form.value.status === 'done') {
+				updatePatch.status = 'done'
+				updatePatch.doneReason = form.value.doneReason ?? 'completed'
 			}
 
 			if (form.value.priority && form.value.priority !== 'P1') {
@@ -482,17 +497,10 @@
 				updatePatch.note = form.value.note.trim()
 			}
 
-			if (form.value.plannedStartDate) {
-				const date = new Date(form.value.plannedStartDate)
+			if (form.value.deadlineDate) {
+				const date = new Date(form.value.deadlineDate)
 				date.setHours(0, 0, 0, 0)
-				updatePatch.plannedStartAt = date.getTime()
-			}
-
-			if (form.value.plannedEndDate) {
-				// 将日期转换为时间戳（UTC 午夜）
-				const date = new Date(form.value.plannedEndDate)
-				date.setHours(23, 59, 59, 999) // 设置为当天的 23:59:59
-				updatePatch.plannedEndAt = date.getTime()
+				updatePatch.deadlineAt = date.getTime()
 			}
 
 			if (form.value.tags.length > 0) {
@@ -502,8 +510,13 @@
 			// 如果有需要更新的字段，执行更新
 			if (Object.keys(updatePatch).length > 0) {
 				await updateTask(task.id, updatePatch)
-				// 更新本地任务对象
-				Object.assign(task, updatePatch)
+				// 更新本地任务对象（对齐 snake_case 字段）
+				if (updatePatch.status) task.status = updatePatch.status as TaskDto['status']
+				if (updatePatch.doneReason !== undefined) task.done_reason = updatePatch.doneReason
+				if (updatePatch.deadlineAt !== undefined) task.deadline_at = updatePatch.deadlineAt
+				if (updatePatch.priority) task.priority = updatePatch.priority
+				if (updatePatch.note !== undefined) task.note = updatePatch.note
+				if (updatePatch.tags) task.tags = updatePatch.tags
 			}
 
 			// 发布刷新信号，驱动列表重新拉取

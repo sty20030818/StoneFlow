@@ -13,7 +13,7 @@
 
 	const props = defineProps<{
 		priority?: string
-		variant?: 'doing' | 'todo' | 'done'
+		variant?: 'todo' | 'done' | 'cancelled'
 	}>()
 
 	const priorityClass = computed(() => {

@@ -1,6 +1,17 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
 
-export type TaskStatus = 'todo' | 'doing' | 'done' | 'archived' | string
+export type TaskStatus = 'todo' | 'done'
+export type TaskDoneReason = 'completed' | 'cancelled'
+
+export type CustomFieldItem = {
+	key: string
+	label: string
+	value: string | null
+}
+
+export type CustomFields = {
+	fields: CustomFieldItem[]
+}
 
 export type TaskDto = {
 	id: string
@@ -9,14 +20,19 @@ export type TaskDto = {
 	title: string
 	note: string | null
 	status: TaskStatus
+	done_reason: TaskDoneReason | null
 	priority: string // P0, P1, P2, P3
 	tags: string[]
-	order_in_list: number
+	rank: number
 	created_at: number
-	started_at: number | null
+	updated_at: number
 	completed_at: number | null
-	project_path: string | null
-	planned_end_date: number | null
+	deadline_at: number | null
+	archived_at: number | null
+	deleted_at: number | null
+	links: string[]
+	custom_fields: CustomFields | null
+	create_by: string
 }
 
 export type ListTasksArgs = {
@@ -51,13 +67,18 @@ export async function createTask(args: CreateTaskArgs): Promise<TaskDto> {
 export type UpdateTaskPatch = {
 	title?: string
 	status?: TaskStatus
+	doneReason?: TaskDoneReason | null
 	priority?: string
 	note?: string | null
 	tags?: string[]
-	projectPath?: string | null
 	spaceId?: string
 	projectId?: string | null
-	plannedEndDate?: number | null
+	deadlineAt?: number | null
+	rank?: number
+	links?: string[]
+	customFields?: CustomFields | null
+	archivedAt?: number | null
+	deletedAt?: number | null
 }
 
 export async function updateTask(id: string, patch: UpdateTaskPatch): Promise<void> {

@@ -196,11 +196,13 @@
 			const info = meta[id]
 			const scoped = tasks.value.filter((t) => t.space_id === id)
 
-			const thisWeekDone = scoped.filter((t) => t.completed_at && t.completed_at >= startOfWeek).length
+			const thisWeekDone = scoped.filter(
+				(t) => t.completed_at && t.completed_at >= startOfWeek && t.done_reason !== 'cancelled',
+			).length
 
 			const activeProjectIds = new Set<string>()
 			for (const t of scoped) {
-				if (t.status !== 'done') {
+				if (t.status === 'todo') {
 					activeProjectIds.add('default')
 				}
 			}
@@ -223,7 +225,13 @@
 			const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 			const end = start + 24 * 60 * 60 * 1000
 
-			const count = tasks.value.filter((t) => t.completed_at && t.completed_at >= start && t.completed_at < end).length
+			const count = tasks.value.filter(
+				(t) =>
+					t.completed_at &&
+					t.completed_at >= start &&
+					t.completed_at < end &&
+					t.done_reason !== 'cancelled',
+			).length
 			days.push({ date: key, count, percent: 0 })
 		}
 
@@ -247,9 +255,19 @@
 
 	const statusSlices = computed<Slice[]>(() => {
 		const buckets: { key: string; label: string; color: string; match: (t: TaskDto) => boolean }[] = [
-			{ key: 'done', label: '已完成', color: '#22c55e', match: (t) => t.status === 'done' },
-			{ key: 'doing', label: '进行中', color: '#3b82f6', match: (t) => t.status === 'doing' },
-			{ key: 'todo', label: '待办', color: '#f97316', match: (t) => t.status === 'todo' },
+			{
+				key: 'done',
+				label: '已完成',
+				color: '#22c55e',
+				match: (t) => t.status === 'done' && t.done_reason !== 'cancelled',
+			},
+			{
+				key: 'cancelled',
+				label: '已取消',
+				color: '#ef4444',
+				match: (t) => t.status === 'done' && t.done_reason === 'cancelled',
+			},
+			{ key: 'todo', label: '待办', color: '#3b82f6', match: (t) => t.status === 'todo' },
 		]
 
 		const total = tasks.value.length || 1
@@ -278,12 +296,8 @@
 	async function refresh() {
 		loading.value = true
 		try {
-			const [doing, todo, done] = await Promise.all([
-				listTasks({ status: 'doing' }),
-				listTasks({ status: 'todo' }),
-				listTasks({ status: 'done' }),
-			])
-			tasks.value = [...doing, ...todo, ...done]
+			const [todo, done] = await Promise.all([listTasks({ status: 'todo' }), listTasks({ status: 'done' })])
+			tasks.value = [...todo, ...done]
 		} catch (e) {
 			toast.add({
 				title: '加载统计失败',

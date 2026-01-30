@@ -36,6 +36,10 @@ const MIGRATIONS: &[Migration] = &[
         version: 7,
         sql: include_str!("migrations/0007_add_task_planned_end_date.sql"),
     },
+    Migration {
+        version: 8,
+        sql: include_str!("migrations/0008_reset_task_model.sql"),
+    },
 ];
 
 /// 执行所有未执行的迁移。

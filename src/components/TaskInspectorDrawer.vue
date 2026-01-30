@@ -53,17 +53,17 @@
 						</div>
 						<div class="h-4 w-px bg-default/70"></div>
 
-						<UButton
+						<!-- <UButton
 							color="neutral"
 							variant="ghost"
 							icon="i-lucide-more-horizontal"
-							size="xs" />
+							size="xs" /> -->
 
 						<UButton
 							color="neutral"
 							variant="ghost"
 							icon="i-lucide-x"
-							size="xs"
+							size="sm"
 							@click="close">
 							<span class="sr-only">关闭</span>
 						</UButton>
@@ -93,13 +93,37 @@
 									<span>{{ opt.label }}</span>
 								</button>
 							</div>
-							<UBadge
+							<!-- <UBadge
 								v-if="statusSubLabel"
 								size="xs"
 								color="neutral"
 								variant="soft">
 								{{ statusSubLabel }}
-							</UBadge>
+							</UBadge> -->
+						</div>
+					</section>
+
+					<!-- 完成原因 -->
+					<section
+						v-if="statusLocal === 'done'"
+						class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">完成类型</label>
+						<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
+							<button
+								v-for="opt in doneReasonOptions"
+								:key="opt.value"
+								type="button"
+								class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
+								:class="
+									doneReasonLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'
+								"
+								@click="onDoneReasonChange(opt.value)">
+								<UIcon
+									:name="opt.icon"
+									class="size-3.5"
+									:class="doneReasonLocal === opt.value ? opt.iconClass : 'text-muted'" />
+								<span>{{ opt.label }}</span>
+							</button>
 						</div>
 					</section>
 
@@ -176,7 +200,7 @@
 									type="button"
 									class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
 									:class="
-										plannedEndDateLocal
+										deadlineLocal
 											? 'bg-indigo-50/40 border-indigo-200 hover:bg-indigo-50/60'
 											: 'bg-elevated/50 border-default/60 hover:bg-elevated/80'
 									">
@@ -184,13 +208,13 @@
 										<UIcon
 											name="i-lucide-alarm-clock"
 											class="size-4 shrink-0"
-											:class="plannedEndDateLocal ? 'text-indigo-500' : 'text-muted'" />
+											:class="deadlineLocal ? 'text-indigo-500' : 'text-muted'" />
 										<div class="min-w-0 flex-1">
 											<div class="text-[11px] text-muted mb-1">DeadLine</div>
 											<div
 												class="text-xs font-semibold"
-												:class="plannedEndDateLocal ? 'text-indigo-600' : 'text-muted'">
-												{{ plannedEndDateLabel }}
+												:class="deadlineLocal ? 'text-indigo-600' : 'text-muted'">
+												{{ deadlineLabel }}
 											</div>
 										</div>
 									</div>
@@ -198,46 +222,23 @@
 								<template #content>
 									<div class="p-2">
 										<UInput
-											v-model="plannedEndDateLocal"
+											v-model="deadlineLocal"
 											type="date"
 											size="sm"
 											:ui="{ rounded: 'rounded-lg' }"
-											@update:model-value="onPlannedEndDateChange" />
+											@update:model-value="onDeadlineChange" />
 										<div class="mt-2 flex gap-2">
 											<UButton
 												color="neutral"
 												variant="ghost"
 												size="xs"
-												@click="onPlannedEndDateClear">
+												@click="onDeadlineClear">
 												清除
 											</UButton>
 										</div>
 									</div>
 								</template>
 							</UPopover>
-						</div>
-					</section>
-
-					<!-- 项目路径 -->
-					<section class="space-y-2">
-						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">项目路径</label>
-						<div class="p-4 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 transition-all">
-							<div class="flex items-center gap-2.5">
-								<UIcon
-									name="i-lucide-folder-open"
-									class="size-4 text-amber-400 shrink-0" />
-								<UInput
-									v-model="projectPathLocal"
-									placeholder="输入本地项目路径..."
-									size="sm"
-									variant="none"
-									:ui="{
-										root: 'flex-1',
-										base: 'px-2 py-0 text-xs font-mono bg-transparent border-none focus:ring-0 placeholder:text-muted/40 rounded-none',
-										rounded: 'rounded-none',
-									}"
-									@blur="onProjectPathBlur" />
-							</div>
 						</div>
 					</section>
 
@@ -424,20 +425,13 @@
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
-	import { getDisplayStatus, mapDisplayStatusToBackend, isPaused, isAbandoned } from '@/utils/task'
+	import { getDisplayStatus } from '@/utils/task'
 
 	const statusSegmentOptions = [
 		{
 			value: 'todo',
 			label: '待办',
 			icon: 'i-lucide-list-todo',
-			iconClass: 'text-orange-500',
-			activeClass: 'bg-orange-50 text-orange-700 shadow-sm',
-		},
-		{
-			value: 'doing',
-			label: '进行中',
-			icon: 'i-lucide-loader',
 			iconClass: 'text-blue-500',
 			activeClass: 'bg-blue-50 text-blue-700 shadow-sm',
 		},
@@ -450,6 +444,23 @@
 		},
 	] as const
 
+	const doneReasonOptions = [
+		{
+			value: 'completed',
+			label: '完成',
+			icon: 'i-lucide-check-circle',
+			iconClass: 'text-emerald-500',
+			activeClass: 'bg-emerald-50 text-emerald-700 shadow-sm',
+		},
+		{
+			value: 'cancelled',
+			label: '取消',
+			icon: 'i-lucide-x-circle',
+			iconClass: 'text-red-500',
+			activeClass: 'bg-red-50 text-red-700 shadow-sm',
+		},
+	] as const
+
 	const store = useTaskInspectorStore()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
@@ -457,9 +468,10 @@
 	const currentTask = computed<TaskDto | null>(() => store.task ?? null)
 
 	const titleLocal = ref('')
-	const statusLocal = ref<'todo' | 'doing' | 'done'>('todo')
+	const statusLocal = ref<'todo' | 'done'>('todo')
+	const doneReasonLocal = ref<'completed' | 'cancelled'>('completed')
 	const priorityLocal = ref<string>('P1')
-	const plannedEndDateLocal = ref<string>('')
+	const deadlineLocal = ref<string>('')
 	const noteLocal = ref<string>('')
 	const tagsLocal = ref<string[]>([])
 	const tagInput = ref('')
@@ -468,8 +480,7 @@
 	const pendingSaves = ref(0)
 	let saveStateTimer: ReturnType<typeof setTimeout> | null = null
 
-	// 新增：项目路径、Space、Project 本地状态
-	const projectPathLocal = ref<string>('')
+	// Space、Project 本地状态
 	const spaceIdLocal = ref<string>('')
 	const projectIdLocal = ref<string | null>(null)
 
@@ -616,9 +627,9 @@
 		return proj?.name ?? '未知项目'
 	})
 
-	const plannedEndDateLabel = computed(() => {
-		if (!plannedEndDateLocal.value) return '未设定'
-		const date = new Date(plannedEndDateLocal.value)
+	const deadlineLabel = computed(() => {
+		if (!deadlineLocal.value) return '未设定'
+		const date = new Date(deadlineLocal.value)
 		return date.toLocaleDateString('zh-CN', {
 			month: 'short',
 			day: 'numeric',
@@ -676,13 +687,10 @@
 		return parts.length ? parts : [raw]
 	})
 
-	const statusSubLabel = computed(() => {
-		const status = currentTask.value?.status
-		if (!status) return null
-		if (isPaused(status)) return '已暂停'
-		if (isAbandoned(status)) return '已放弃'
-		return null
-	})
+	// const statusSubLabel = computed(() => {
+	// 	if (statusLocal.value !== 'done') return null
+	// 	return getDoneReasonLabel(doneReasonLocal.value)
+	// })
 
 	const saveStateLabel = computed(() => {
 		if (saveState.value === 'saving') return '保存中'
@@ -710,7 +718,6 @@
 		if (!t) return []
 
 		const created = new Date(t.created_at)
-		const started = t.started_at ? new Date(t.started_at) : null
 		const completed = t.completed_at ? new Date(t.completed_at) : null
 
 		const items = [
@@ -720,14 +727,6 @@
 				icon: 'i-lucide-circle-dot',
 			},
 		]
-
-		if (started) {
-			items.push({
-				label: '开始',
-				content: started.toLocaleString(),
-				icon: 'i-lucide-play',
-			})
-		}
 
 		if (completed) {
 			items.push({
@@ -807,20 +806,38 @@
 
 	async function onStatusChange(value: unknown) {
 		const record = value as { value?: string } | null
-		const displayStatus = (typeof value === 'string' ? value : record?.value) as 'todo' | 'doing' | 'done' | undefined
+		const displayStatus = (typeof value === 'string' ? value : record?.value) as 'todo' | 'done' | undefined
 		if (!currentTask.value || !displayStatus) return
 
-		// 映射显示状态到后端状态
-		const backendStatus = mapDisplayStatusToBackend(displayStatus, currentTask.value.status)
-		if (backendStatus === currentTask.value.status) return
+		if (displayStatus === 'done') {
+			const nextReason = doneReasonLocal.value ?? 'completed'
+			await commitUpdate(
+				{ status: 'done', doneReason: nextReason },
+				{
+					status: 'done',
+					done_reason: nextReason,
+					completed_at: currentTask.value.completed_at ?? Date.now(),
+				},
+			)
+			statusLocal.value = 'done'
+			doneReasonLocal.value = nextReason
+			return
+		}
 
-		await commitUpdate({ status: backendStatus }, { status: backendStatus })
-		statusLocal.value = displayStatus
+		await commitUpdate({ status: 'todo', doneReason: null }, { status: 'todo', done_reason: null, completed_at: null })
+		statusLocal.value = 'todo'
 	}
 
 	function onStatusSegmentClick(value: string) {
 		if (statusLocal.value === value) return
 		onStatusChange(value)
+	}
+
+	async function onDoneReasonChange(value: 'completed' | 'cancelled') {
+		if (!currentTask.value || statusLocal.value !== 'done') return
+		if (doneReasonLocal.value === value) return
+		await commitUpdate({ doneReason: value }, { done_reason: value })
+		doneReasonLocal.value = value
 	}
 
 	async function onPriorityChange(value: string) {
@@ -830,22 +847,22 @@
 	}
 
 	// DeadLine 功能
-	async function onPlannedEndDateChange() {
+	async function onDeadlineChange() {
 		if (!currentTask.value) return
-		const val = plannedEndDateLocal.value
+		const val = deadlineLocal.value
 		if (!val) {
-			await commitUpdate({ plannedEndDate: null }, { planned_end_date: null })
+			await commitUpdate({ deadlineAt: null }, { deadline_at: null })
 			return
 		}
 		// web date string yyyy-mm-dd -> timestamp (local midnight)
 		const date = new Date(val)
 		const ts = date.getTime()
-		await commitUpdate({ plannedEndDate: ts }, { planned_end_date: ts })
+		await commitUpdate({ deadlineAt: ts }, { deadline_at: ts })
 	}
 
-	async function onPlannedEndDateClear() {
-		plannedEndDateLocal.value = ''
-		await onPlannedEndDateChange()
+	async function onDeadlineClear() {
+		deadlineLocal.value = ''
+		await onDeadlineChange()
 	}
 
 	function addTag() {
@@ -865,14 +882,6 @@
 	async function onTagsChange() {
 		if (!currentTask.value) return
 		await commitUpdate({ tags: tagsLocal.value }, { tags: tagsLocal.value })
-	}
-
-	// 项目路径变更
-	async function onProjectPathBlur() {
-		if (!currentTask.value) return
-		const nextPath = projectPathLocal.value.trim() || null
-		if (nextPath === (currentTask.value.project_path || null)) return
-		await commitUpdate({ projectPath: nextPath }, { project_path: nextPath })
 	}
 
 	// Space 切换
@@ -906,6 +915,7 @@
 		titleLocal.value = t.title
 		// 将后端状态映射到显示状态
 		statusLocal.value = getDisplayStatus(t.status)
+		doneReasonLocal.value = t.done_reason === 'cancelled' ? 'cancelled' : 'completed'
 		priorityLocal.value = t.priority || 'P1'
 		noteLocal.value = t.note || ''
 		tagsLocal.value = t.tags || []
@@ -913,18 +923,17 @@
 		timelineCollapsed.value = true
 
 		// 处理截止日期
-		if (t.planned_end_date) {
-			const d = new Date(t.planned_end_date)
+		if (t.deadline_at) {
+			const d = new Date(t.deadline_at)
 			const year = d.getFullYear()
 			const month = String(d.getMonth() + 1).padStart(2, '0')
 			const day = String(d.getDate()).padStart(2, '0')
-			plannedEndDateLocal.value = `${year}-${month}-${day}`
+			deadlineLocal.value = `${year}-${month}-${day}`
 		} else {
-			plannedEndDateLocal.value = ''
+			deadlineLocal.value = ''
 		}
 
 		// 同步项目路径、Space、Project
-		projectPathLocal.value = t.project_path || ''
 		spaceIdLocal.value = t.space_id
 		projectIdLocal.value = t.project_id
 	}

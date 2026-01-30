@@ -1,10 +1,13 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 use rusqlite::{params, types::Value, Connection};
 use uuid::Uuid;
 
 use crate::db::now_ms;
-use crate::types::{dto::TaskDto, error::AppError};
+use crate::types::{
+    dto::{CustomFieldItemDto, CustomFieldsDto, TaskDto},
+    error::AppError,
+};
 
 pub struct TaskRepo;
 
@@ -18,9 +21,10 @@ impl TaskRepo {
         let mut sql = String::from(
             r#"
 SELECT
-  t.id, t.space_id, t.project_id, t.title, t.note, t.status, t.priority,
-  t.order_in_list, t.created_at, t.started_at, t.completed_at, t.project_path,
-  GROUP_CONCAT(tag.name, ',') as tags, t.planned_end_date
+  t.id, t.space_id, t.project_id, t.title, t.note, t.status, t.done_reason, t.priority,
+  t.rank, t.created_at, t.updated_at, t.completed_at, t.deadline_at, t.archived_at,
+  t.deleted_at, t.links, t.custom_fields, t.create_by,
+  GROUP_CONCAT(tag.name, ',') as tags
 FROM tasks t
 LEFT JOIN task_tags tt ON t.id = tt.task_id
 LEFT JOIN tags tag ON tt.tag_id = tag.id
@@ -44,11 +48,11 @@ WHERE 1=1
             ps.push(Value::Text(project_id.to_string()));
         }
 
-        sql.push_str(" GROUP BY t.id ORDER BY t.created_at DESC\n");
+        sql.push_str(" GROUP BY t.id ORDER BY t.rank DESC, t.created_at DESC\n");
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(rusqlite::params_from_iter(ps), |row| {
-            let tags_str: Option<String> = row.get(12)?;
+            let tags_str: Option<String> = row.get(18)?;
             let tags = if let Some(s) = tags_str {
                 if s.is_empty() {
                     Vec::new()
@@ -59,6 +63,9 @@ WHERE 1=1
                 Vec::new()
             };
 
+            let links = Self::parse_links(row.get(15)?);
+            let custom_fields = Self::parse_custom_fields(row.get(16)?);
+
             Ok(TaskDto {
                 id: row.get(0)?,
                 space_id: row.get(1)?,
@@ -66,14 +73,19 @@ WHERE 1=1
                 title: row.get(3)?,
                 note: row.get(4)?,
                 status: row.get(5)?,
-                priority: row.get(6)?,
+                done_reason: row.get(6)?,
+                priority: row.get(7)?,
                 tags,
-                order_in_list: row.get(7)?,
-                created_at: row.get(8)?,
-                started_at: row.get(9)?,
-                completed_at: row.get(10)?,
-                project_path: row.get(11)?,
-                planned_end_date: row.get(13)?,
+                rank: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
+                completed_at: row.get(11)?,
+                deadline_at: row.get(12)?,
+                archived_at: row.get(13)?,
+                deleted_at: row.get(14)?,
+                links,
+                custom_fields,
+                create_by: row.get(17)?,
             })
         })?;
 
@@ -98,29 +110,27 @@ WHERE 1=1
 
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
-        let started_at = if auto_start { Some(now) } else { None };
-        let status = if auto_start { "doing" } else { "todo" };
-        let order_in_list = now;
+        let _auto_start = auto_start;
+        let status = "todo";
+        let rank = now;
+        let updated_at = now;
+        let links = Self::serialize_links(&[])?;
+        let create_by = "stonefish";
 
         conn.execute(
             r#"
 INSERT INTO tasks(
-  id, space_id, project_id, title, note, status, priority,
-  order_in_list, created_at, started_at, completed_at, planned_end_date
+  id, space_id, project_id, title, note, status, done_reason, priority,
+  rank, created_at, updated_at, completed_at, deadline_at, archived_at, deleted_at,
+  links, custom_fields, create_by
 ) VALUES (
-  ?1, ?2, ?3, ?4, NULL, ?5, 'P1',
-  ?6, ?7, ?8, NULL, NULL
+  ?1, ?2, ?3, ?4, NULL, ?5, NULL, 'P1',
+  ?6, ?7, ?8, NULL, NULL, NULL, NULL,
+  ?9, NULL, ?10
 )
 "#,
             params![
-                id,
-                space_id,
-                project_id,
-                title,
-                status,
-                order_in_list,
-                now,
-                started_at
+                id, space_id, project_id, title, status, rank, now, updated_at, links, create_by
             ],
         )?;
 
@@ -131,22 +141,27 @@ INSERT INTO tasks(
             title: title.to_string(),
             note: None,
             status: status.to_string(),
+            done_reason: None,
             priority: "P1".to_string(),
             tags: Vec::new(),
-            order_in_list,
+            rank,
             created_at: now,
-            started_at,
+            updated_at,
             completed_at: None,
-            project_path: None,
-            planned_end_date: None,
+            deadline_at: None,
+            archived_at: None,
+            deleted_at: None,
+            links: Vec::new(),
+            custom_fields: None,
+            create_by: create_by.to_string(),
         })
     }
 
     pub fn complete(conn: &Connection, id: &str) -> Result<(), AppError> {
         let now = now_ms();
         let changed = conn.execute(
-            "UPDATE tasks SET status = 'done', completed_at = ?1 WHERE id = ?2",
-            params![now, id],
+            "UPDATE tasks SET status = 'done', done_reason = 'completed', completed_at = ?1, updated_at = ?2 WHERE id = ?3",
+            params![now, now, id],
         )?;
         if changed == 0 {
             return Err(AppError::Validation("任务不存在".to_string()));
@@ -184,13 +199,18 @@ INSERT INTO tasks(
         id: &str,
         title: Option<&str>,
         status: Option<&str>,
+        done_reason: Option<Option<&str>>,
         priority: Option<&str>,
         note: Option<Option<&str>>,
         tags: Option<Vec<String>>,
-        project_path: Option<Option<&str>>,
         space_id: Option<&str>,
         project_id: Option<Option<&str>>,
-        planned_end_date: Option<Option<i64>>,
+        deadline_at: Option<Option<i64>>,
+        rank: Option<i64>,
+        links: Option<Vec<String>>,
+        custom_fields: Option<Option<CustomFieldsDto>>,
+        archived_at: Option<Option<i64>>,
+        deleted_at: Option<Option<i64>>,
     ) -> Result<(), AppError> {
         let tx = conn.transaction()?;
 
@@ -198,9 +218,11 @@ INSERT INTO tasks(
             return Err(AppError::Validation("任务不存在".to_string()));
         }
 
+        let now = now_ms();
         let mut sets: Vec<&str> = Vec::new();
         let mut ps: Vec<Value> = Vec::new();
         let mut changed_any = false;
+        let mut touch_updated_at = false;
 
         if let Some(title) = title {
             let title = title.trim();
@@ -209,11 +231,62 @@ INSERT INTO tasks(
             }
             sets.push("title = ?");
             ps.push(Value::Text(title.to_string()));
+            touch_updated_at = true;
         }
 
         if let Some(status) = status {
+            let status = status.trim().to_lowercase();
+            if status != "todo" && status != "done" {
+                return Err(AppError::Validation("状态必须为 todo 或 done".to_string()));
+            }
             sets.push("status = ?");
-            ps.push(Value::Text(status.to_string()));
+            ps.push(Value::Text(status.clone()));
+            touch_updated_at = true;
+
+            if status == "done" {
+                let reason = done_reason
+                    .ok_or_else(|| {
+                        AppError::Validation("完成任务时必须提供 doneReason".to_string())
+                    })?
+                    .ok_or_else(|| {
+                        AppError::Validation("完成任务时必须提供 doneReason".to_string())
+                    })?;
+                let reason = reason.trim().to_lowercase();
+                if reason != "completed" && reason != "cancelled" {
+                    return Err(AppError::Validation(
+                        "doneReason 必须为 completed 或 cancelled".to_string(),
+                    ));
+                }
+                sets.push("done_reason = ?");
+                ps.push(Value::Text(reason));
+                sets.push("completed_at = ?");
+                ps.push(Value::Integer(now));
+            } else {
+                sets.push("done_reason = NULL");
+                sets.push("completed_at = NULL");
+            }
+        } else if let Some(done_reason) = done_reason {
+            let current_status: String = tx.query_row(
+                "SELECT status FROM tasks WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )?;
+            if current_status != "done" {
+                return Err(AppError::Validation(
+                    "仅完成任务可设置 doneReason".to_string(),
+                ));
+            }
+            let reason = done_reason
+                .ok_or_else(|| AppError::Validation("doneReason 不可为空".to_string()))?;
+            let reason = reason.trim().to_lowercase();
+            if reason != "completed" && reason != "cancelled" {
+                return Err(AppError::Validation(
+                    "doneReason 必须为 completed 或 cancelled".to_string(),
+                ));
+            }
+            sets.push("done_reason = ?");
+            ps.push(Value::Text(reason));
+            touch_updated_at = true;
         }
 
         if let Some(priority) = priority {
@@ -224,6 +297,7 @@ INSERT INTO tasks(
             }
             sets.push("priority = ?");
             ps.push(Value::Text(priority.to_string()));
+            touch_updated_at = true;
         }
 
         if let Some(note) = note {
@@ -236,23 +310,13 @@ INSERT INTO tasks(
                     sets.push("note = NULL");
                 }
             }
-        }
-
-        if let Some(project_path) = project_path {
-            match project_path.map(str::trim).filter(|v| !v.is_empty()) {
-                Some(value) => {
-                    sets.push("project_path = ?");
-                    ps.push(Value::Text(value.to_string()));
-                }
-                None => {
-                    sets.push("project_path = NULL");
-                }
-            }
+            touch_updated_at = true;
         }
 
         if let Some(space_id) = space_id {
             sets.push("space_id = ?");
             ps.push(Value::Text(space_id.to_string()));
+            touch_updated_at = true;
         }
 
         if let Some(project_id) = project_id {
@@ -265,18 +329,82 @@ INSERT INTO tasks(
                     sets.push("project_id = NULL");
                 }
             }
+            touch_updated_at = true;
         }
 
-        if let Some(planned_end_date) = planned_end_date {
-            match planned_end_date {
+        if let Some(deadline_at) = deadline_at {
+            match deadline_at {
                 Some(value) => {
-                    sets.push("planned_end_date = ?");
+                    sets.push("deadline_at = ?");
                     ps.push(Value::Integer(value));
                 }
                 None => {
-                    sets.push("planned_end_date = NULL");
+                    sets.push("deadline_at = NULL");
                 }
             }
+            touch_updated_at = true;
+        }
+
+        if let Some(rank) = rank {
+            sets.push("rank = ?");
+            ps.push(Value::Integer(rank));
+            touch_updated_at = true;
+        }
+
+        if let Some(links) = links {
+            let normalized = Self::normalize_links(links);
+            let payload = Self::serialize_links(&normalized)?;
+            sets.push("links = ?");
+            ps.push(Value::Text(payload));
+            touch_updated_at = true;
+        }
+
+        if let Some(custom_fields) = custom_fields {
+            match custom_fields {
+                Some(value) => {
+                    let normalized = Self::normalize_custom_fields(value)?;
+                    let payload = Self::serialize_custom_fields(&normalized)?;
+                    sets.push("custom_fields = ?");
+                    ps.push(Value::Text(payload));
+                }
+                None => {
+                    sets.push("custom_fields = NULL");
+                }
+            }
+            touch_updated_at = true;
+        }
+
+        if let Some(archived_at) = archived_at {
+            match archived_at {
+                Some(value) => {
+                    sets.push("archived_at = ?");
+                    ps.push(Value::Integer(value));
+                }
+                None => {
+                    sets.push("archived_at = NULL");
+                }
+            }
+            touch_updated_at = true;
+        }
+
+        if let Some(deleted_at) = deleted_at {
+            match deleted_at {
+                Some(value) => {
+                    sets.push("deleted_at = ?");
+                    ps.push(Value::Integer(value));
+                }
+                None => {
+                    sets.push("deleted_at = NULL");
+                }
+            }
+            touch_updated_at = true;
+        }
+
+        let mut updated_at_written = false;
+        if touch_updated_at && !sets.is_empty() {
+            sets.push("updated_at = ?");
+            ps.push(Value::Integer(now));
+            updated_at_written = true;
         }
 
         if !sets.is_empty() {
@@ -293,8 +421,15 @@ INSERT INTO tasks(
         }
 
         if let Some(tags) = tags {
+            touch_updated_at = true;
             Self::sync_tags(&tx, id, &tags)?;
             changed_any = true;
+            if touch_updated_at && !updated_at_written {
+                tx.execute(
+                    "UPDATE tasks SET updated_at = ?1 WHERE id = ?2",
+                    params![now, id],
+                )?;
+            }
         }
 
         if !changed_any {
@@ -361,5 +496,59 @@ INSERT INTO tasks(
             }
             Err(err) => Err(err.into()),
         }
+    }
+
+    fn normalize_links(links: Vec<String>) -> Vec<String> {
+        links
+            .into_iter()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    }
+
+    fn parse_links(raw: Option<String>) -> Vec<String> {
+        match raw {
+            Some(value) => serde_json::from_str::<Vec<String>>(&value).unwrap_or_default(),
+            None => Vec::new(),
+        }
+    }
+
+    fn serialize_links(links: &[String]) -> Result<String, AppError> {
+        serde_json::to_string(links)
+            .map_err(|e| AppError::Validation(format!("links 序列化失败: {e}")))
+    }
+
+    fn parse_custom_fields(raw: Option<String>) -> Option<CustomFieldsDto> {
+        raw.and_then(|value| serde_json::from_str::<CustomFieldsDto>(&value).ok())
+    }
+
+    fn serialize_custom_fields(fields: &CustomFieldsDto) -> Result<String, AppError> {
+        serde_json::to_string(fields)
+            .map_err(|e| AppError::Validation(format!("customFields 序列化失败: {e}")))
+    }
+
+    fn normalize_custom_fields(input: CustomFieldsDto) -> Result<CustomFieldsDto, AppError> {
+        let mut map: BTreeMap<String, CustomFieldItemDto> = BTreeMap::new();
+
+        for item in input.fields {
+            let key = item.key.trim().to_string();
+            if key.is_empty() {
+                return Err(AppError::Validation(
+                    "customFields.key 不能为空".to_string(),
+                ));
+            }
+            let label = item.label.trim().to_string();
+            if label.is_empty() {
+                return Err(AppError::Validation(
+                    "customFields.label 不能为空".to_string(),
+                ));
+            }
+            let value = item.value.map(|v| v.trim().to_string());
+            map.insert(key.clone(), CustomFieldItemDto { key, label, value });
+        }
+
+        Ok(CustomFieldsDto {
+            fields: map.into_values().collect(),
+        })
     }
 }

@@ -263,7 +263,7 @@
 		const all = [{ label: '所有 Project', value: 'all' }]
 		const ids = new Set<string>()
 		for (const t of tasks.value) {
-			if (!t.completed_at) continue
+			if (!t.completed_at || t.done_reason === 'cancelled') continue
 			ids.add(t.space_id)
 		}
 		const spaceIds = Array.from(ids)
@@ -302,7 +302,7 @@
 
 	const filteredTasks = computed(() => {
 		return tasks.value.filter((t) => {
-			if (!t.completed_at) return false
+			if (!t.completed_at || t.done_reason === 'cancelled') return false
 			if (!isInDateRange(t.completed_at)) return false
 			if (spaceFilter.value !== 'all' && t.space_id !== spaceFilter.value) return false
 			if (projectFilter.value !== 'all') {
@@ -369,7 +369,9 @@
 	})
 
 	const stats = computed(() => {
-		const thisWeekTasks = tasks.value.filter((t) => t.completed_at && isInDateRange(t.completed_at))
+		const thisWeekTasks = tasks.value.filter(
+			(t) => t.completed_at && isInDateRange(t.completed_at) && t.done_reason !== 'cancelled',
+		)
 		const thisWeekCount = thisWeekTasks.length
 		const activeProjectIds = new Set<string>()
 		for (const t of thisWeekTasks) {

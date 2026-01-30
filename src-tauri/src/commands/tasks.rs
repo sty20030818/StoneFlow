@@ -3,7 +3,10 @@ use tauri::State;
 
 use crate::db::DbState;
 use crate::repos::task_repo::TaskRepo;
-use crate::types::{dto::TaskDto, error::ApiError};
+use crate::types::{
+    dto::{CustomFieldsDto, TaskDto},
+    error::ApiError,
+};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -73,19 +76,29 @@ pub struct UpdateTaskArgs {
 pub struct UpdateTaskPatch {
     pub title: Option<String>,
     pub status: Option<String>,
+    /// Some(None) 表示清空 doneReason
+    pub done_reason: Option<Option<String>>,
     pub priority: Option<String>,
     /// Some(None) 表示清空 note
     pub note: Option<Option<String>>,
     /// 标签名数组（传空数组表示清空）
     pub tags: Option<Vec<String>>,
-    /// Some(None) 表示清空 project_path
-    pub project_path: Option<Option<String>>,
     /// 切换所属 Space
     pub space_id: Option<String>,
     /// Some(None) 表示设为未分类
     pub project_id: Option<Option<String>>,
     /// Some(None) 表示清空截止日期
-    pub planned_end_date: Option<Option<i64>>,
+    pub deadline_at: Option<Option<i64>>,
+    /// 更新排序权重
+    pub rank: Option<i64>,
+    /// 外部链接列表（传空数组表示清空）
+    pub links: Option<Vec<String>>,
+    /// Some(None) 表示清空 customFields
+    pub custom_fields: Option<Option<CustomFieldsDto>>,
+    /// Some(None) 表示清空归档时间
+    pub archived_at: Option<Option<i64>>,
+    /// Some(None) 表示清空删除时间
+    pub deleted_at: Option<Option<i64>>,
 }
 
 #[tauri::command]
@@ -100,13 +113,18 @@ pub fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<()
         &args.id,
         args.patch.title.as_deref(),
         args.patch.status.as_deref(),
+        args.patch.done_reason.as_ref().map(|v| v.as_deref()),
         args.patch.priority.as_deref(),
         args.patch.note.as_ref().map(|v| v.as_deref()),
         args.patch.tags,
-        args.patch.project_path.as_ref().map(|v| v.as_deref()),
         args.patch.space_id.as_deref(),
         args.patch.project_id.as_ref().map(|v| v.as_deref()),
-        args.patch.planned_end_date.as_ref().cloned(),
+        args.patch.deadline_at.as_ref().cloned(),
+        args.patch.rank,
+        args.patch.links,
+        args.patch.custom_fields,
+        args.patch.archived_at.as_ref().cloned(),
+        args.patch.deleted_at.as_ref().cloned(),
     )
     .map_err(ApiError::from)
 }

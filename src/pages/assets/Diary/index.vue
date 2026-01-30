@@ -316,7 +316,7 @@
 		try {
 			entries.value = await listDiaryEntries()
 			const doneTasks = await listTasks({ status: 'done' })
-			tasks.value = doneTasks
+			tasks.value = doneTasks.filter((t) => t.done_reason !== 'cancelled')
 		} catch (e) {
 			toast.add({
 				title: '加载失败',

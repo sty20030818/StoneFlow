@@ -21,7 +21,6 @@ export function useProjectTasks(
 	const refreshSignals = useRefreshSignalsStore()
 
 	const loading = ref(false)
-	const doing = ref<TaskDto[]>([])
 	const todo = ref<TaskDto[]>([])
 	const doneAll = ref<TaskDto[]>([])
 
@@ -38,13 +37,11 @@ export function useProjectTasks(
 			if (sid) params.spaceId = sid
 			if (pid !== undefined && pid !== null) params.projectId = pid
 
-			const [doingRows, todoRows, doneRows] = await Promise.all([
-				listTasks({ ...params, status: 'doing' }),
+			const [todoRows, doneRows] = await Promise.all([
 				listTasks({ ...params, status: 'todo' }),
 				listTasks({ ...params, status: 'done' }),
 			])
 
-			doing.value = doingRows
 			todo.value = todoRows
 			doneAll.value = doneRows
 		} catch (e) {
@@ -89,7 +86,6 @@ export function useProjectTasks(
 
 	return {
 		loading,
-		doing,
 		todo,
 		doneAll,
 		refresh,

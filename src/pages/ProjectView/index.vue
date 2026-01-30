@@ -6,24 +6,6 @@
 			:project="currentProject" />
 
 		<WorkspaceLayout>
-			<template #in-progress>
-				<TaskColumn
-					title="Doing"
-					:tasks="doing"
-					:loading="loading"
-					empty-text="暂无进行中任务"
-					:show-complete-button="true"
-					:show-space-label="showSpaceLabel"
-					:skeleton-count="2"
-					:is-edit-mode="isEditMode"
-					:selected-task-id-set="selectedTaskIds"
-					@complete="onComplete"
-					@task-click="onTaskClick"
-					@toggle-task-select="toggleTaskSelect"
-					@toggle-column-select="() => toggleColumnSelect(doing)"
-					@request-task-delete="requestDeleteTask" />
-			</template>
-
 			<template #todo>
 				<TaskColumn
 					title="Todo"
@@ -143,7 +125,7 @@
 	})
 
 	// 统一使用 useProjectTasks composable
-	const { loading, doing, todo, doneAll, refresh, onComplete } = useProjectTasks(taskSpaceId, projectId)
+	const { loading, todo, doneAll, refresh, onComplete } = useProjectTasks(taskSpaceId, projectId)
 
 	const isEditMode = ref(false)
 	const confirmDeleteOpen = ref(false)
@@ -261,7 +243,7 @@
 
 	function pruneSelection() {
 		if (selectedTaskIds.value.size === 0) return
-		const existingIds = new Set([...doing.value, ...todo.value, ...doneAll.value].map((task) => task.id))
+		const existingIds = new Set([...todo.value, ...doneAll.value].map((task) => task.id))
 		updateSelected((set) => {
 			Array.from(set).forEach((id) => {
 				if (!existingIds.has(id)) set.delete(id)
@@ -269,7 +251,7 @@
 		})
 	}
 
-	watch([doing, todo, doneAll], () => {
+	watch([todo, doneAll], () => {
 		pruneSelection()
 	})
 

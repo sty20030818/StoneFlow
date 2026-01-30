@@ -31,16 +31,38 @@ pub struct TaskDto {
     pub project_id: Option<String>,
     pub title: String,
     pub note: Option<String>,
-    /// todo / doing / done / archived
+    /// todo / done
     pub status: String,
+    /// completed / cancelled（仅 status=done 时有效）
+    pub done_reason: Option<String>,
     pub priority: String,  // P0, P1, P2, P3
     pub tags: Vec<String>, // 从 task_tags JOIN 获取
-    pub order_in_list: i64,
+    pub rank: i64,
     pub created_at: i64,
-    pub started_at: Option<i64>,
+    pub updated_at: i64,
     pub completed_at: Option<i64>,
-    /// 本地项目物理路径
-    pub project_path: Option<String>,
     /// 截止日期（时间戳毫秒）
-    pub planned_end_date: Option<i64>,
+    pub deadline_at: Option<i64>,
+    /// 归档时间（时间戳毫秒）
+    pub archived_at: Option<i64>,
+    /// 软删除时间（时间戳毫秒）
+    pub deleted_at: Option<i64>,
+    /// 外部链接列表
+    pub links: Vec<String>,
+    /// 自定义字段
+    pub custom_fields: Option<CustomFieldsDto>,
+    /// 创建者
+    pub create_by: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomFieldsDto {
+    pub fields: Vec<CustomFieldItemDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomFieldItemDto {
+    pub key: String,
+    pub label: String,
+    pub value: Option<String>,
 }

@@ -1,6 +1,17 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+@font-face {
+	font-family: "MapleMono";
+	src: url("/fonts/MapleMono.woff2") format("woff2");
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Lxgw";
+	src: url("/fonts/Lxgw.woff2") format("woff2");
+	font-display: swap;
+}
 
 /* 应用级基础样式（保持最小；尽量让 Nuxt UI 主导整体样式） */
 html,
@@ -12,7 +23,7 @@ body,
 
 body {
 	margin: 0;
-	font-family: "Plus Jakarta Sans", sans-serif;
+	font-family: "MapleMono", "Lxgw", sans-serif;
 }
 
 /* 全局隐藏滚动条 */

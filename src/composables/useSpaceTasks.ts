@@ -14,7 +14,6 @@ export function useSpaceTasks(
 	const toast = useToast()
 
 	const loading = ref(false)
-	const doing = ref<TaskDto[]>([])
 	const todo = ref<TaskDto[]>([])
 	const doneToday = ref<TaskDto[]>([])
 
@@ -38,15 +37,15 @@ export function useSpaceTasks(
 			if (sid) params.spaceId = sid
 			if (pid !== undefined && pid !== null) params.projectId = pid
 
-			const [doingRows, todoRows, doneRows] = await Promise.all([
-				listTasks({ ...params, status: 'doing' }),
+			const [todoRows, doneRows] = await Promise.all([
 				listTasks({ ...params, status: 'todo' }),
 				listTasks({ ...params, status: 'done' }),
 			])
 
-			doing.value = doingRows
 			todo.value = todoRows
-			doneToday.value = doneRows.filter((t) => isTodayLocal(t.completed_at ?? null))
+			doneToday.value = doneRows.filter(
+				(t) => t.done_reason !== 'cancelled' && isTodayLocal(t.completed_at ?? null),
+			)
 		} catch (e) {
 			toast.add({
 				title: '加载失败',
@@ -86,7 +85,6 @@ export function useSpaceTasks(
 
 	return {
 		loading,
-		doing,
 		todo,
 		doneToday,
 		refresh,
