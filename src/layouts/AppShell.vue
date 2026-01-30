@@ -29,7 +29,7 @@
 	import Sidebar from './Sidebar.vue'
 	import Header from './Header.vue'
 
-	import TaskInspectorDrawer from '@/components/TaskInspectorDrawer.vue'
+	import TaskInspectorDrawer from '@/components/TaskInspectorDrawer'
 
 	import { useSettingsStore } from '@/stores/settings'
 	import { useSpacesStore } from '@/stores/spaces'

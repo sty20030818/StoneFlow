@@ -183,6 +183,7 @@
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 
+	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
 
@@ -201,12 +202,7 @@
 	const reflectionTask = ref<TaskDto | null>(null)
 	const reflectionText = ref('')
 
-	const spaceOptions = [
-		{ label: '所有 Space', value: 'all' },
-		{ label: 'Work', value: 'work' },
-		{ label: 'Personal', value: 'personal' },
-		{ label: 'Study', value: 'study' },
-	]
+	const spaceOptions = [{ label: '所有 Space', value: 'all' }, ...SPACE_IDS.map((id) => ({ label: SPACE_DISPLAY[id].label, value: id }))]
 
 	const dateRangeOptions = [
 		{ label: '最近 7 天', value: 'this-week' },
@@ -251,12 +247,7 @@
 	}
 
 	function spaceLabel(spaceId: string): string {
-		const labels: Record<string, string> = {
-			work: 'Work',
-			personal: 'Personal',
-			study: 'Study',
-		}
-		return labels[spaceId] ?? spaceId
+		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.label ?? spaceId
 	}
 
 	const projectOptions = computed(() => {

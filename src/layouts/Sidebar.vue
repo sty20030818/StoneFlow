@@ -42,16 +42,17 @@
 						<span>All Tasks</span>
 					</RouterLink>
 					<!-- 默认 Project 入口 -->
-					<RouterLink
-						v-if="defaultProject"
-						:to="`/space/${spaceValue}?project=${defaultProject.id}`"
-						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
-						:class="isActiveProject(defaultProject.id) ? 'bg-elevated text-default' : ''">
-						<UIcon
-							name="i-lucide-folder"
-							class="size-3.5 text-amber-500" />
-						<span class="truncate">{{ defaultProject.name }}</span>
-					</RouterLink>
+						<RouterLink
+							v-if="defaultProject"
+							:to="`/space/${spaceValue}?project=${defaultProject.id}`"
+							class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+							:class="isActiveProject(defaultProject.id) ? 'bg-elevated text-default' : ''">
+							<UIcon
+								:name="projectIcon"
+								class="size-3.5"
+								:class="defaultProjectIconClass" />
+							<span class="truncate">{{ defaultProject.name }}</span>
+						</RouterLink>
 				</nav>
 			</section>
 
@@ -164,6 +165,8 @@
 
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import UserCard from '@/components/UserCard.vue'
+	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
+	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { getDefaultProject } from '@/services/api/projects'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { useProjectTreeStore } from '@/stores/project-tree'
@@ -182,30 +185,17 @@
 	const currentPath = computed(() => route.path)
 
 	const spaceValue = computed(() => props.space ?? 'work')
+	const projectIcon = PROJECT_ICON
+	const projectLevelColors = PROJECT_LEVEL_TEXT_CLASSES
+	const defaultProjectIconClass = projectLevelColors[0]
 
-	const spaces = [
-		{
-			id: 'work',
-			label: 'Work',
-			icon: 'i-lucide-briefcase',
-			iconClass: 'text-blue-500/70',
-			activeIconClass: 'text-blue-500',
-		},
-		{
-			id: 'personal',
-			label: 'Personal',
-			icon: 'i-lucide-user',
-			iconClass: 'text-purple-500/70',
-			activeIconClass: 'text-purple-500',
-		},
-		{
-			id: 'study',
-			label: 'Study',
-			icon: 'i-lucide-book-open',
-			iconClass: 'text-green-500/70',
-			activeIconClass: 'text-green-500',
-		},
-	]
+	const spaces = SPACE_IDS.map((id) => ({
+		id,
+		label: SPACE_DISPLAY[id].label,
+		icon: SPACE_DISPLAY[id].icon,
+		iconClass: SPACE_DISPLAY[id].iconMutedClass,
+		activeIconClass: SPACE_DISPLAY[id].iconClass,
+	}))
 
 	function onSpaceClick(id: string) {
 		if (id === spaceValue.value) return
@@ -249,7 +239,7 @@
 		const list = projectsStore.getProjectsOfSpace(spaceId)
 		if (!list.length) return []
 
-		const levelColors = ['text-amber-400', 'text-sky-400', 'text-violet-400', 'text-emerald-400', 'text-rose-400']
+		const levelColors = projectLevelColors
 
 		// 过滤掉默认项目（ID 以 _default 结尾）
 		const filtered = list.filter((p) => !p.id.endsWith('_default'))
@@ -269,7 +259,7 @@
 				return {
 					id: p.id,
 					label: p.name,
-					icon: 'i-lucide-folder',
+					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
 					children: next.length ? next : undefined,
 				}

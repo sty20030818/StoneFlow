@@ -86,6 +86,7 @@
 	import { computed } from 'vue'
 
 	import type { ProjectDto } from '@/services/api/projects'
+	import { PROJECT_PRIORITY_DISPLAY, PROJECT_STATUS_DISPLAY, type ProjectPriorityValue, type ProjectStatusValue } from '@/config/project'
 
 	const props = defineProps<{
 		project: ProjectDto | null
@@ -102,69 +103,21 @@
 		return `${yyyy}.${mm}.${dd} ${hh}:${min}`
 	}
 
-	const priorityValue = computed(() => props.project?.priority?.toUpperCase() || 'P1')
-	const priorityDisplayLabel = computed(() => {
-		if (priorityValue.value === 'P0') return 'P0 Critical'
-		if (priorityValue.value === 'P1') return 'P1 High'
-		if (priorityValue.value === 'P2') return 'P2 Medium'
-		return 'P3 Low'
-	})
-
-	const priorityPillClass = computed(() => {
-		if (priorityValue.value === 'P0') return 'bg-rose-500 text-white shadow-rose-300/70'
-		if (priorityValue.value === 'P1') return 'bg-amber-500 text-white shadow-amber-300/70'
-		if (priorityValue.value === 'P2') return 'bg-blue-500 text-white shadow-blue-300/70'
-		return 'bg-slate-500 text-white shadow-slate-300/70'
-	})
-
-	const prioritySurfaceVars = computed<Record<string, string>>(() => {
-		if (priorityValue.value === 'P0') {
-			return {
-				'--glow-color': '#f43f5e',
-				'--priority-color-soft': 'rgba(244, 63, 94, 0.12)',
-				'--priority-color-pale': 'rgba(244, 63, 94, 0.04)',
-				'--priority-color-border': 'rgba(244, 63, 94, 0.4)',
-			}
-		}
-		if (priorityValue.value === 'P1') {
-			return {
-				'--glow-color': '#f59e0b',
-				'--priority-color-soft': 'rgba(245, 158, 11, 0.1)',
-				'--priority-color-pale': 'rgba(245, 158, 11, 0.03)',
-				'--priority-color-border': 'rgba(245, 158, 11, 0.3)',
-			}
-		}
-		if (priorityValue.value === 'P2') {
-			return {
-				'--glow-color': '#3b82f6',
-				'--priority-color-soft': 'rgba(59, 130, 246, 0.08)',
-				'--priority-color-pale': 'rgba(59, 130, 246, 0.02)',
-				'--priority-color-border': 'rgba(59, 130, 246, 0.3)',
-			}
-		}
-		return {
-			'--glow-color': '#94a3b8',
-			'--priority-color-soft': 'rgba(148, 163, 184, 0.1)',
-			'--priority-color-pale': 'rgba(148, 163, 184, 0.03)',
-			'--priority-color-border': 'rgba(148, 163, 184, 0.3)',
-		}
-	})
+	const priorityValue = computed<ProjectPriorityValue>(
+		() => (props.project?.priority?.toUpperCase() as ProjectPriorityValue) || 'P1',
+	)
+	const priorityDisplay = computed(() => PROJECT_PRIORITY_DISPLAY[priorityValue.value] ?? PROJECT_PRIORITY_DISPLAY.P1)
+	const priorityDisplayLabel = computed(() => priorityDisplay.value.label)
+	const priorityPillClass = computed(() => priorityDisplay.value.pillClass)
+	const prioritySurfaceVars = computed<Record<string, string>>(() => priorityDisplay.value.surfaceVars)
 
 	const statusConfig = computed(() => {
 		// 优先检查 archived
 		if (props.project?.archived_at) {
 			return { label: 'Archived', color: 'neutral' as const, dot: 'bg-slate-400' }
 		}
-		const status = props.project?.status?.toLowerCase() ?? 'active'
-		switch (status) {
-			case 'paused':
-				return { label: 'Paused', color: 'warning' as const, dot: 'bg-amber-500' }
-			case 'done':
-				return { label: 'Done', color: 'info' as const, dot: 'bg-blue-500' }
-			case 'active':
-			default:
-				return { label: 'Active', color: 'success' as const, dot: 'bg-emerald-500' }
-		}
+		const status = (props.project?.status?.toLowerCase() ?? 'active') as ProjectStatusValue
+		return PROJECT_STATUS_DISPLAY[status] ?? PROJECT_STATUS_DISPLAY.active
 	})
 
 	const statusLabel = computed(() => statusConfig.value.label)
@@ -197,12 +150,7 @@
 		return formatTime(value)
 	}
 
-	const priorityIconName = computed(() => {
-		if (priorityValue.value === 'P0') return 'i-lucide-alert-triangle'
-		if (priorityValue.value === 'P1') return 'i-lucide-flame'
-		if (priorityValue.value === 'P2') return 'i-lucide-flag'
-		return 'i-lucide-feather'
-	})
+	const priorityIconName = computed(() => priorityDisplay.value.iconName)
 </script>
 
 <style scoped>

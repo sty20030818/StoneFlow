@@ -3,9 +3,17 @@
  * 包括状态映射、排序等
  */
 
-export type TaskStatus = 'todo' | 'done'
-export type TaskDoneReason = 'completed' | 'cancelled'
-export type DisplayStatus = 'todo' | 'done'
+import {
+	TASK_DONE_REASON_LABELS,
+	TASK_STATUS_LABELS,
+	TASK_STATUS_OPTIONS,
+	type TaskDoneReasonValue,
+	type TaskStatusValue,
+} from '@/config/task'
+
+export type TaskStatus = TaskStatusValue
+export type TaskDoneReason = TaskDoneReasonValue
+export type DisplayStatus = TaskStatusValue
 
 /**
  * 将后端状态映射到前端显示状态
@@ -30,18 +38,7 @@ export function getStatusSortOrder(status: string | undefined | null): number {
  * 状态选项配置（用于 UI 选择器）
  */
 export const statusOptions = [
-	{
-		value: 'todo',
-		label: '待办',
-		icon: 'i-lucide-list-todo',
-		iconClass: 'text-blue-500',
-	},
-	{
-		value: 'done',
-		label: '已完成',
-		icon: 'i-lucide-check-circle-2',
-		iconClass: 'text-green-500',
-	},
+	...TASK_STATUS_OPTIONS,
 ] as const
 
 /**
@@ -57,8 +54,9 @@ export function mapDisplayStatusToBackend(displayStatus: DisplayStatus): TaskSta
  * 获取完成原因标签
  */
 export function getDoneReasonLabel(doneReason: string | undefined | null): string {
-	if (doneReason?.toLowerCase() === 'cancelled') return '已取消'
-	return '已完成'
+	const key = doneReason?.toLowerCase() as TaskDoneReasonValue | undefined
+	if (!key) return TASK_DONE_REASON_LABELS.completed
+	return TASK_DONE_REASON_LABELS[key] ?? TASK_DONE_REASON_LABELS.completed
 }
 
 /**
@@ -68,6 +66,6 @@ export function getDoneReasonLabel(doneReason: string | undefined | null): strin
  * @returns 显示标签
  */
 export function getStatusLabel(status: string | undefined | null, doneReason?: string | null): string {
-	if (!status || status.toLowerCase() === 'todo') return '待办'
+	if (!status || status.toLowerCase() === 'todo') return TASK_STATUS_LABELS.todo
 	return getDoneReasonLabel(doneReason)
 }

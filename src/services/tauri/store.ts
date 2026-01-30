@@ -1,8 +1,10 @@
 import { LazyStore } from '@tauri-apps/plugin-store'
 
+import type { SpaceId } from '@/config/space'
+
 export type HomeView = 'today' | 'projects' | 'focus' | 'inbox'
 export type InfoDensity = 'comfortable' | 'compact'
-export type ActiveSpaceId = 'work' | 'study' | 'personal'
+export type ActiveSpaceId = SpaceId
 
 export type SettingsModel = {
 	homeView: HomeView

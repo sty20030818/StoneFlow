@@ -91,11 +91,12 @@
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
 	import TaskCard from '@/components/TaskCard.vue'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
+	import { TASK_DONE_REASON_LABELS, TASK_STATUS_LABELS } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
 
 	function getStatusFromTitle(title: string): string {
-		if (title === '待办' || title === 'Todo') return 'todo'
-		if (title.includes('已完成') || title === 'Done') return 'done'
+		if (title === TASK_STATUS_LABELS.todo || title === 'Todo') return 'todo'
+		if (title.includes(TASK_DONE_REASON_LABELS.completed) || title === 'Done') return 'done'
 		return 'todo'
 	}
 

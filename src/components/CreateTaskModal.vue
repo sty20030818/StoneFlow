@@ -57,7 +57,7 @@
 							label-key="label"
 							size="md"
 							class="w-full"
-							placeholder="未分类"
+							:placeholder="uncategorizedLabel"
 							:search-input="false"
 							:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
 							<template #item="{ item }">
@@ -237,8 +237,17 @@
 
 	import type { ProjectDto } from '@/services/api/projects'
 	import { getDefaultProject } from '@/services/api/projects'
-	import type { TaskDoneReason, TaskDto } from '@/services/api/tasks'
+	import type { TaskDoneReason, TaskDto, TaskStatus, UpdateTaskPatch } from '@/services/api/tasks'
 	import { createTask, updateTask } from '@/services/api/tasks'
+	import {
+		PROJECT_ICON,
+		PROJECT_LEVEL_TEXT_CLASSES,
+		PROJECT_UNCATEGORIZED_ICON,
+		PROJECT_UNCATEGORIZED_ICON_CLASS,
+		UNCATEGORIZED_LABEL,
+	} from '@/config/project'
+	import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
+	import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/config/task'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { statusOptions } from '@/utils/task'
@@ -267,16 +276,34 @@
 		set: (value) => emit('update:modelValue', value),
 	})
 
-	const form = ref({
+	type FormState = {
+		title: string
+		spaceId: SpaceId
+		projectId: string | null
+		status: TaskStatus
+		doneReason: TaskDoneReason
+		priority: TaskPriorityValue
+		deadlineDate: string
+		tags: string[]
+		note: string
+	}
+
+	function normalizeSpaceId(value?: string): SpaceId {
+		const candidate = value as SpaceId | undefined
+		if (candidate && SPACE_IDS.includes(candidate)) return candidate
+		return 'work'
+	}
+
+	const form = ref<FormState>({
 		title: '',
-		spaceId: props.spaceId ?? 'work',
-		projectId: null as string | null,
-		status: 'todo' as 'todo' | 'done',
-		doneReason: 'completed' as TaskDoneReason,
-		priority: 'P1' as string,
-		deadlineDate: '' as string,
-		tags: [] as string[],
-		note: '' as string,
+		spaceId: normalizeSpaceId(props.spaceId),
+		projectId: null,
+		status: 'todo',
+		doneReason: 'completed',
+		priority: 'P1',
+		deadlineDate: '',
+		tags: [],
+		note: '',
 	})
 
 	const tagInput = ref('')
@@ -285,61 +312,15 @@
 		return form.value.title.trim().length > 0
 	})
 
-	const spaceOptions = [
-		{
-			value: 'work',
-			label: 'Work',
-			icon: 'i-lucide-briefcase',
-			iconClass: 'text-blue-500',
-		},
-		{
-			value: 'personal',
-			label: 'Personal',
-			icon: 'i-lucide-user',
-			iconClass: 'text-purple-500',
-		},
-		{
-			value: 'study',
-			label: 'Study',
-			icon: 'i-lucide-book-open',
-			iconClass: 'text-green-500',
-		},
-	]
+	const spaceOptions = SPACE_OPTIONS
 
-	const priorityOptions = [
-		{
-			value: 'P0',
-			label: 'P0 - 紧急',
-			icon: 'i-lucide-alert-circle',
-			iconClass: 'text-red-500',
-		},
-		{
-			value: 'P1',
-			label: 'P1 - 高',
-			icon: 'i-lucide-flag',
-			iconClass: 'text-amber-500',
-		},
-		{
-			value: 'P2',
-			label: 'P2 - 中',
-			icon: 'i-lucide-flag',
-			iconClass: 'text-blue-500',
-		},
-		{
-			value: 'P3',
-			label: 'P3 - 低',
-			icon: 'i-lucide-flag',
-			iconClass: 'text-muted',
-		},
-	]
+	const priorityOptions = TASK_PRIORITY_OPTIONS
 
-	const doneReasonOptions = [
-		{ value: 'completed', label: '完成', icon: 'i-lucide-check-circle', iconClass: 'text-emerald-500' },
-		{ value: 'cancelled', label: '取消', icon: 'i-lucide-x-circle', iconClass: 'text-red-500' },
-	] as const
+	const doneReasonOptions = TASK_DONE_REASON_OPTIONS
 
 	// 层级颜色（与 Sidebar / CreateProject 保持一致）
-	const levelColors = ['text-amber-400', 'text-sky-400', 'text-violet-400', 'text-emerald-400', 'text-rose-400']
+	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
+	const uncategorizedLabel = UNCATEGORIZED_LABEL
 
 	function addTag() {
 		const tag = tagInput.value.trim()
@@ -363,9 +344,9 @@
 		}> = [
 			{
 				value: null,
-				label: '未分类',
-				icon: 'i-lucide-folder',
-				iconClass: 'text-slate-400',
+				label: UNCATEGORIZED_LABEL,
+				icon: PROJECT_UNCATEGORIZED_ICON,
+				iconClass: PROJECT_UNCATEGORIZED_ICON_CLASS,
 				depth: 0,
 			},
 		]
@@ -383,7 +364,7 @@
 				options.push({
 					value: project.id,
 					label: project.name,
-					icon: 'i-lucide-folder',
+					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
 					depth,
 				})
@@ -420,9 +401,7 @@
 	watch(
 		() => props.spaceId,
 		(newSpaceId) => {
-			if (newSpaceId) {
-				form.value.spaceId = newSpaceId
-			}
+			form.value.spaceId = normalizeSpaceId(newSpaceId)
 		},
 		{ immediate: true },
 	)
@@ -437,9 +416,7 @@
 			form.value.tags = []
 			form.value.note = ''
 			tagInput.value = ''
-			if (props.spaceId) {
-				form.value.spaceId = props.spaceId
-			}
+			form.value.spaceId = normalizeSpaceId(props.spaceId)
 			// 打开弹窗时确保当前 Space 的项目已加载
 			await projectsStore.loadForSpace(form.value.spaceId)
 			// 加载默认项目
@@ -475,14 +452,7 @@
 			})
 
 			// 如果有额外的字段，更新任务
-			const updatePatch: {
-				status?: string
-				doneReason?: TaskDoneReason | null
-				priority?: string
-				note?: string | null
-				deadlineAt?: number | null
-				tags?: string[]
-			} = {}
+			const updatePatch: UpdateTaskPatch = {}
 
 			if (form.value.status === 'done') {
 				updatePatch.status = 'done'

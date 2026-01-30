@@ -55,6 +55,7 @@
 	import { useInlineCreateFocusStore } from './stores/inline-create-focus'
 	import { useProjectsStore } from './stores/projects'
 	import { useSettingsStore } from './stores/settings'
+	import { SPACE_DISPLAY, SPACE_IDS } from './config/space'
 
 	import AppShell from './layouts/AppShell.vue'
 
@@ -106,9 +107,11 @@
 			label: 'Workspace',
 			items: [
 				{ label: 'All Tasks', icon: 'i-lucide-list-checks', to: `/space/${currentSpaceId.value}` },
-				{ label: 'Work', icon: 'i-lucide-briefcase', to: '/space/work' },
-				{ label: 'Personal', icon: 'i-lucide-user', to: '/space/personal' },
-				{ label: 'Study', icon: 'i-lucide-book-open', to: '/space/study' },
+				...SPACE_IDS.map((id) => ({
+					label: SPACE_DISPLAY[id].label,
+					icon: SPACE_DISPLAY[id].icon,
+					to: `/space/${id}`,
+				})),
 			],
 		},
 		{

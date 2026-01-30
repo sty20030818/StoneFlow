@@ -112,9 +112,9 @@
 			<div
 				v-else
 				class="w-6 h-6 flex items-center justify-center rounded-full"
-				:class="isCancelled ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'">
+				:class="doneReasonStyle.ringClass">
 				<UIcon
-					:name="isCancelled ? 'i-lucide-x-circle' : 'i-lucide-check'"
+					:name="doneReasonStyle.icon"
 					class="size-3" />
 			</div>
 		</div>
@@ -125,7 +125,7 @@
 				size="xs"
 				color="error"
 				variant="soft">
-				已取消
+				{{ doneReasonStyle.badgeLabel }}
 			</UBadge>
 		</div>
 		<div class="ml-auto flex items-center gap-2 shrink-0">
@@ -160,6 +160,7 @@
 	import PriorityBadge from '@/components/PriorityBadge.vue'
 	import SpaceLabel from '@/components/SpaceLabel.vue'
 	import TimeDisplay from '@/components/TimeDisplay.vue'
+	import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
 	import { getDisplayStatus } from '@/utils/task'
 
@@ -181,6 +182,8 @@
 
 	const displayStatus = computed(() => getDisplayStatus(props.task.status))
 	const isCancelled = computed(() => props.task.done_reason === 'cancelled')
+	const doneReasonKey = computed<TaskDoneReasonValue>(() => (isCancelled.value ? 'cancelled' : 'completed'))
+	const doneReasonStyle = computed(() => TASK_DONE_REASON_CARD_STYLES[doneReasonKey.value])
 
 	const selectRingClass = computed(() => {
 		if (props.selected) return 'border-error/70 bg-error/15 text-error shadow-sm'

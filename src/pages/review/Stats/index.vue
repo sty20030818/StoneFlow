@@ -173,6 +173,13 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 
+	import {
+		TASK_DONE_REASON_COLORS,
+		TASK_DONE_REASON_LABELS,
+		TASK_STATUS_CHART_COLORS,
+		TASK_STATUS_LABELS,
+	} from '@/config/task'
+	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 
 	const toast = useToast()
@@ -182,18 +189,13 @@
 	const tasks = ref<TaskDto[]>([])
 
 	const spaceCards = computed(() => {
-		const ids = ['work', 'personal', 'study'] as const
-		const meta: Record<(typeof ids)[number], { id: string; label: string; icon: string; iconClass: string }> = {
-			work: { id: 'work', label: 'Work', icon: 'i-lucide-briefcase', iconClass: 'text-blue-500' },
-			personal: { id: 'personal', label: 'Personal', icon: 'i-lucide-user', iconClass: 'text-purple-500' },
-			study: { id: 'study', label: 'Study', icon: 'i-lucide-book-open', iconClass: 'text-green-500' },
-		}
+		const ids = SPACE_IDS
 
 		const now = new Date()
 		const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime()
 
 		return ids.map((id) => {
-			const info = meta[id]
+			const info = SPACE_DISPLAY[id]
 			const scoped = tasks.value.filter((t) => t.space_id === id)
 
 			const thisWeekDone = scoped.filter(
@@ -257,17 +259,22 @@
 		const buckets: { key: string; label: string; color: string; match: (t: TaskDto) => boolean }[] = [
 			{
 				key: 'done',
-				label: '已完成',
-				color: '#22c55e',
+				label: TASK_DONE_REASON_LABELS.completed,
+				color: TASK_DONE_REASON_COLORS.completed,
 				match: (t) => t.status === 'done' && t.done_reason !== 'cancelled',
 			},
 			{
 				key: 'cancelled',
-				label: '已取消',
-				color: '#ef4444',
+				label: TASK_DONE_REASON_LABELS.cancelled,
+				color: TASK_DONE_REASON_COLORS.cancelled,
 				match: (t) => t.status === 'done' && t.done_reason === 'cancelled',
 			},
-			{ key: 'todo', label: '待办', color: '#3b82f6', match: (t) => t.status === 'todo' },
+			{
+				key: 'todo',
+				label: TASK_STATUS_LABELS.todo,
+				color: TASK_STATUS_CHART_COLORS.todo,
+				match: (t) => t.status === 'todo',
+			},
 		]
 
 		const total = tasks.value.length || 1

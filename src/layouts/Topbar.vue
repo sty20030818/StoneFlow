@@ -37,34 +37,14 @@
 	import { computed, inject } from 'vue'
 	import { useRoute } from 'vue-router'
 
-	// Space 页面配置
-	const spaceConfigs: Record<string, { title: string; description: string; icon: string; iconClass: string }> = {
-		work: {
-			title: 'Work',
-			description: '工作相关任务',
-			icon: 'i-lucide-briefcase',
-			iconClass: 'text-blue-500',
-		},
-		personal: {
-			title: 'Personal',
-			description: '个人事务',
-			icon: 'i-lucide-user',
-			iconClass: 'text-purple-500',
-		},
-		study: {
-			title: 'Study',
-			description: '学习相关任务',
-			icon: 'i-lucide-book-open',
-			iconClass: 'text-green-500',
-		},
-	}
+	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 
 	const route = useRoute()
 
 	const pageTitle = computed(() => {
 		if (route.path.startsWith('/space/')) {
 			const spaceId = route.params.spaceId as string
-			return spaceConfigs[spaceId]?.title ?? spaceId
+			return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.label ?? spaceId
 		}
 		return String(route.meta.title ?? '')
 	})
@@ -72,7 +52,7 @@
 	const pageIcon = computed(() => {
 		if (route.path.startsWith('/space/')) {
 			const spaceId = route.params.spaceId as string
-			return spaceConfigs[spaceId]?.icon ?? 'i-lucide-folder'
+			return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.icon ?? DEFAULT_SPACE_DISPLAY.icon
 		}
 		return String(route.meta.icon ?? '')
 	})
@@ -80,7 +60,7 @@
 	const pageIconClass = computed(() => {
 		if (route.path.startsWith('/space/')) {
 			const spaceId = route.params.spaceId as string
-			return spaceConfigs[spaceId]?.iconClass ?? 'text-gray-500'
+			return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.iconClass ?? DEFAULT_SPACE_DISPLAY.iconClass
 		}
 		return String(route.meta.iconClass ?? '')
 	})
@@ -88,7 +68,7 @@
 	const pageDescription = computed(() => {
 		if (route.path.startsWith('/space/')) {
 			const spaceId = route.params.spaceId as string
-			return spaceConfigs[spaceId]?.description ?? '任务列表'
+			return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.description ?? DEFAULT_SPACE_DISPLAY.description
 		}
 		return String(route.meta.description ?? '')
 	})

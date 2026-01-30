@@ -57,7 +57,7 @@
 							label-key="label"
 							size="md"
 							class="w-full"
-							placeholder="None (Top Level)"
+							:placeholder="projectRootLabel"
 							:search-input="false"
 							:ui="selectMenuUi">
 							<template #item="{ item }">
@@ -163,6 +163,15 @@
 
 	import type { ProjectDto } from '@/services/api/projects'
 	import { createProject } from '@/services/api/projects'
+	import {
+		PROJECT_ICON,
+		PROJECT_LEVEL_TEXT_CLASSES,
+		PROJECT_PRIORITY_OPTIONS,
+		PROJECT_ROOT_ICON_CLASS,
+		PROJECT_ROOT_LABEL,
+		PROJECT_STATUS_OPTIONS,
+	} from '@/config/project'
+	import { SPACE_OPTIONS } from '@/config/space'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
@@ -209,27 +218,15 @@
 	}
 
 	// ============ Options Data ============
-	const spaceOptions = [
-		{ value: 'work', label: 'Work', icon: 'i-lucide-briefcase', iconClass: 'text-blue-500' },
-		{ value: 'personal', label: 'Personal', icon: 'i-lucide-user', iconClass: 'text-purple-500' },
-		{ value: 'study', label: 'Study', icon: 'i-lucide-book-open', iconClass: 'text-green-500' },
-	]
+	const spaceOptions = SPACE_OPTIONS
 
-	const statusOptions = [
-		{ value: 'active', label: 'Active', icon: 'i-lucide-play-circle', iconClass: 'text-emerald-500' },
-		{ value: 'paused', label: 'Paused', icon: 'i-lucide-pause-circle', iconClass: 'text-amber-500' },
-		{ value: 'done', label: 'Done', icon: 'i-lucide-check-circle', iconClass: 'text-blue-500' },
-	]
+	const statusOptions = PROJECT_STATUS_OPTIONS
 
-	const priorityOptions = [
-		{ value: 'P0', label: 'P0 - Critical', icon: 'i-lucide-alert-circle', iconClass: 'text-rose-500' },
-		{ value: 'P1', label: 'P1 - High', icon: 'i-lucide-flag', iconClass: 'text-amber-500' },
-		{ value: 'P2', label: 'P2 - Medium', icon: 'i-lucide-flag', iconClass: 'text-blue-500' },
-		{ value: 'P3', label: 'P3 - Low', icon: 'i-lucide-flag', iconClass: 'text-muted' },
-	]
+	const priorityOptions = PROJECT_PRIORITY_OPTIONS
 
 	// 层级颜色（与 Sidebar 保持一致）
-	const levelColors = ['text-amber-400', 'text-sky-400', 'text-violet-400', 'text-emerald-400', 'text-rose-400']
+	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
+	const projectRootLabel = PROJECT_ROOT_LABEL
 
 	// ============ Parent Project Options ============
 	// 用于缓存当前 Space 的项目选项
@@ -241,7 +238,15 @@
 			iconClass: string
 			depth: number
 		}>
-	>([{ value: null, label: 'None (Top Level)', icon: 'i-lucide-folder', iconClass: 'text-slate-400', depth: 0 }])
+	>([
+		{
+			value: null,
+			label: PROJECT_ROOT_LABEL,
+			icon: PROJECT_ICON,
+			iconClass: PROJECT_ROOT_ICON_CLASS,
+			depth: 0,
+		},
+	])
 
 	// 根据 spaceId 构建项目树形选项
 	function buildParentProjectOptions(spaceId: string) {
@@ -272,9 +277,9 @@
 		const options: OptionItem[] = [
 			{
 				value: null,
-				label: 'None (Top Level)',
-				icon: 'i-lucide-folder',
-				iconClass: 'text-slate-400',
+				label: PROJECT_ROOT_LABEL,
+				icon: PROJECT_ICON,
+				iconClass: PROJECT_ROOT_ICON_CLASS,
 				depth: 0,
 			},
 		]
@@ -285,7 +290,7 @@
 				options.push({
 					value: project.id,
 					label: project.name,
-					icon: 'i-lucide-folder',
+					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
 					depth,
 				})

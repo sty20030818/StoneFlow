@@ -2,21 +2,20 @@
  * 常量定义
  */
 
+import { SPACE_LABELS } from '@/config/space'
+import { TASK_PRIORITY_BADGE_STYLES, type TaskPriorityValue } from '@/config/task'
+
 /**
  * Space 标签映射
  */
-export const SPACE_LABELS: Record<string, string> = {
-	work: 'Work',
-	personal: 'Personal',
-	study: 'Study',
-}
+export { SPACE_LABELS }
 
 /**
  * 优先级颜色映射
  */
-export const PRIORITY_COLORS = {
-	P0: { bg: 'bg-red-100', text: 'text-red-600' },
-	P1: { bg: 'bg-amber-100', text: 'text-amber-600' },
-	P2: { bg: 'bg-blue-100', text: 'text-blue-600' },
-	P3: { bg: 'bg-gray-100', text: 'text-gray-600' },
-} as const
+export const PRIORITY_COLORS: Record<TaskPriorityValue, { bg: string; text: string }> = {
+	P0: { bg: TASK_PRIORITY_BADGE_STYLES.P0.bgClass, text: TASK_PRIORITY_BADGE_STYLES.P0.textClass },
+	P1: { bg: TASK_PRIORITY_BADGE_STYLES.P1.bgClass, text: TASK_PRIORITY_BADGE_STYLES.P1.textClass },
+	P2: { bg: TASK_PRIORITY_BADGE_STYLES.P2.bgClass, text: TASK_PRIORITY_BADGE_STYLES.P2.textClass },
+	P3: { bg: TASK_PRIORITY_BADGE_STYLES.P3.bgClass, text: TASK_PRIORITY_BADGE_STYLES.P3.textClass },
+}

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 
+import { SPACE_IDS } from '@/config/space'
 import type { SettingsModel } from '@/services/tauri/store'
 import { DEFAULT_SETTINGS, settingsStore } from '@/services/tauri/store'
 
@@ -12,7 +13,7 @@ export const useSettingsStore = defineStore('settings', () => {
 		const val = await settingsStore.get<SettingsModel>('settings')
 		if (val) {
 			const next = { ...val }
-			if (!['work', 'study', 'personal'].includes(next.activeSpaceId)) {
+			if (!SPACE_IDS.includes(next.activeSpaceId)) {
 				next.activeSpaceId = 'work'
 			}
 			Object.assign(state, next)

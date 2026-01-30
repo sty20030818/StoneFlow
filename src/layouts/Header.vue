@@ -27,7 +27,7 @@
 							class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 							:class="projectPillClass(index)">
 							<UIcon
-								name="i-lucide-folder"
+								:name="projectIcon"
 								class="size-3.5 shrink-0 text-white" />
 							<span class="truncate max-w-[160px]">{{ item.label }}</span>
 						</RouterLink>
@@ -36,7 +36,7 @@
 							class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 							:class="projectPillClass(index)">
 							<UIcon
-								name="i-lucide-folder"
+								:name="projectIcon"
 								class="size-3.5 shrink-0 text-white" />
 							<span class="truncate max-w-[160px]">{{ item.label }}</span>
 						</span>
@@ -126,6 +126,8 @@
 	import { useRoute } from 'vue-router'
 
 	import type { ProjectDto } from '@/services/api/projects'
+import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
+	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useSettingsStore } from '@/stores/settings'
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
@@ -136,6 +138,7 @@
 	const workspaceEditStore = useWorkspaceEditStore()
 
 	const searchQuery = ref('')
+	const projectIcon = PROJECT_ICON
 
 	const isWorkspacePage = computed(() => {
 		return route.path.startsWith('/space/') || route.path === '/all-tasks'
@@ -185,31 +188,18 @@
 	const currentSpaceLabel = computed(() => {
 		const spaceId = currentSpaceId.value
 		if (!spaceId) return null
-		const labelMap: Record<string, string> = {
-			work: 'Work',
-			personal: 'Personal',
-			study: 'Study',
-		}
-		return labelMap[spaceId] ?? spaceId
+		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.label ?? spaceId
 	})
 
 	const currentSpaceIcon = computed(() => {
 		const spaceId = currentSpaceId.value
 		if (!spaceId) return null
-		const iconMap: Record<string, string> = {
-			work: 'i-lucide-briefcase',
-			personal: 'i-lucide-user',
-			study: 'i-lucide-book-open',
-		}
-		return iconMap[spaceId] ?? 'i-lucide-folder'
+		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.icon ?? DEFAULT_SPACE_DISPLAY.icon
 	})
 
 	const spacePillClass = computed(() => {
 		const spaceId = currentSpaceId.value
-		if (spaceId === 'work') return 'bg-blue-500'
-		if (spaceId === 'personal') return 'bg-purple-500'
-		if (spaceId === 'study') return 'bg-emerald-500'
-		return 'bg-slate-500'
+		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.pillClass ?? DEFAULT_SPACE_DISPLAY.pillClass
 	})
 
 	// 从 inject 获取 workspace 页面的 breadcrumbItems
@@ -221,10 +211,13 @@
 	const breadcrumbItems = computed(() => {
 		// 优先使用 inject 的 breadcrumbItems（来自 workspace 页面），但需要过滤掉 Space 相关的项
 		if (workspaceBreadcrumbItems.value.length > 0) {
+			const spaceLabelSet = new Set(
+				Object.values(SPACE_DISPLAY).map((item) => item.label.toLowerCase()),
+			)
 			// 过滤掉 'Space' 和 space label（如 'Work'），只保留 project 路径
 			return workspaceBreadcrumbItems.value.filter((item) => {
 				const label = item.label.toLowerCase()
-				return label !== 'space' && label !== 'work' && label !== 'personal' && label !== 'study'
+				return label !== 'space' && !spaceLabelSet.has(label)
 			})
 		}
 		// 如果没有传入，根据路由自动生成（只包含 project，不包含 space）
@@ -252,7 +245,7 @@
 
 	const projectTrail = computed(() => breadcrumbItems.value)
 
-	const levelPalette = ['bg-amber-500', 'bg-sky-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500']
+	const levelPalette = PROJECT_LEVEL_PILL_CLASSES
 
 	const projectPillClass = (index: number) => levelPalette[index % levelPalette.length]
 
