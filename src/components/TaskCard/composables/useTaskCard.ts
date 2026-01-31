@@ -22,7 +22,7 @@ export type TaskCardEmits = {
 
 export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 	const displayStatus = computed(() => getDisplayStatus(props.task.status))
-	const isCancelled = computed(() => props.task.done_reason === 'cancelled')
+	const isCancelled = computed(() => props.task.doneReason === 'cancelled')
 	const doneReasonKey = computed<TaskDoneReasonValue>(() => (isCancelled.value ? 'cancelled' : 'completed'))
 	const doneReasonStyle = computed(() => TASK_DONE_REASON_CARD_STYLES[doneReasonKey.value])
 

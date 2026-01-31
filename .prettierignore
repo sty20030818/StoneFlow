@@ -2,6 +2,16 @@ node_modules
 dist
 .cursor
 .vscode
+.codex
+.agent
+Docs
+release-output
+openspec
+
+AGENTS.md
+COMMIT_MSG.md
+bun.lock
+StoneFlow.code-workspace
 auto-imports.d.ts
 components.d.ts
 src-tauri/target

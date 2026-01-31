@@ -266,7 +266,7 @@
 			})
 		}
 
-		return result.sort((a, b) => b.updated_at - a.updated_at)
+		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
 	function selectSnippet(s: SnippetDto) {
@@ -289,10 +289,10 @@
 			content: '',
 			folder: null,
 			tags: [],
-			linked_task_id: null,
-			linked_project_id: null,
-			created_at: Date.now(),
-			updated_at: Date.now(),
+			linkedTaskId: null,
+			linkedProjectId: null,
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
 		}
 		selectSnippet(newSnippet)
 	}

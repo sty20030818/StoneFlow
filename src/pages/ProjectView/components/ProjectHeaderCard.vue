@@ -118,7 +118,7 @@
 
 	const statusConfig = computed(() => {
 		// 优先检查 archived
-		if (props.project?.archived_at) {
+		if (props.project?.archivedAt) {
 			return { label: 'Archived', color: 'neutral' as const, dot: 'bg-slate-400' }
 		}
 		const status = (props.project?.status?.toLowerCase() ?? 'active') as ProjectStatusValue
@@ -129,8 +129,8 @@
 	const statusColor = computed(() => statusConfig.value.color)
 	const statusDotClass = computed(() => statusConfig.value.dot)
 
-	const createdAtLabel = computed(() => formatTime(props.project?.created_at ?? null))
-	const updatedAtRelative = computed(() => formatRelativeTime(props.project?.updated_at ?? null))
+	const createdAtLabel = computed(() => formatTime(props.project?.createdAt ?? null))
+	const updatedAtRelative = computed(() => formatRelativeTime(props.project?.updatedAt ?? null))
 
 	function formatRelativeTime(value: number | null) {
 		if (!value) return '—'

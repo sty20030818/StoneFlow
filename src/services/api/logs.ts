@@ -4,12 +4,12 @@ export type ActivityLogEntityType = 'task' | 'project'
 
 export type ActivityLogEntry = {
 	id: string
-	entity_type: ActivityLogEntityType
-	entity_id: string
+	entityType: ActivityLogEntityType
+	entityId: string
 	action: string
-	created_at: number
-	space_id: string
-	project_name: string
+	createdAt: number
+	spaceId: string
+	projectName: string
 	detail: string
 }
 
@@ -33,24 +33,24 @@ export async function listActivityLogs(args: ListActivityLogsArgs = {}): Promise
 	for (const t of tasks) {
 		entries.push({
 			id: `${t.id}-created`,
-			entity_type: 'task',
-			entity_id: t.id,
+			entityType: 'task',
+			entityId: t.id,
 			action: 'task_created',
-			created_at: t.created_at,
-			space_id: t.space_id,
-			project_name: '当前 Space 默认 Project',
+			createdAt: t.createdAt,
+			spaceId: t.spaceId,
+			projectName: '当前 Space 默认 Project',
 			detail: `创建任务「${t.title}」`,
 		})
 
-		if (t.completed_at) {
+		if (t.completedAt) {
 			entries.push({
 				id: `${t.id}-completed`,
-				entity_type: 'task',
-				entity_id: t.id,
+				entityType: 'task',
+				entityId: t.id,
 				action: 'task_completed',
-				created_at: t.completed_at,
-				space_id: t.space_id,
-				project_name: '当前 Space 默认 Project',
+				createdAt: t.completedAt,
+				spaceId: t.spaceId,
+				projectName: '当前 Space 默认 Project',
 				detail: `完成任务「${t.title}」`,
 			})
 		}
@@ -59,24 +59,24 @@ export async function listActivityLogs(args: ListActivityLogsArgs = {}): Promise
 	let filtered = entries
 
 	if (args.entityType) {
-		filtered = filtered.filter((e) => e.entity_type === args.entityType)
+		filtered = filtered.filter((e) => e.entityType === args.entityType)
 	}
 
 	if (args.spaceId) {
-		filtered = filtered.filter((e) => e.space_id === args.spaceId)
+		filtered = filtered.filter((e) => e.spaceId === args.spaceId)
 	}
 
 	if (args.from !== undefined) {
 		const from = args.from
-		filtered = filtered.filter((e) => e.created_at >= from)
+		filtered = filtered.filter((e) => e.createdAt >= from)
 	}
 
 	if (args.to !== undefined) {
 		const to = args.to
-		filtered = filtered.filter((e) => e.created_at <= to)
+		filtered = filtered.filter((e) => e.createdAt <= to)
 	}
 
-	filtered.sort((a, b) => b.created_at - a.created_at)
+	filtered.sort((a, b) => b.createdAt - a.createdAt)
 
 	return filtered
 }

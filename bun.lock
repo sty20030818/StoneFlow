@@ -15,7 +15,7 @@
         "pinia": "^3.0.4",
         "tailwindcss": "^4.1.18",
         "vue": "^3.5.27",
-        "vue-router": "^5.0.0",
+        "vue-router": "^5.0.1",
       },
       "devDependencies": {
         "@tauri-apps/cli": "^2.9.6",
@@ -989,7 +989,7 @@
 
     "vue-eslint-parser": ["vue-eslint-parser@10.2.0", "https://registry.npmmirror.com/vue-eslint-parser/-/vue-eslint-parser-10.2.0.tgz", { "dependencies": { "debug": "^4.4.0", "eslint-scope": "^8.2.0", "eslint-visitor-keys": "^4.2.0", "espree": "^10.3.0", "esquery": "^1.6.0", "semver": "^7.6.3" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0" } }, "sha512-CydUvFOQKD928UzZhTp4pr2vWz1L+H99t7Pkln2QSPdvmURT0MoC4wUccfCnuEaihNsu9aYYyk+bep8rlfkUXw=="],
 
-    "vue-router": ["vue-router@5.0.0", "https://registry.npmmirror.com/vue-router/-/vue-router-5.0.0.tgz", { "dependencies": { "@babel/generator": "^7.28.6", "@vue-macros/common": "^3.1.1", "@vue/devtools-api": "^8.0.0", "ast-walker-scope": "^0.8.3", "chokidar": "^5.0.0", "json5": "^2.2.3", "local-pkg": "^1.1.2", "magic-string": "^0.30.21", "mlly": "^1.8.0", "muggle-string": "^0.4.1", "pathe": "^2.0.3", "picomatch": "^4.0.3", "scule": "^1.3.0", "tinyglobby": "^0.2.15", "unplugin": "^2.3.11", "unplugin-utils": "^0.3.1", "yaml": "^2.8.2" }, "peerDependencies": { "@pinia/colada": "^0.18.1", "@vue/compiler-sfc": "^3.5.17", "pinia": "^3.0.4", "vue": "^3.5.0" }, "optionalPeers": ["@pinia/colada", "@vue/compiler-sfc", "pinia"] }, "sha512-xWHlps4o1ScODWqvyapl0v1uGy0g7ozmsTSO/dguyGb/9RL6oSU2HfN/8oMXnoFOH1BuTaAkbiOz4OWdkfjcZg=="],
+    "vue-router": ["vue-router@5.0.1", "https://registry.npmmirror.com/vue-router/-/vue-router-5.0.1.tgz", { "dependencies": { "@babel/generator": "^7.28.6", "@vue-macros/common": "^3.1.1", "@vue/devtools-api": "^8.0.0", "ast-walker-scope": "^0.8.3", "chokidar": "^5.0.0", "json5": "^2.2.3", "local-pkg": "^1.1.2", "magic-string": "^0.30.21", "mlly": "^1.8.0", "muggle-string": "^0.4.1", "pathe": "^2.0.3", "picomatch": "^4.0.3", "scule": "^1.3.0", "tinyglobby": "^0.2.15", "unplugin": "^2.3.11", "unplugin-utils": "^0.3.1", "yaml": "^2.8.2" }, "peerDependencies": { "@pinia/colada": "^0.18.1", "@vue/compiler-sfc": "^3.5.17", "pinia": "^3.0.4", "vue": "^3.5.0" }, "optionalPeers": ["@pinia/colada", "@vue/compiler-sfc", "pinia"] }, "sha512-t+lFugGXMdaq8lbn+vXG4j2H9UlsP205Tszz1wcDk9FyxqItBzcdJQ06IhpkQ2mHOfiTOHZeBshkskzPzHJkCw=="],
 
     "vue-tsc": ["vue-tsc@3.2.4", "https://registry.npmmirror.com/vue-tsc/-/vue-tsc-3.2.4.tgz", { "dependencies": { "@volar/typescript": "2.4.27", "@vue/language-core": "3.2.4" }, "peerDependencies": { "typescript": ">=5.0.0" }, "bin": { "vue-tsc": "bin/vue-tsc.js" } }, "sha512-xj3YCvSLNDKt1iF9OcImWHhmYcihVu9p4b9s4PGR/qp6yhW+tZJaypGxHScRyOrdnHvaOeF+YkZOdKwbgGvp5g=="],
 

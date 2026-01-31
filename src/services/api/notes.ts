@@ -2,10 +2,10 @@ export type NoteDto = {
 	id: string
 	title: string
 	content: string
-	linked_project_id: string | null
-	linked_task_id: string | null
-	created_at: number
-	updated_at: number
+	linkedProjectId: string | null
+	linkedTaskId: string | null
+	createdAt: number
+	updatedAt: number
 }
 
 const STORAGE_KEY = 'stoneflow_notes'
@@ -18,7 +18,17 @@ export async function listNotes(): Promise<NoteDto[]> {
 	const raw = localStorage.getItem(STORAGE_KEY)
 	if (!raw) return []
 	try {
-		return JSON.parse(raw) as NoteDto[]
+		const parsed = JSON.parse(raw) as Partial<NoteDto>[]
+		return parsed.map((note) => ({
+			id: note.id ?? '',
+			title: note.title ?? '',
+			content: note.content ?? '',
+			linkedProjectId:
+				note.linkedProjectId ?? (note as { linked_project_id?: string | null }).linked_project_id ?? null,
+			linkedTaskId: note.linkedTaskId ?? (note as { linked_task_id?: string | null }).linked_task_id ?? null,
+			createdAt: note.createdAt ?? (note as { created_at?: number }).created_at ?? 0,
+			updatedAt: note.updatedAt ?? (note as { updated_at?: number }).updated_at ?? 0,
+		}))
 	} catch {
 		return []
 	}
@@ -27,18 +37,18 @@ export async function listNotes(): Promise<NoteDto[]> {
 export async function createNote(data: {
 	title: string
 	content: string
-	linked_project_id?: string | null
-	linked_task_id?: string | null
+	linkedProjectId?: string | null
+	linkedTaskId?: string | null
 }): Promise<NoteDto> {
 	const now = Date.now()
 	const note: NoteDto = {
 		id: `note_${now}_${Math.random().toString(36).substring(2, 9)}`,
 		title: data.title.trim(),
 		content: data.content,
-		linked_project_id: data.linked_project_id ?? null,
-		linked_task_id: data.linked_task_id ?? null,
-		created_at: now,
-		updated_at: now,
+		linkedProjectId: data.linkedProjectId ?? null,
+		linkedTaskId: data.linkedTaskId ?? null,
+		createdAt: now,
+		updatedAt: now,
 	}
 
 	const all = await listNotes()
@@ -51,7 +61,7 @@ export async function updateNote(id: string, patch: Partial<NoteDto>): Promise<v
 	const all = await listNotes()
 	const idx = all.findIndex((n) => n.id === id)
 	if (idx < 0) throw new Error('Note not found')
-	all[idx] = { ...all[idx], ...patch, updated_at: Date.now() }
+	all[idx] = { ...all[idx], ...patch, updatedAt: Date.now() }
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
 }
 

@@ -57,18 +57,18 @@
 									<div class="flex items-center gap-2 mb-1.5">
 										<span class="text-sm font-medium">{{ e.title || '无标题' }}</span>
 										<UBadge
-											v-if="e.linked_project_id"
+											v-if="e.linkedProjectId"
 											color="primary"
 											variant="soft"
 											size="2xs">
 											Project
 										</UBadge>
 										<UBadge
-											v-if="e.linked_task_ids.length > 0"
+											v-if="e.linkedTaskIds.length > 0"
 											color="success"
 											variant="soft"
 											size="2xs">
-											{{ e.linked_task_ids.length }} Tasks
+											{{ e.linkedTaskIds.length }} Tasks
 										</UBadge>
 									</div>
 									<div class="text-xs text-muted line-clamp-3 mb-2">
@@ -150,7 +150,7 @@
 				<div class="space-y-2">
 					<label class="text-[11px] font-medium text-muted uppercase tracking-wide">关联 Project ID（可选）</label>
 					<UInput
-						v-model="editForm.linked_project_id"
+						v-model="editForm.linkedProjectId"
 						placeholder="project:xxx"
 						size="sm" />
 				</div>
@@ -197,8 +197,8 @@
 		date: new Date().toISOString().split('T')[0],
 		title: '',
 		content: '',
-		linked_task_ids: [] as string[],
-		linked_project_id: null as string | null,
+		linkedTaskIds: [] as string[],
+		linkedProjectId: null as string | null,
 	})
 
 	type GroupedEntry = {
@@ -228,15 +228,15 @@
 			})
 
 			const dayTasks = tasks.value.filter((t) => {
-				if (!t.completed_at) return false
-				const taskDate = new Date(t.completed_at).toISOString().split('T')[0]
+				if (!t.completedAt) return false
+				const taskDate = new Date(t.completedAt).toISOString().split('T')[0]
 				return taskDate === date
 			})
 
 			result.push({
 				date,
 				dateLabel,
-				entries: entriesList.sort((a, b) => b.created_at - a.created_at),
+				entries: entriesList.sort((a, b) => b.createdAt - a.createdAt),
 				tasks: dayTasks,
 			})
 		}
@@ -250,8 +250,8 @@
 			date: e.date,
 			title: e.title,
 			content: e.content,
-			linked_task_ids: [...e.linked_task_ids],
-			linked_project_id: e.linked_project_id,
+			linkedTaskIds: [...e.linkedTaskIds],
+			linkedProjectId: e.linkedProjectId,
 		}
 		editOpen.value = true
 	}
@@ -262,8 +262,8 @@
 			date: new Date().toISOString().split('T')[0],
 			title: '',
 			content: '',
-			linked_task_ids: [],
-			linked_project_id: null,
+			linkedTaskIds: [],
+			linkedProjectId: null,
 		}
 		editOpen.value = true
 	}
@@ -316,7 +316,7 @@
 		try {
 			entries.value = await listDiaryEntries()
 			const doneTasks = await listTasks({ status: 'done' })
-			tasks.value = doneTasks.filter((t) => t.done_reason !== 'cancelled')
+			tasks.value = doneTasks.filter((t) => t.doneReason !== 'cancelled')
 		} catch (e) {
 			toast.add({
 				title: '加载失败',

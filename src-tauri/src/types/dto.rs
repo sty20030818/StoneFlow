@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SpaceDto {
     pub id: String,
     pub name: String,
@@ -10,6 +11,7 @@ pub struct SpaceDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectDto {
     pub id: String,
     pub space_id: String,
@@ -25,6 +27,7 @@ pub struct ProjectDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskDto {
     pub id: String,
     pub space_id: String,
@@ -56,11 +59,13 @@ pub struct TaskDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CustomFieldsDto {
     pub fields: Vec<CustomFieldItemDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CustomFieldItemDto {
     pub key: String,
     pub label: String,

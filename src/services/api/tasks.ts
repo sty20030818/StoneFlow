@@ -15,24 +15,24 @@ export type CustomFields = {
 
 export type TaskDto = {
 	id: string
-	space_id: string
-	project_id: string | null
+	spaceId: string
+	projectId: string | null
 	title: string
 	note: string | null
 	status: TaskStatus
-	done_reason: TaskDoneReason | null
+	doneReason: TaskDoneReason | null
 	priority: TaskPriorityValue
 	tags: string[]
 	rank: number
-	created_at: number
-	updated_at: number
-	completed_at: number | null
-	deadline_at: number | null
-	archived_at: number | null
-	deleted_at: number | null
+	createdAt: number
+	updatedAt: number
+	completedAt: number | null
+	deadlineAt: number | null
+	archivedAt: number | null
+	deletedAt: number | null
 	links: string[]
-	custom_fields: CustomFields | null
-	create_by: string
+	customFields: CustomFields | null
+	createBy: string
 }
 
 export type ListTasksArgs = {
@@ -53,7 +53,7 @@ export type CreateTaskArgs = {
 }
 
 export async function createTask(args: CreateTaskArgs): Promise<TaskDto> {
-	// Tauri 会自动将 camelCase 转换为 snake_case
+	// Rust 侧已使用 camelCase 解析请求字段
 	return await tauriInvoke<TaskDto>('create_task', {
 		args: {
 			spaceId: args.spaceId,

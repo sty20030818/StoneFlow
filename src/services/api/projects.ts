@@ -3,16 +3,16 @@ import type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/pr
 
 export type ProjectDto = {
 	id: string
-	space_id: string
-	parent_id: string | null
+	spaceId: string
+	parentId: string | null
 	path: string
 	name: string
 	note: string | null
 	status: ProjectStatusValue
 	priority: ProjectPriorityValue
-	created_at: number
-	updated_at: number
-	archived_at: number | null
+	createdAt: number
+	updatedAt: number
+	archivedAt: number | null
 }
 
 export type ListProjectsArgs = {
@@ -33,7 +33,7 @@ export type CreateProjectArgs = {
  */
 export async function listProjects(args: ListProjectsArgs): Promise<ProjectDto[]> {
 	// Rust: commands/projects.rs -> list_projects
-	// Tauri 会自动将 camelCase 转换为 snake_case
+	// Rust 侧已使用 camelCase 解析请求字段
 	return await tauriInvoke<ProjectDto[]>('list_projects', {
 		args: {
 			spaceId: args.spaceId,
@@ -43,7 +43,7 @@ export async function listProjects(args: ListProjectsArgs): Promise<ProjectDto[]
 
 export async function createProject(args: CreateProjectArgs): Promise<ProjectDto> {
 	// Rust: commands/projects.rs -> create_project
-	// Tauri 会自动将 camelCase 转换为 snake_case
+	// Rust 侧已使用 camelCase 解析请求字段
 	return await tauriInvoke<ProjectDto>('create_project', {
 		args: {
 			spaceId: args.spaceId,

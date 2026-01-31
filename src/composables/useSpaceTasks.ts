@@ -43,7 +43,7 @@ export function useSpaceTasks(
 			])
 
 			todo.value = todoRows
-			doneToday.value = doneRows.filter((t) => t.done_reason !== 'cancelled' && isTodayLocal(t.completed_at ?? null))
+			doneToday.value = doneRows.filter((t) => t.doneReason !== 'cancelled' && isTodayLocal(t.completedAt ?? null))
 		} catch (e) {
 			toast.add({
 				title: '加载失败',

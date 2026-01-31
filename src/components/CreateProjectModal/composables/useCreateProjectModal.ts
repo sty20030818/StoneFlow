@@ -98,16 +98,16 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 
 	function buildParentProjectOptions(spaceId: string) {
 		const storeProjects = projectsStore.getProjectsOfSpace(spaceId)
-		const fallbackProjects = (props.projects ?? []).filter((p) => p.space_id === spaceId)
+		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === spaceId)
 		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
 
 		const filtered = projectsList.filter((p) => !p.id.endsWith('_default'))
 
 		const byParent = new Map<string | null, typeof filtered>()
 		for (const p of filtered) {
-			const bucket = byParent.get(p.parent_id) ?? []
+			const bucket = byParent.get(p.parentId) ?? []
 			bucket.push(p)
-			byParent.set(p.parent_id, bucket)
+			byParent.set(p.parentId, bucket)
 		}
 
 		const options: ParentProjectOption[] = [

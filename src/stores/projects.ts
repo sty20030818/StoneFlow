@@ -11,16 +11,16 @@ export const useProjectsStore = defineStore('projects', () => {
 	async function loadForSpace(spaceId: string, force = false) {
 		if (!force && loadedSpaceIds.value.has(spaceId)) return
 		const data = await listProjects({ spaceId })
-		projects.value = projects.value.filter((p) => p.space_id !== spaceId).concat(data)
+		projects.value = projects.value.filter((p) => p.spaceId !== spaceId).concat(data)
 		loadedSpaceIds.value.add(spaceId)
 	}
 
 	const bySpace = computed(() => {
 		const map = new Map<string, ProjectDto[]>()
 		for (const p of projects.value) {
-			const arr = map.get(p.space_id) ?? []
+			const arr = map.get(p.spaceId) ?? []
 			arr.push(p)
-			map.set(p.space_id, arr)
+			map.set(p.spaceId, arr)
 		}
 		return map
 	})

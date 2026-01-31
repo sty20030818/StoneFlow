@@ -72,28 +72,28 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const currentSpaceLabel = computed(() => {
-		const sid = currentTask.value?.space_id
+		const sid = currentTask.value?.spaceId
 		if (!sid) return DEFAULT_SPACE_DISPLAY.label
 		return SPACE_DISPLAY[sid as keyof typeof SPACE_DISPLAY]?.label ?? sid
 	})
 
 	const currentSpaceIcon = computed(() => {
-		const sid = currentTask.value?.space_id
+		const sid = currentTask.value?.spaceId
 		if (!sid) return DEFAULT_SPACE_DISPLAY.icon
 		return SPACE_DISPLAY[sid as keyof typeof SPACE_DISPLAY]?.icon ?? DEFAULT_SPACE_DISPLAY.icon
 	})
 
 	const spacePillClass = computed(() => {
-		const sid = currentTask.value?.space_id
+		const sid = currentTask.value?.spaceId
 		if (!sid) return DEFAULT_SPACE_DISPLAY.pillClass
 		return SPACE_DISPLAY[sid as keyof typeof SPACE_DISPLAY]?.pillClass ?? DEFAULT_SPACE_DISPLAY.pillClass
 	})
 
 	const projectPath = computed(() => {
 		const task = currentTask.value
-		if (!task?.project_id) return UNCATEGORIZED_LABEL
-		const projects = projectsStore.getProjectsOfSpace(task.space_id)
-		const project = projects.find((p) => p.id === task.project_id)
+		if (!task?.projectId) return UNCATEGORIZED_LABEL
+		const projects = projectsStore.getProjectsOfSpace(task.spaceId)
+		const project = projects.find((p) => p.id === task.projectId)
 		if (!project) return UNKNOWN_PROJECT_LABEL
 		return project.path || project.name
 	})
@@ -134,8 +134,8 @@ export function useTaskInspectorDerived(params: {
 		const t = currentTask.value
 		if (!t) return []
 
-		const created = new Date(t.created_at)
-		const completed = t.completed_at ? new Date(t.completed_at) : null
+		const created = new Date(t.createdAt)
+		const completed = t.completedAt ? new Date(t.completedAt) : null
 
 		const items = [
 			{

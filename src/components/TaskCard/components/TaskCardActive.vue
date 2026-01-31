@@ -52,11 +52,11 @@
 			</p>
 
 			<div
-				v-if="showSpaceLabel || task.tags.length > 0 || task.deadline_at || (task.links?.length ?? 0) > 0"
+				v-if="showSpaceLabel || task.tags.length > 0 || task.deadlineAt || (task.links?.length ?? 0) > 0"
 				class="flex items-center gap-2 mt-3">
 				<SpaceLabel
 					v-if="showSpaceLabel"
-					:space-id="task.space_id" />
+					:space-id="task.spaceId" />
 				<span
 					v-for="tag in task.tags"
 					:key="tag"
@@ -64,13 +64,13 @@
 					#{{ tag }}
 				</span>
 				<div
-					v-if="task.deadline_at"
+					v-if="task.deadlineAt"
 					class="flex items-center gap-1 text-blue-600 text-[10px]">
 					<UIcon
 						name="i-lucide-calendar"
 						class="size-3" />
 					<span class="font-medium">
-						{{ formatDueDate(task.deadline_at) }}
+						{{ formatDueDate(task.deadlineAt) }}
 					</span>
 				</div>
 				<div

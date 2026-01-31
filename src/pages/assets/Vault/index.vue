@@ -286,7 +286,7 @@
 			})
 		}
 
-		return result.sort((a, b) => b.updated_at - a.updated_at)
+		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
 	function selectEntry(e: VaultEntryDto) {
@@ -309,8 +309,8 @@
 			value: '',
 			folder: null,
 			note: null,
-			created_at: Date.now(),
-			updated_at: Date.now(),
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
 		}
 		selectEntry(newEntry)
 	}

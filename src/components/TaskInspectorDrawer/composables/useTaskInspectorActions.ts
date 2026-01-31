@@ -79,8 +79,8 @@ export function useTaskInspectorActions(params: {
 				{ status: 'done', doneReason: nextReason },
 				{
 					status: 'done',
-					done_reason: nextReason,
-					completed_at: currentTask.value.completed_at ?? Date.now(),
+					doneReason: nextReason,
+					completedAt: currentTask.value.completedAt ?? Date.now(),
 				},
 			)
 			state.statusLocal.value = 'done'
@@ -88,7 +88,7 @@ export function useTaskInspectorActions(params: {
 			return
 		}
 
-		await commitUpdate({ status: 'todo', doneReason: null }, { status: 'todo', done_reason: null, completed_at: null })
+		await commitUpdate({ status: 'todo', doneReason: null }, { status: 'todo', doneReason: null, completedAt: null })
 		state.statusLocal.value = 'todo'
 	}
 
@@ -100,7 +100,7 @@ export function useTaskInspectorActions(params: {
 	async function onDoneReasonChange(value: TaskDoneReasonValue) {
 		if (!currentTask.value || state.statusLocal.value !== 'done') return
 		if (state.doneReasonLocal.value === value) return
-		await commitUpdate({ doneReason: value }, { done_reason: value })
+		await commitUpdate({ doneReason: value }, { doneReason: value })
 		state.doneReasonLocal.value = value
 	}
 
@@ -114,12 +114,12 @@ export function useTaskInspectorActions(params: {
 		if (!currentTask.value) return
 		const val = state.deadlineLocal.value
 		if (!val) {
-			await commitUpdate({ deadlineAt: null }, { deadline_at: null })
+			await commitUpdate({ deadlineAt: null }, { deadlineAt: null })
 			return
 		}
 		const date = new Date(val)
 		const ts = date.getTime()
-		await commitUpdate({ deadlineAt: ts }, { deadline_at: ts })
+		await commitUpdate({ deadlineAt: ts }, { deadlineAt: ts })
 	}
 
 	async function onDeadlineClear() {
@@ -157,14 +157,14 @@ export function useTaskInspectorActions(params: {
 		state.spaceIdLocal.value = value
 		state.projectIdLocal.value = null
 
-		await commitUpdate({ spaceId: value, projectId: null }, { space_id: value, project_id: null })
+		await commitUpdate({ spaceId: value, projectId: null }, { spaceId: value, projectId: null })
 	}
 
 	async function onProjectChange(value: string | null) {
 		if (!currentTask.value || value === state.projectIdLocal.value) return
 		state.projectIdLocal.value = value
 
-		await commitUpdate({ projectId: value }, { project_id: value })
+		await commitUpdate({ projectId: value }, { projectId: value })
 	}
 
 	async function onNoteBlur() {

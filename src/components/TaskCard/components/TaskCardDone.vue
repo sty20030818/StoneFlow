@@ -56,8 +56,8 @@
 				<span class="font-medium">{{ task.links.length }}</span>
 			</div>
 			<TimeDisplay
-				v-if="showTime && task.completed_at"
-				:timestamp="task.completed_at"
+				v-if="showTime && task.completedAt"
+				:timestamp="task.completedAt"
 				text-class="text-xs text-muted" />
 		</div>
 	</div>

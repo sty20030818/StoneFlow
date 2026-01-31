@@ -5,10 +5,10 @@ export type SnippetDto = {
 	content: string
 	folder: string | null
 	tags: string[]
-	linked_task_id: string | null
-	linked_project_id: string | null
-	created_at: number
-	updated_at: number
+	linkedTaskId: string | null
+	linkedProjectId: string | null
+	createdAt: number
+	updatedAt: number
 }
 
 const STORAGE_KEY = 'stoneflow_snippets'
@@ -21,7 +21,20 @@ export async function listSnippets(): Promise<SnippetDto[]> {
 	const raw = localStorage.getItem(STORAGE_KEY)
 	if (!raw) return []
 	try {
-		return JSON.parse(raw) as SnippetDto[]
+		const parsed = JSON.parse(raw) as Partial<SnippetDto>[]
+		return parsed.map((snippet) => ({
+			id: snippet.id ?? '',
+			title: snippet.title ?? '',
+			language: snippet.language ?? '',
+			content: snippet.content ?? '',
+			folder: snippet.folder ?? null,
+			tags: snippet.tags ?? [],
+			linkedTaskId: snippet.linkedTaskId ?? (snippet as { linked_task_id?: string | null }).linked_task_id ?? null,
+			linkedProjectId:
+				snippet.linkedProjectId ?? (snippet as { linked_project_id?: string | null }).linked_project_id ?? null,
+			createdAt: snippet.createdAt ?? (snippet as { created_at?: number }).created_at ?? 0,
+			updatedAt: snippet.updatedAt ?? (snippet as { updated_at?: number }).updated_at ?? 0,
+		}))
 	} catch {
 		return []
 	}
@@ -33,8 +46,8 @@ export async function createSnippet(data: {
 	content: string
 	folder?: string | null
 	tags?: string[]
-	linked_task_id?: string | null
-	linked_project_id?: string | null
+	linkedTaskId?: string | null
+	linkedProjectId?: string | null
 }): Promise<SnippetDto> {
 	const now = Date.now()
 	const snippet: SnippetDto = {
@@ -44,10 +57,10 @@ export async function createSnippet(data: {
 		content: data.content,
 		folder: data.folder ?? null,
 		tags: data.tags ?? [],
-		linked_task_id: data.linked_task_id ?? null,
-		linked_project_id: data.linked_project_id ?? null,
-		created_at: now,
-		updated_at: now,
+		linkedTaskId: data.linkedTaskId ?? null,
+		linkedProjectId: data.linkedProjectId ?? null,
+		createdAt: now,
+		updatedAt: now,
 	}
 
 	const all = await listSnippets()
@@ -60,7 +73,7 @@ export async function updateSnippet(id: string, patch: Partial<SnippetDto>): Pro
 	const all = await listSnippets()
 	const idx = all.findIndex((s) => s.id === id)
 	if (idx < 0) throw new Error('Snippet not found')
-	all[idx] = { ...all[idx], ...patch, updated_at: Date.now() }
+	all[idx] = { ...all[idx], ...patch, updatedAt: Date.now() }
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
 }
 

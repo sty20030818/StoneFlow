@@ -7,8 +7,8 @@ export type VaultEntryDto = {
 	value: string
 	folder: string | null
 	note: string | null
-	created_at: number
-	updated_at: number
+	createdAt: number
+	updatedAt: number
 }
 
 const STORAGE_KEY = 'stoneflow_vault'
@@ -21,7 +21,17 @@ export async function listVaultEntries(): Promise<VaultEntryDto[]> {
 	const raw = localStorage.getItem(STORAGE_KEY)
 	if (!raw) return []
 	try {
-		return JSON.parse(raw) as VaultEntryDto[]
+		const parsed = JSON.parse(raw) as Partial<VaultEntryDto>[]
+		return parsed.map((entry) => ({
+			id: entry.id ?? '',
+			name: entry.name ?? '',
+			type: entry.type ?? 'config',
+			value: entry.value ?? '',
+			folder: entry.folder ?? null,
+			note: entry.note ?? null,
+			createdAt: entry.createdAt ?? (entry as { created_at?: number }).created_at ?? 0,
+			updatedAt: entry.updatedAt ?? (entry as { updated_at?: number }).updated_at ?? 0,
+		}))
 	} catch {
 		return []
 	}
@@ -42,8 +52,8 @@ export async function createVaultEntry(data: {
 		value: data.value,
 		folder: data.folder ?? null,
 		note: data.note ?? null,
-		created_at: now,
-		updated_at: now,
+		createdAt: now,
+		updatedAt: now,
 	}
 
 	const all = await listVaultEntries()
@@ -56,7 +66,7 @@ export async function updateVaultEntry(id: string, patch: Partial<VaultEntryDto>
 	const all = await listVaultEntries()
 	const idx = all.findIndex((e) => e.id === id)
 	if (idx < 0) throw new Error('Vault entry not found')
-	all[idx] = { ...all[idx], ...patch, updated_at: Date.now() }
+	all[idx] = { ...all[idx], ...patch, updatedAt: Date.now() }
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
 }
 

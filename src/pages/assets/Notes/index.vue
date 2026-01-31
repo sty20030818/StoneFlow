@@ -57,14 +57,14 @@
 								</div>
 								<div class="flex items-center gap-1.5 mt-1.5">
 									<UBadge
-										v-if="n.linked_project_id"
+										v-if="n.linkedProjectId"
 										color="primary"
 										variant="soft"
 										size="2xs">
 										Project
 									</UBadge>
 									<UBadge
-										v-if="n.linked_task_id"
+										v-if="n.linkedTaskId"
 										color="success"
 										variant="soft"
 										size="2xs">
@@ -128,14 +128,14 @@
 						<div class="space-y-2">
 							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">关联 Project ID</label>
 							<UInput
-								v-model="editForm.linked_project_id"
+								v-model="editForm.linkedProjectId"
 								placeholder="project:xxx（可选）"
 								size="sm" />
 						</div>
 						<div class="space-y-2">
 							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">关联 Task ID</label>
 							<UInput
-								v-model="editForm.linked_task_id"
+								v-model="editForm.linkedTaskId"
 								placeholder="task:xxx（可选）"
 								size="sm" />
 						</div>
@@ -179,8 +179,8 @@
 	const editForm = ref({
 		title: '',
 		content: '',
-		linked_project_id: null as string | null,
-		linked_task_id: null as string | null,
+		linkedProjectId: null as string | null,
+		linkedTaskId: null as string | null,
 	})
 
 	const filteredNotes = computed(() => {
@@ -195,7 +195,7 @@
 			})
 		}
 
-		return result.sort((a, b) => b.updated_at - a.updated_at)
+		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
 	function selectNote(n: NoteDto) {
@@ -203,8 +203,8 @@
 		editForm.value = {
 			title: n.title,
 			content: n.content,
-			linked_project_id: n.linked_project_id,
-			linked_task_id: n.linked_task_id,
+			linkedProjectId: n.linkedProjectId,
+			linkedTaskId: n.linkedTaskId,
 		}
 	}
 
@@ -213,10 +213,10 @@
 			id: '',
 			title: '',
 			content: '',
-			linked_project_id: null,
-			linked_task_id: null,
-			created_at: Date.now(),
-			updated_at: Date.now(),
+			linkedProjectId: null,
+			linkedTaskId: null,
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
 		}
 		selectNote(newNote)
 	}

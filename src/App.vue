@@ -192,7 +192,7 @@
 
 	async function onProjectCreated(project: ProjectDto) {
 		// 项目创建成功，强制刷新项目列表
-		await projectsStore.loadForSpace(project.space_id, true)
+		await projectsStore.loadForSpace(project.spaceId, true)
 	}
 
 	// 提供全局的创建项目弹窗控制函数

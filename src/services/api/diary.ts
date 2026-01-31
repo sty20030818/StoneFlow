@@ -3,10 +3,10 @@ export type DiaryEntryDto = {
 	date: string
 	title: string
 	content: string
-	linked_task_ids: string[]
-	linked_project_id: string | null
-	created_at: number
-	updated_at: number
+	linkedTaskIds: string[]
+	linkedProjectId: string | null
+	createdAt: number
+	updatedAt: number
 }
 
 const STORAGE_KEY = 'stoneflow_diary'
@@ -19,7 +19,18 @@ export async function listDiaryEntries(): Promise<DiaryEntryDto[]> {
 	const raw = localStorage.getItem(STORAGE_KEY)
 	if (!raw) return []
 	try {
-		return JSON.parse(raw) as DiaryEntryDto[]
+		const parsed = JSON.parse(raw) as Partial<DiaryEntryDto>[]
+		return parsed.map((entry) => ({
+			id: entry.id ?? '',
+			date: entry.date ?? '',
+			title: entry.title ?? '',
+			content: entry.content ?? '',
+			linkedTaskIds: entry.linkedTaskIds ?? (entry as { linked_task_ids?: string[] }).linked_task_ids ?? [],
+			linkedProjectId:
+				entry.linkedProjectId ?? (entry as { linked_project_id?: string | null }).linked_project_id ?? null,
+			createdAt: entry.createdAt ?? (entry as { created_at?: number }).created_at ?? 0,
+			updatedAt: entry.updatedAt ?? (entry as { updated_at?: number }).updated_at ?? 0,
+		}))
 	} catch {
 		return []
 	}
@@ -29,8 +40,8 @@ export async function createDiaryEntry(data: {
 	date: string
 	title: string
 	content: string
-	linked_task_ids?: string[]
-	linked_project_id?: string | null
+	linkedTaskIds?: string[]
+	linkedProjectId?: string | null
 }): Promise<DiaryEntryDto> {
 	const now = Date.now()
 	const entry: DiaryEntryDto = {
@@ -38,10 +49,10 @@ export async function createDiaryEntry(data: {
 		date: data.date,
 		title: data.title.trim(),
 		content: data.content,
-		linked_task_ids: data.linked_task_ids ?? [],
-		linked_project_id: data.linked_project_id ?? null,
-		created_at: now,
-		updated_at: now,
+		linkedTaskIds: data.linkedTaskIds ?? [],
+		linkedProjectId: data.linkedProjectId ?? null,
+		createdAt: now,
+		updatedAt: now,
 	}
 
 	const all = await listDiaryEntries()
@@ -54,7 +65,7 @@ export async function updateDiaryEntry(id: string, patch: Partial<DiaryEntryDto>
 	const all = await listDiaryEntries()
 	const idx = all.findIndex((e) => e.id === id)
 	if (idx < 0) throw new Error('Diary entry not found')
-	all[idx] = { ...all[idx], ...patch, updated_at: Date.now() }
+	all[idx] = { ...all[idx], ...patch, updatedAt: Date.now() }
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
 }
 

@@ -18,15 +18,15 @@ export function useTaskInspectorSync(params: {
 		if (!t) return
 		state.titleLocal.value = t.title
 		state.statusLocal.value = getDisplayStatus(t.status)
-		state.doneReasonLocal.value = t.done_reason === 'cancelled' ? 'cancelled' : 'completed'
+		state.doneReasonLocal.value = t.doneReason === 'cancelled' ? 'cancelled' : 'completed'
 		state.priorityLocal.value = t.priority || 'P1'
 		state.noteLocal.value = t.note || ''
 		state.tagsLocal.value = t.tags || []
 		state.tagInput.value = ''
 		state.timelineCollapsed.value = true
 
-		if (t.deadline_at) {
-			const d = new Date(t.deadline_at)
+		if (t.deadlineAt) {
+			const d = new Date(t.deadlineAt)
 			const year = d.getFullYear()
 			const month = String(d.getMonth() + 1).padStart(2, '0')
 			const day = String(d.getDate()).padStart(2, '0')
@@ -35,15 +35,15 @@ export function useTaskInspectorSync(params: {
 			state.deadlineLocal.value = ''
 		}
 
-		state.spaceIdLocal.value = t.space_id
-		state.projectIdLocal.value = t.project_id
+		state.spaceIdLocal.value = t.spaceId
+		state.projectIdLocal.value = t.projectId
 	}
 
 	watch(
 		() => currentTask.value,
 		async (task) => {
 			if (task) {
-				await projectsStore.loadForSpace(task.space_id)
+				await projectsStore.loadForSpace(task.spaceId)
 				syncFromTask()
 			}
 		},

@@ -115,12 +115,12 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		]
 
 		const storeProjects = projectsStore.getProjectsOfSpace(form.value.spaceId)
-		const fallbackProjects = (props.projects ?? []).filter((p) => p.space_id === form.value.spaceId)
+		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === form.value.spaceId)
 		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
 		if (!projectsList.length) return options
 
 		function buildTree(parentId: string | null, depth: number) {
-			const children = projectsList.filter((p) => p.parent_id === parentId && !p.id.endsWith('_default'))
+			const children = projectsList.filter((p) => p.parentId === parentId && !p.id.endsWith('_default'))
 			for (const project of children) {
 				options.push({
 					value: project.id,
@@ -231,8 +231,8 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			if (Object.keys(updatePatch).length > 0) {
 				await updateTask(task.id, updatePatch)
 				if (updatePatch.status) task.status = updatePatch.status as TaskDto['status']
-				if (updatePatch.doneReason !== undefined) task.done_reason = updatePatch.doneReason
-				if (updatePatch.deadlineAt !== undefined) task.deadline_at = updatePatch.deadlineAt
+				if (updatePatch.doneReason !== undefined) task.doneReason = updatePatch.doneReason
+				if (updatePatch.deadlineAt !== undefined) task.deadlineAt = updatePatch.deadlineAt
 				if (updatePatch.priority) task.priority = updatePatch.priority
 				if (updatePatch.note !== undefined) task.note = updatePatch.note
 				if (updatePatch.tags) task.tags = updatePatch.tags

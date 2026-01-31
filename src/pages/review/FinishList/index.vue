@@ -116,8 +116,8 @@
 						<div class="min-w-0">
 							<div class="font-medium truncate">{{ t.title }}</div>
 							<div class="text-[11px] text-muted">
-								完成于 {{ formatDateTime(t.completed_at ?? 0) }} · Lead
-								{{ formatDuration(t.completed_at && t.created_at ? t.completed_at - t.created_at : 0) }}
+								完成于 {{ formatDateTime(t.completedAt ?? 0) }} · Lead
+								{{ formatDuration(t.completedAt && t.createdAt ? t.completedAt - t.createdAt : 0) }}
 							</div>
 						</div>
 						<div class="flex items-center gap-1.5">
@@ -257,8 +257,8 @@
 		const all = [{ label: '所有 Project', value: 'all' }]
 		const ids = new Set<string>()
 		for (const t of tasks.value) {
-			if (!t.completed_at || t.done_reason === 'cancelled') continue
-			ids.add(t.space_id)
+			if (!t.completedAt || t.doneReason === 'cancelled') continue
+			ids.add(t.spaceId)
 		}
 		const spaceIds = Array.from(ids)
 		const options = []
@@ -296,11 +296,11 @@
 
 	const filteredTasks = computed(() => {
 		return tasks.value.filter((t) => {
-			if (!t.completed_at || t.done_reason === 'cancelled') return false
-			if (!isInDateRange(t.completed_at)) return false
-			if (spaceFilter.value !== 'all' && t.space_id !== spaceFilter.value) return false
+			if (!t.completedAt || t.doneReason === 'cancelled') return false
+			if (!isInDateRange(t.completedAt)) return false
+			if (spaceFilter.value !== 'all' && t.spaceId !== spaceFilter.value) return false
 			if (projectFilter.value !== 'all') {
-				const projects = projectsStore.getProjectsOfSpace(t.space_id)
+				const projects = projectsStore.getProjectsOfSpace(t.spaceId)
 				const hasProject = projects.some((p) => p.id === projectFilter.value)
 				if (!hasProject) return false
 			}
@@ -335,15 +335,15 @@
 
 		for (const [, list] of byProject.entries()) {
 			const sample = list[0]
-			const spaceId = sample.space_id
+			const spaceId = sample.spaceId
 			const spaceLabelText = spaceLabel(spaceId)
 			const projects = projectsStore.getProjectsOfSpace(spaceId)
 			const project = projects[0]
 
 			const leads: number[] = []
 			for (const t of list) {
-				if (t.completed_at && t.created_at) {
-					leads.push(t.completed_at - t.created_at)
+				if (t.completedAt && t.createdAt) {
+					leads.push(t.completedAt - t.createdAt)
 				}
 			}
 			leads.sort((a, b) => a - b)
@@ -364,15 +364,15 @@
 
 	const stats = computed(() => {
 		const thisWeekTasks = tasks.value.filter(
-			(t) => t.completed_at && isInDateRange(t.completed_at) && t.done_reason !== 'cancelled',
+			(t) => t.completedAt && isInDateRange(t.completedAt) && t.doneReason !== 'cancelled',
 		)
 		const thisWeekCount = thisWeekTasks.length
 		const activeProjectIds = new Set<string>()
 		for (const t of thisWeekTasks) {
-			const projects = projectsStore.getProjectsOfSpace(t.space_id)
+			const projects = projectsStore.getProjectsOfSpace(t.spaceId)
 			if (projects[0]) activeProjectIds.add(projects[0].id)
 		}
-		const spaceIds = new Set(thisWeekTasks.map((t) => t.space_id))
+		const spaceIds = new Set(thisWeekTasks.map((t) => t.spaceId))
 		return {
 			thisWeekCount,
 			activeProjectCount: activeProjectIds.size,

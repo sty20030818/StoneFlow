@@ -196,10 +196,10 @@
 
 		return ids.map((id) => {
 			const info = SPACE_DISPLAY[id]
-			const scoped = tasks.value.filter((t) => t.space_id === id)
+			const scoped = tasks.value.filter((t) => t.spaceId === id)
 
 			const thisWeekDone = scoped.filter(
-				(t) => t.completed_at && t.completed_at >= startOfWeek && t.done_reason !== 'cancelled',
+				(t) => t.completedAt && t.completedAt >= startOfWeek && t.doneReason !== 'cancelled',
 			).length
 
 			const activeProjectIds = new Set<string>()
@@ -228,7 +228,7 @@
 			const end = start + 24 * 60 * 60 * 1000
 
 			const count = tasks.value.filter(
-				(t) => t.completed_at && t.completed_at >= start && t.completed_at < end && t.done_reason !== 'cancelled',
+				(t) => t.completedAt && t.completedAt >= start && t.completedAt < end && t.doneReason !== 'cancelled',
 			).length
 			days.push({ date: key, count, percent: 0 })
 		}
@@ -257,13 +257,13 @@
 				key: 'done',
 				label: TASK_DONE_REASON_LABELS.completed,
 				color: TASK_DONE_REASON_COLORS.completed,
-				match: (t) => t.status === 'done' && t.done_reason !== 'cancelled',
+				match: (t) => t.status === 'done' && t.doneReason !== 'cancelled',
 			},
 			{
 				key: 'cancelled',
 				label: TASK_DONE_REASON_LABELS.cancelled,
 				color: TASK_DONE_REASON_COLORS.cancelled,
-				match: (t) => t.status === 'done' && t.done_reason === 'cancelled',
+				match: (t) => t.status === 'done' && t.doneReason === 'cancelled',
 			},
 			{
 				key: 'todo',
