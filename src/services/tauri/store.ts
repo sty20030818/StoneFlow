@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: SettingsModel = {
 
 export const DEFAULT_UI_STATE: UiState = {
 	projectTreeExpanded: {},
+	lastView: null,
 }
 
 export const settingsStore = new LazyStore('settings.json', {

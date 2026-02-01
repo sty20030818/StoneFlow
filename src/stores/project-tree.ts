@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { uiStore, type UiState } from '@/services/tauri/store'
+import { DEFAULT_UI_STATE, uiStore, type UiState } from '@/services/tauri/store'
 
 export const useProjectTreeStore = defineStore('project-tree', () => {
 	const expandedBySpace = ref<Record<string, string[]>>({})
@@ -22,7 +22,8 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 
 	async function setExpanded(spaceId: string, keys: string[]) {
 		expandedBySpace.value[spaceId] = keys
-		await uiStore.set('ui', { projectTreeExpanded: { ...expandedBySpace.value } })
+		const current = (await uiStore.get<UiState>('ui')) ?? DEFAULT_UI_STATE
+		await uiStore.set('ui', { ...current, projectTreeExpanded: { ...expandedBySpace.value } })
 	}
 
 	return {

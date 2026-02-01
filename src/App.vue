@@ -89,14 +89,14 @@
 		await settingsStore.load()
 		const spaceId = currentSpaceId.value
 		if (spaceId) {
-			await projectsStore.loadForSpace(spaceId)
+			await projectsStore.ensureLoaded(spaceId)
 		}
 	})
 
 	// 监听 space 变化，自动加载项目
 	watch(currentSpaceId, async (spaceId) => {
 		if (spaceId && settingsStore.loaded) {
-			await projectsStore.loadForSpace(spaceId)
+			await projectsStore.ensureLoaded(spaceId)
 		}
 	})
 

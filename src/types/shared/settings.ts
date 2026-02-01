@@ -10,6 +10,13 @@ export type SettingsModel = {
 	activeSpaceId: SpaceId
 }
 
+export type LastViewState = {
+	route: string
+	spaceId?: SpaceId | null
+	projectId?: string | null
+}
+
 export type UiState = {
 	projectTreeExpanded: Record<string, string[]>
+	lastView?: LastViewState | null
 }

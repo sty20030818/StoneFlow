@@ -235,7 +235,7 @@
 		async () => {
 			exitEditMode()
 			if (spaceId.value) {
-				await projectsStore.loadForSpace(spaceId.value)
+				await projectsStore.ensureLoaded(spaceId.value)
 			}
 		},
 		{ immediate: true },

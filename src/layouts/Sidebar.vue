@@ -234,9 +234,10 @@
 		children?: ProjectTreeItem[]
 	}
 
+	const currentProjects = computed(() => projectsStore.getProjectsOfSpace(spaceValue.value))
+
 	const projectsTree = computed<ProjectTreeItem[]>(() => {
-		const spaceId = spaceValue.value
-		const list = projectsStore.getProjectsOfSpace(spaceId)
+		const list = currentProjects.value
 		if (!list.length) return []
 
 		const levelColors = projectLevelColors
@@ -246,7 +247,7 @@
 
 		const byParent = new Map<string | null, typeof filtered>()
 		for (const p of filtered) {
-			const key = p.parent_id
+			const key = p.parentId
 			const bucket = byParent.get(key) ?? []
 			bucket.push(p)
 			byParent.set(key, bucket)
@@ -290,6 +291,30 @@
 		return currentPath.value === `/space/${spaceValue.value}` && activeProjectId.value === projectId
 	}
 
+	function getAncestorIds(projectId: string, list: ProjectDto[]) {
+		const byId = new Map(list.map((p) => [p.id, p]))
+		const ancestors: string[] = []
+		let curr = byId.get(projectId)
+		while (curr?.parentId) {
+			ancestors.unshift(curr.parentId)
+			curr = byId.get(curr.parentId)
+		}
+		return ancestors
+	}
+
+	function ensureAncestorsExpanded() {
+		if (currentPath.value !== `/space/${spaceValue.value}`) return
+		if (!activeProjectId.value) return
+		const list = currentProjects.value
+		if (!list.length) return
+		const ancestors = getAncestorIds(activeProjectId.value, list)
+		if (!ancestors.length) return
+		const next = Array.from(new Set([...expandedKeys.value, ...ancestors]))
+		if (next.length !== expandedKeys.value.length) {
+			expandedKeys.value = next
+		}
+	}
+
 	async function loadDefaultProject() {
 		try {
 			const project = await getDefaultProject(spaceValue.value)
@@ -300,7 +325,11 @@
 	}
 
 	async function loadProjects(force = false) {
-		await projectsStore.loadForSpace(spaceValue.value, force)
+		if (force) {
+			await projectsStore.loadForSpace(spaceValue.value, true)
+		} else {
+			await projectsStore.ensureLoaded(spaceValue.value)
+		}
 		await loadDefaultProject()
 	}
 
@@ -320,6 +349,14 @@
 		() => {
 			loadProjects(true)
 		},
+	)
+
+	watch(
+		() => [activeProjectId.value, currentProjects.value, currentPath.value],
+		() => {
+			ensureAncestorsExpanded()
+		},
+		{ immediate: true },
 	)
 
 	onMounted(() => {

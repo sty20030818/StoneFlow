@@ -15,6 +15,13 @@ export const useProjectsStore = defineStore('projects', () => {
 		loadedSpaceIds.value.add(spaceId)
 	}
 
+	async function ensureLoaded(spaceId: string) {
+		await loadForSpace(spaceId)
+		if (getProjectsOfSpace(spaceId).length === 0) {
+			await loadForSpace(spaceId, true)
+		}
+	}
+
 	const bySpace = computed(() => {
 		const map = new Map<string, ProjectDto[]>()
 		for (const p of projects.value) {
@@ -32,6 +39,7 @@ export const useProjectsStore = defineStore('projects', () => {
 	return {
 		projects,
 		loadForSpace,
+		ensureLoaded,
 		getProjectsOfSpace,
 	}
 })
