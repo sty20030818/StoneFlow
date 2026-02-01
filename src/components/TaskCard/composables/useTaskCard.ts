@@ -52,12 +52,12 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		emit('complete', props.task.id)
 	}
 
-	function formatDueDate(timestamp: number): string {
+	function formatRelativeTime(timestamp: number): string {
 		const date = new Date(timestamp)
 		const now = new Date()
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-		const dueDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-		const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+		const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+		const diffDays = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
 		if (diffDays === 0) return '今天'
 		if (diffDays === 1) return '明天'
@@ -65,10 +65,36 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		if (diffDays > 0 && diffDays <= 7) return `${diffDays}天后`
 		if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)}天前`
 
+		// 默认显示简短日期
 		return date.toLocaleDateString('zh-CN', {
-			month: 'short',
+			month: 'numeric',
 			day: 'numeric',
 		})
+	}
+
+	function formatAbsoluteTime(timestamp: number): string {
+		const date = new Date(timestamp)
+		const now = new Date()
+
+		const pad = (n: number) => n.toString().padStart(2, '0')
+		const month = pad(date.getMonth() + 1)
+		const day = pad(date.getDate())
+		const hour = pad(date.getHours())
+		const minute = pad(date.getMinutes())
+		const year = date.getFullYear()
+
+		const isToday = date.toDateString() === now.toDateString()
+		const isThisYear = year === now.getFullYear()
+
+		if (isToday) {
+			return `${hour}:${minute}`
+		}
+
+		if (isThisYear) {
+			return `${month}/${day} ${hour}:${minute}`
+		}
+
+		return `${year} ${month}/${day}`
 	}
 
 	return {
@@ -80,6 +106,7 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		onCardClick,
 		onRequestDelete,
 		onComplete,
-		formatDueDate,
+		formatRelativeTime,
+		formatAbsoluteTime,
 	}
 }

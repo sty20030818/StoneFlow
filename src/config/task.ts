@@ -111,32 +111,60 @@ export const TASK_PRIORITY_OPTIONS: PriorityOption[] = PRIORITY_OPTIONS
 
 export const TASK_PRIORITY_STYLES: Record<
 	TaskPriorityValue | 'default',
-	{ cardClass: string; iconClass: string; textClass: string }
+	{
+		cardClass: string
+		iconClass: string
+		textClass: string
+		cardBorderClass: string
+		cardShadowClass: string
+		badgeColor: string
+		badgeClass: string // 增加显式类名用于兜底显色
+	}
 > = {
 	P0: {
 		cardClass: 'bg-red-50/50 border-red-200 hover:bg-red-50/80',
 		iconClass: 'text-red-500',
 		textClass: 'text-red-600',
+		cardBorderClass: 'hover:border-red-500/60',
+		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(239,68,68,0.15)]',
+		badgeColor: 'red',
+		badgeClass: 'bg-red-100 text-red-600',
 	},
 	P1: {
 		cardClass: 'bg-amber-50/50 border-amber-200 hover:bg-amber-50/80',
 		iconClass: 'text-amber-500',
 		textClass: 'text-amber-600',
+		cardBorderClass: 'hover:border-amber-500/60',
+		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]',
+		badgeColor: 'orange',
+		badgeClass: 'bg-amber-100 text-amber-600',
 	},
 	P2: {
 		cardClass: 'bg-blue-50/50 border-blue-200 hover:bg-blue-50/80',
 		iconClass: 'text-blue-500',
 		textClass: 'text-blue-600',
+		cardBorderClass: 'hover:border-blue-500/60',
+		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]',
+		badgeColor: 'blue',
+		badgeClass: 'bg-blue-100 text-blue-600',
 	},
 	P3: {
 		cardClass: 'bg-elevated/50 border-default/60 hover:bg-elevated/80',
 		iconClass: 'text-muted',
 		textClass: 'text-default',
+		cardBorderClass: 'hover:border-slate-300',
+		cardShadowClass: '',
+		badgeColor: 'gray',
+		badgeClass: 'bg-slate-100 text-slate-500',
 	},
 	default: {
 		cardClass: 'bg-elevated/50 border-default/60 hover:bg-elevated/80',
 		iconClass: 'text-muted',
 		textClass: 'text-default',
+		cardBorderClass: 'hover:border-slate-300',
+		cardShadowClass: '',
+		badgeColor: 'gray',
+		badgeClass: 'bg-slate-100 text-slate-500',
 	},
 }
 
