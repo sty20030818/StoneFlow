@@ -76,16 +76,7 @@ impl ProjectRepo {
             return Err(AppError::Validation("项目名称不能为空".to_string()));
         }
 
-        let priority_str = common_task_utils::normalize_priority(priority.unwrap_or("P1"));
-        common_task_utils::validate_priority(&priority_str)?;
-
-        let priority_enum = match priority_str.as_str() {
-            "P0" => Priority::P0,
-            "P1" => Priority::P1,
-            "P2" => Priority::P2,
-            "P3" => Priority::P3,
-            _ => Priority::P1,
-        };
+        let priority_enum = common_task_utils::parse_priority(priority)?;
 
         let path = helpers::build_project_path(conn, space_id, parent_id, title).await?;
 
