@@ -1,5 +1,13 @@
-use rusqlite::{params, Connection};
+use sea_orm::PaginatorTrait;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
+    Set, TransactionTrait,
+};
 
+use crate::db::entities::{
+    sea_orm_active_enums::{DoneReason, TaskStatus},
+    tasks,
+};
 use crate::db::now_ms;
 use crate::types::{
     dto::{CustomFieldsDto, LinkInputDto, TaskDto},
@@ -16,7 +24,6 @@ pub mod list;
 pub mod stats;
 pub mod tags;
 pub mod update;
-pub mod update_builder;
 pub mod validations;
 
 pub use create::create;
@@ -25,54 +32,62 @@ pub use list::list;
 pub use update::update;
 
 impl TaskRepo {
-    pub fn list(
-        conn: &Connection,
+    pub async fn list(
+        conn: &DatabaseConnection,
         space_id: Option<&str>,
         status: Option<&str>,
         project_id: Option<&str>,
     ) -> Result<Vec<TaskDto>, AppError> {
-        list(conn, space_id, status, project_id)
+        list(conn, space_id, status, project_id).await
     }
 
-    pub fn create(
-        conn: &Connection,
+    pub async fn create(
+        conn: &DatabaseConnection,
         space_id: &str,
         title: &str,
         auto_start: bool,
         project_id: Option<&str>,
     ) -> Result<TaskDto, AppError> {
-        create(conn, space_id, title, auto_start, project_id)
+        create(conn, space_id, title, auto_start, project_id).await
     }
 
-    pub fn complete(conn: &Connection, id: &str) -> Result<(), AppError> {
+    pub async fn complete(conn: &DatabaseConnection, id: &str) -> Result<(), AppError> {
         let now = now_ms();
-        let project_id: Option<String> = conn
-            .query_row(
-                "SELECT project_id FROM tasks WHERE id = ?1",
-                params![id],
-                |row| row.get(0),
-            )
-            .unwrap_or(None);
-        let changed = conn.execute(
-            "UPDATE tasks SET status = 'done', done_reason = 'completed', completed_at = ?1, updated_at = ?2 WHERE id = ?3",
-            params![now, now, id],
-        )?;
-        if changed == 0 {
-            return Err(AppError::Validation("任务不存在".to_string()));
+        let txn = conn.begin().await.map_err(AppError::from)?;
+
+        let task = tasks::Entity::find_by_id(id)
+            .one(&txn)
+            .await
+            .map_err(AppError::from)?;
+
+        let task = match task {
+            Some(t) => t,
+            None => return Err(AppError::Validation("任务不存在".to_string())),
+        };
+
+        let mut active = task.clone().into_active_model();
+        active.status = Set(TaskStatus::Done);
+        active.done_reason = Set(Some(DoneReason::Completed));
+        active.completed_at = Set(Some(now));
+        active.updated_at = Set(now);
+
+        active.update(&txn).await.map_err(AppError::from)?;
+
+        if let Some(pid) = &task.project_id {
+            stats::refresh_project_stats(&txn, pid, now).await?;
         }
-        if let Some(project_id) = project_id.as_deref() {
-            stats::refresh_project_stats(conn, project_id, now)?;
-        }
+
+        txn.commit().await.map_err(AppError::from)?;
         Ok(())
     }
 
-    pub fn delete_many(conn: &mut Connection, ids: &[String]) -> Result<usize, AppError> {
-        delete_many(conn, ids)
+    pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
+        delete_many(conn, ids).await
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn update(
-        conn: &mut Connection,
+    pub async fn update(
+        conn: &DatabaseConnection,
         id: &str,
         title: Option<&str>,
         status: Option<&str>,
@@ -107,13 +122,18 @@ impl TaskRepo {
             archived_at,
             deleted_at,
         )
+        .await
     }
 }
 
 impl TaskRepo {
-    pub fn task_exists(conn: &Connection, id: &str) -> Result<bool, AppError> {
-        let mut stmt = conn.prepare("SELECT 1 FROM tasks WHERE id = ?1 LIMIT 1")?;
-        let mut rows = stmt.query(params![id])?;
-        Ok(rows.next()?.is_some())
+    #[allow(dead_code)]
+    pub async fn task_exists(conn: &DatabaseConnection, id: &str) -> Result<bool, AppError> {
+        let count = tasks::Entity::find()
+            .filter(tasks::Column::Id.eq(id))
+            .count(conn)
+            .await
+            .map_err(AppError::from)?;
+        Ok(count > 0)
     }
 }

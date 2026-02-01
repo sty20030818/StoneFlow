@@ -6,8 +6,8 @@ use crate::types::{
 };
 use serde_json;
 
-pub fn parse_custom_fields(raw: Option<String>) -> Option<CustomFieldsDto> {
-    raw.and_then(|value| serde_json::from_str::<CustomFieldsDto>(&value).ok())
+pub fn parse_from_json_string(raw: Option<&str>) -> Option<CustomFieldsDto> {
+    raw.and_then(|value| serde_json::from_str::<CustomFieldsDto>(value).ok())
 }
 
 pub fn serialize_custom_fields(fields: &CustomFieldsDto) -> Result<String, AppError> {

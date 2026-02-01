@@ -1,33 +1,27 @@
-use rusqlite::Connection;
+use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder};
 
+use crate::db::entities::spaces;
 use crate::types::{dto::SpaceDto, error::AppError};
 
 pub struct SpaceRepo;
 
 impl SpaceRepo {
-    pub fn list(conn: &Connection) -> Result<Vec<SpaceDto>, AppError> {
-        let mut stmt = conn.prepare(
-            r#"
-SELECT id, name, "order", created_at, updated_at
-FROM spaces
-ORDER BY "order" ASC
-"#,
-        )?;
+    pub async fn list(conn: &DatabaseConnection) -> Result<Vec<SpaceDto>, AppError> {
+        let models = spaces::Entity::find()
+            .order_by_asc(spaces::Column::Order)
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
 
-        let rows = stmt.query_map((), |row| {
-            Ok(SpaceDto {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                order: row.get::<_, i64>(2)?,
-                created_at: row.get(3)?,
-                updated_at: row.get(4)?,
+        Ok(models
+            .into_iter()
+            .map(|m| SpaceDto {
+                id: m.id,
+                name: m.name,
+                order: m.order,
+                created_at: m.created_at,
+                updated_at: m.updated_at,
             })
-        })?;
-
-        let mut out = Vec::new();
-        for r in rows {
-            out.push(r?);
-        }
-        Ok(out)
+            .collect())
     }
 }

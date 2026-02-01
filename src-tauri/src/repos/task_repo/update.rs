@@ -1,19 +1,25 @@
 use std::collections::HashSet;
 
-use rusqlite::{params, types::Value, Connection};
+use sea_orm::{
+    ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, Set, TransactionTrait,
+};
 
+use crate::db::entities::{
+    sea_orm_active_enums::{DoneReason, Priority, TaskStatus},
+    tasks,
+};
 use crate::db::now_ms;
-use crate::repos::common_task_utils;
+
 use crate::types::{
     dto::{CustomFieldsDto, LinkInputDto},
     error::AppError,
 };
 
-use super::{custom_fields, links, stats, tags, update_builder::TaskUpdateBuilder, validations};
+use super::{custom_fields, links, stats, tags, validations};
 
 #[allow(clippy::too_many_arguments)]
-pub fn update(
-    conn: &mut Connection,
+pub async fn update(
+    conn: &DatabaseConnection,
     id: &str,
     title: Option<&str>,
     status: Option<&str>,
@@ -30,184 +36,194 @@ pub fn update(
     archived_at: Option<Option<i64>>,
     deleted_at: Option<Option<i64>>,
 ) -> Result<(), AppError> {
-    let tx = conn.transaction()?;
+    let txn = conn.begin().await.map_err(AppError::from)?;
 
-    if !super::TaskRepo::task_exists(&tx, id)? {
-        return Err(AppError::Validation("任务不存在".to_string()));
-    }
+    // 1. Fetch existing task
+    let task_model = tasks::Entity::find_by_id(id)
+        .one(&txn)
+        .await
+        .map_err(AppError::from)?;
 
+    let task_model = match task_model {
+        Some(m) => m,
+        None => return Err(AppError::Validation("任务不存在".to_string())),
+    };
+
+    let previous_project_id = task_model.project_id.clone();
+    let current_status_is_done = task_model.status == TaskStatus::Done;
+
+    let mut active_model = task_model.into_active_model();
     let now = now_ms();
-    let previous_project_id = tx.query_row(
-        "SELECT project_id FROM tasks WHERE id = ?1",
-        params![id],
-        |row| row.get::<_, Option<String>>(0),
-    )?;
-
-    let mut builder = TaskUpdateBuilder::new();
     let mut touch_updated_at = false;
     let mut changed_any = false;
 
+    // 2. Apply updates
     if let Some(title) = title {
         let title = validations::trim_and_validate_title(title)?;
-        builder.add_set("title = ?", Value::Text(title));
+        active_model.title = Set(title);
         touch_updated_at = true;
+        changed_any = true;
     }
 
-    if let Some(status) = status {
-        let status = validations::normalize_status(status)?;
-        builder.add_set("status = ?", Value::Text(status.clone()));
-        touch_updated_at = true;
+    if let Some(status_str) = status {
+        let status_str = validations::normalize_status(status_str)?;
+        let is_done = status_str == "done";
 
-        if status == "done" {
-            let reason = validations::require_done_reason(done_reason)?;
-            builder.add_set("done_reason = ?", Value::Text(reason));
-            builder.add_set("completed_at = ?", Value::Integer(now));
+        if is_done {
+            let reason_str = validations::require_done_reason(done_reason)?;
+            let reason_enum = match reason_str.as_str() {
+                "completed" => DoneReason::Completed,
+                "cancelled" => DoneReason::Cancelled,
+                _ => DoneReason::Completed,
+            };
+            active_model.status = Set(TaskStatus::Done);
+            active_model.done_reason = Set(Some(reason_enum));
+            active_model.completed_at = Set(Some(now));
         } else {
-            builder.add_raw_set("done_reason = NULL");
-            builder.add_raw_set("completed_at = NULL");
+            active_model.status = Set(TaskStatus::Todo);
+            active_model.done_reason = Set(None);
+            active_model.completed_at = Set(None);
         }
-    } else if let Some(done_reason) = done_reason {
-        let current_status: String = tx.query_row(
-            "SELECT status FROM tasks WHERE id = ?1",
-            params![id],
-            |row| row.get(0),
-        )?;
-        if current_status != "done" {
+        touch_updated_at = true;
+        changed_any = true;
+    } else if let Some(reason_opt) = done_reason {
+        // Only update reason if status is done (or keep check)
+        if !current_status_is_done {
             return Err(AppError::Validation(
                 "仅完成任务可设置 doneReason".to_string(),
             ));
         }
         let reason = validations::normalize_done_reason(
-            done_reason.ok_or_else(|| AppError::Validation("doneReason 不可为空".to_string()))?,
+            reason_opt.ok_or_else(|| AppError::Validation("doneReason 不可为空".to_string()))?,
         )?;
-        builder.add_set("done_reason = ?", Value::Text(reason));
+        let reason_enum = match reason.as_str() {
+            "completed" => DoneReason::Completed,
+            "cancelled" => DoneReason::Cancelled,
+            _ => DoneReason::Completed,
+        };
+        active_model.done_reason = Set(Some(reason_enum));
         touch_updated_at = true;
+        changed_any = true;
     }
 
-    if let Some(priority) = priority {
-        let priority = validations::normalize_priority(priority)?;
-        builder.add_set("priority = ?", Value::Text(priority));
+    if let Some(priority_str) = priority {
+        let priority_str = validations::normalize_priority(priority_str)?;
+        let p_enum = match priority_str.as_str() {
+            "P0" => Priority::P0,
+            "P1" => Priority::P1,
+            "P2" => Priority::P2,
+            "P3" => Priority::P3,
+            _ => Priority::P1,
+        };
+        active_model.priority = Set(p_enum);
         touch_updated_at = true;
+        changed_any = true;
     }
 
-    if let Some(note) = note {
-        match note.map(str::trim).filter(|v| !v.is_empty()) {
-            Some(value) => {
-                builder.add_set("note = ?", Value::Text(value.to_string()));
-            }
-            None => {
-                builder.add_raw_set("note = NULL");
-            }
-        }
+    if let Some(note_opt) = note {
+        active_model.note = Set(note_opt
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty()));
         touch_updated_at = true;
+        changed_any = true;
     }
 
     if let Some(space_id) = space_id {
-        builder.add_set("space_id = ?", Value::Text(space_id.to_string()));
+        active_model.space_id = Set(space_id.to_string());
         touch_updated_at = true;
+        changed_any = true;
     }
 
-    if let Some(project_id) = project_id {
-        match project_id {
-            Some(value) => builder.add_set("project_id = ?", Value::Text(value.to_string())),
-            None => builder.add_raw_set("project_id = NULL"),
-        }
+    if let Some(project_id_opt) = project_id {
+        active_model.project_id = Set(project_id_opt.map(|s| s.to_string()));
         touch_updated_at = true;
+        changed_any = true;
     }
 
-    if let Some(deadline_at) = deadline_at {
-        match deadline_at {
-            Some(value) => builder.add_set("deadline_at = ?", Value::Integer(value)),
-            None => builder.add_raw_set("deadline_at = NULL"),
-        }
+    if let Some(deadline_opt) = deadline_at {
+        active_model.deadline_at = Set(deadline_opt);
         touch_updated_at = true;
+        changed_any = true;
     }
 
     if let Some(rank) = rank {
-        builder.add_set("rank = ?", Value::Integer(rank));
-        touch_updated_at = true;
-    }
-
-    if let Some(links_input) = links_input {
-        links::sync_links(&tx, id, &links_input)?;
+        active_model.rank = Set(rank);
         touch_updated_at = true;
         changed_any = true;
     }
 
-    if let Some(custom_fields_input) = custom_fields_input {
-        match custom_fields_input {
+    if let Some(archived_opt) = archived_at {
+        active_model.archived_at = Set(archived_opt);
+        touch_updated_at = true;
+        changed_any = true;
+    }
+
+    if let Some(deleted_opt) = deleted_at {
+        active_model.deleted_at = Set(deleted_opt);
+        touch_updated_at = true;
+        changed_any = true;
+    }
+
+    if let Some(custom_fields_opt) = custom_fields_input {
+        match custom_fields_opt {
             Some(value) => {
                 let normalized = custom_fields::normalize_custom_fields(value)?;
                 let payload = custom_fields::serialize_custom_fields(&normalized)?;
-                builder.add_set("custom_fields = ?", Value::Text(payload));
+                active_model.custom_fields = Set(Some(payload));
             }
-            None => builder.add_raw_set("custom_fields = NULL"),
+            None => {
+                active_model.custom_fields = Set(None);
+            }
         }
         touch_updated_at = true;
-    }
-
-    if let Some(archived_at) = archived_at {
-        match archived_at {
-            Some(value) => builder.add_set("archived_at = ?", Value::Integer(value)),
-            None => builder.add_raw_set("archived_at = NULL"),
-        }
-        touch_updated_at = true;
-    }
-
-    if let Some(deleted_at) = deleted_at {
-        match deleted_at {
-            Some(value) => builder.add_set("deleted_at = ?", Value::Integer(value)),
-            None => builder.add_raw_set("deleted_at = NULL"),
-        }
-        touch_updated_at = true;
-    }
-
-    builder.finalize_updated_at(now);
-    let updated_at_written = builder.updated_at_written();
-
-    if let Some((sql, params)) = builder.build(id) {
-        let changed = tx.execute(&sql, rusqlite::params_from_iter(params))?;
-        if changed == 0 {
-            return Err(AppError::Validation("任务不存在".to_string()));
-        }
         changed_any = true;
+    }
+
+    // Handle touch updated at
+    if touch_updated_at {
+        active_model.updated_at = Set(now);
+    }
+
+    // 3. Save Active Model
+    // check changed_any? ActiveModel update only updates Set fields.
+    // If nothing set, it might error or do nothing.
+    // However, we handle links/tags separately which might set changed_any.
+
+    let saved_model = active_model.update(&txn).await.map_err(AppError::from)?;
+    let new_project_id = saved_model.project_id.clone();
+
+    // 4. Handle Associations (Links / Tags)
+    if let Some(links_input) = links_input {
+        links::sync_links(&txn, id, &links_input).await?;
+        changed_any = true;
+        // Note: sync_links updates updated_at in links table, but maybe task updated_at should also be touched?
+        // Logic above sets touch_updated_at = true if links_input is Some.
     }
 
     if let Some(tags_input) = tags_input {
-        touch_updated_at = true;
-        tags::sync_tags(&tx, id, &tags_input)?;
+        tags::sync_tags(&txn, id, &tags_input).await?;
         changed_any = true;
     }
 
-    if common_task_utils::should_touch_updated_at(touch_updated_at, updated_at_written) {
-        tx.execute(
-            "UPDATE tasks SET updated_at = ?1 WHERE id = ?2",
-            params![now, id],
-        )?;
-        changed_any = true;
-    }
+    // We already set updated_at if touch_updated_at is true.
 
     if !changed_any {
         return Err(AppError::Validation("没有可更新的字段".to_string()));
     }
 
-    let current_project_id = tx.query_row(
-        "SELECT project_id FROM tasks WHERE id = ?1",
-        params![id],
-        |row| row.get::<_, Option<String>>(0),
-    )?;
-
-    let mut touched_project_ids = HashSet::new();
-    if let Some(value) = previous_project_id {
-        touched_project_ids.insert(value);
+    // 5. Refresh Stats
+    let mut touched_pids = HashSet::new();
+    if let Some(pid) = previous_project_id {
+        touched_pids.insert(pid);
     }
-    if let Some(value) = current_project_id {
-        touched_project_ids.insert(value);
-    }
-    for project_id in touched_project_ids {
-        stats::refresh_project_stats(&tx, &project_id, now)?;
+    if let Some(pid) = new_project_id {
+        touched_pids.insert(pid);
     }
 
-    tx.commit()?;
+    for pid in touched_pids {
+        stats::refresh_project_stats(&txn, &pid, now).await?;
+    }
+
+    txn.commit().await.map_err(AppError::from)?;
     Ok(())
 }

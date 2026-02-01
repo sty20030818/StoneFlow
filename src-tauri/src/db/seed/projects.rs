@@ -1,108 +1,78 @@
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    Set, TransactionTrait,
+};
+
+use crate::db::entities::{projects, sea_orm_active_enums::Priority, spaces, tasks};
 use crate::db::now_ms;
+use crate::repos::task_repo::stats;
 use crate::types::error::AppError;
 
-pub fn seed_default_projects_and_backfill_tasks(
-    conn: &mut rusqlite::Connection,
+pub async fn seed_default_projects_and_backfill_tasks(
+    conn: &DatabaseConnection,
 ) -> Result<(), AppError> {
-    // 不变量：默认项目 ID 为 "{space_id}_default"，并在同一事务内补齐任务与统计。
-    let has_projects_table: i64 = conn
-        .query_row(
-            "SELECT COUNT(1) FROM sqlite_master WHERE type = 'table' AND name = 'projects'",
-            (),
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-    if has_projects_table == 0 {
-        return Ok(());
-    }
+    // Assuming tables exist because migrations ran.
 
     let now = now_ms();
-    let tx = conn.transaction()?;
+    let txn = conn.begin().await.map_err(AppError::from)?;
 
-    let mut stmt = tx.prepare("SELECT id, name FROM spaces ORDER BY \"order\" ASC")?;
-    let rows = stmt.query_map((), |row| {
-        let id: String = row.get(0)?;
-        let name: String = row.get(1)?;
-        Ok((id, name))
-    })?;
-    let spaces: Vec<(String, String)> = rows.collect::<Result<Vec<_>, _>>()?;
-    drop(stmt);
+    let spaces_list = spaces::Entity::find()
+        .all(&txn)
+        .await
+        .map_err(AppError::from)?;
 
-    for (space_id, _space_name) in spaces {
+    for space in spaces_list {
+        let space_id = space.id;
         let project_id = format!("{space_id}_default");
 
-        let exists: i64 = tx
-            .query_row(
-                "SELECT COUNT(1) FROM projects WHERE id = ?1",
-                (&project_id,),
-                |row| row.get(0),
-            )
-            .unwrap_or(0);
+        let exists = projects::Entity::find_by_id(&project_id)
+            .count(&txn)
+            .await
+            .map_err(AppError::from)?
+            > 0;
 
-        if exists == 0 {
+        if !exists {
             let project_title = "Default Project".to_string();
             let path = "/Default Project".to_string();
 
-            tx.execute(
-                r#"
-INSERT INTO projects(
-  id, space_id, parent_id, path,
-  title, note, priority,
-  todo_task_count, done_task_count, last_task_updated_at,
-  created_at, updated_at, archived_at, deleted_at,
-  create_by, rank
-) VALUES (
-  ?1, ?2, NULL, ?3,
-  ?4, NULL, 'P1',
-  0, 0, NULL,
-  ?5, ?5, NULL, NULL,
-  'stonefish', 1024
-)
-"#,
-                (
-                    project_id.clone(),
-                    space_id.clone(),
-                    path,
-                    project_title,
-                    now,
-                ),
-            )?;
+            let active = projects::ActiveModel {
+                id: Set(project_id.clone()),
+                space_id: Set(space_id.clone()),
+                parent_id: Set(None),
+                path: Set(path),
+                title: Set(project_title),
+                note: Set(None),
+                priority: Set(Priority::P1),
+                todo_task_count: Set(0),
+                done_task_count: Set(0),
+                last_task_updated_at: Set(None),
+                created_at: Set(now),
+                updated_at: Set(now),
+                archived_at: Set(None),
+                deleted_at: Set(None),
+                create_by: Set("stonefish".to_string()),
+                rank: Set(1024),
+            };
+            active.insert(&txn).await.map_err(AppError::from)?;
         }
 
-        tx.execute(
-            r#"
-UPDATE tasks
-SET project_id = ?1
-WHERE space_id = ?2
-  AND project_id IS NULL
-"#,
-            (&project_id, &space_id),
-        )?;
+        // Backfill tasks: update tasks set project_id = default where space_id = X and project_id is NULL
+        // SeaORM update many is explicit
+        tasks::Entity::update_many()
+            .col_expr(
+                tasks::Column::ProjectId,
+                sea_orm::sea_query::Expr::value(project_id.clone()),
+            )
+            .filter(tasks::Column::SpaceId.eq(&space_id))
+            .filter(tasks::Column::ProjectId.is_null())
+            .exec(&txn)
+            .await
+            .map_err(AppError::from)?;
 
-        tx.execute(
-            r#"
-UPDATE projects
-SET todo_task_count = (
-    SELECT COUNT(1) FROM tasks t
-    WHERE t.project_id = ?1
-      AND t.status = 'todo'
-      AND t.archived_at IS NULL
-      AND t.deleted_at IS NULL
-  ),
-  done_task_count = (
-    SELECT COUNT(1) FROM tasks t
-    WHERE t.project_id = ?1
-      AND t.status = 'done'
-      AND t.archived_at IS NULL
-      AND t.deleted_at IS NULL
-  ),
-  last_task_updated_at = ?2
-WHERE id = ?1
-"#,
-            (&project_id, now),
-        )?;
+        // Refresh stats
+        stats::refresh_project_stats(&txn, &project_id, now).await?;
     }
 
-    tx.commit()?;
+    txn.commit().await.map_err(AppError::from)?;
     Ok(())
 }

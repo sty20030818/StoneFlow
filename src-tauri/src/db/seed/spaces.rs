@@ -1,29 +1,41 @@
+use sea_orm::{
+    ActiveModelTrait, DatabaseConnection, EntityTrait, PaginatorTrait, Set, TransactionTrait,
+};
+
+use crate::db::entities::spaces;
 use crate::db::now_ms;
 use crate::types::error::AppError;
 
-pub fn seed_default_spaces_if_empty(conn: &mut rusqlite::Connection) -> Result<(), AppError> {
-    // 不变量：仅在 spaces 为空时插入，固定 ID 与顺序不可变。
-    let count: i64 = conn.query_row("SELECT COUNT(1) FROM spaces", (), |row| row.get(0))?;
+pub async fn seed_default_spaces_if_empty(conn: &DatabaseConnection) -> Result<(), AppError> {
+    let count = spaces::Entity::find()
+        .count(conn)
+        .await
+        .map_err(AppError::from)?;
+
     if count > 0 {
         return Ok(());
     }
 
     let now = now_ms();
-    let tx = conn.transaction()?;
+    let txn = conn.begin().await.map_err(AppError::from)?;
 
-    let spaces = [
+    let spaces_data = [
         ("work", "工作", 1_i64),
         ("study", "学习", 2_i64),
         ("personal", "个人", 3_i64),
     ];
 
-    for (id, name, order) in spaces {
-        tx.execute(
-            "INSERT INTO spaces(id, name, \"order\", created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-            (id, name, order, now, now),
-        )?;
+    for (id, name, order) in spaces_data {
+        let active = spaces::ActiveModel {
+            id: Set(id.to_string()),
+            name: Set(name.to_string()),
+            order: Set(order),
+            created_at: Set(now),
+            updated_at: Set(now),
+        };
+        active.insert(&txn).await.map_err(AppError::from)?;
     }
 
-    tx.commit()?;
+    txn.commit().await.map_err(AppError::from)?;
     Ok(())
 }

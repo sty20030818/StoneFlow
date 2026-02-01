@@ -46,22 +46,26 @@ pub enum AppError {
     Validation(String),
 
     #[error(transparent)]
-    Sqlite(#[from] rusqlite::Error),
+    Db(#[from] sea_orm::DbErr),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error("路径解析失败：{0}")]
     Path(String),
+
+    #[error("内部错误：{0}")]
+    Internal(String),
 }
 
 impl From<AppError> for ApiError {
     fn from(value: AppError) -> Self {
         match value {
             AppError::Validation(msg) => ApiError::validation(msg),
-            AppError::Sqlite(e) => ApiError::db(e.to_string()),
+            AppError::Db(e) => ApiError::db(e.to_string()),
             AppError::Io(e) => ApiError::internal(e.to_string()),
             AppError::Path(msg) => ApiError::internal(msg),
+            AppError::Internal(msg) => ApiError::internal(msg),
         }
     }
 }

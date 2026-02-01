@@ -1,46 +1,52 @@
-use rusqlite::{types::Value, Connection};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, TransactionTrait,
+};
 
+use crate::db::entities::tasks;
 use crate::db::now_ms;
 use crate::types::error::AppError;
 
 use super::stats;
 
-pub fn delete_many(conn: &mut Connection, ids: &[String]) -> Result<usize, AppError> {
+pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
     if ids.is_empty() {
         return Err(AppError::Validation("请选择要删除的任务".to_string()));
     }
 
     let now = now_ms();
-    let tx = conn.transaction()?;
+    let txn = conn.begin().await.map_err(AppError::from)?;
 
-    let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-    let id_values: Vec<Value> = ids.iter().map(|s| Value::Text(s.clone())).collect();
+    // 1. 获取受影响的 Project ID
+    let project_ids: Vec<String> = tasks::Entity::find()
+        .select_only()
+        .column(tasks::Column::ProjectId)
+        .filter(tasks::Column::Id.is_in(ids.iter().cloned()))
+        .filter(tasks::Column::ProjectId.is_not_null())
+        .into_tuple()
+        .all(&txn)
+        .await
+        .map_err(AppError::from)?;
 
-    let project_ids = {
-        let mut stmt = tx.prepare(&format!(
-            "SELECT project_id FROM tasks WHERE id IN ({})",
-            placeholders
-        ))?;
-        let project_rows = stmt.query_map(rusqlite::params_from_iter(id_values.iter()), |row| {
-            row.get::<_, Option<String>>(0)
-        })?;
+    // 2. 删除任务
+    let res = tasks::Entity::delete_many()
+        .filter(tasks::Column::Id.is_in(ids.iter().cloned()))
+        .exec(&txn)
+        .await
+        .map_err(AppError::from)?;
 
-        let mut project_ids = Vec::new();
-        for row in project_rows {
-            if let Some(project_id) = row? {
-                project_ids.push(project_id);
-            }
-        }
-        project_ids
-    };
+    let count = res.rows_affected as usize;
 
-    let sql = format!("DELETE FROM tasks WHERE id IN ({})", placeholders);
-    let changed = tx.execute(&sql, rusqlite::params_from_iter(id_values.iter()))?;
+    // 3. 刷新统计
+    // 去重 project_ids
+    let mut unique_pids = project_ids;
+    unique_pids.sort();
+    unique_pids.dedup();
 
-    for project_id in project_ids {
-        stats::refresh_project_stats(&tx, &project_id, now)?;
+    for pid in unique_pids {
+        stats::refresh_project_stats(&txn, &pid, now).await?;
     }
 
-    tx.commit()?;
-    Ok(changed)
+    txn.commit().await.map_err(AppError::from)?;
+
+    Ok(count)
 }

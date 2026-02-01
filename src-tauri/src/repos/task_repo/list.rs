@@ -1,85 +1,94 @@
-use rusqlite::{types::Value, Connection};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 
+use crate::db::entities::{sea_orm_active_enums::TaskStatus, tasks};
 use crate::types::{dto::TaskDto, error::AppError};
 
 use super::{custom_fields, links, tags};
 
-pub fn list(
-    conn: &Connection,
+pub async fn list(
+    conn: &DatabaseConnection,
     space_id: Option<&str>,
     status: Option<&str>,
     project_id: Option<&str>,
 ) -> Result<Vec<TaskDto>, AppError> {
-    let mut sql = String::from(
-        r#"
-SELECT
-  t.id, t.space_id, t.project_id, t.title, t.note, t.status, t.done_reason, t.priority,
-  t.rank, t.created_at, t.updated_at, t.completed_at, t.deadline_at, t.archived_at,
-  t.deleted_at, t.custom_fields, t.create_by
-FROM tasks t
-WHERE 1=1
-"#,
-    );
-    let mut ps: Vec<Value> = Vec::new();
+    let mut query = tasks::Entity::find();
 
-    if let Some(space_id) = space_id {
-        sql.push_str(" AND t.space_id = ?\n");
-        ps.push(Value::Text(space_id.to_string()));
+    if let Some(sid) = space_id {
+        query = query.filter(tasks::Column::SpaceId.eq(sid));
     }
 
-    if let Some(status) = status {
-        sql.push_str(" AND t.status = ?\n");
-        ps.push(Value::Text(status.to_string()));
+    if let Some(stat) = status {
+        // Map string to enum
+        let status_enum = match stat {
+            "todo" => TaskStatus::Todo,
+            "done" => TaskStatus::Done,
+            _ => TaskStatus::Todo, // Fallback or strict? Existing code allows string
+        };
+        query = query.filter(tasks::Column::Status.eq(status_enum));
     }
 
-    if let Some(project_id) = project_id {
-        sql.push_str(" AND t.project_id = ?\n");
-        ps.push(Value::Text(project_id.to_string()));
+    if let Some(pid) = project_id {
+        query = query.filter(tasks::Column::ProjectId.eq(pid));
     }
 
-    sql.push_str(" ORDER BY t.rank DESC, t.created_at DESC\n");
+    // Default sorting: rank DESC, created_at DESC
+    query = query
+        .order_by_desc(tasks::Column::Rank)
+        .order_by_desc(tasks::Column::CreatedAt);
 
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params_from_iter(ps), |row| {
-        let custom_fields = custom_fields::parse_custom_fields(row.get(15)?);
+    let models = query.all(conn).await.map_err(AppError::from)?;
 
-        Ok(TaskDto {
-            id: row.get(0)?,
-            space_id: row.get(1)?,
-            project_id: row.get(2)?,
-            title: row.get(3)?,
-            note: row.get(4)?,
-            status: row.get(5)?,
-            done_reason: row.get(6)?,
-            priority: row.get(7)?,
+    let mut dtos = Vec::with_capacity(models.len());
+    for m in models {
+        let custom_fields = custom_fields::parse_from_json_string(m.custom_fields.as_deref());
+
+        dtos.push(TaskDto {
+            id: m.id,
+            space_id: m.space_id,
+            project_id: m.project_id,
+            title: m.title,
+            note: m.note,
+            status: match m.status {
+                TaskStatus::Todo => "todo".to_string(),
+                TaskStatus::Done => "done".to_string(),
+            },
+            done_reason: m.done_reason.map(|r| match r {
+                crate::db::entities::sea_orm_active_enums::DoneReason::Completed => {
+                    "completed".to_string()
+                }
+                crate::db::entities::sea_orm_active_enums::DoneReason::Cancelled => {
+                    "cancelled".to_string()
+                }
+            }),
+            priority: match m.priority {
+                crate::db::entities::sea_orm_active_enums::Priority::P0 => "P0".to_string(),
+                crate::db::entities::sea_orm_active_enums::Priority::P1 => "P1".to_string(),
+                crate::db::entities::sea_orm_active_enums::Priority::P2 => "P2".to_string(),
+                crate::db::entities::sea_orm_active_enums::Priority::P3 => "P3".to_string(),
+            },
             tags: Vec::new(),
-            rank: row.get(8)?,
-            created_at: row.get(9)?,
-            updated_at: row.get(10)?,
-            completed_at: row.get(11)?,
-            deadline_at: row.get(12)?,
-            archived_at: row.get(13)?,
-            deleted_at: row.get(14)?,
+            rank: m.rank,
+            created_at: m.created_at,
+            updated_at: m.updated_at,
+            completed_at: m.completed_at,
+            deadline_at: m.deadline_at,
+            archived_at: m.archived_at,
+            deleted_at: m.deleted_at,
             links: Vec::new(),
             custom_fields,
-            create_by: row.get(16)?,
-        })
-    })?;
-
-    let mut out = Vec::new();
-    for r in rows {
-        out.push(r?);
+            create_by: m.create_by,
+        });
     }
 
-    if !out.is_empty() {
-        let task_ids = out.iter().map(|t| t.id.clone()).collect::<Vec<_>>();
-        let tag_map = tags::load_tags_for_tasks(conn, &task_ids)?;
-        let link_map = links::load_links_for_tasks(conn, &task_ids)?;
-        for task in &mut out {
+    if !dtos.is_empty() {
+        let task_ids = dtos.iter().map(|t| t.id.clone()).collect::<Vec<_>>();
+        let tag_map = tags::load_tags_for_tasks(conn, &task_ids).await?;
+        let link_map = links::load_links_for_tasks(conn, &task_ids).await?;
+        for task in &mut dtos {
             task.links = link_map.get(&task.id).cloned().unwrap_or_default();
             task.tags = tag_map.get(&task.id).cloned().unwrap_or_default();
         }
     }
 
-    Ok(out)
+    Ok(dtos)
 }

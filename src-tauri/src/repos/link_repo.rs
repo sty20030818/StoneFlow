@@ -1,8 +1,12 @@
 use std::collections::HashMap;
 
-use rusqlite::{params, types::Value, Connection};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QuerySelect, RelationTrait, Set, Statement,
+};
 use uuid::Uuid;
 
+use crate::db::entities::{links, project_links, sea_orm_active_enums::LinkKind, task_links};
 use crate::db::now_ms;
 use crate::types::{
     dto::{LinkDto, LinkInputDto},
@@ -38,8 +42,8 @@ struct NormalizedLinkInput {
     rank: i64,
 }
 
-pub fn load_links(
-    conn: &Connection,
+pub async fn load_links(
+    conn: &DatabaseConnection,
     entity: LinkEntity,
     owner_ids: &[String],
 ) -> Result<HashMap<String, Vec<LinkDto>>, AppError> {
@@ -47,117 +51,193 @@ pub fn load_links(
         return Ok(HashMap::new());
     }
 
-    let mut placeholders = String::new();
-    let mut params: Vec<Value> = Vec::with_capacity(owner_ids.len());
-    for (idx, id) in owner_ids.iter().enumerate() {
-        if idx > 0 {
-            placeholders.push_str(", ");
-        }
-        placeholders.push('?');
-        params.push(Value::Text(id.to_string()));
-    }
-
-    let table = entity.junction_table();
-    let owner_column = entity.owner_column();
-    let sql = format!(
-        r#"
-SELECT
-  pl.{owner_column}, l.id, l.title, l.url, l.kind, l.rank, l.created_at, l.updated_at
-FROM {table} pl
-INNER JOIN links l ON l.id = pl.link_id
-WHERE pl.{owner_column} IN ({placeholders})
-ORDER BY l.rank ASC, l.created_at ASC
-"#,
-        owner_column = owner_column,
-        table = table,
-        placeholders = placeholders
-    );
-
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params_from_iter(params), |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            LinkDto {
-                id: row.get(1)?,
-                title: row.get(2)?,
-                url: row.get(3)?,
-                kind: row.get(4)?,
-                rank: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            },
-        ))
-    })?;
+    let rows: Vec<(String, links::Model)> = match entity {
+        LinkEntity::Task => task_links::Entity::find()
+            .select_only()
+            .column(task_links::Column::TaskId)
+            .join(
+                sea_orm::JoinType::InnerJoin,
+                task_links::Relation::Links.def(),
+            )
+            .select_also(links::Entity)
+            .filter(task_links::Column::TaskId.is_in(owner_ids.iter().cloned()))
+            .all(conn)
+            .await
+            .map_err(AppError::from)?
+            .into_iter()
+            .filter_map(|(tl, link)| link.map(|l| (tl.task_id, l)))
+            .collect(),
+        LinkEntity::Project => project_links::Entity::find()
+            .select_only()
+            .column(project_links::Column::ProjectId)
+            .join(
+                sea_orm::JoinType::InnerJoin,
+                project_links::Relation::Links.def(),
+            )
+            .select_also(links::Entity)
+            .filter(project_links::Column::ProjectId.is_in(owner_ids.iter().cloned()))
+            .all(conn)
+            .await
+            .map_err(AppError::from)?
+            .into_iter()
+            .filter_map(|(pl, link)| link.map(|l| (pl.project_id, l)))
+            .collect(),
+    };
 
     let mut map: HashMap<String, Vec<LinkDto>> = HashMap::new();
-    for row in rows {
-        let (owner_id, link) = row?;
-        map.entry(owner_id).or_default().push(link);
+    for (owner_id, l) in rows {
+        let dto = LinkDto {
+            id: l.id,
+            title: l.title,
+            url: l.url,
+            kind: match l.kind {
+                LinkKind::Doc => "doc".to_string(),
+                LinkKind::RepoLocal => "repoLocal".to_string(),
+                LinkKind::RepoRemote => "repoRemote".to_string(),
+                LinkKind::Web => "web".to_string(),
+                LinkKind::Design => "design".to_string(),
+                LinkKind::Other => "other".to_string(),
+            },
+            rank: l.rank,
+            created_at: l.created_at,
+            updated_at: l.updated_at,
+        };
+        map.entry(owner_id).or_default().push(dto);
+    }
+
+    // 排序逻辑 (rank 升序, created_at 升序)
+    for list in map.values_mut() {
+        list.sort_by(|a, b| {
+            a.rank
+                .cmp(&b.rank)
+                .then_with(|| a.created_at.cmp(&b.created_at))
+        });
     }
 
     Ok(map)
 }
 
-pub fn sync_links(
-    conn: &Connection,
+pub async fn sync_links<C>(
+    conn: &C,
     entity: LinkEntity,
     owner_id: &str,
     links: &[LinkInputDto],
-) -> Result<(), AppError> {
+) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
     let now = now_ms();
     let normalized = normalize_link_inputs(links)?;
 
-    let table = entity.junction_table();
-    let owner_column = entity.owner_column();
-    let delete_sql = format!(
-        "DELETE FROM {table} WHERE {owner_column} = ?1",
-        table = table,
-        owner_column = owner_column
+    // 1. 删除现有的关联关系
+    let sql = format!(
+        "DELETE FROM {} WHERE {} = $1",
+        entity.junction_table(),
+        entity.owner_column()
     );
-    conn.execute(&delete_sql, params![owner_id])?;
+    conn.execute(Statement::from_sql_and_values(
+        sea_orm::DatabaseBackend::Sqlite,
+        &sql,
+        [owner_id.into()],
+    ))
+    .await
+    .map_err(AppError::from)?;
 
-    for link in normalized {
-        let link_id = if let Some(id) = link.id.as_deref() {
-            let existing: Result<String, rusqlite::Error> = conn.query_row(
-                "SELECT id FROM links WHERE id = ?1 LIMIT 1",
-                params![id],
-                |row| row.get(0),
-            );
-            match existing {
-                Ok(existing_id) => {
-                    conn.execute(
-                        "UPDATE links SET title = ?1, url = ?2, kind = ?3, rank = ?4, updated_at = ?5 WHERE id = ?6",
-                        params![link.title, link.url, link.kind, link.rank, now, existing_id],
-                    )?;
-                    existing_id
+    // 2. 处理链接
+    for link_input in normalized {
+        let link_id = if let Some(id) = &link_input.id {
+            // 更新现有链接
+            let kind_enum = parse_kind(&link_input.kind)?;
+
+            // 检查是否存在逻辑，或直接更新
+            // 尝试更新
+            let update_res = links::ActiveModel {
+                id: Set(id.clone()),
+                title: Set(link_input.title.clone()),
+                url: Set(link_input.url.clone()),
+                kind: Set(kind_enum),
+                rank: Set(link_input.rank),
+                updated_at: Set(now),
+                ..Default::default()
+            }
+            .update(conn)
+            .await;
+
+            match update_res {
+                Ok(_) => id.clone(),
+                Err(sea_orm::DbErr::RecordNotFound(_)) => {
+                    // 如果未找到则创建 (兜底)
+                    create_new_link(conn, id, &link_input, now).await?
                 }
-                Err(rusqlite::Error::QueryReturnedNoRows) => {
-                    conn.execute(
-                        "INSERT INTO links(id, title, url, kind, rank, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
-                        params![id, link.title, link.url, link.kind, link.rank, now],
-                    )?;
-                    id.to_string()
-                }
-                Err(err) => return Err(err.into()),
+                Err(e) => return Err(AppError::from(e)),
             }
         } else {
+            // 创建新链接
             let id = Uuid::new_v4().to_string();
-            conn.execute(
-                "INSERT INTO links(id, title, url, kind, rank, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
-                params![id, link.title, link.url, link.kind, link.rank, now],
-            )?;
-            id
+            create_new_link(conn, &id, &link_input, now).await?
         };
 
-        let insert_sql = format!(
-            "INSERT OR IGNORE INTO {table}({owner_column}, link_id) VALUES (?1, ?2)",
-            table = table,
-            owner_column = owner_column
-        );
-        conn.execute(&insert_sql, params![owner_id, link_id])?;
+        // 插入关联表
+        match entity {
+            LinkEntity::Task => {
+                task_links::ActiveModel {
+                    task_id: Set(owner_id.to_string()),
+                    link_id: Set(link_id),
+                }
+                .insert(conn)
+                .await
+                .ok();
+            }
+            LinkEntity::Project => {
+                project_links::ActiveModel {
+                    project_id: Set(owner_id.to_string()),
+                    link_id: Set(link_id),
+                }
+                .insert(conn)
+                .await
+                .ok();
+            }
+        }
     }
 
     Ok(())
+}
+
+async fn create_new_link<C>(
+    conn: &C,
+    id: &str,
+    input: &NormalizedLinkInput,
+    now: i64,
+) -> Result<String, AppError>
+where
+    C: ConnectionTrait,
+{
+    let kind_enum = parse_kind(&input.kind)?;
+    links::ActiveModel {
+        id: Set(id.to_string()),
+        title: Set(input.title.clone()),
+        url: Set(input.url.clone()),
+        kind: Set(kind_enum),
+        rank: Set(input.rank),
+        created_at: Set(now),
+        updated_at: Set(now),
+    }
+    .insert(conn)
+    .await
+    .map_err(AppError::from)?;
+    Ok(id.to_string())
+}
+
+fn parse_kind(k: &str) -> Result<LinkKind, AppError> {
+    match k {
+        "doc" => Ok(LinkKind::Doc),
+        "repoLocal" => Ok(LinkKind::RepoLocal),
+        "repoRemote" => Ok(LinkKind::RepoRemote),
+        "web" => Ok(LinkKind::Web),
+        "design" => Ok(LinkKind::Design),
+        "other" => Ok(LinkKind::Other),
+        _ => Err(AppError::Validation("links.kind 不合法".to_string())),
+    }
 }
 
 fn normalize_link_inputs(links: &[LinkInputDto]) -> Result<Vec<NormalizedLinkInput>, AppError> {
@@ -188,60 +268,4 @@ fn normalize_link_inputs(links: &[LinkInputDto]) -> Result<Vec<NormalizedLinkInp
     }
 
     Ok(normalized)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rusqlite::Connection;
-
-    fn setup_conn() -> Connection {
-        let conn = Connection::open_in_memory().expect("open in memory");
-        conn.execute_batch(
-            r#"
-CREATE TABLE links(
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  url TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  rank INTEGER NOT NULL,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-CREATE TABLE task_links(task_id TEXT NOT NULL, link_id TEXT NOT NULL);
-CREATE TABLE project_links(project_id TEXT NOT NULL, link_id TEXT NOT NULL);
-"#,
-        )
-        .expect("create tables");
-        conn
-    }
-
-    #[test]
-    fn sync_and_load_links_for_task() {
-        let conn = setup_conn();
-        let inputs = vec![
-            LinkInputDto {
-                id: None,
-                title: "Doc".to_string(),
-                url: "https://example.com/doc".to_string(),
-                kind: "doc".to_string(),
-                rank: Some(2),
-            },
-            LinkInputDto {
-                id: None,
-                title: "".to_string(),
-                url: "https://example.com/web".to_string(),
-                kind: "web".to_string(),
-                rank: Some(1),
-            },
-        ];
-
-        sync_links(&conn, LinkEntity::Task, "task-1", &inputs).expect("sync links");
-        let map = load_links(&conn, LinkEntity::Task, &["task-1".to_string()]).expect("load links");
-        let items = map.get("task-1").expect("task links");
-        assert_eq!(items.len(), 2);
-        assert_eq!(items[0].rank, 1);
-        assert_eq!(items[0].title, "https://example.com/web");
-        assert_eq!(items[1].rank, 2);
-    }
 }

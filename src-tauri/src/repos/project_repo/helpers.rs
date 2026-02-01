@@ -1,5 +1,6 @@
-use rusqlite::{params, Connection};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
+use crate::db::entities::projects;
 use crate::repos::{
     link_repo::{self, LinkEntity},
     tag_repo::{self, TagEntity},
@@ -27,13 +28,16 @@ pub fn compute_status(
     "inProgress".to_string()
 }
 
-pub fn attach_links(conn: &Connection, projects: &mut [ProjectDto]) -> Result<(), AppError> {
+pub async fn attach_links(
+    conn: &DatabaseConnection,
+    projects: &mut [ProjectDto],
+) -> Result<(), AppError> {
     if projects.is_empty() {
         return Ok(());
     }
 
     let project_ids = projects.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
-    let link_map = link_repo::load_links(conn, LinkEntity::Project, &project_ids)?;
+    let link_map = link_repo::load_links(conn, LinkEntity::Project, &project_ids).await?;
     for project in projects {
         project.links = link_map.get(&project.id).cloned().unwrap_or_default();
     }
@@ -41,13 +45,16 @@ pub fn attach_links(conn: &Connection, projects: &mut [ProjectDto]) -> Result<()
     Ok(())
 }
 
-pub fn attach_tags(conn: &Connection, projects: &mut [ProjectDto]) -> Result<(), AppError> {
+pub async fn attach_tags(
+    conn: &DatabaseConnection,
+    projects: &mut [ProjectDto],
+) -> Result<(), AppError> {
     if projects.is_empty() {
         return Ok(());
     }
 
     let project_ids = projects.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
-    let tag_map = tag_repo::load_tags(conn, TagEntity::Project, &project_ids)?;
+    let tag_map = tag_repo::load_tags(conn, TagEntity::Project, &project_ids).await?;
     for project in projects {
         project.tags = tag_map.get(&project.id).cloned().unwrap_or_default();
     }
@@ -55,19 +62,26 @@ pub fn attach_tags(conn: &Connection, projects: &mut [ProjectDto]) -> Result<(),
     Ok(())
 }
 
-pub fn build_project_path(
-    conn: &Connection,
+pub async fn build_project_path(
+    conn: &DatabaseConnection,
     space_id: &str,
     parent_id: Option<&str>,
     title: &str,
 ) -> Result<String, AppError> {
     if let Some(parent_id) = parent_id {
-        let parent_path: String = conn.query_row(
-            "SELECT path FROM projects WHERE id = ?1 AND space_id = ?2",
-            params![parent_id, space_id],
-            |row| row.get(0),
-        )?;
-        Ok(format!("{}/{}", parent_path, title))
+        let parent = projects::Entity::find_by_id(parent_id)
+            .filter(projects::Column::SpaceId.eq(space_id))
+            .one(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        if let Some(p) = parent {
+            Ok(format!("{}/{}", p.path, title))
+        } else {
+            // Fallback or error? Existing code errored if query_row check strictness
+            // existing used unwrap or ? on query_row, implies it expects it.
+            Err(AppError::Validation("Parent project not found".to_string()))
+        }
     } else {
         Ok(format!("/{title}"))
     }

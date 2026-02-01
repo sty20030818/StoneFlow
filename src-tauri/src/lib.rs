@@ -17,10 +17,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
-            let db_state = crate::db::init_db(app.handle())
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-            app.manage(db_state);
-            Ok(())
+            tauri::async_runtime::block_on(async move {
+                let db_state = crate::db::init_db(app.handle())
+                    .await
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+                app.manage(db_state);
+                Ok(())
+            })
         })
         .invoke_handler(tauri::generate_handler![
             hello,

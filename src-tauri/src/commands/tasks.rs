@@ -17,21 +17,17 @@ pub struct ListTasksArgs {
 }
 
 #[tauri::command]
-pub fn list_tasks(
+pub async fn list_tasks(
     state: State<'_, DbState>,
     args: ListTasksArgs,
 ) -> Result<Vec<TaskDto>, ApiError> {
-    let conn = state
-        .conn
-        .lock()
-        .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
-
     TaskRepo::list(
-        &conn,
+        &state.conn,
         args.space_id.as_deref(),
         args.status.as_deref(),
         args.project_id.as_deref(),
     )
+    .await
     .map_err(ApiError::from)
 }
 
@@ -47,20 +43,19 @@ pub struct CreateTaskArgs {
 }
 
 #[tauri::command]
-pub fn create_task(state: State<'_, DbState>, args: CreateTaskArgs) -> Result<TaskDto, ApiError> {
-    let conn = state
-        .conn
-        .lock()
-        .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
-
+pub async fn create_task(
+    state: State<'_, DbState>,
+    args: CreateTaskArgs,
+) -> Result<TaskDto, ApiError> {
     let auto_start = args.auto_start.unwrap_or(true);
     TaskRepo::create(
-        &conn,
+        &state.conn,
         &args.space_id,
         &args.title,
         auto_start,
         args.project_id.as_deref(),
     )
+    .await
     .map_err(ApiError::from)
 }
 
@@ -102,14 +97,9 @@ pub struct UpdateTaskPatch {
 }
 
 #[tauri::command]
-pub fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
-    let mut conn = state
-        .conn
-        .lock()
-        .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
-
+pub async fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
     TaskRepo::update(
-        &mut conn,
+        &state.conn,
         &args.id,
         args.patch.title.as_deref(),
         args.patch.status.as_deref(),
@@ -126,6 +116,7 @@ pub fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<()
         args.patch.archived_at.as_ref().cloned(),
         args.patch.deleted_at.as_ref().cloned(),
     )
+    .await
     .map_err(ApiError::from)
 }
 
@@ -136,13 +127,13 @@ pub struct CompleteTaskArgs {
 }
 
 #[tauri::command]
-pub fn complete_task(state: State<'_, DbState>, args: CompleteTaskArgs) -> Result<(), ApiError> {
-    let conn = state
-        .conn
-        .lock()
-        .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
-
-    TaskRepo::complete(&conn, &args.id).map_err(ApiError::from)
+pub async fn complete_task(
+    state: State<'_, DbState>,
+    args: CompleteTaskArgs,
+) -> Result<(), ApiError> {
+    TaskRepo::complete(&state.conn, &args.id)
+        .await
+        .map_err(ApiError::from)
 }
 
 #[derive(Debug, Deserialize)]
@@ -152,11 +143,11 @@ pub struct DeleteTasksArgs {
 }
 
 #[tauri::command]
-pub fn delete_tasks(state: State<'_, DbState>, args: DeleteTasksArgs) -> Result<usize, ApiError> {
-    let mut conn = state
-        .conn
-        .lock()
-        .map_err(|_| ApiError::internal("数据库锁获取失败".to_string()))?;
-
-    TaskRepo::delete_many(&mut conn, &args.ids).map_err(ApiError::from)
+pub async fn delete_tasks(
+    state: State<'_, DbState>,
+    args: DeleteTasksArgs,
+) -> Result<usize, ApiError> {
+    TaskRepo::delete_many(&state.conn, &args.ids)
+        .await
+        .map_err(ApiError::from)
 }

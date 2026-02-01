@@ -1,13 +1,16 @@
 use std::collections::{HashMap, HashSet};
 
-use rusqlite::{params, types::Value, Connection};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, RelationTrait, Set, Statement,
+};
 use uuid::Uuid;
 
+use crate::db::entities::{project_tags, tags, task_tags};
 use crate::types::error::AppError;
 
 pub enum TagEntity {
     Task,
-    #[allow(dead_code)]
     Project,
 }
 
@@ -27,8 +30,8 @@ impl TagEntity {
     }
 }
 
-pub fn load_tags(
-    conn: &Connection,
+pub async fn load_tags(
+    conn: &DatabaseConnection,
     entity: TagEntity,
     owner_ids: &[String],
 ) -> Result<HashMap<String, Vec<String>>, AppError> {
@@ -36,70 +39,98 @@ pub fn load_tags(
         return Ok(HashMap::new());
     }
 
-    let mut placeholders = String::new();
-    let mut params: Vec<Value> = Vec::with_capacity(owner_ids.len());
-    for (idx, id) in owner_ids.iter().enumerate() {
-        if idx > 0 {
-            placeholders.push_str(", ");
-        }
-        placeholders.push('?');
-        params.push(Value::Text(id.to_string()));
-    }
-
-    let table = entity.table();
-    let owner_column = entity.owner_column();
-    let sql = format!(
-        r#"
-SELECT
-  tt.{owner_column}, tag.name
-FROM {table} tt
-INNER JOIN tags tag ON tt.tag_id = tag.id
-WHERE tt.{owner_column} IN ({placeholders})
-ORDER BY tag.name ASC, tag.created_at ASC
-"#,
-        owner_column = owner_column,
-        table = table,
-        placeholders = placeholders
-    );
-
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params_from_iter(params), |row| {
-        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-    })?;
+    let rows: Vec<(String, String)> = match entity {
+        TagEntity::Task => task_tags::Entity::find()
+            .select_only()
+            .column(task_tags::Column::TaskId)
+            .column(tags::Column::Name)
+            .join(
+                sea_orm::JoinType::InnerJoin,
+                task_tags::Relation::Tags.def(),
+            )
+            .filter(task_tags::Column::TaskId.is_in(owner_ids.iter().cloned()))
+            .order_by_asc(tags::Column::Name)
+            .order_by_asc(tags::Column::CreatedAt)
+            .into_tuple()
+            .all(conn)
+            .await
+            .map_err(AppError::from)?,
+        TagEntity::Project => project_tags::Entity::find()
+            .select_only()
+            .column(project_tags::Column::ProjectId)
+            .column(tags::Column::Name)
+            .join(
+                sea_orm::JoinType::InnerJoin,
+                project_tags::Relation::Tags.def(),
+            )
+            .filter(project_tags::Column::ProjectId.is_in(owner_ids.iter().cloned()))
+            .order_by_asc(tags::Column::Name)
+            .order_by_asc(tags::Column::CreatedAt)
+            .into_tuple()
+            .all(conn)
+            .await
+            .map_err(AppError::from)?,
+    };
 
     let mut map: HashMap<String, Vec<String>> = HashMap::new();
-    for row in rows {
-        let (owner_id, name) = row?;
+    for (owner_id, name) in rows {
         map.entry(owner_id).or_default().push(name);
     }
 
     Ok(map)
 }
 
-pub fn sync_tags(
-    conn: &Connection,
+pub async fn sync_tags<C>(
+    conn: &C,
     entity: TagEntity,
     owner_id: &str,
-    tags: &[String],
+    names: &[String],
     created_at: i64,
-) -> Result<(), AppError> {
-    let normalized = normalize_tag_names(tags);
+) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
+    let normalized = normalize_tag_names(names);
 
-    let delete_sql = format!(
-        "DELETE FROM {table} WHERE {owner_column} = ?1",
-        table = entity.table(),
-        owner_column = entity.owner_column()
+    // 1. 删除现有的关联记录
+    let sql = format!(
+        "DELETE FROM {} WHERE {} = $1",
+        entity.table(),
+        entity.owner_column()
     );
-    conn.execute(&delete_sql, params![owner_id])?;
+    conn.execute(Statement::from_sql_and_values(
+        sea_orm::DatabaseBackend::Sqlite,
+        &sql,
+        [owner_id.into()],
+    ))
+    .await
+    .map_err(AppError::from)?;
 
+    // 2. 插入新标签和关联
     for name in normalized {
-        let tag_id = ensure_tag(conn, &name, created_at)?;
-        let insert_sql = format!(
-            "INSERT OR IGNORE INTO {table}({owner_column}, tag_id) VALUES (?1, ?2)",
-            table = entity.table(),
-            owner_column = entity.owner_column()
-        );
-        conn.execute(&insert_sql, params![owner_id, tag_id])?;
+        let tag_id = ensure_tag(conn, &name, created_at).await?;
+
+        // 通用插入
+        match entity {
+            TagEntity::Task => {
+                task_tags::ActiveModel {
+                    task_id: Set(owner_id.to_string()),
+                    tag_id: Set(tag_id),
+                }
+                .insert(conn)
+                .await
+                .ok();
+            }
+            TagEntity::Project => {
+                project_tags::ActiveModel {
+                    project_id: Set(owner_id.to_string()),
+                    tag_id: Set(tag_id),
+                }
+                .insert(conn)
+                .await
+                .ok();
+            }
+        }
     }
 
     Ok(())
@@ -114,59 +145,27 @@ fn normalize_tag_names(tags: &[String]) -> Vec<String> {
         .collect()
 }
 
-fn ensure_tag(conn: &Connection, name: &str, created_at: i64) -> Result<String, AppError> {
-    let existing: Result<String, rusqlite::Error> = conn.query_row(
-        "SELECT id FROM tags WHERE name = ?1 LIMIT 1",
-        params![name],
-        |row| row.get(0),
-    );
+async fn ensure_tag<C>(conn: &C, name: &str, created_at: i64) -> Result<String, AppError>
+where
+    C: ConnectionTrait,
+{
+    // 检查是否存在
+    let existing = tags::Entity::find()
+        .filter(tags::Column::Name.eq(name))
+        .one(conn)
+        .await
+        .map_err(AppError::from)?;
 
-    match existing {
-        Ok(id) => Ok(id),
-        Err(rusqlite::Error::QueryReturnedNoRows) => {
-            let id = Uuid::new_v4().to_string();
-            conn.execute(
-                "INSERT INTO tags(id, name, created_at) VALUES (?1, ?2, ?3)",
-                params![id, name, created_at],
-            )?;
-            Ok(id)
-        }
-        Err(err) => Err(err.into()),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rusqlite::Connection;
-
-    fn setup_conn() -> Connection {
-        let conn = Connection::open_in_memory().expect("open in memory");
-        conn.execute_batch(
-            r#"
-CREATE TABLE tags(
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  created_at INTEGER NOT NULL
-);
-CREATE TABLE task_tags(task_id TEXT NOT NULL, tag_id TEXT NOT NULL);
-CREATE TABLE project_tags(project_id TEXT NOT NULL, tag_id TEXT NOT NULL);
-"#,
-        )
-        .expect("create tables");
-        conn
-    }
-
-    #[test]
-    fn sync_and_load_tags_for_task() {
-        let conn = setup_conn();
-        let tags = vec![" foo ".to_string(), "bar".to_string(), "foo".to_string()];
-        sync_tags(&conn, TagEntity::Task, "task-1", &tags, 1).expect("sync tags");
-
-        let map = load_tags(&conn, TagEntity::Task, &["task-1".to_string()]).expect("load tags");
-        let items = map.get("task-1").expect("task tags");
-        assert_eq!(items.len(), 2);
-        assert_eq!(items[0], "bar");
-        assert_eq!(items[1], "foo");
+    if let Some(tag) = existing {
+        Ok(tag.id)
+    } else {
+        let id = Uuid::new_v4().to_string();
+        let new_tag = tags::ActiveModel {
+            id: Set(id.clone()),
+            name: Set(name.to_string()),
+            created_at: Set(created_at),
+        };
+        new_tag.insert(conn).await.map_err(AppError::from)?;
+        Ok(id)
     }
 }

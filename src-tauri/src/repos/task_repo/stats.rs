@@ -1,41 +1,41 @@
-use rusqlite::{params, Connection};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter, Set,
+};
 
+use crate::db::entities::{projects, sea_orm_active_enums::TaskStatus, tasks};
 use crate::types::error::AppError;
 
-pub fn refresh_project_stats(
-    conn: &Connection,
-    project_id: &str,
-    now: i64,
-) -> Result<(), AppError> {
-    let todo_task_count: i64 = conn.query_row(
-        r#"
-SELECT COUNT(1)
-FROM tasks
-WHERE project_id = ?1
-  AND status = 'todo'
-  AND archived_at IS NULL
-  AND deleted_at IS NULL
-"#,
-        params![project_id],
-        |row| row.get(0),
-    )?;
-    let done_task_count: i64 = conn.query_row(
-        r#"
-SELECT COUNT(1)
-FROM tasks
-WHERE project_id = ?1
-  AND status = 'done'
-  AND archived_at IS NULL
-  AND deleted_at IS NULL
-"#,
-        params![project_id],
-        |row| row.get(0),
-    )?;
+pub async fn refresh_project_stats<C>(conn: &C, project_id: &str, now: i64) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
+    let todo_task_count = tasks::Entity::find()
+        .filter(tasks::Column::ProjectId.eq(project_id))
+        .filter(tasks::Column::Status.eq(TaskStatus::Todo))
+        .filter(tasks::Column::ArchivedAt.is_null())
+        .filter(tasks::Column::DeletedAt.is_null())
+        .count(conn)
+        .await
+        .map_err(AppError::from)?;
 
-    conn.execute(
-        "UPDATE projects SET todo_task_count = ?1, done_task_count = ?2, last_task_updated_at = ?3 WHERE id = ?4",
-        params![todo_task_count, done_task_count, now, project_id],
-    )?;
+    let done_task_count = tasks::Entity::find()
+        .filter(tasks::Column::ProjectId.eq(project_id))
+        .filter(tasks::Column::Status.eq(TaskStatus::Done))
+        .filter(tasks::Column::ArchivedAt.is_null())
+        .filter(tasks::Column::DeletedAt.is_null())
+        .count(conn)
+        .await
+        .map_err(AppError::from)?;
+
+    let project = projects::ActiveModel {
+        id: Set(project_id.to_string()),
+        todo_task_count: Set(todo_task_count as i64),
+        done_task_count: Set(done_task_count as i64),
+        last_task_updated_at: Set(Some(now)),
+        ..Default::default()
+    };
+
+    project.update(conn).await.map_err(AppError::from)?;
 
     Ok(())
 }

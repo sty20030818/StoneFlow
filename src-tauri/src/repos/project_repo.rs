@@ -1,6 +1,9 @@
-use rusqlite::{params, Connection};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+};
 use uuid::Uuid;
 
+use crate::db::entities::{projects, sea_orm_active_enums::Priority};
 use crate::db::now_ms;
 use crate::repos::common_task_utils;
 use crate::types::{dto::ProjectDto, error::AppError};
@@ -11,138 +14,57 @@ pub struct ProjectRepo;
 
 impl ProjectRepo {
     /// 列出某个 Space 下的所有 Project，按 path 排序（用于构建树 & Project Tree）。
-    pub fn list_by_space(conn: &Connection, space_id: &str) -> Result<Vec<ProjectDto>, AppError> {
-        let mut stmt = conn.prepare(
-            r#"
-SELECT
-  p.id,
-  p.space_id,
-  p.parent_id,
-  p.path,
-  p.title,
-  p.note,
-  p.priority,
-  p.todo_task_count,
-  p.done_task_count,
-  p.last_task_updated_at,
-  p.created_at,
-  p.updated_at,
-  p.archived_at,
-  p.deleted_at,
-  p.create_by,
-  p.rank
-FROM projects p
-WHERE p.space_id = ?1
-ORDER BY p.path ASC
-"#,
-        )?;
+    pub async fn list_by_space(
+        conn: &DatabaseConnection,
+        space_id: &str,
+    ) -> Result<Vec<ProjectDto>, AppError> {
+        let models = projects::Entity::find()
+            .filter(projects::Column::SpaceId.eq(space_id))
+            .order_by_asc(projects::Column::Path)
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
 
-        let rows = stmt.query_map((space_id,), |row| {
-            let archived_at: Option<i64> = row.get(12)?;
-            let deleted_at: Option<i64> = row.get(13)?;
-            let todo_task_count: i64 = row.get(7)?;
-            let done_task_count: i64 = row.get(8)?;
-            let computed_status =
-                helpers::compute_status(deleted_at, archived_at, todo_task_count, done_task_count);
-            Ok(ProjectDto {
-                id: row.get(0)?,
-                space_id: row.get(1)?,
-                parent_id: row.get(2)?,
-                path: row.get(3)?,
-                title: row.get(4)?,
-                note: row.get(5)?,
-                priority: row.get(6)?,
-                todo_task_count,
-                done_task_count,
-                last_task_updated_at: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
-                archived_at,
-                deleted_at,
-                create_by: row.get(14)?,
-                rank: row.get(15)?,
-                computed_status,
-                tags: Vec::new(),
-                links: Vec::new(),
-            })
-        })?;
-
-        let mut out = Vec::new();
-        for r in rows {
-            out.push(r?);
+        let mut dtos = Vec::with_capacity(models.len());
+        for m in models {
+            dtos.push(model_to_dto(m));
         }
-        helpers::attach_links(conn, &mut out)?;
-        helpers::attach_tags(conn, &mut out)?;
-        Ok(out)
+
+        helpers::attach_links(conn, &mut dtos).await?;
+        helpers::attach_tags(conn, &mut dtos).await?;
+
+        Ok(dtos)
     }
 
     /// 获取默认 Project（每个 Space 都有一个名为 "{SpaceName} · Default" 的默认项目）。
-    /// 注意：Default Project 应该在数据库初始化时创建，如果不存在则返回错误。
-    pub fn get_default_project(conn: &Connection, space_id: &str) -> Result<ProjectDto, AppError> {
+    pub async fn get_default_project(
+        conn: &DatabaseConnection,
+        space_id: &str,
+    ) -> Result<ProjectDto, AppError> {
         let default_id = format!("{space_id}_default");
 
-        let mut project = conn
-            .query_row(
-            r#"
-SELECT
-  p.id, p.space_id, p.parent_id, p.path, p.title, p.note, p.priority,
-  p.todo_task_count, p.done_task_count, p.last_task_updated_at,
-  p.created_at, p.updated_at, p.archived_at, p.deleted_at,
-  p.create_by, p.rank
-FROM projects p
-WHERE p.id = ?1
-"#,
-            (&default_id,),
-            |row| {
-                let archived_at: Option<i64> = row.get(12)?;
-                let deleted_at: Option<i64> = row.get(13)?;
-                let todo_task_count: i64 = row.get(7)?;
-                let done_task_count: i64 = row.get(8)?;
-                let computed_status =
-                    helpers::compute_status(deleted_at, archived_at, todo_task_count, done_task_count);
-                Ok(ProjectDto {
-                    id: row.get(0)?,
-                    space_id: row.get(1)?,
-                    parent_id: row.get(2)?,
-                    path: row.get(3)?,
-                    title: row.get(4)?,
-                    note: row.get(5)?,
-                    priority: row.get(6)?,
-                    todo_task_count,
-                    done_task_count,
-                    last_task_updated_at: row.get(9)?,
-                    created_at: row.get(10)?,
-                    updated_at: row.get(11)?,
-                    archived_at,
-                    deleted_at,
-                    create_by: row.get(14)?,
-                    rank: row.get(15)?,
-                    computed_status,
-                    tags: Vec::new(),
-                    links: Vec::new(),
-                })
-            },
-        )
-        .map_err(|e| {
-            if let rusqlite::Error::QueryReturnedNoRows = e {
-                AppError::Validation(format!(
-                    "Default project for space '{}' not found. Please ensure database is properly initialized.",
-                    space_id
-                ))
-            } else {
-                AppError::from(e)
+        let model = projects::Entity::find_by_id(&default_id)
+            .one(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        match model {
+            Some(m) => {
+                let mut dto = model_to_dto(m);
+                helpers::attach_links(conn, std::slice::from_mut(&mut dto)).await?;
+                helpers::attach_tags(conn, std::slice::from_mut(&mut dto)).await?;
+                Ok(dto)
             }
-        })?;
-
-        helpers::attach_links(conn, std::slice::from_mut(&mut project))?;
-        helpers::attach_tags(conn, std::slice::from_mut(&mut project))?;
-
-        Ok(project)
+            None => Err(AppError::Validation(format!(
+                "Default project for space '{}' not found. Please ensure database is properly initialized.",
+                space_id
+            ))),
+        }
     }
 
     /// 创建新项目。
-    pub fn create(
-        conn: &Connection,
+    pub async fn create(
+        conn: &DatabaseConnection,
         space_id: &str,
         title: &str,
         parent_id: Option<&str>,
@@ -154,55 +76,82 @@ WHERE p.id = ?1
             return Err(AppError::Validation("项目名称不能为空".to_string()));
         }
 
-        let priority = common_task_utils::normalize_priority(priority.unwrap_or("P1"));
-        common_task_utils::validate_priority(&priority)?;
+        let priority_str = common_task_utils::normalize_priority(priority.unwrap_or("P1"));
+        common_task_utils::validate_priority(&priority_str)?;
 
-        let path = helpers::build_project_path(conn, space_id, parent_id, title)?;
+        let priority_enum = match priority_str.as_str() {
+            "P0" => Priority::P0,
+            "P1" => Priority::P1,
+            "P2" => Priority::P2,
+            "P3" => Priority::P3,
+            _ => Priority::P1,
+        };
+
+        let path = helpers::build_project_path(conn, space_id, parent_id, title).await?;
 
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
 
-        conn.execute(
-            r#"
-INSERT INTO projects(
-  id, space_id, parent_id, path,
-  title, note, priority,
-  todo_task_count, done_task_count, last_task_updated_at,
-  created_at, updated_at, archived_at, deleted_at,
-  create_by, rank
-) VALUES (
-  ?1, ?2, ?3, ?4,
-  ?5, ?6, ?7,
-  0, 0, NULL,
-  ?8, ?8, NULL, NULL,
-  'stonefish', 1024
-)
-"#,
-            params![id, space_id, parent_id, path, title, note, priority, now],
-        )?;
+        let active_model = projects::ActiveModel {
+            id: Set(id.clone()),
+            space_id: Set(space_id.to_string()),
+            parent_id: Set(parent_id.map(|s| s.to_string())),
+            path: Set(path.clone()),
+            title: Set(title.to_string()),
+            note: Set(note.map(|s| s.to_string())),
+            priority: Set(priority_enum),
+            todo_task_count: Set(0),
+            done_task_count: Set(0),
+            last_task_updated_at: Set(None),
+            created_at: Set(now),
+            updated_at: Set(now),
+            archived_at: Set(None),
+            deleted_at: Set(None),
+            create_by: Set("stonefish".to_string()),
+            rank: Set(1024),
+        };
 
-        let computed_status = helpers::compute_status(None, None, 0, 0);
+        let res = active_model.insert(conn).await.map_err(AppError::from)?;
 
-        Ok(ProjectDto {
-            id,
-            space_id: space_id.to_string(),
-            parent_id: parent_id.map(|s| s.to_string()),
-            path,
-            title: title.to_string(),
-            note: note.map(|s| s.to_string()),
-            priority,
-            todo_task_count: 0,
-            done_task_count: 0,
-            last_task_updated_at: None,
-            created_at: now,
-            updated_at: now,
-            archived_at: None,
-            deleted_at: None,
-            create_by: "stonefish".to_string(),
-            rank: 1024,
-            computed_status,
-            tags: Vec::new(),
-            links: Vec::new(),
-        })
+        Ok(model_to_dto(res))
+    }
+}
+
+fn model_to_dto(m: projects::Model) -> ProjectDto {
+    let computed_status = helpers::compute_status(
+        m.deleted_at,
+        m.archived_at,
+        m.todo_task_count,
+        m.done_task_count,
+    );
+
+    let priority_string = match m.priority {
+        Priority::P0 => "P0",
+        Priority::P1 => "P1",
+        Priority::P2 => "P2",
+        Priority::P3 => "P3",
+    }
+    .to_string();
+
+    ProjectDto {
+        id: m.id,
+        space_id: m.space_id,
+        parent_id: m.parent_id,
+        path: m.path,
+        title: m.title,
+        note: m.note,
+        priority: priority_string,
+        todo_task_count: m.todo_task_count,
+        done_task_count: m.done_task_count,
+        last_task_updated_at: m.last_task_updated_at,
+        created_at: m.created_at,
+        updated_at: m.updated_at,
+        archived_at: m.archived_at,
+        deleted_at: m.deleted_at,
+        create_by: m.create_by,
+        rank: m.rank,
+        computed_status,
+        tags: Vec::new(),
+        links: Vec::new(),
     }
 }

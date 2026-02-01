@@ -1,13 +1,17 @@
-use rusqlite::params;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use uuid::Uuid;
 
+use crate::db::entities::{
+    sea_orm_active_enums::{Priority, TaskStatus},
+    tasks,
+};
 use crate::db::now_ms;
 use crate::types::{dto::TaskDto, error::AppError};
 
 use super::{stats, validations};
 
-pub fn create(
-    conn: &rusqlite::Connection,
+pub async fn create(
+    conn: &DatabaseConnection,
     space_id: &str,
     title: &str,
     auto_start: bool,
@@ -18,37 +22,44 @@ pub fn create(
     let now = now_ms();
     let id = Uuid::new_v4().to_string();
     let _auto_start = auto_start;
-    let status = "todo";
+    let status = TaskStatus::Todo;
     let rank = 1024;
     let updated_at = now;
     let create_by = "stonefish";
 
-    conn.execute(
-        r#"
-INSERT INTO tasks(
-  id, space_id, project_id, title, note, status, done_reason, priority,
-  rank, created_at, updated_at, completed_at, deadline_at, archived_at, deleted_at,
-  custom_fields, create_by
-) VALUES (
-  ?1, ?2, ?3, ?4, NULL, ?5, NULL, 'P1',
-  ?6, ?7, ?8, NULL, NULL, NULL, NULL,
-  NULL, ?9
-)
-"#,
-        params![id, space_id, project_id, title, status, rank, now, updated_at, create_by],
-    )?;
+    let active_model = tasks::ActiveModel {
+        id: Set(id.clone()),
+        space_id: Set(space_id.to_string()),
+        project_id: Set(project_id.map(|s| s.to_string())),
+        title: Set(title.clone()),
+        note: Set(None),
+        status: Set(status.clone()),
+        done_reason: Set(None),
+        priority: Set(Priority::P1),
+        rank: Set(rank),
+        created_at: Set(now),
+        updated_at: Set(updated_at),
+        completed_at: Set(None),
+        deadline_at: Set(None),
+        archived_at: Set(None),
+        deleted_at: Set(None),
+        custom_fields: Set(None),
+        create_by: Set(create_by.to_string()),
+    };
+
+    active_model.insert(conn).await.map_err(AppError::from)?;
 
     if let Some(project_id) = project_id {
-        stats::refresh_project_stats(conn, project_id, now)?;
+        stats::refresh_project_stats(conn, project_id, now).await?;
     }
 
     Ok(TaskDto {
         id,
         space_id: space_id.to_string(),
         project_id: project_id.map(|s| s.to_string()),
-        title: title.to_string(),
+        title,
         note: None,
-        status: status.to_string(),
+        status: "todo".to_string(), // Map enum to string
         done_reason: None,
         priority: "P1".to_string(),
         tags: Vec::new(),
