@@ -17,13 +17,21 @@ pub struct ProjectDto {
     pub space_id: String,
     pub parent_id: Option<String>,
     pub path: String,
-    pub name: String,
+    pub title: String,
     pub note: Option<String>,
-    pub status: String,
     pub priority: String,
+    pub todo_task_count: i64,
+    pub done_task_count: i64,
+    pub last_task_updated_at: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
     pub archived_at: Option<i64>,
+    pub deleted_at: Option<i64>,
+    pub create_by: String,
+    pub rank: i64,
+    pub computed_status: String,
+    pub tags: Vec<String>,
+    pub links: Vec<LinkDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,11 +59,33 @@ pub struct TaskDto {
     /// 软删除时间（时间戳毫秒）
     pub deleted_at: Option<i64>,
     /// 外部链接列表
-    pub links: Vec<String>,
+    pub links: Vec<LinkDto>,
     /// 自定义字段
     pub custom_fields: Option<CustomFieldsDto>,
     /// 创建者
     pub create_by: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkDto {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    pub kind: String,
+    pub rank: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkInputDto {
+    pub id: Option<String>,
+    pub title: String,
+    pub url: String,
+    pub kind: String,
+    pub rank: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

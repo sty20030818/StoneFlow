@@ -29,7 +29,7 @@ pub fn list_projects(
 #[serde(rename_all = "camelCase")]
 pub struct CreateProjectArgs {
     pub space_id: String,
-    pub name: String,
+    pub title: String,
     pub parent_id: Option<String>,
     pub note: Option<String>,
     pub priority: Option<String>,
@@ -49,7 +49,7 @@ pub fn create_project(
     ProjectRepo::create(
         &conn,
         &args.space_id,
-        &args.name,
+        &args.title,
         args.parent_id.as_deref(),
         args.note.as_deref(),
         args.priority.as_deref(),

@@ -124,7 +124,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			for (const project of children) {
 				options.push({
 					value: project.id,
-					label: project.name,
+					label: project.title,
 					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
 					depth,

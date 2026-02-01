@@ -1,18 +1,27 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
-import type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/project'
+import type { LinkDto } from '@/services/api/tasks'
+import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 
 export type ProjectDto = {
 	id: string
 	spaceId: string
 	parentId: string | null
 	path: string
-	name: string
+	title: string
 	note: string | null
-	status: ProjectStatusValue
 	priority: ProjectPriorityValue
+	todoTaskCount: number
+	doneTaskCount: number
+	lastTaskUpdatedAt: number | null
 	createdAt: number
 	updatedAt: number
 	archivedAt: number | null
+	deletedAt: number | null
+	createBy: string
+	rank: number
+	computedStatus: ProjectComputedStatusValue
+	tags: string[]
+	links: LinkDto[]
 }
 
 export type ListProjectsArgs = {
@@ -21,10 +30,9 @@ export type ListProjectsArgs = {
 
 export type CreateProjectArgs = {
 	spaceId: string
-	name: string
+	title: string
 	parentId?: string | null
 	note?: string | null
-	status?: ProjectStatusValue | null
 	priority?: ProjectPriorityValue | null
 }
 
@@ -47,10 +55,9 @@ export async function createProject(args: CreateProjectArgs): Promise<ProjectDto
 	return await tauriInvoke<ProjectDto>('create_project', {
 		args: {
 			spaceId: args.spaceId,
-			name: args.name,
+			title: args.title,
 			parentId: args.parentId ?? null,
 			note: args.note ?? null,
-			status: args.status ?? null,
 			priority: args.priority ?? null,
 		},
 	})

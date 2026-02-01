@@ -230,7 +230,7 @@
 					for (let i = 0; i < path.length; i++) {
 						const p = path[i]
 						const isLast = i === path.length - 1
-						base.push({ label: p.name, ...(isLast ? {} : { to: `/space/${spaceId}?project=${p.id}` }) })
+						base.push({ label: p.title, ...(isLast ? {} : { to: `/space/${spaceId}?project=${p.id}` }) })
 					}
 					return base
 				}

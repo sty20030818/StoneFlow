@@ -8,9 +8,7 @@ import {
 	PROJECT_PRIORITY_OPTIONS,
 	PROJECT_ROOT_ICON_CLASS,
 	PROJECT_ROOT_LABEL,
-	PROJECT_STATUS_OPTIONS,
 	type ProjectPriorityValue,
-	type ProjectStatusValue,
 } from '@/config/project'
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { useProjectsStore } from '@/stores/projects'
@@ -28,11 +26,10 @@ export type CreateProjectModalEmits = {
 }
 
 export type CreateProjectFormState = {
-	name: string
+	title: string
 	spaceId: SpaceId
 	parentId: string | null
 	note: string | null
-	status: ProjectStatusValue
 	priority: ProjectPriorityValue
 }
 
@@ -45,7 +42,6 @@ export type SelectOption<TValue extends string | null = string | null> = {
 }
 
 export type SpaceOption = SelectOption<SpaceId>
-export type StatusOption = SelectOption<ProjectStatusValue>
 export type PriorityOption = SelectOption<ProjectPriorityValue>
 
 export type ParentProjectOption = SelectOption<string | null> & {
@@ -69,18 +65,16 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	}
 
 	const form = reactive<CreateProjectFormState>({
-		name: '',
+		title: '',
 		spaceId: normalizeSpaceId(props.spaceId),
 		parentId: null,
 		note: null,
-		status: 'active',
 		priority: 'P1',
 	})
 
-	const canSubmit = computed(() => form.name.trim().length > 0)
+	const canSubmit = computed(() => form.title.trim().length > 0)
 
 	const spaceOptions: SpaceOption[] = SPACE_OPTIONS
-	const statusOptions: StatusOption[] = [...PROJECT_STATUS_OPTIONS]
 	const priorityOptions: PriorityOption[] = PROJECT_PRIORITY_OPTIONS
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
@@ -125,7 +119,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 			for (const project of children) {
 				options.push({
 					value: project.id,
-					label: project.name,
+					label: project.title,
 					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
 					depth,
@@ -163,10 +157,9 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	watch(isOpen, async (open) => {
 		if (!open) return
 
-		form.name = ''
+		form.title = ''
 		form.parentId = null
 		form.note = null
-		form.status = 'active'
 		form.priority = 'P1'
 		form.spaceId = normalizeSpaceId(props.spaceId)
 		await refreshParentProjectOptions()
@@ -179,10 +172,9 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		try {
 			const project = await createProject({
 				spaceId: form.spaceId,
-				name: form.name.trim(),
+				title: form.title.trim(),
 				parentId: form.parentId,
 				note: form.note?.trim() || null,
-				status: form.status,
 				priority: form.priority,
 			})
 
@@ -207,7 +199,6 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		loading,
 		canSubmit,
 		spaceOptions,
-		statusOptions,
 		priorityOptions,
 		currentParentProjectOptions,
 		projectRootLabel,

@@ -11,7 +11,7 @@ function projectPath(list: ProjectDto[], targetId: string): ProjectDto[] {
 	let curr: ProjectDto | undefined = byId.get(targetId)
 	while (curr) {
 		out.unshift(curr)
-		curr = curr.parent_id ? byId.get(curr.parent_id) : undefined
+		curr = curr.parentId ? byId.get(curr.parentId) : undefined
 	}
 	return out
 }
@@ -49,7 +49,7 @@ export function useProjectBreadcrumb(
 				const p = path[i]
 				const isLast = i === path.length - 1
 				base.push({
-					label: p.name,
+					label: p.title,
 					...(isLast ? {} : { to: `/space/${spaceId.value}?project=${p.id}` }),
 				})
 			}

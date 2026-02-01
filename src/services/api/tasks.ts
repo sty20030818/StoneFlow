@@ -3,6 +3,24 @@ import type { TaskDoneReason, TaskPriorityValue, TaskStatus } from '@/types/doma
 
 export type { TaskDoneReason, TaskPriorityValue, TaskStatus } from '@/types/domain/task'
 
+export type LinkDto = {
+	id: string
+	title: string
+	url: string
+	kind: 'doc' | 'repoLocal' | 'repoRemote' | 'web' | 'design' | 'other'
+	rank: number
+	createdAt: number
+	updatedAt: number
+}
+
+export type LinkInput = {
+	id?: string
+	title: string
+	url: string
+	kind: LinkDto['kind']
+	rank?: number
+}
+
 export type CustomFieldItem = {
 	key: string
 	label: string
@@ -30,7 +48,7 @@ export type TaskDto = {
 	deadlineAt: number | null
 	archivedAt: number | null
 	deletedAt: number | null
-	links: string[]
+	links: LinkDto[]
 	customFields: CustomFields | null
 	createBy: string
 }
@@ -75,7 +93,7 @@ export type UpdateTaskPatch = {
 	projectId?: string | null
 	deadlineAt?: number | null
 	rank?: number
-	links?: string[]
+	links?: LinkInput[]
 	customFields?: CustomFields | null
 	archivedAt?: number | null
 	deletedAt?: number | null

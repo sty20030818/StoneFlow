@@ -128,26 +128,30 @@ fn seed_default_projects_and_backfill_tasks(conn: &mut Connection) -> Result<(),
 
         // 如果不存在，创建 default project
         if exists == 0 {
-            let project_name = "Default Project".to_string();
+            let project_title = "Default Project".to_string();
             let path = "/Default Project".to_string();
 
             tx.execute(
                 r#"
 INSERT INTO projects(
   id, space_id, parent_id, path,
-  name, note, status, priority,
-  created_at, updated_at, archived_at
+  title, note, priority,
+  todo_task_count, done_task_count, last_task_updated_at,
+  created_at, updated_at, archived_at, deleted_at,
+  create_by, rank
 ) VALUES (
   ?1, ?2, NULL, ?3,
-  ?4, NULL, 'active', 'P1',
-  ?5, ?5, NULL
+  ?4, NULL, 'P1',
+  0, 0, NULL,
+  ?5, ?5, NULL, NULL,
+  'stonefish', 1024
 )
 "#,
                 (
                     project_id.clone(),
                     space_id.clone(),
                     path,
-                    project_name,
+                    project_title,
                     now,
                 ),
             )?;
@@ -161,7 +165,30 @@ SET project_id = ?1
 WHERE space_id = ?2
   AND project_id IS NULL
 "#,
-            (project_id, space_id),
+            (&project_id, &space_id),
+        )?;
+
+        tx.execute(
+            r#"
+UPDATE projects
+SET todo_task_count = (
+    SELECT COUNT(1) FROM tasks t
+    WHERE t.project_id = ?1
+      AND t.status = 'todo'
+      AND t.archived_at IS NULL
+      AND t.deleted_at IS NULL
+  ),
+  done_task_count = (
+    SELECT COUNT(1) FROM tasks t
+    WHERE t.project_id = ?1
+      AND t.status = 'done'
+      AND t.archived_at IS NULL
+      AND t.deleted_at IS NULL
+  ),
+  last_task_updated_at = ?2
+WHERE id = ?1
+"#,
+            (&project_id, now),
         )?;
     }
 

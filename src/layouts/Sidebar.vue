@@ -51,7 +51,7 @@
 							:name="projectIcon"
 							class="size-3.5"
 							:class="defaultProjectIconClass" />
-						<span class="truncate">{{ defaultProject.name }}</span>
+						<span class="truncate">{{ defaultProject.title }}</span>
 					</RouterLink>
 				</nav>
 			</section>
@@ -259,7 +259,7 @@
 				const next = build(p.id, depth + 1)
 				return {
 					id: p.id,
-					label: p.name,
+					label: p.title,
 					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
 					children: next.length ? next : undefined,

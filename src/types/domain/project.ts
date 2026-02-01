@@ -1,4 +1,4 @@
 import type { PriorityValue } from '@/types/shared/priority'
 
-export type ProjectStatusValue = 'active' | 'paused' | 'done'
+export type ProjectComputedStatusValue = 'inProgress' | 'done' | 'archived' | 'deleted'
 export type ProjectPriorityValue = PriorityValue

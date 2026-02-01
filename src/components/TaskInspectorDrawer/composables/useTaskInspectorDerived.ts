@@ -59,7 +59,7 @@ export function useTaskInspectorDerived(params: {
 		if (!state.projectIdLocal.value) return UNCATEGORIZED_LABEL
 		const projects = projectsStore.getProjectsOfSpace(state.spaceIdLocal.value)
 		const proj = projects.find((p) => p.id === state.projectIdLocal.value)
-		return proj?.name ?? UNKNOWN_PROJECT_LABEL
+		return proj?.title ?? UNKNOWN_PROJECT_LABEL
 	})
 
 	const deadlineLabel = computed(() => {
@@ -95,7 +95,7 @@ export function useTaskInspectorDerived(params: {
 		const projects = projectsStore.getProjectsOfSpace(task.spaceId)
 		const project = projects.find((p) => p.id === task.projectId)
 		if (!project) return UNKNOWN_PROJECT_LABEL
-		return project.path || project.name
+		return project.path || project.title
 	})
 
 	const projectTrail = computed(() => {

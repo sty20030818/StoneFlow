@@ -1,5 +1,5 @@
 import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS } from '@/config/priority'
-import type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/project'
+import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 
 export const PROJECT_ICON = 'i-lucide-folder'
 export const PROJECT_ROOT_LABEL = 'None (Top Level)'
@@ -83,19 +83,14 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 	},
 }
 
-export const PROJECT_STATUS_OPTIONS = [
-	{ value: 'active', label: 'Active', icon: 'i-lucide-play-circle', iconClass: 'text-emerald-500' },
-	{ value: 'paused', label: 'Paused', icon: 'i-lucide-pause-circle', iconClass: 'text-amber-500' },
-	{ value: 'done', label: 'Done', icon: 'i-lucide-check-circle', iconClass: 'text-blue-500' },
-] as const
-
 export const PROJECT_STATUS_DISPLAY: Record<
-	ProjectStatusValue,
-	{ label: string; color: 'success' | 'warning' | 'info'; dot: string }
+	ProjectComputedStatusValue,
+	{ label: string; color: 'success' | 'warning' | 'info' | 'neutral'; dot: string }
 > = {
-	active: { label: 'Active', color: 'success', dot: 'bg-emerald-500' },
-	paused: { label: 'Paused', color: 'warning', dot: 'bg-amber-500' },
-	done: { label: 'Done', color: 'info', dot: 'bg-blue-500' },
+	inProgress: { label: 'In Progress', color: 'warning', dot: 'bg-amber-500' },
+	done: { label: 'Done', color: 'success', dot: 'bg-emerald-500' },
+	archived: { label: 'Archived', color: 'neutral', dot: 'bg-slate-400' },
+	deleted: { label: 'Deleted', color: 'neutral', dot: 'bg-slate-500' },
 }
 
-export type { ProjectPriorityValue, ProjectStatusValue } from '@/types/domain/project'
+export type { ProjectPriorityValue, ProjectComputedStatusValue } from '@/types/domain/project'

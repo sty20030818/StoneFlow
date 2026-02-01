@@ -39,11 +39,11 @@ export function useTaskInspectorOptions(params: {
 		})
 
 		function addProjects(parentId: string | null, depth: number) {
-			const children = projects.filter((p) => p.parent_id === parentId)
+			const children = projects.filter((p) => p.parentId === parentId)
 			for (const proj of children) {
 				options.push({
 					value: proj.id,
-					label: proj.name,
+					label: proj.title,
 					icon: PROJECT_ICON,
 					iconClass: levelColors[Math.min(depth, levelColors.length - 1)],
 					depth,

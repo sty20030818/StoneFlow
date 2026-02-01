@@ -12,7 +12,7 @@
 			<div class="flex items-start justify-between gap-4">
 				<div class="min-w-0 pl-3">
 					<h1 class="text-3xl font-semibold text-slate-900 tracking-tight truncate">
-						{{ project.name }}
+						{{ project.title }}
 					</h1>
 				</div>
 
@@ -90,7 +90,7 @@
 		PROJECT_PRIORITY_DISPLAY,
 		PROJECT_STATUS_DISPLAY,
 		type ProjectPriorityValue,
-		type ProjectStatusValue,
+		type ProjectComputedStatusValue,
 	} from '@/config/project'
 
 	const props = defineProps<{
@@ -117,12 +117,8 @@
 	const prioritySurfaceVars = computed<Record<string, string>>(() => priorityDisplay.value.surfaceVars)
 
 	const statusConfig = computed(() => {
-		// 优先检查 archived
-		if (props.project?.archivedAt) {
-			return { label: 'Archived', color: 'neutral' as const, dot: 'bg-slate-400' }
-		}
-		const status = (props.project?.status?.toLowerCase() ?? 'active') as ProjectStatusValue
-		return PROJECT_STATUS_DISPLAY[status] ?? PROJECT_STATUS_DISPLAY.active
+		const status = (props.project?.computedStatus ?? 'inProgress') as ProjectComputedStatusValue
+		return PROJECT_STATUS_DISPLAY[status] ?? PROJECT_STATUS_DISPLAY.inProgress
 	})
 
 	const statusLabel = computed(() => statusConfig.value.label)

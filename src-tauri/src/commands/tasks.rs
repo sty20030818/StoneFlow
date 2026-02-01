@@ -4,7 +4,7 @@ use tauri::State;
 use crate::db::DbState;
 use crate::repos::task_repo::TaskRepo;
 use crate::types::{
-    dto::{CustomFieldsDto, TaskDto},
+    dto::{CustomFieldsDto, LinkInputDto, TaskDto},
     error::ApiError,
 };
 
@@ -92,7 +92,7 @@ pub struct UpdateTaskPatch {
     /// 更新排序权重
     pub rank: Option<i64>,
     /// 外部链接列表（传空数组表示清空）
-    pub links: Option<Vec<String>>,
+    pub links: Option<Vec<LinkInputDto>>,
     /// Some(None) 表示清空 customFields
     pub custom_fields: Option<Option<CustomFieldsDto>>,
     /// Some(None) 表示清空归档时间

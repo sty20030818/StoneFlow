@@ -40,6 +40,10 @@ const MIGRATIONS: &[Migration] = &[
         version: 8,
         sql: include_str!("migrations/0008_reset_task_model.sql"),
     },
+    Migration {
+        version: 9,
+        sql: include_str!("migrations/0009_update_project_data_model.sql"),
+    },
 ];
 
 /// 执行所有未执行的迁移。
@@ -62,13 +66,23 @@ pub fn run_migrations(conn: &mut Connection) -> Result<(), AppError> {
         .unwrap_or(0);
 
     for m in MIGRATIONS.iter().filter(|m| m.version > current) {
-        let tx = conn.transaction()?;
-        tx.execute_batch(m.sql)?;
-        tx.execute(
-            "INSERT INTO schema_migrations(version) VALUES (?1)",
-            (m.version,),
-        )?;
-        tx.commit()?;
+        let needs_no_tx = m.sql.to_ascii_lowercase().contains("pragma foreign_keys = off");
+
+        if needs_no_tx {
+            conn.execute_batch(m.sql)?;
+            conn.execute(
+                "INSERT INTO schema_migrations(version) VALUES (?1)",
+                (m.version,),
+            )?;
+        } else {
+            let tx = conn.transaction()?;
+            tx.execute_batch(m.sql)?;
+            tx.execute(
+                "INSERT INTO schema_migrations(version) VALUES (?1)",
+                (m.version,),
+            )?;
+            tx.commit()?;
+        }
     }
 
     Ok(())

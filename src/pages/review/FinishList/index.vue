@@ -266,7 +266,7 @@
 			const list = projectsStore.getProjectsOfSpace(sid)
 			for (const p of list) {
 				options.push({
-					label: `${spaceLabel(sid)} / ${p.name}`,
+					label: `${spaceLabel(sid)} / ${p.title}`,
 					value: p.id,
 				})
 			}
@@ -351,7 +351,7 @@
 
 			result.push({
 				projectId: project?.id ?? 'default',
-				projectName: project?.name ?? '当前 Space 默认 Project',
+				projectName: project?.title ?? '当前 Space 默认 Project',
 				spaceId,
 				spaceLabel: spaceLabelText,
 				tasks: list,

@@ -12,7 +12,6 @@
 				v-model:form="form"
 				:space-options="spaceOptions"
 				:parent-options="currentParentProjectOptions"
-				:status-options="statusOptions"
 				:priority-options="priorityOptions"
 				:project-root-label="projectRootLabel"
 				@submit="handleSubmit" />
@@ -46,7 +45,6 @@
 		loading,
 		canSubmit,
 		spaceOptions,
-		statusOptions,
 		priorityOptions,
 		currentParentProjectOptions,
 		projectRootLabel,
