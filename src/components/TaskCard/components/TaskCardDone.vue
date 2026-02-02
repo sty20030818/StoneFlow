@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="relative flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-all duration-300 opacity-60 hover:opacity-100 cursor-default items-center"
+		class="relative flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-[color,background-color,border-color,box-shadow,opacity] duration-300 opacity-60 hover:opacity-100 cursor-default items-center"
 		:class="[
 			isEditMode && selected ? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm' : '',
 			isEditMode && !selected ? 'opacity-40' : '',

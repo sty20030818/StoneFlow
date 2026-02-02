@@ -151,3 +151,80 @@ pub async fn delete_tasks(
         .await
         .map_err(ApiError::from)
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReorderTaskArgs {
+    pub task_id: String,
+    pub new_rank: i64,
+}
+
+/// 更新单个任务的 rank
+#[tauri::command]
+pub async fn reorder_task(
+    state: State<'_, DbState>,
+    args: ReorderTaskArgs,
+) -> Result<(), ApiError> {
+    TaskRepo::update(
+        &state.conn,
+        &args.task_id,
+        None, // title
+        None, // status
+        None, // done_reason
+        None, // priority
+        None, // note
+        None, // tags
+        None, // space_id
+        None, // project_id
+        None, // deadline_at
+        Some(args.new_rank),
+        None, // links
+        None, // custom_fields
+        None, // archived_at
+        None, // deleted_at
+    )
+    .await
+    .map_err(ApiError::from)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RebalanceRanksArgs {
+    /// 按顺序排列的任务 ID 列表
+    pub task_ids: Vec<String>,
+    /// 步长，默认 1024
+    pub step: Option<i64>,
+}
+
+/// 批量重排任务 rank（用于阈值触发的无感重排）
+#[tauri::command]
+pub async fn rebalance_ranks(
+    state: State<'_, DbState>,
+    args: RebalanceRanksArgs,
+) -> Result<(), ApiError> {
+    let step = args.step.unwrap_or(1024);
+    for (index, task_id) in args.task_ids.iter().enumerate() {
+        let new_rank = (index as i64) * step;
+        TaskRepo::update(
+            &state.conn,
+            task_id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(new_rank),
+            None,
+            None,
+            None,
+            None,
+        )
+        .await
+        .map_err(ApiError::from)?;
+    }
+    Ok(())
+}

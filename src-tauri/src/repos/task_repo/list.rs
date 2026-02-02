@@ -31,9 +31,11 @@ pub async fn list(
         query = query.filter(tasks::Column::ProjectId.eq(pid));
     }
 
-    // Default sorting: rank DESC, created_at DESC
+    // Sorting: priority ASC → rank ASC → deadline_at ASC NULLS LAST → created_at DESC
     query = query
-        .order_by_desc(tasks::Column::Rank)
+        .order_by_asc(tasks::Column::Priority)
+        .order_by_asc(tasks::Column::Rank)
+        .order_by_asc(tasks::Column::DeadlineAt)
         .order_by_desc(tasks::Column::CreatedAt);
 
     let models = query.all(conn).await.map_err(AppError::from)?;

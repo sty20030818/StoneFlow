@@ -115,3 +115,23 @@ export async function deleteTasks(ids: string[]): Promise<number> {
 		args: { ids },
 	})
 }
+
+/**
+ * 更新单个任务的 rank
+ */
+export async function reorderTask(taskId: string, newRank: number): Promise<void> {
+	await tauriInvoke<void>('reorder_task', {
+		args: { taskId, newRank },
+	})
+}
+
+/**
+ * 批量重排任务 rank（用于阈值触发的无感重排）
+ * @param taskIds 按顺序排列的任务 ID 列表
+ * @param step 步长，默认 1024
+ */
+export async function rebalanceRanks(taskIds: string[], step = 1024): Promise<void> {
+	await tauriInvoke<void>('rebalance_ranks', {
+		args: { taskIds, step },
+	})
+}

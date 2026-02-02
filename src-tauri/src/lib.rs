@@ -6,7 +6,10 @@ mod types;
 use commands::hello::hello;
 use commands::projects::{create_project, get_default_project, list_projects};
 use commands::spaces::list_spaces;
-use commands::tasks::{complete_task, create_task, delete_tasks, list_tasks, update_task};
+use commands::tasks::{
+    complete_task, create_task, delete_tasks, list_tasks, rebalance_ranks, reorder_task,
+    update_task,
+};
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -35,7 +38,9 @@ pub fn run() {
             create_task,
             update_task,
             complete_task,
-            delete_tasks
+            delete_tasks,
+            reorder_task,
+            rebalance_ranks
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

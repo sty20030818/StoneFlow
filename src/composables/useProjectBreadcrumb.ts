@@ -3,7 +3,7 @@ import { computed, type ComputedRef } from 'vue'
 import type { ProjectDto } from '@/services/api/projects'
 
 /**
- * 从 project 列表按 parent_id 回溯，得到 root → … → current 的层级路径
+ * 从 project 列表按 parentId 回溯，得到 root → … → current 的层级路径
  */
 function projectPath(list: ProjectDto[], targetId: string): ProjectDto[] {
 	const byId = new Map(list.map((p) => [p.id, p]))

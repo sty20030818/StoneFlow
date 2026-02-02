@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="relative rounded-2xl border bg-white p-4 transition-all duration-300 ease-out hover:-translate-y-px hover:shadow-md group flex gap-4 items-start cursor-default"
+		class="relative rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity] duration-300 ease-out hover:-translate-y-px hover:shadow-md group flex gap-4 items-start cursor-default"
 		:class="[
 			cardBorderClass,
 			isEditMode && selected ? 'bg-red-50/50' : 'bg-white',

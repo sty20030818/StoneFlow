@@ -8,7 +8,7 @@ const host = process.env.TAURI_DEV_HOST
 
 // 参考：https://vite.dev/config/
 export default defineConfig(async () => ({
-	plugins: [vue(), ui(), tailwindcss()],
+	plugins: [vue(), ui({ router: false }), tailwindcss()],
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url)),

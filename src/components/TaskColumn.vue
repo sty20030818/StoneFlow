@@ -60,25 +60,21 @@
 					v-if="tasks.length === 0"
 					:text="emptyText" />
 
-				<TransitionGroup
+				<DraggableTaskList
 					v-else
-					name="task-list"
-					tag="div"
-					class="space-y-3">
-					<TaskCard
-						v-for="t in tasks"
-						:key="t.id"
-						:task="t"
-						:is-edit-mode="isEditMode"
-						:selected="isTaskSelected(t.id)"
-						:show-complete-button="showCompleteButton"
-						:show-time="showTime"
-						:show-space-label="showSpaceLabel"
-						@click="$emit('task-click', t)"
-						@complete="$emit('complete', t.id)"
-						@toggle-select="$emit('toggle-task-select', t.id)"
-						@request-delete="$emit('request-task-delete', t.id)" />
-				</TransitionGroup>
+					:tasks="tasks"
+					:priority="priority ?? 'all'"
+					:disabled="isEditMode"
+					:is-edit-mode="isEditMode"
+					:selected-task-id-set="selectedTaskIdSet"
+					:show-complete-button="showCompleteButton"
+					:show-time="showTime"
+					:show-space-label="showSpaceLabel"
+					@task-click="$emit('task-click', $event)"
+					@complete="$emit('complete', $event)"
+					@toggle-task-select="$emit('toggle-task-select', $event)"
+					@request-task-delete="$emit('request-task-delete', $event)"
+					@reorder="$emit('reorder', $event)" />
 			</div>
 		</template>
 	</section>
@@ -87,9 +83,9 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
+	import DraggableTaskList from '@/components/DraggableTaskList.vue'
 	import EmptyState from '@/components/EmptyState.vue'
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
-	import TaskCard from '@/components/TaskCard'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
 	import { TASK_DONE_REASON_LABELS, TASK_STATUS_LABELS } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
@@ -105,6 +101,8 @@
 		tasks: TaskDto[]
 		loading: boolean
 		emptyText: string
+		/** 优先级标识，用于限制拖拽范围。如果不传则允许组内任意拖拽 */
+		priority?: string
 		showCompleteButton?: boolean
 		showTime?: boolean
 		showSpaceLabel?: boolean
@@ -122,6 +120,7 @@
 		'toggle-task-select': [taskId: string]
 		'toggle-column-select': []
 		'request-task-delete': [taskId: string]
+		reorder: [tasks: TaskDto[]]
 	}>()
 
 	const selectedCount = computed(() => {
@@ -137,10 +136,6 @@
 		if (indeterminate.value) return 'border-error/70 bg-error/10'
 		return 'border-default/60 bg-transparent hover:border-default'
 	})
-
-	function isTaskSelected(taskId: string) {
-		return props.selectedTaskIdSet?.has(taskId) ?? false
-	}
 </script>
 
 <style scoped>

@@ -247,14 +247,14 @@
 
 	const projectPillClass = (index: number) => levelPalette[index % levelPalette.length]
 
-	/** 从 project 列表按 parent_id 回溯，得到 root → … → current 的层级路径 */
+	/** 从 project 列表按 parentId 回溯，得到 root → … → current 的层级路径 */
 	function projectPath(list: ProjectDto[], targetId: string): ProjectDto[] {
 		const byId = new Map(list.map((p) => [p.id, p]))
 		const out: ProjectDto[] = []
 		let curr: ProjectDto | undefined = byId.get(targetId)
 		while (curr) {
 			out.unshift(curr)
-			curr = curr.parent_id ? byId.get(curr.parent_id) : undefined
+			curr = curr.parentId ? byId.get(curr.parentId) : undefined
 		}
 		return out
 	}

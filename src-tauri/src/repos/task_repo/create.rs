@@ -1,4 +1,6 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+};
 use uuid::Uuid;
 
 use crate::db::entities::{
@@ -23,7 +25,20 @@ pub async fn create(
     let id = Uuid::new_v4().to_string();
     let _auto_start = auto_start;
     let status = TaskStatus::Todo;
-    let rank = 1024;
+    let priority = Priority::P1;
+
+    // Find min rank to put new task at the top
+    let min_rank_task = tasks::Entity::find()
+        .filter(tasks::Column::SpaceId.eq(space_id))
+        .filter(tasks::Column::Status.eq(status.clone()))
+        .filter(tasks::Column::Priority.eq(priority.clone()))
+        .order_by_asc(tasks::Column::Rank)
+        .one(conn)
+        .await
+        .map_err(AppError::from)?;
+
+    let rank = min_rank_task.map(|t| t.rank - 1024).unwrap_or(1024);
+
     let updated_at = now;
     let create_by = "stonefish";
 
@@ -35,7 +50,7 @@ pub async fn create(
         note: Set(None),
         status: Set(status.clone()),
         done_reason: Set(None),
-        priority: Set(Priority::P1),
+        priority: Set(priority),
         rank: Set(rank),
         created_at: Set(now),
         updated_at: Set(updated_at),
