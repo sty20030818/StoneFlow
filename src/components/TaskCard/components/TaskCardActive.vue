@@ -91,16 +91,6 @@
 								{{ formatAbsoluteTime(task.createdAt) }}
 							</span>
 						</div>
-
-						<!-- <button
-						v-if="isEditMode"
-						type="button"
-						class="text-red-500 hover:bg-red-50 p-1 rounded-full transition-colors"
-						@click.stop="onRequestDelete">
-						<UIcon
-							name="i-lucide-trash-2"
-							class="size-4" />
-					</button> -->
 					</div>
 				</div>
 

@@ -6,6 +6,7 @@ mod types;
 use commands::hello::hello;
 use commands::projects::{create_project, get_default_project, list_projects};
 use commands::spaces::list_spaces;
+use commands::sync::{pull_from_neon, push_to_neon};
 use commands::tasks::{
     complete_task, create_task, delete_tasks, list_tasks, rebalance_ranks, reorder_task,
     update_task,
@@ -40,7 +41,9 @@ pub fn run() {
             complete_task,
             delete_tasks,
             reorder_task,
-            rebalance_ranks
+            rebalance_ranks,
+            pull_from_neon,
+            push_to_neon
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

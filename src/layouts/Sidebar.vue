@@ -148,9 +148,38 @@
 				</section>
 			</div>
 			<!-- User Capsule -->
-			<div class="p-3 pt-3">
+			<div class="px-3 pt-3">
 				<div class="pt-1.5">
 					<UserCard />
+				</div>
+			</div>
+			<!-- Sync Controls -->
+			<div class="px-3 pb-3 pt-2">
+				<div class="grid grid-cols-2 gap-2">
+					<UButton
+						block
+						size="xs"
+						color="neutral"
+						variant="soft"
+						icon="i-lucide-cloud-upload"
+						label="上传"
+						:loading="isPushing"
+						:disabled="isPulling"
+						@click="handlePush" />
+					<UButton
+						block
+						size="xs"
+						color="neutral"
+						variant="soft"
+						icon="i-lucide-cloud-download"
+						label="下载"
+						:loading="isPulling"
+						:disabled="isPushing"
+						@click="handlePull" />
+				</div>
+				<div class="mt-1.5 flex justify-between text-[10px] text-muted">
+					<span>{{ lastPushedText }}</span>
+					<span>{{ lastPulledText }}</span>
 				</div>
 			</div>
 		</div>
@@ -173,6 +202,9 @@
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
+	import { invoke } from '@tauri-apps/api/core'
+	import { formatDistanceToNow } from 'date-fns'
+	import { zhCN } from 'date-fns/locale'
 	const props = defineProps<{
 		space?: string | null
 	}>()
@@ -359,8 +391,65 @@
 		{ immediate: true },
 	)
 
+	// --- Neon Sync Logic ---
+	const isPushing = ref(false)
+	const isPulling = ref(false)
+	const lastPushedAt = ref<number | null>(null)
+	const lastPulledAt = ref<number | null>(null)
+
+	const lastPushedText = computed(() => {
+		if (!lastPushedAt.value) return '未上传'
+		return '↑ ' + formatDistanceToNow(lastPushedAt.value, { addSuffix: true, locale: zhCN })
+	})
+
+	const lastPulledText = computed(() => {
+		if (!lastPulledAt.value) return '未下载'
+		return '↓ ' + formatDistanceToNow(lastPulledAt.value, { addSuffix: true, locale: zhCN })
+	})
+
+	async function handlePush() {
+		if (isPushing.value || isPulling.value) return
+		try {
+			isPushing.value = true
+			const ts = await invoke<number>('push_to_neon')
+			lastPushedAt.value = ts
+			localStorage.setItem('neon_last_pushed_at', String(ts))
+		} catch (error) {
+			console.error('上传失败:', error)
+		} finally {
+			isPushing.value = false
+		}
+	}
+
+	async function handlePull() {
+		if (isPushing.value || isPulling.value) return
+		try {
+			isPulling.value = true
+			const ts = await invoke<number>('pull_from_neon')
+			lastPulledAt.value = ts
+			localStorage.setItem('neon_last_pulled_at', String(ts))
+			loadProjects(true)
+		} catch (error) {
+			console.error('下载失败:', error)
+		} finally {
+			isPulling.value = false
+		}
+	}
+
 	onMounted(() => {
 		projectTreeStore.load()
 		loadProjects()
+
+		// 恢复上次同步时间
+		const savedPush = localStorage.getItem('neon_last_pushed_at')
+		if (savedPush) {
+			const ts = parseInt(savedPush, 10)
+			if (!isNaN(ts)) lastPushedAt.value = ts
+		}
+		const savedPull = localStorage.getItem('neon_last_pulled_at')
+		if (savedPull) {
+			const ts = parseInt(savedPull, 10)
+			if (!isNaN(ts)) lastPulledAt.value = ts
+		}
 	})
 </script>

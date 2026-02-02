@@ -2,7 +2,8 @@ use sea_orm::{DbErr, Schema};
 use sea_orm_migration::prelude::*;
 
 use crate::db::entities::{
-    links, project_links, project_tags, projects, spaces, tags, task_links, task_tags, tasks,
+    app_settings, links, project_links, project_tags, projects, spaces, tags, task_links,
+    task_tags, tasks,
 };
 
 #[derive(DeriveMigrationName)]
@@ -18,6 +19,15 @@ impl MigrationTrait for Migration {
         // Spaces -> Projects -> Tasks
         // Tags, Links 独立
         // 关联表 (Junctions) 最后
+
+        manager
+            .create_table(
+                schema
+                    .create_table_from_entity(app_settings::Entity)
+                    .if_not_exists()
+                    .to_owned(),
+            )
+            .await?;
 
         manager
             .create_table(
@@ -180,6 +190,10 @@ impl MigrationTrait for Migration {
             .await?;
         manager
             .drop_table(Table::drop().table(spaces::Entity).to_owned())
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(app_settings::Entity).to_owned())
             .await?;
 
         Ok(())
