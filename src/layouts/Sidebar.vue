@@ -76,52 +76,13 @@
 						class="text-[12px] text-muted px-2.5 py-1.5 rounded-md bg-elevated/60 border border-dashed border-default/70">
 						当前 Space 暂无项目
 					</div>
-					<UTree
+					<DraggableProjectTree
 						v-else
-						v-model:expanded="expandedKeys"
-						:nested="false"
-						:items="projectsTree"
-						:get-key="(item) => item.id"
-						:on-toggle="preventTreeToggle"
-						:ui="{
-							root: 'space-y-0.5',
-							item: 'p-0',
-							itemWithChildren: 'p-0',
-							link: 'p-0',
-							listWithChildren: 'mt-0',
-						}">
-						<template #item-wrapper="{ item, level, expanded, handleToggle }">
-							<div
-								class="group relative rounded-lg text-[13px] transition-all duration-150"
-								:class="
-									isActiveProject(item.id)
-										? 'bg-elevated text-default'
-										: 'text-muted hover:bg-elevated hover:text-default'
-								">
-								<RouterLink
-									:to="`/space/${spaceValue}?project=${item.id}`"
-									class="flex w-full items-center gap-2.5 py-1.5 pr-8"
-									:style="{ paddingLeft: `${10 + (level - 1) * 12}px` }"
-									@click.stop>
-									<UIcon
-										:name="item.icon"
-										class="size-3.5"
-										:class="item.iconClass" />
-									<span class="truncate">{{ item.label }}</span>
-								</RouterLink>
-								<button
-									v-if="item.children?.length"
-									type="button"
-									class="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:text-default"
-									:class="expanded ? 'rotate-90' : ''"
-									@click.stop="handleToggle">
-									<UIcon
-										name="i-lucide-chevron-right"
-										class="size-3.5" />
-								</button>
-							</div>
-						</template>
-					</UTree>
+						:projects="projectsTree"
+						:space-id="spaceValue"
+						:active-project-id="activeProjectId"
+						:expanded-keys="expandedKeys"
+						@update:expanded-keys="expandedKeys = $event" />
 				</div>
 			</section>
 		</div>
@@ -193,6 +154,7 @@
 	import { inject } from 'vue'
 
 	import BrandLogo from '@/components/BrandLogo.vue'
+	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
 	import UserCard from '@/components/UserCard.vue'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
@@ -258,16 +220,11 @@
 	// 通过 inject 获取全局的创建项目弹窗控制函数
 	const openCreateProjectModal = inject<(spaceId?: string) => void>('openCreateProjectModal')
 
-	type ProjectTreeItem = {
-		id: string
-		label: string
-		icon: string
-		iconClass: string
-		children?: ProjectTreeItem[]
-	}
-
 	const currentProjects = computed(() => projectsStore.getProjectsOfSpace(spaceValue.value))
 
+	/**
+	 * 构建项目树（用于嵌套拖拽）
+	 */
 	const projectsTree = computed<ProjectTreeItem[]>(() => {
 		const list = currentProjects.value
 		if (!list.length) return []
@@ -277,6 +234,7 @@
 		// 过滤掉默认项目（ID 以 _default 结尾）
 		const filtered = list.filter((p) => !p.id.endsWith('_default'))
 
+		// 按 parentId 分组
 		const byParent = new Map<string | null, typeof filtered>()
 		for (const p of filtered) {
 			const key = p.parentId
@@ -285,21 +243,30 @@
 			byParent.set(key, bucket)
 		}
 
-		function build(parentId: string | null, depth: number): ProjectTreeItem[] {
+		// 递归构建树
+		function buildTree(parentId: string | null, depth: number): ProjectTreeItem[] {
 			const children = byParent.get(parentId) ?? []
+			// 按 rank ASC -> createdAt DESC 排序
+			children.sort((a, b) => {
+				if (a.rank !== b.rank) return a.rank - b.rank
+				return b.createdAt - a.createdAt
+			})
 			return children.map((p) => {
-				const next = build(p.id, depth + 1)
+				const childItems = buildTree(p.id, depth + 1)
 				return {
 					id: p.id,
+					parentId: p.parentId,
 					label: p.title,
 					icon: PROJECT_ICON,
 					iconClass: levelColors[depth % levelColors.length],
-					children: next.length ? next : undefined,
+					rank: p.rank,
+					createdAt: p.createdAt,
+					children: childItems.length > 0 ? childItems : undefined,
 				}
 			})
 		}
 
-		return build(null, 0)
+		return buildTree(null, 0)
 	})
 
 	const projectTreeStore = useProjectTreeStore()
@@ -312,12 +279,6 @@
 	})
 
 	const activeProjectId = computed(() => (typeof route.query.project === 'string' ? route.query.project : null))
-
-	function preventTreeToggle(event: CustomEvent<{ originalEvent?: Event }>) {
-		if (event.detail?.originalEvent?.type === 'click') {
-			event.preventDefault()
-		}
-	}
 
 	function isActiveProject(projectId: string) {
 		return currentPath.value === `/space/${spaceValue.value}` && activeProjectId.value === projectId

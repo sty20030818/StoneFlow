@@ -3,7 +3,7 @@
 	<div class="relative group">
 		<!-- 主卡片容器 -->
 		<div
-			class="relative rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out hover:-translate-y-px hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden"
+			class="relative rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out hover:-translate-y-px hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
 			:class="[
 				cardBorderClass,
 				isEditMode && selected ? 'bg-red-50/50' : 'bg-white',
@@ -22,7 +22,7 @@
 				<button
 					v-if="isEditMode"
 					type="button"
-					class="size-6 rounded-full border-2 border-slate-300 hover:border-red-500 hover:bg-red-50 transition-all flex items-center justify-center cursor-pointer"
+					class="no-drag size-6 rounded-full border-2 border-slate-300 hover:border-red-500 hover:bg-red-50 transition-all flex items-center justify-center cursor-pointer"
 					:class="selectRingClass"
 					@click.stop="onToggleSelect">
 					<UIcon
@@ -35,16 +35,7 @@
 				<button
 					v-else
 					@click.stop="onComplete"
-					class="size-6 rounded-full border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"></button>
-
-				<!-- 拖拽手柄 (仅非编辑模式) -->
-				<div
-					v-if="!isEditMode"
-					class="drag-handle opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
-					<UIcon
-						name="i-lucide-grip-horizontal"
-						class="size-5 text-slate-400" />
-				</div>
+					class="no-drag size-6 rounded-full border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"></button>
 			</div>
 
 			<!-- 内容区域 -->

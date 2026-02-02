@@ -71,3 +71,27 @@ export async function getDefaultProject(spaceId: string): Promise<ProjectDto> {
 		spaceId,
 	})
 }
+
+/**
+ * 更新项目的 rank（和可选的 parentId）用于拖拽排序
+ */
+export async function reorderProject(projectId: string, newRank: number, newParentId?: string | null): Promise<void> {
+	await tauriInvoke<void>('reorder_project', {
+		args: {
+			projectId,
+			newRank,
+			newParentId: newParentId !== undefined ? newParentId : undefined,
+		},
+	})
+}
+
+/**
+ * 批量重排项目 rank（用于阈值触发的无感重排）
+ * @param projectIds 按顺序排列的项目 ID 列表
+ * @param step 步长，默认 1024
+ */
+export async function rebalanceProjectRanks(projectIds: string[], step = 1024): Promise<void> {
+	await tauriInvoke<void>('rebalance_project_ranks', {
+		args: { projectIds, step },
+	})
+}

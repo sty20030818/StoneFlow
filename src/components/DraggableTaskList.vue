@@ -5,12 +5,13 @@
 		:animation="150"
 		:disabled="disabled"
 		:force-fallback="true"
-		handle=".drag-handle"
 		chosen-class="cursor-grabbing"
 		fallback-class="cursor-grabbing"
 		class="flex flex-col gap-3 min-h-[40px]"
 		ghost-class="opacity-50"
 		drag-class="shadow-lg"
+		filter=".no-drag"
+		:prevent-on-filter="true"
 		@end="onDragEnd">
 		<TaskCard
 			v-for="task in localTasks"

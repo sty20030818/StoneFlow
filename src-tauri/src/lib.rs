@@ -4,7 +4,9 @@ mod repos;
 mod types;
 
 use commands::hello::hello;
-use commands::projects::{create_project, get_default_project, list_projects};
+use commands::projects::{
+    create_project, get_default_project, list_projects, rebalance_project_ranks, reorder_project,
+};
 use commands::spaces::list_spaces;
 use commands::sync::{pull_from_neon, push_to_neon};
 use commands::tasks::{
@@ -42,6 +44,8 @@ pub fn run() {
             delete_tasks,
             reorder_task,
             rebalance_ranks,
+            reorder_project,
+            rebalance_project_ranks,
             pull_from_neon,
             push_to_neon
         ])

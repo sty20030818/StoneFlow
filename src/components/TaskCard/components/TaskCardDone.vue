@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="relative flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-[color,background-color,border-color,box-shadow,opacity] duration-300 opacity-60 hover:opacity-100 cursor-default items-center group"
+		class="relative flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-[color,background-color,border-color,box-shadow,opacity] duration-300 opacity-60 hover:opacity-100 cursor-default items-center group select-none"
 		:class="[
 			isEditMode && selected ? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm' : '',
 			isEditMode && !selected ? 'opacity-40' : '',
@@ -17,7 +17,7 @@
 			<button
 				v-if="isEditMode"
 				type="button"
-				class="size-5 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
+				class="no-drag size-5 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
 				:class="selectRingClass"
 				@click.stop="onToggleSelect">
 				<UIcon
@@ -35,14 +35,6 @@
 					:name="doneReasonStyle.icon"
 					class="size-3" />
 			</div>
-		</div>
-
-		<!-- 拖拽手柄 -->
-		<div
-			class="drag-handle shrink-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
-			<UIcon
-				name="i-lucide-grip-vertical"
-				class="size-4 text-slate-300" />
 		</div>
 
 		<!-- 内容区域 (单行) -->

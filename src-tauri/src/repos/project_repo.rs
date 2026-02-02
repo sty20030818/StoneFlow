@@ -13,14 +13,15 @@ pub mod helpers;
 pub struct ProjectRepo;
 
 impl ProjectRepo {
-    /// 列出某个 Space 下的所有 Project，按 path 排序（用于构建树 & Project Tree）。
+    /// 列出某个 Space 下的所有 Project，按 rank ASC → created_at DESC 排序。
     pub async fn list_by_space(
         conn: &DatabaseConnection,
         space_id: &str,
     ) -> Result<Vec<ProjectDto>, AppError> {
         let models = projects::Entity::find()
             .filter(projects::Column::SpaceId.eq(space_id))
-            .order_by_asc(projects::Column::Path)
+            .order_by_asc(projects::Column::Rank)
+            .order_by_desc(projects::Column::CreatedAt)
             .all(conn)
             .await
             .map_err(AppError::from)?;
@@ -99,12 +100,65 @@ impl ProjectRepo {
             archived_at: Set(None),
             deleted_at: Set(None),
             create_by: Set("stonefish".to_string()),
-            rank: Set(1024),
+            rank: Set(0),
         };
 
         let res = active_model.insert(conn).await.map_err(AppError::from)?;
 
         Ok(model_to_dto(res))
+    }
+
+    /// 更新项目的 rank 和可选的 parentId（用于拖拽排序）。
+    pub async fn reorder(
+        conn: &DatabaseConnection,
+        project_id: &str,
+        new_rank: i64,
+        new_parent_id: Option<Option<&str>>,
+    ) -> Result<(), AppError> {
+        let model = projects::Entity::find_by_id(project_id)
+            .one(conn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        let now = now_ms();
+
+        let mut active_model: projects::ActiveModel = model.into();
+        active_model.rank = Set(new_rank);
+        active_model.updated_at = Set(now);
+
+        // 如果需要更新 parentId
+        if let Some(parent_opt) = new_parent_id {
+            active_model.parent_id = Set(parent_opt.map(|s| s.to_string()));
+            // TODO: 更新 path（需要重新计算）
+        }
+
+        active_model.update(conn).await.map_err(AppError::from)?;
+        Ok(())
+    }
+
+    /// 批量重排项目 rank。
+    pub async fn rebalance_ranks(
+        conn: &DatabaseConnection,
+        project_ids: &[String],
+        step: i64,
+    ) -> Result<(), AppError> {
+        let now = now_ms();
+        for (index, project_id) in project_ids.iter().enumerate() {
+            let new_rank = (index as i64) * step;
+            let model = projects::Entity::find_by_id(project_id)
+                .one(conn)
+                .await
+                .map_err(AppError::from)?;
+
+            if let Some(m) = model {
+                let mut active_model: projects::ActiveModel = m.into();
+                active_model.rank = Set(new_rank);
+                active_model.updated_at = Set(now);
+                active_model.update(conn).await.map_err(AppError::from)?;
+            }
+        }
+        Ok(())
     }
 }
 
