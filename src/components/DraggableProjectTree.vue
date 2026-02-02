@@ -4,8 +4,7 @@
 		:animation="150"
 		:disabled="disabled"
 		:force-fallback="true"
-		chosen-class="cursor-grabbing"
-		fallback-class="cursor-grabbing"
+		:fallback-tolerance="5"
 		class="space-y-0.5"
 		ghost-class="opacity-50"
 		drag-class="shadow-lg"
@@ -15,7 +14,8 @@
 		@end="onDragEnd">
 		<div
 			v-for="item in localProjects"
-			:key="item.id">
+			:key="item.id"
+			class="rounded-lg">
 			<div
 				class="group relative rounded-lg text-[13px] transition-all duration-150 select-none"
 				:class="
@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 	import type { SortableEvent } from 'sortablejs'
-	import { computed, ref, watch } from 'vue'
+	import { computed, ref, toRefs, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
 	import { rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
@@ -96,6 +96,9 @@
 			parentId: null,
 		},
 	)
+
+	// 使用 toRefs 确保解构后的属性在模板中保持响应式
+	const { activeProjectId, spaceId, expandedKeys } = toRefs(props)
 
 	// 基于 parentId 生成唯一 group 名称，限制只能同级拖拽
 	const groupName = computed(() => `projects-${props.parentId ?? 'root'}`)

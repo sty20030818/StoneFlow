@@ -1,14 +1,14 @@
 <template>
 	<!-- 外层容器:相对定位,用于删除按钮的绝对定位基准 -->
-	<div class="relative group">
+	<div class="relative group rounded-2xl flex items-center">
 		<!-- 主卡片容器 -->
 		<div
-			class="relative rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out hover:-translate-y-px hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
+			class="relative w-full rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform,margin] duration-300 ease-out hover:-translate-y-px hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
 			:class="[
 				cardBorderClass,
 				isEditMode && selected ? 'bg-red-50/50' : 'bg-white',
 				isEditMode && !selected ? 'opacity-80' : '',
-				isEditMode ? 'group-hover:pr-16' : '',
+				isEditMode ? 'group-hover:mr-14' : '',
 			]"
 			@click="onCardClick">
 			<!-- 编辑模式：选中遮罩 -->
@@ -22,8 +22,8 @@
 				<button
 					v-if="isEditMode"
 					type="button"
-					class="no-drag size-6 rounded-full border-2 border-slate-300 hover:border-red-500 hover:bg-red-50 transition-all flex items-center justify-center cursor-pointer"
-					:class="selectRingClass"
+					class="no-drag size-6 rounded-full border-2 hover:border-red-500 hover:bg-red-50 transition-all flex items-center justify-center cursor-pointer"
+					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50' : 'border-slate-300']"
 					@click.stop="onToggleSelect">
 					<UIcon
 						v-if="selected"
@@ -114,18 +114,18 @@
 					</div>
 				</div>
 			</div>
-
-			<!-- 右侧删除按钮 (绝对定位,编辑模式) -->
-			<button
-				v-if="isEditMode"
-				type="button"
-				class="absolute right-2 top-1/2 -translate-y-1/2 size-12 rounded-full bg-red-500 text-white flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 shadow-lg hover:bg-red-600 hover:scale-110 z-20"
-				@click.stop="onRequestDelete">
-				<UIcon
-					name="i-lucide-trash-2"
-					class="size-5" />
-			</button>
 		</div>
+
+		<!-- 右侧删除按钮 (独立于卡片，绝对定位在右侧) -->
+		<button
+			v-if="isEditMode"
+			type="button"
+			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md hover:scale-105 z-0"
+			@click.stop="onRequestDelete">
+			<UIcon
+				name="i-lucide-trash-2"
+				class="size-5" />
+		</button>
 	</div>
 </template>
 

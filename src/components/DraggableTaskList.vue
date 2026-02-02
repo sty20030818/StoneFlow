@@ -5,6 +5,7 @@
 		:animation="150"
 		:disabled="disabled"
 		:force-fallback="true"
+		:fallback-tolerance="5"
 		chosen-class="cursor-grabbing"
 		fallback-class="cursor-grabbing"
 		class="flex flex-col gap-3 min-h-[40px]"
