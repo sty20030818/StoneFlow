@@ -51,25 +51,27 @@
 		<template v-else>
 			<div class="space-y-3">
 				<InlineTaskCreator
-					v-if="showInlineCreator && !isEditMode"
+					v-if="showInlineCreator"
 					:space-id="spaceId"
 					:project-id="projectId"
-					:disabled="!spaceId" />
+					:disabled="!spaceId || isEditMode" />
 
 				<EmptyState
 					v-if="tasks.length === 0"
 					:text="emptyText" />
 
 				<DraggableTaskList
-					v-else
-					:tasks="tasks"
-					:priority="priority ?? 'all'"
+					v-for="p in priorityList"
+					:key="p"
+					:tasks="tasksByPriority[p] || []"
+					:priority="p"
 					:disabled="isEditMode"
 					:is-edit-mode="isEditMode"
 					:selected-task-id-set="selectedTaskIdSet"
 					:show-complete-button="showCompleteButton"
 					:show-time="showTime"
 					:show-space-label="showSpaceLabel"
+					class="empty:hidden"
 					@task-click="$emit('task-click', $event)"
 					@complete="$emit('complete', $event)"
 					@toggle-task-select="$emit('toggle-task-select', $event)"
@@ -135,6 +137,29 @@
 		if (allSelected.value) return 'border-error/80 bg-error/10'
 		if (indeterminate.value) return 'border-error/70 bg-error/10'
 		return 'border-default/60 bg-transparent hover:border-default'
+	})
+
+	const priorityList = computed(() => {
+		if (props.priority && props.priority !== 'all') {
+			return [props.priority]
+		}
+		return ['P0', 'P1', 'P2', 'P3']
+	})
+
+	const tasksByPriority = computed(() => {
+		const groups: Record<string, TaskDto[]> = { P0: [], P1: [], P2: [], P3: [] }
+		props.tasks.forEach((task) => {
+			// 如果任务的 priority 不在预期范围内，默认归类到 P3 或保持原样
+			// 这里假设后端返回的 priority 总是合法的 'P0'-'P3'
+			const p = task.priority || 'P3'
+			if (Array.isArray(groups[p])) {
+				groups[p].push(task)
+			} else {
+				// Fallback: 如果是非常规 priority，放 P3
+				groups['P3'].push(task)
+			}
+		})
+		return groups
 	})
 </script>
 
