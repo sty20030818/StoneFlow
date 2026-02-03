@@ -27,7 +27,7 @@
 							class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 							:class="projectPillClass(index)">
 							<UIcon
-								:name="projectIcon"
+								:name="item.icon ?? projectIcon"
 								class="size-3.5 shrink-0 text-white" />
 							<span class="truncate max-w-[160px]">{{ item.label }}</span>
 						</RouterLink>
@@ -36,14 +36,28 @@
 							class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
 							:class="projectPillClass(index)">
 							<UIcon
-								:name="projectIcon"
+								:name="item.icon ?? projectIcon"
 								class="size-3.5 shrink-0 text-white" />
 							<span class="truncate max-w-[160px]">{{ item.label }}</span>
 						</span>
 						<span
 							v-else
-							class="text-base font-bold text-default truncate max-w-[240px]">
-							{{ item.label }}
+							class="text-base font-bold text-default truncate max-w-[400px] flex items-baseline gap-2">
+							<span
+								v-if="item.icon"
+								class="inline-flex items-center gap-2">
+								<UIcon
+									:name="item.icon"
+									class="size-4 text-muted" />
+								<span>{{ item.label }}</span>
+							</span>
+							<span v-else>{{ item.label }}</span>
+
+							<span
+								v-if="item.description"
+								class="text-xs font-normal text-muted truncate max-w-[300px]">
+								{{ item.description }}
+							</span>
 						</span>
 					</template>
 				</template>
@@ -51,6 +65,11 @@
 
 			<!-- 右侧：搜索框胶囊 + 操作按钮 -->
 			<div class="flex items-center gap-2 shrink-0">
+				<!-- 页面操作传送门（例如：视图切换器） -->
+				<div
+					id="header-actions-portal"
+					class="flex items-center gap-2"></div>
+
 				<!-- 搜索框（胶囊样式） -->
 				<div class="relative shrink-0">
 					<UInput
@@ -203,7 +222,9 @@
 	})
 
 	// 从 inject 获取 workspace 页面的 breadcrumbItems
-	const workspaceBreadcrumbItems = inject<ComputedRef<{ label: string; to?: string }[]>>(
+	const workspaceBreadcrumbItems = inject<
+		ComputedRef<{ label: string; to?: string; icon?: string; description?: string }[]>
+	>(
 		'workspaceBreadcrumbItems',
 		computed(() => []),
 	)
@@ -221,7 +242,7 @@
 		// 如果没有传入，根据路由自动生成（只包含 project，不包含 space）
 		if (route.path.startsWith('/space/') || route.path === '/all-tasks') {
 			const spaceId = (route.params.spaceId as string) || currentSpaceId.value
-			const base: { label: string; to?: string }[] = []
+			const base: { label: string; to?: string; icon?: string; description?: string }[] = []
 			const pid = route.query.project
 			if (typeof pid === 'string' && spaceId) {
 				const list = projectsStore.getProjectsOfSpace(spaceId)

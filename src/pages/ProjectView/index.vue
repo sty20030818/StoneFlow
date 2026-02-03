@@ -54,7 +54,7 @@
 				content: 'z-[121]',
 			}">
 			<template #body>
-				<p class="text-sm text-muted">将删除 {{ deleteCount }} 个任务，此操作不可撤销。</p>
+				<p class="text-sm text-muted">将删除 {{ deleteCount }} 个任务，可在回收站恢复。</p>
 			</template>
 			<template #footer>
 				<div class="flex items-center justify-end gap-2">
@@ -196,7 +196,7 @@
 			refreshSignals.bumpTask()
 			await refresh(true)
 			toast.add({
-				title: '删除成功',
+				title: '已移入回收站',
 				description: `已删除 ${deletedCount} 项任务`,
 				color: 'success',
 			})

@@ -14,6 +14,7 @@ import Vault from '@/pages/assets/Vault/index.vue'
 import Notes from '@/pages/assets/Notes/index.vue'
 import Diary from '@/pages/assets/Diary/index.vue'
 import Toolbox from '@/pages/assets/Toolbox/index.vue'
+import Trash from '@/pages/Trash/index.vue'
 
 // Settings
 import Settings from '@/pages/Settings/index.vue'
@@ -80,6 +81,11 @@ export const routes = [
 		path: '/toolbox',
 		component: Toolbox,
 		meta: { title: 'Toolbox', icon: 'i-lucide-wrench', iconClass: 'text-gray-500', description: '实用工具' },
+	},
+	{
+		path: '/trash',
+		component: Trash,
+		meta: { title: '回收站', icon: 'i-lucide-trash-2', iconClass: 'text-red-500', description: '回收站' },
 	},
 
 	// Settings

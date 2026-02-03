@@ -1,7 +1,7 @@
 <template>
-	<aside class="w-72 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative">
+	<aside class="w-72 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative h-full">
 		<!-- 顶部：Brand + Space Segmented Control -->
-		<div class="px-3 pt-3">
+		<div class="px-3 pt-3 shrink-0">
 			<div class="mb-2">
 				<BrandLogo />
 			</div>
@@ -26,9 +26,8 @@
 			</div>
 		</div>
 
-		<!-- 中间滚动区：Execution Zone + Projects -->
-		<div class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-			<!-- Execution Zone -->
+		<!-- 固定区域：Execution Zone -->
+		<div class="px-3 pt-4 shrink-0">
 			<section>
 				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Execution</div>
 				<nav class="flex flex-col gap-0.5">
@@ -53,23 +52,39 @@
 							:class="defaultProjectIconClass" />
 						<span class="truncate">{{ defaultProject.title }}</span>
 					</RouterLink>
+					<!-- Trash 入口 -->
+					<RouterLink
+						to="/trash"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						:class="currentPath === '/trash' ? 'bg-elevated text-default' : ''">
+						<UIcon
+							name="i-lucide-trash-2"
+							class="text-red-500" />
+						<span>Trash</span>
+					</RouterLink>
 				</nav>
 			</section>
+		</div>
 
-			<!-- Project Tree -->
+		<!-- 固定区域：Projects Header -->
+		<div class="px-3 pt-4 shrink-0 pb-1.5">
+			<div class="flex items-center justify-between px-1.5">
+				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">Projects</div>
+				<UButton
+					color="neutral"
+					variant="ghost"
+					icon="i-lucide-plus"
+					size="xs"
+					:ui="{
+						rounded: 'rounded-lg',
+					}"
+					@click="handleOpenCreateProjectModal" />
+			</div>
+		</div>
+
+		<!-- 滚动区域：Project Tree -->
+		<div class="flex-1 overflow-y-auto px-3 pb-3 min-h-0">
 			<section>
-				<div class="flex items-center justify-between px-1.5 mb-1.5">
-					<div class="text-[11px] font-medium text-muted uppercase tracking-wide">Projects</div>
-					<UButton
-						color="neutral"
-						variant="ghost"
-						icon="i-lucide-plus"
-						size="xs"
-						:ui="{
-							rounded: 'rounded-lg',
-						}"
-						@click="handleOpenCreateProjectModal" />
-				</div>
 				<div class="space-y-0.5">
 					<div
 						v-if="projectsTree.length === 0"
@@ -379,7 +394,7 @@
 		{ immediate: true },
 	)
 
-	// --- Neon Sync Logic ---
+	// --- Neon 同步逻辑 ---
 	const isPushing = ref(false)
 	const isPulling = ref(false)
 	const lastPushedAt = ref<number | null>(null)

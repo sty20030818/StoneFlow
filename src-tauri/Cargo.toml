@@ -2,7 +2,7 @@
 name = "stoneflow"
 version = "0.1.0"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["stonefish"]
 edition = "2021"
 
 # 更多字段与写法参考：https://doc.rust-lang.org/cargo/reference/manifest.html

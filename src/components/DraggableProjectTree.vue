@@ -9,7 +9,7 @@
 		ghost-class="opacity-50"
 		drag-class="shadow-lg"
 		:group="groupName"
-		filter=".expand-toggle"
+		filter=".expand-toggle, .project-menu"
 		:prevent-on-filter="true"
 		@end="onDragEnd">
 		<div
@@ -20,7 +20,8 @@
 				class="group relative rounded-lg text-[13px] transition-all duration-150 select-none"
 				:class="
 					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
-				">
+				"
+				@contextmenu.prevent="openContextMenu(item)">
 				<RouterLink
 					:to="`/space/${spaceId}?project=${item.id}`"
 					class="flex w-full items-center gap-2 py-1.5 pr-8"
@@ -32,6 +33,30 @@
 						:class="item.iconClass" />
 					<span class="truncate flex-1">{{ item.label }}</span>
 				</RouterLink>
+				<UPopover
+					:mode="'click'"
+					:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
+					:ui="{ content: 'z-[120]' }">
+					<button
+						type="button"
+						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default opacity-0 group-hover:opacity-100 outline-none focus:outline-none"
+						:class="item.children && item.children.length > 0 ? 'right-7' : 'right-1'"
+						@click.stop>
+						<UIcon
+							name="i-lucide-more-horizontal"
+							class="size-3.5" />
+					</button>
+					<template #content>
+						<div class="p-1 min-w-[140px]">
+							<button
+								type="button"
+								class="w-full px-3 py-2 rounded-lg text-left text-sm text-error hover:bg-elevated transition-colors outline-none focus:outline-none"
+								@click="openDeleteConfirm(item)">
+								删除
+							</button>
+						</div>
+					</template>
+				</UPopover>
 				<button
 					v-if="item.children && item.children.length > 0"
 					type="button"
@@ -59,6 +84,38 @@
 			</div>
 		</div>
 	</VueDraggable>
+
+	<UModal
+		v-model:open="confirmDeleteOpen"
+		title="确认删除"
+		:ui="{
+			width: 'sm:max-w-lg',
+			overlay: 'z-[120]',
+			content: 'z-[121]',
+		}">
+		<template #body>
+			<p class="text-sm text-muted">将删除项目“{{ deleteTarget?.label }}”，可在回收站恢复。</p>
+		</template>
+		<template #footer>
+			<div class="flex items-center justify-end gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					size="sm"
+					@click="closeDeleteConfirm">
+					取消
+				</UButton>
+				<UButton
+					color="error"
+					size="sm"
+					:loading="deleting"
+					:disabled="!deleteTarget"
+					@click="confirmDelete">
+					确认删除
+				</UButton>
+			</div>
+		</template>
+	</UModal>
 </template>
 
 <script setup lang="ts">
@@ -66,8 +123,10 @@
 	import { computed, ref, toRefs, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
-	import { rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
+	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { calculateInsertRank } from '@/utils/rank'
+	import { Menu } from '@tauri-apps/api/menu'
 
 	export type ProjectTreeItem = {
 		id: string
@@ -108,8 +167,14 @@
 		reorder: [projects: ProjectTreeItem[]]
 	}>()
 
+	const toast = useToast()
+	const refreshSignals = useRefreshSignalsStore()
+
 	// 本地项目列表副本，用于拖拽
 	const localProjects = ref<ProjectTreeItem[]>([])
+	const confirmDeleteOpen = ref(false)
+	const deleting = ref(false)
+	const deleteTarget = ref<ProjectTreeItem | null>(null)
 
 	/**
 	 * 同步 props 到本地
@@ -152,6 +217,55 @@
 			? props.expandedKeys.filter((k) => k !== projectId)
 			: [...props.expandedKeys, projectId]
 		emit('update:expandedKeys', newKeys)
+	}
+
+	async function openContextMenu(item: ProjectTreeItem) {
+		// Native Context Menu
+		const menu = await Menu.new({
+			items: [
+				{
+					id: 'delete',
+					text: '删除',
+					action: () => {
+						openDeleteConfirm(item)
+					},
+				},
+			],
+		})
+		await menu.popup()
+	}
+
+	function openDeleteConfirm(item: ProjectTreeItem) {
+		deleteTarget.value = item
+		confirmDeleteOpen.value = true
+	}
+
+	function closeDeleteConfirm() {
+		confirmDeleteOpen.value = false
+		deleteTarget.value = null
+	}
+
+	async function confirmDelete() {
+		if (!deleteTarget.value || deleting.value) return
+		deleting.value = true
+		try {
+			await deleteProject(deleteTarget.value.id)
+			refreshSignals.bumpProject()
+			toast.add({
+				title: '已移入回收站',
+				description: deleteTarget.value.label,
+				color: 'success',
+			})
+			closeDeleteConfirm()
+		} catch (e) {
+			toast.add({
+				title: '删除失败',
+				description: e instanceof Error ? e.message : '未知错误',
+				color: 'error',
+			})
+		} finally {
+			deleting.value = false
+		}
 	}
 
 	async function onDragEnd(evt: SortableEvent) {
