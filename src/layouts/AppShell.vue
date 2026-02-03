@@ -31,10 +31,8 @@
 
 	import TaskInspectorDrawer from '@/components/TaskInspectorDrawer'
 
-	import { SPACE_IDS } from '@/config/space'
 	import { useSettingsStore } from '@/stores/settings'
 	import { useSpacesStore } from '@/stores/spaces'
-	import { useProjectsStore } from '@/stores/projects'
 	import { useViewStateStore } from '@/stores/view-state'
 
 	const toast = useToast()
@@ -42,96 +40,51 @@
 	const router = useRouter()
 	const settingsStore = useSettingsStore()
 	const spacesStore = useSpacesStore()
-	const projectsStore = useProjectsStore()
 	const viewStateStore = useViewStateStore()
 	const restoring = ref(true)
 
-	function normalizeSpaceRoute(spaceId: string, path: string) {
-		if (path === '/all-tasks') return `/space/${spaceId}`
-		return path
-	}
-
-	function normalizeSpaceId(value?: string | null) {
-		if (!value) return null
-		return SPACE_IDS.includes(value as (typeof SPACE_IDS)[number]) ? (value as (typeof SPACE_IDS)[number]) : null
-	}
-
-	function parseSpaceIdFromRoute(path: string) {
-		const match = path.match(/^\/space\/([^/]+)/)
-		return match ? match[1] : null
-	}
-
-	function getRouteSpaceId() {
-		const sid = route.params.spaceId
-		if (typeof sid === 'string') return normalizeSpaceId(sid)
-		if (!settingsStore.loaded) return null
-		return settingsStore.settings.activeSpaceId ?? null
-	}
-
 	async function restoreLastView() {
-		const lastView = viewStateStore.getLastView()
-		if (!lastView) return
+		// 恢复上一次 active space 的 view
+		const currentSpaceId = settingsStore.settings.activeSpaceId
+		const lastView = viewStateStore.getLastView(currentSpaceId)
 
-		const targetSpaceId =
-			normalizeSpaceId(lastView.spaceId ?? parseSpaceIdFromRoute(lastView.route)) ??
-			settingsStore.settings.activeSpaceId
-
-		if (targetSpaceId && targetSpaceId !== settingsStore.settings.activeSpaceId) {
-			await settingsStore.update({ activeSpaceId: targetSpaceId })
-		}
-
-		if (targetSpaceId) {
-			await projectsStore.ensureLoaded(targetSpaceId)
-		}
-
-		let nextPath = lastView.route
-		let nextQuery: Record<string, string> | undefined
-
-		if (lastView.route.startsWith('/space/')) {
-			nextPath = `/space/${targetSpaceId}`
-			if (lastView.projectId && targetSpaceId) {
-				const list = projectsStore.getProjectsOfSpace(targetSpaceId)
-				const exists = list.some((p) => p.id === lastView.projectId)
-				if (exists) {
-					nextQuery = { project: lastView.projectId }
-				}
+		if (lastView && lastView.route) {
+			let nextPath = lastView.route
+			let nextQuery = {}
+			if (lastView.projectId) {
+				nextQuery = { project: lastView.projectId }
 			}
-		}
-
-		const currentProject = typeof route.query.project === 'string' ? route.query.project : undefined
-		const samePath = route.path === nextPath && currentProject === nextQuery?.project
-		if (!samePath) {
 			await router.replace({ path: nextPath, query: nextQuery })
 		}
 	}
 
 	const space = computed({
 		get: () => settingsStore.settings.activeSpaceId,
-		set: async (v) => {
-			// 保存当前 space 的页面状态
-			const currentSpaceId = settingsStore.settings.activeSpaceId
-			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
-				const projectId = typeof route.query.project === 'string' ? route.query.project : null
-				const normalizedRoute = normalizeSpaceRoute(currentSpaceId, route.path)
-				spacesStore.savePageState(currentSpaceId, {
-					route: normalizedRoute,
-					projectId,
-				})
-			}
+		set: async (newSpaceId) => {
+			if (newSpaceId === settingsStore.settings.activeSpaceId) return
 
-			// 更新 activeSpaceId
-			await settingsStore.update({ activeSpaceId: v })
+			// 1. 切换前，保存旧 Space 状态 (Persist old space state)
+			const oldSpaceId = settingsStore.settings.activeSpaceId
+			const currentProjectId = typeof route.query.project === 'string' ? route.query.project : null
 
-			// 恢复目标 space 的页面状态
-			const targetState = spacesStore.getPageState(v)
-			if (targetState.route === '/all-tasks') {
-				await router.push({ path: `/space/${v}` })
-			} else if (targetState.route.startsWith('/space/')) {
-				// 使用新的 spaceId，但保留 projectId（如果存在）
-				const query = targetState.projectId ? { project: targetState.projectId } : {}
-				await router.push({ path: `/space/${v}`, query })
+			// 确保存的是合规的 space 路由
+			await viewStateStore.setLastView(oldSpaceId, {
+				route: route.path,
+				spaceId: oldSpaceId,
+				projectId: currentProjectId,
+			})
+
+			// 2. 更新 Active Space
+			await settingsStore.update({ activeSpaceId: newSpaceId })
+
+			// 3. 恢复新 Space 状态 (Restore new space state)
+			const lastView = viewStateStore.getLastView(newSpaceId)
+			if (lastView) {
+				const query = lastView.projectId ? { project: lastView.projectId } : {}
+				await router.push({ path: lastView.route, query })
 			} else {
-				await router.push(targetState.route)
+				// 默认 fallback
+				await router.push(`/space/${newSpaceId}`)
 			}
 		},
 	})
@@ -143,19 +96,9 @@
 			loading.value = true
 			await settingsStore.load()
 			await spacesStore.load()
-			await viewStateStore.load()
-			await restoreLastView()
+			// viewStateStore 已经在 main.ts 中 load() 过了，这里不需要再 await，或者再次 await 也没问题
 
-			// 初始化时，如果当前路由是 space 页面，保存状态
-			const currentSpaceId = settingsStore.settings.activeSpaceId
-			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
-				const projectId = typeof route.query.project === 'string' ? route.query.project : null
-				const normalizedRoute = normalizeSpaceRoute(currentSpaceId, route.path)
-				spacesStore.savePageState(currentSpaceId, {
-					route: normalizedRoute,
-					projectId,
-				})
-			}
+			await restoreLastView()
 		} catch (e) {
 			toast.add({
 				title: '初始化失败',
@@ -168,28 +111,21 @@
 		}
 	})
 
-	// 监听路由变化，自动保存当前 space 的页面状态
+	// 监听路由变化，实时持久化当前 Space 状态
 	watch(
-		() => [route.path, route.query.project, settingsStore.settings.activeSpaceId],
+		() => [route.path, route.query.project],
 		() => {
 			if (restoring.value || !settingsStore.loaded) return
+
 			const currentSpaceId = settingsStore.settings.activeSpaceId
 			const projectId = typeof route.query.project === 'string' ? route.query.project : null
-			const spaceId = getRouteSpaceId()
-			if (spaceId) {
-				viewStateStore.setLastView({
-					route: route.path,
-					spaceId,
-					projectId,
-				})
-			}
-			if (currentSpaceId && (route.path.startsWith('/space/') || route.path === '/all-tasks')) {
-				const normalizedRoute = normalizeSpaceRoute(currentSpaceId, route.path)
-				spacesStore.savePageState(currentSpaceId, {
-					route: normalizedRoute,
-					projectId,
-				})
-			}
+
+			// 记录任意页面状态
+			viewStateStore.setLastView(currentSpaceId, {
+				route: route.path,
+				spaceId: currentSpaceId,
+				projectId,
+			})
 		},
 	)
 </script>

@@ -89,11 +89,28 @@
 
 		<!-- 底部：Library + User Capsule -->
 		<div class="shrink-0 border-t border-default/80 bg-default/80">
-			<!-- Library：Finish List + Snippets + Vault + Notes + Stats + Logs -->
-			<div class="px-3 pt-3">
-				<section>
-					<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Library</div>
-					<nav class="flex flex-col gap-0.5">
+			<!-- Library：Collapsible -->
+			<div class="px-3">
+				<section
+					class="transition-all duration-200 ease-in-out"
+					:class="isLibraryCollapsed ? 'py-2' : 'pt-3'">
+					<div
+						class="flex items-center justify-between px-1.5 cursor-pointer group select-none"
+						@click="isLibraryCollapsed = !isLibraryCollapsed">
+						<div
+							class="text-[11px] font-medium text-muted uppercase tracking-wide"
+							:class="{ 'opacity-70': isLibraryCollapsed }">
+							Library
+						</div>
+						<UIcon
+							name="i-lucide-chevron-down"
+							class="size-3.5 text-muted transition-transform duration-200 opacity-0 group-hover:opacity-100"
+							:class="isLibraryCollapsed ? '-rotate-90' : ''" />
+					</div>
+
+					<nav
+						v-show="!isLibraryCollapsed"
+						class="flex flex-col gap-0.5 mt-1.5">
 						<RouterLink
 							v-for="item in libraryNav"
 							:key="item.to"
@@ -108,8 +125,11 @@
 					</nav>
 				</section>
 			</div>
+
 			<!-- User Capsule -->
-			<div class="px-3 pt-3">
+			<div
+				class="px-3"
+				:class="isLibraryCollapsed ? 'pt-0' : 'pt-3'">
 				<div class="pt-1.5">
 					<UserCard />
 				</div>
@@ -163,6 +183,7 @@
 	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+	import { useViewStateStore } from '@/stores/view-state'
 
 	import { invoke } from '@tauri-apps/api/core'
 	import { formatDistanceToNow } from 'date-fns'
@@ -182,6 +203,12 @@
 	const projectIcon = PROJECT_ICON
 	const projectLevelColors = PROJECT_LEVEL_TEXT_CLASSES
 	const defaultProjectIconClass = projectLevelColors[0]
+
+	const viewStateStore = useViewStateStore()
+	const isLibraryCollapsed = computed({
+		get: () => viewStateStore.libraryCollapsed,
+		set: (val) => viewStateStore.setLibraryCollapsed(val),
+	})
 
 	const spaces = SPACE_IDS.map((id) => ({
 		id,
@@ -399,6 +426,7 @@
 
 	onMounted(() => {
 		projectTreeStore.load()
+		viewStateStore.load()
 		loadProjects()
 
 		// 恢复上次同步时间

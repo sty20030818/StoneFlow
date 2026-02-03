@@ -18,5 +18,6 @@ export type LastViewState = {
 
 export type UiState = {
 	projectTreeExpanded: Record<string, string[]>
-	lastView?: LastViewState | null
+	lastView: Record<string, LastViewState>
+	libraryCollapsed: boolean
 }
