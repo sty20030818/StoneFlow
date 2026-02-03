@@ -63,6 +63,10 @@ export async function listTasks(args: ListTasksArgs): Promise<TaskDto[]> {
 	return await tauriInvoke<TaskDto[]>('list_tasks', { args })
 }
 
+export async function listDeletedTasks(args: ListTasksArgs): Promise<TaskDto[]> {
+	return await tauriInvoke<TaskDto[]>('list_deleted_tasks', { args })
+}
+
 export type CreateTaskArgs = {
 	spaceId: string
 	title: string
@@ -112,6 +116,13 @@ export async function completeTask(id: string): Promise<void> {
 export async function deleteTasks(ids: string[]): Promise<number> {
 	if (ids.length === 0) return 0
 	return await tauriInvoke<number>('delete_tasks', {
+		args: { ids },
+	})
+}
+
+export async function restoreTasks(ids: string[]): Promise<number> {
+	if (ids.length === 0) return 0
+	return await tauriInvoke<number>('restore_tasks', {
 		args: { ids },
 	})
 }

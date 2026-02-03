@@ -22,6 +22,17 @@ pub async fn list_projects(
         .map_err(ApiError::from)
 }
 
+/// 列出某个 Space 下的已软删除 Project。
+#[tauri::command]
+pub async fn list_deleted_projects(
+    state: State<'_, DbState>,
+    args: ListProjectsArgs,
+) -> Result<Vec<ProjectDto>, ApiError> {
+    ProjectRepo::list_deleted_by_space(&state.conn, &args.space_id)
+        .await
+        .map_err(ApiError::from)
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateProjectArgs {
@@ -103,6 +114,34 @@ pub async fn rebalance_project_ranks(
 ) -> Result<(), ApiError> {
     let step = args.step.unwrap_or(1024);
     ProjectRepo::rebalance_ranks(&state.conn, &args.project_ids, step)
+        .await
+        .map_err(ApiError::from)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteProjectArgs {
+    pub project_id: String,
+}
+
+/// 软删除项目。
+#[tauri::command]
+pub async fn delete_project(
+    state: State<'_, DbState>,
+    args: DeleteProjectArgs,
+) -> Result<(), ApiError> {
+    ProjectRepo::soft_delete(&state.conn, &args.project_id)
+        .await
+        .map_err(ApiError::from)
+}
+
+/// 恢复软删除项目。
+#[tauri::command]
+pub async fn restore_project(
+    state: State<'_, DbState>,
+    args: DeleteProjectArgs,
+) -> Result<(), ApiError> {
+    ProjectRepo::restore(&state.conn, &args.project_id)
         .await
         .map_err(ApiError::from)
 }

@@ -20,7 +20,33 @@ impl ProjectRepo {
     ) -> Result<Vec<ProjectDto>, AppError> {
         let models = projects::Entity::find()
             .filter(projects::Column::SpaceId.eq(space_id))
+            .filter(projects::Column::DeletedAt.is_null())
             .order_by_asc(projects::Column::Rank)
+            .order_by_desc(projects::Column::CreatedAt)
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        let mut dtos = Vec::with_capacity(models.len());
+        for m in models {
+            dtos.push(model_to_dto(m));
+        }
+
+        helpers::attach_links(conn, &mut dtos).await?;
+        helpers::attach_tags(conn, &mut dtos).await?;
+
+        Ok(dtos)
+    }
+
+    /// 列出某个 Space 下的已软删除 Project。
+    pub async fn list_deleted_by_space(
+        conn: &DatabaseConnection,
+        space_id: &str,
+    ) -> Result<Vec<ProjectDto>, AppError> {
+        let models = projects::Entity::find()
+            .filter(projects::Column::SpaceId.eq(space_id))
+            .filter(projects::Column::DeletedAt.is_not_null())
+            .order_by_desc(projects::Column::DeletedAt)
             .order_by_desc(projects::Column::CreatedAt)
             .all(conn)
             .await
@@ -158,6 +184,38 @@ impl ProjectRepo {
                 active_model.update(conn).await.map_err(AppError::from)?;
             }
         }
+        Ok(())
+    }
+
+    /// 软删除项目。
+    pub async fn soft_delete(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
+        let model = projects::Entity::find_by_id(project_id)
+            .one(conn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        let now = now_ms();
+        let mut active_model: projects::ActiveModel = model.into();
+        active_model.deleted_at = Set(Some(now));
+        active_model.updated_at = Set(now);
+        active_model.update(conn).await.map_err(AppError::from)?;
+        Ok(())
+    }
+
+    /// 恢复软删除项目。
+    pub async fn restore(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
+        let model = projects::Entity::find_by_id(project_id)
+            .one(conn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        let now = now_ms();
+        let mut active_model: projects::ActiveModel = model.into();
+        active_model.deleted_at = Set(None);
+        active_model.updated_at = Set(now);
+        active_model.update(conn).await.map_err(AppError::from)?;
         Ok(())
     }
 }

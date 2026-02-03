@@ -33,6 +33,29 @@ pub async fn list_tasks(
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ListDeletedTasksArgs {
+    pub space_id: Option<String>,
+    pub status: Option<String>,
+    pub project_id: Option<String>,
+}
+
+#[tauri::command]
+pub async fn list_deleted_tasks(
+    state: State<'_, DbState>,
+    args: ListDeletedTasksArgs,
+) -> Result<Vec<TaskDto>, ApiError> {
+    TaskRepo::list_deleted(
+        &state.conn,
+        args.space_id.as_deref(),
+        args.status.as_deref(),
+        args.project_id.as_deref(),
+    )
+    .await
+    .map_err(ApiError::from)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateTaskArgs {
     pub space_id: String,
     pub title: String,
@@ -148,6 +171,22 @@ pub async fn delete_tasks(
     args: DeleteTasksArgs,
 ) -> Result<usize, ApiError> {
     TaskRepo::delete_many(&state.conn, &args.ids)
+        .await
+        .map_err(ApiError::from)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreTasksArgs {
+    pub ids: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn restore_tasks(
+    state: State<'_, DbState>,
+    args: RestoreTasksArgs,
+) -> Result<usize, ApiError> {
+    TaskRepo::restore_many(&state.conn, &args.ids)
         .await
         .map_err(ApiError::from)
 }

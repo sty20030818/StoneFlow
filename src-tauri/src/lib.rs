@@ -5,13 +5,14 @@ mod types;
 
 use commands::hello::hello;
 use commands::projects::{
-    create_project, get_default_project, list_projects, rebalance_project_ranks, reorder_project,
+    create_project, delete_project, get_default_project, list_deleted_projects, list_projects,
+    rebalance_project_ranks, reorder_project, restore_project,
 };
 use commands::spaces::list_spaces;
 use commands::sync::{pull_from_neon, push_to_neon};
 use commands::tasks::{
-    complete_task, create_task, delete_tasks, list_tasks, rebalance_ranks, reorder_task,
-    update_task,
+    complete_task, create_task, delete_tasks, list_deleted_tasks, list_tasks, rebalance_ranks,
+    reorder_task, restore_tasks, update_task,
 };
 use tauri::Manager;
 
@@ -24,9 +25,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
             tauri::async_runtime::block_on(async move {
-                let db_state = crate::db::init_db(app.handle())
-                    .await
-                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+                let db_state = crate::db::init_db(app.handle()).await.map_err(Box::new)?;
                 app.manage(db_state);
                 Ok(())
             })
@@ -34,14 +33,19 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             hello,
             list_projects,
+            list_deleted_projects,
             create_project,
             get_default_project,
+            delete_project,
+            restore_project,
             list_spaces,
             list_tasks,
+            list_deleted_tasks,
             create_task,
             update_task,
             complete_task,
             delete_tasks,
+            restore_tasks,
             reorder_task,
             rebalance_ranks,
             reorder_project,

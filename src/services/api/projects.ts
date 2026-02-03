@@ -49,6 +49,15 @@ export async function listProjects(args: ListProjectsArgs): Promise<ProjectDto[]
 	})
 }
 
+export async function listDeletedProjects(args: ListProjectsArgs): Promise<ProjectDto[]> {
+	// Rust: commands/projects.rs -> list_deleted_projects
+	return await tauriInvoke<ProjectDto[]>('list_deleted_projects', {
+		args: {
+			spaceId: args.spaceId,
+		},
+	})
+}
+
 export async function createProject(args: CreateProjectArgs): Promise<ProjectDto> {
 	// Rust: commands/projects.rs -> create_project
 	// Rust 侧已使用 camelCase 解析请求字段
@@ -69,6 +78,24 @@ export async function getDefaultProject(spaceId: string): Promise<ProjectDto> {
 	// 注意：Default Project 应该在数据库初始化时创建，如果不存在则返回错误
 	return await tauriInvoke<ProjectDto>('get_default_project', {
 		spaceId,
+	})
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+	// Rust: commands/projects.rs -> delete_project
+	await tauriInvoke<void>('delete_project', {
+		args: {
+			projectId,
+		},
+	})
+}
+
+export async function restoreProject(projectId: string): Promise<void> {
+	// Rust: commands/projects.rs -> restore_project
+	await tauriInvoke<void>('restore_project', {
+		args: {
+			projectId,
+		},
 	})
 }
 

@@ -27,7 +27,7 @@ pub mod update;
 pub mod validations;
 
 pub use create::create;
-pub use delete::delete_many;
+pub use delete::{delete_many, restore_many};
 pub use list::list;
 pub use update::update;
 
@@ -39,6 +39,15 @@ impl TaskRepo {
         project_id: Option<&str>,
     ) -> Result<Vec<TaskDto>, AppError> {
         list(conn, space_id, status, project_id).await
+    }
+
+    pub async fn list_deleted(
+        conn: &DatabaseConnection,
+        space_id: Option<&str>,
+        status: Option<&str>,
+        project_id: Option<&str>,
+    ) -> Result<Vec<TaskDto>, AppError> {
+        list::list_deleted(conn, space_id, status, project_id).await
     }
 
     pub async fn create(
@@ -83,6 +92,10 @@ impl TaskRepo {
 
     pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
         delete_many(conn, ids).await
+    }
+
+    pub async fn restore_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
+        restore_many(conn, ids).await
     }
 
     #[allow(clippy::too_many_arguments)]
