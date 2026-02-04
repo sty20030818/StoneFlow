@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use sea_orm::{
-    ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
+    QueryOrder, Set, TransactionTrait,
 };
 
 use crate::db::entities::{
@@ -51,6 +52,17 @@ pub async fn update(
 
     let previous_project_id = task_model.project_id.clone();
     let current_status_is_done = task_model.status == TaskStatus::Done;
+    let previous_status = task_model.status.clone();
+    let previous_priority = task_model.priority.clone();
+    let previous_space_id = task_model.space_id.clone();
+    let mut effective_status = task_model.status.clone();
+    let mut effective_priority = task_model.priority.clone();
+    let mut effective_space_id = task_model.space_id.clone();
+    let mut effective_project_id = task_model.project_id.clone();
+    let mut priority_changed = false;
+    let mut status_changed_to_todo = false;
+    let mut space_changed = false;
+    let mut project_changed = false;
 
     let mut active_model = task_model.into_active_model();
     let now = now_ms();
@@ -79,10 +91,15 @@ pub async fn update(
             active_model.status = Set(TaskStatus::Done);
             active_model.done_reason = Set(Some(reason_enum));
             active_model.completed_at = Set(Some(now));
+            effective_status = TaskStatus::Done;
         } else {
             active_model.status = Set(TaskStatus::Todo);
             active_model.done_reason = Set(None);
             active_model.completed_at = Set(None);
+            effective_status = TaskStatus::Todo;
+            if previous_status == TaskStatus::Done {
+                status_changed_to_todo = true;
+            }
         }
         touch_updated_at = true;
         changed_any = true;
@@ -115,7 +132,9 @@ pub async fn update(
             "P3" => Priority::P3,
             _ => Priority::P1,
         };
-        active_model.priority = Set(p_enum);
+        active_model.priority = Set(p_enum.clone());
+        effective_priority = p_enum;
+        priority_changed = effective_priority != previous_priority;
         touch_updated_at = true;
         changed_any = true;
     }
@@ -130,12 +149,16 @@ pub async fn update(
 
     if let Some(space_id) = space_id {
         active_model.space_id = Set(space_id.to_string());
+        effective_space_id = space_id.to_string();
+        space_changed = effective_space_id != previous_space_id;
         touch_updated_at = true;
         changed_any = true;
     }
 
     if let Some(project_id_opt) = project_id {
         active_model.project_id = Set(project_id_opt.map(|s| s.to_string()));
+        effective_project_id = project_id_opt.map(|s| s.to_string());
+        project_changed = effective_project_id != previous_project_id;
         touch_updated_at = true;
         changed_any = true;
     }
@@ -148,6 +171,23 @@ pub async fn update(
 
     if let Some(rank) = rank {
         active_model.rank = Set(rank);
+        touch_updated_at = true;
+        changed_any = true;
+    } else if effective_status == TaskStatus::Todo
+        && (priority_changed || status_changed_to_todo || space_changed || project_changed)
+    {
+        let max_rank_task = tasks::Entity::find()
+            .filter(tasks::Column::SpaceId.eq(effective_space_id.clone()))
+            .filter(tasks::Column::Status.eq(TaskStatus::Todo))
+            .filter(tasks::Column::Priority.eq(effective_priority.clone()))
+            .filter(tasks::Column::DeletedAt.is_null())
+            .order_by_desc(tasks::Column::Rank)
+            .one(&txn)
+            .await
+            .map_err(AppError::from)?;
+
+        let new_rank = max_rank_task.map(|t| t.rank + 1024).unwrap_or(1024);
+        active_model.rank = Set(new_rank);
         touch_updated_at = true;
         changed_any = true;
     }

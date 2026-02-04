@@ -13,7 +13,7 @@ pub mod helpers;
 pub struct ProjectRepo;
 
 impl ProjectRepo {
-    /// 列出某个 Space 下的所有 Project，按 rank ASC → created_at DESC 排序。
+    /// 列出某个 Space 下的所有 Project，按 rank ASC → created_at ASC 排序。
     pub async fn list_by_space(
         conn: &DatabaseConnection,
         space_id: &str,
@@ -22,7 +22,7 @@ impl ProjectRepo {
             .filter(projects::Column::SpaceId.eq(space_id))
             .filter(projects::Column::DeletedAt.is_null())
             .order_by_asc(projects::Column::Rank)
-            .order_by_desc(projects::Column::CreatedAt)
+            .order_by_asc(projects::Column::CreatedAt)
             .all(conn)
             .await
             .map_err(AppError::from)?;
@@ -110,6 +110,23 @@ impl ProjectRepo {
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
 
+        let mut rank_query = projects::Entity::find()
+            .filter(projects::Column::SpaceId.eq(space_id))
+            .filter(projects::Column::DeletedAt.is_null());
+        if let Some(pid) = parent_id {
+            rank_query = rank_query.filter(projects::Column::ParentId.eq(pid));
+        } else {
+            rank_query = rank_query.filter(projects::Column::ParentId.is_null());
+        }
+
+        let max_rank_project = rank_query
+            .order_by_desc(projects::Column::Rank)
+            .one(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        let rank = max_rank_project.map(|p| p.rank + 1024).unwrap_or(1024);
+
         let active_model = projects::ActiveModel {
             id: Set(id.clone()),
             space_id: Set(space_id.to_string()),
@@ -126,7 +143,7 @@ impl ProjectRepo {
             archived_at: Set(None),
             deleted_at: Set(None),
             create_by: Set("stonefish".to_string()),
-            rank: Set(0),
+            rank: Set(rank),
         };
 
         let res = active_model.insert(conn).await.map_err(AppError::from)?;

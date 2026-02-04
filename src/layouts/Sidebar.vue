@@ -288,10 +288,10 @@
 		// 递归构建树
 		function buildTree(parentId: string | null, depth: number): ProjectTreeItem[] {
 			const children = byParent.get(parentId) ?? []
-			// 按 rank ASC -> createdAt DESC 排序
+			// 按 rank ASC -> createdAt ASC 排序
 			children.sort((a, b) => {
 				if (a.rank !== b.rank) return a.rank - b.rank
-				return b.createdAt - a.createdAt
+				return a.createdAt - b.createdAt
 			})
 			return children.map((p) => {
 				const childItems = buildTree(p.id, depth + 1)

@@ -17,11 +17,15 @@ pub async fn list(
         query = query.filter(tasks::Column::SpaceId.eq(sid));
     }
 
+    let mut is_done = false;
     if let Some(stat) = status {
         // Map string to enum
         let status_enum = match stat {
             "todo" => TaskStatus::Todo,
-            "done" => TaskStatus::Done,
+            "done" => {
+                is_done = true;
+                TaskStatus::Done
+            }
             _ => TaskStatus::Todo, // Fallback or strict? Existing code allows string
         };
         query = query.filter(tasks::Column::Status.eq(status_enum));
@@ -33,12 +37,18 @@ pub async fn list(
 
     query = query.filter(tasks::Column::DeletedAt.is_null());
 
-    // Sorting: priority ASC → rank ASC → deadline_at ASC NULLS LAST → created_at DESC
-    query = query
-        .order_by_asc(tasks::Column::Priority)
-        .order_by_asc(tasks::Column::Rank)
-        .order_by_asc(tasks::Column::DeadlineAt)
-        .order_by_desc(tasks::Column::CreatedAt);
+    // Sorting:
+    // - Done: completed_at DESC（仅按完成时间）
+    // - Others: priority ASC → rank ASC → deadline_at ASC → created_at ASC
+    if is_done {
+        query = query.order_by_desc(tasks::Column::CompletedAt);
+    } else {
+        query = query
+            .order_by_asc(tasks::Column::Priority)
+            .order_by_asc(tasks::Column::Rank)
+            .order_by_asc(tasks::Column::DeadlineAt)
+            .order_by_asc(tasks::Column::CreatedAt);
+    }
 
     let models = query.all(conn).await.map_err(AppError::from)?;
 

@@ -51,7 +51,7 @@
 		<template v-else>
 			<div class="space-y-3">
 				<InlineTaskCreator
-					v-if="showInlineCreator"
+					v-if="showInlineCreator && !isDoneColumn"
 					:space-id="spaceId"
 					:project-id="projectId"
 					:disabled="!spaceId || isEditMode" />
@@ -60,23 +60,42 @@
 					v-if="tasks.length === 0"
 					:text="emptyText" />
 
-				<DraggableTaskList
-					v-for="p in priorityList"
-					:key="p"
-					:tasks="tasksByPriority[p] || []"
-					:priority="p"
-					:disabled="isEditMode"
-					:is-edit-mode="isEditMode"
-					:selected-task-id-set="selectedTaskIdSet"
-					:show-complete-button="showCompleteButton"
-					:show-time="showTime"
-					:show-space-label="showSpaceLabel"
-					class="empty:hidden"
-					@task-click="$emit('task-click', $event)"
-					@complete="$emit('complete', $event)"
-					@toggle-task-select="$emit('toggle-task-select', $event)"
-					@request-task-delete="$emit('request-task-delete', $event)"
-					@reorder="$emit('reorder', $event)" />
+				<template v-if="!isDoneColumn">
+					<DraggableTaskList
+						v-for="p in priorityList"
+						:key="p"
+						:tasks="tasksByPriority[p] || []"
+						:priority="p"
+						:disabled="isEditMode"
+						:is-edit-mode="isEditMode"
+						:selected-task-id-set="selectedTaskIdSet"
+						:show-complete-button="showCompleteButton"
+						:show-time="showTime"
+						:show-space-label="showSpaceLabel"
+						class="empty:hidden"
+						@task-click="$emit('task-click', $event)"
+						@complete="$emit('complete', $event)"
+						@toggle-task-select="$emit('toggle-task-select', $event)"
+						@request-task-delete="$emit('request-task-delete', $event)"
+						@reorder="$emit('reorder', $event)" />
+				</template>
+				<div
+					v-else
+					class="flex flex-col gap-3">
+					<TaskCard
+						v-for="task in doneTasks"
+						:key="task.id"
+						:task="task"
+						:is-edit-mode="isEditMode"
+						:selected="isTaskSelected(task.id)"
+						:show-complete-button="showCompleteButton"
+						:show-time="showTime"
+						:show-space-label="showSpaceLabel"
+						@click="$emit('task-click', task)"
+						@complete="$emit('complete', task.id)"
+						@toggle-select="$emit('toggle-task-select', task.id)"
+						@request-delete="$emit('request-task-delete', task.id)" />
+				</div>
 			</div>
 		</template>
 	</section>
@@ -88,6 +107,7 @@
 	import DraggableTaskList from '@/components/DraggableTaskList.vue'
 	import EmptyState from '@/components/EmptyState.vue'
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
+	import TaskCard from '@/components/TaskCard'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
 	import { TASK_DONE_REASON_LABELS, TASK_STATUS_LABELS } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
@@ -132,6 +152,7 @@
 
 	const allSelected = computed(() => props.tasks.length > 0 && selectedCount.value === props.tasks.length)
 	const indeterminate = computed(() => selectedCount.value > 0 && !allSelected.value)
+	const isDoneColumn = computed(() => getStatusFromTitle(props.title) === 'done')
 
 	const columnSelectClass = computed(() => {
 		if (allSelected.value) return 'border-error/80 bg-error/10'
@@ -161,6 +182,15 @@
 		})
 		return groups
 	})
+
+	const doneTasks = computed(() => {
+		if (!isDoneColumn.value) return []
+		return [...props.tasks].sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
+	})
+
+	function isTaskSelected(taskId: string) {
+		return props.selectedTaskIdSet?.has(taskId) ?? false
+	}
 </script>
 
 <style scoped>

@@ -49,6 +49,7 @@ export function useUpdater() {
 			} else {
 				state.value.available = false
 				state.value.status = 'idle'
+				console.log('[Updater] 目前已是最新版本')
 			}
 		} catch (e) {
 			state.value.status = 'error'

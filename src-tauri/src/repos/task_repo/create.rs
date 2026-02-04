@@ -27,17 +27,17 @@ pub async fn create(
     let status = TaskStatus::Todo;
     let priority = Priority::P1;
 
-    // Find min rank to put new task at the top
-    let min_rank_task = tasks::Entity::find()
+    // Find max rank to put new task at the bottom
+    let max_rank_task = tasks::Entity::find()
         .filter(tasks::Column::SpaceId.eq(space_id))
         .filter(tasks::Column::Status.eq(status.clone()))
         .filter(tasks::Column::Priority.eq(priority.clone()))
-        .order_by_asc(tasks::Column::Rank)
+        .order_by_desc(tasks::Column::Rank)
         .one(conn)
         .await
         .map_err(AppError::from)?;
 
-    let rank = min_rank_task.map(|t| t.rank - 1024).unwrap_or(1024);
+    let rank = max_rank_task.map(|t| t.rank + 1024).unwrap_or(1024);
 
     let updated_at = now;
     let create_by = "stonefish";
