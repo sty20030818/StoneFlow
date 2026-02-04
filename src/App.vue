@@ -147,41 +147,43 @@
 		}
 	}
 
+	function isEditableTarget(target: EventTarget | null) {
+		return (
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			(target as HTMLElement | null)?.isContentEditable
+		)
+	}
+
+	function isInteractiveTarget(target: EventTarget | null) {
+		if (!(target instanceof HTMLElement)) return false
+		const tag = target.tagName
+		return tag === 'BUTTON' || tag === 'A' || tag === 'SELECT' || target.getAttribute('role') === 'button'
+	}
+
 	// 监听快捷键
 	function handleKeydown(e: KeyboardEvent) {
 		// ⌘K / Ctrl+K: 打开命令面板
 		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
 			e.preventDefault()
 			commandPaletteOpen.value = !commandPaletteOpen.value
+			return
 		}
+
 		if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
-			// 避免在输入框中触发
-			if (
-				e.target instanceof HTMLInputElement ||
-				e.target instanceof HTMLTextAreaElement ||
-				(e.target as HTMLElement)?.isContentEditable
-			) {
-				return
-			}
+			if (isEditableTarget(e.target)) return
+			e.preventDefault()
+			createTaskModalOpen.value = true
+			return
+		}
 
-			// ⌘⇧N / Ctrl+Shift+N: 全局创建任务（弹窗）
-			if (e.shiftKey) {
-				e.preventDefault()
-				createTaskModalOpen.value = true
-				return
-			}
-
-			// ⌘N / Ctrl+N: 页面内联创建聚焦（Workspace/Project 视图优先）
+		if (e.key === 'Enter') {
+			if (isEditableTarget(e.target) || isInteractiveTarget(e.target)) return
 			const isWorkspaceRoute = route.path === '/all-tasks' || route.path.startsWith('/space/')
 			if (isWorkspaceRoute) {
 				e.preventDefault()
 				inlineCreateFocusStore.bumpTodoFocus()
-				return
 			}
-
-			// 回退策略：非 Workspace 页面仍可用弹窗创建
-			e.preventDefault()
-			createTaskModalOpen.value = true
 		}
 	}
 

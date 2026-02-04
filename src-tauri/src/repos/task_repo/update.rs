@@ -58,7 +58,6 @@ pub async fn update(
     let mut effective_status = task_model.status.clone();
     let mut effective_priority = task_model.priority.clone();
     let mut effective_space_id = task_model.space_id.clone();
-    let mut effective_project_id = task_model.project_id.clone();
     let mut priority_changed = false;
     let mut status_changed_to_todo = false;
     let mut space_changed = false;
@@ -156,9 +155,9 @@ pub async fn update(
     }
 
     if let Some(project_id_opt) = project_id {
-        active_model.project_id = Set(project_id_opt.map(|s| s.to_string()));
-        effective_project_id = project_id_opt.map(|s| s.to_string());
-        project_changed = effective_project_id != previous_project_id;
+        let next_project_id = project_id_opt.map(|s| s.to_string());
+        active_model.project_id = Set(next_project_id.clone());
+        project_changed = next_project_id != previous_project_id;
         touch_updated_at = true;
         changed_any = true;
     }
