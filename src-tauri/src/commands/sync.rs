@@ -4,19 +4,25 @@ use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectOptions, Database, EntityTrait, QueryFilter, Set,
 };
 use sea_orm_migration::MigratorTrait;
-use std::env;
-
+use serde::Deserialize;
 // 定义常量 Key
 const KEY_LAST_PUSHED_AT: &str = "last_pushed_at";
 const KEY_LAST_PULLED_AT: &str = "last_pulled_at";
 
-/// 辅助函数：获取远程连接 (复用)
-async fn get_remote_db() -> Result<sea_orm::DatabaseConnection, String> {
-    dotenvy::dotenv().ok();
-    let database_url = env::var("NEON_DATABASE_URL")
-        .map_err(|_| "未找到 NEON_DATABASE_URL 环境变量".to_string())?;
+#[derive(Deserialize)]
+pub(crate) struct DatabaseUrlArgs {
+    #[serde(alias = "databaseUrl")]
+    database_url: String,
+}
 
-    let mut opt = ConnectOptions::new(database_url);
+/// 辅助函数：获取远程连接 (复用)
+async fn get_remote_db(database_url: &str) -> Result<sea_orm::DatabaseConnection, String> {
+    let database_url = database_url.trim();
+    if database_url.is_empty() {
+        return Err("数据库地址为空".to_string());
+    }
+
+    let mut opt = ConnectOptions::new(database_url.to_string());
     opt.max_connections(100)
         .min_connections(5)
         .connect_timeout(std::time::Duration::from_secs(8))
@@ -77,9 +83,12 @@ async fn update_sync_time(
 /// Command: Pull from Neon (下载)
 /// -------------------------------------------------------------------------
 #[tauri::command]
-pub async fn pull_from_neon(state: tauri::State<'_, DbState>) -> Result<i64, String> {
+pub async fn pull_from_neon(
+    state: tauri::State<'_, DbState>,
+    args: DatabaseUrlArgs,
+) -> Result<i64, String> {
     let local_db = &state.conn;
-    let remote_db = get_remote_db().await?;
+    let remote_db = get_remote_db(&args.database_url).await?;
 
     let current_sync_start = chrono::Utc::now().timestamp_millis();
     let last_pulled_at = get_sync_time(local_db, KEY_LAST_PULLED_AT)
@@ -255,9 +264,12 @@ pub async fn pull_from_neon(state: tauri::State<'_, DbState>) -> Result<i64, Str
 /// Command: Push to Neon (上传)
 /// -------------------------------------------------------------------------
 #[tauri::command]
-pub async fn push_to_neon(state: tauri::State<'_, DbState>) -> Result<i64, String> {
+pub async fn push_to_neon(
+    state: tauri::State<'_, DbState>,
+    args: DatabaseUrlArgs,
+) -> Result<i64, String> {
     let local_db = &state.conn;
-    let remote_db = get_remote_db().await?;
+    let remote_db = get_remote_db(&args.database_url).await?;
 
     let current_sync_start = chrono::Utc::now().timestamp_millis();
     let last_pushed_at = get_sync_time(local_db, KEY_LAST_PUSHED_AT)
@@ -424,4 +436,13 @@ pub async fn push_to_neon(state: tauri::State<'_, DbState>) -> Result<i64, Strin
         .map_err(|e| format!("更新 last_pushed_at 失败: {}", e))?;
 
     Ok(current_sync_start)
+}
+
+/// -------------------------------------------------------------------------
+/// Command: Test Neon Connection
+/// -------------------------------------------------------------------------
+#[tauri::command]
+pub async fn test_neon_connection(args: DatabaseUrlArgs) -> Result<(), String> {
+    let _ = get_remote_db(&args.database_url).await?;
+    Ok(())
 }

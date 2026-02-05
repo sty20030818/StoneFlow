@@ -1,41 +1,578 @@
 <template>
-	<section class="space-y-6 max-w-xl">
-		<PreferenceCard
-			:model="model"
-			@update:home-view="onHomeViewChange"
-			@update:density="onDensityChange"
-			@update:auto-start="onAutoStartChange" />
+	<section class="max-w-5xl space-y-6">
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+			<div class="space-y-1">
+				<div class="text-2xl font-semibold text-default">远端同步</div>
+				<div class="text-sm text-muted">
+					在应用内配置 Neon 数据库连接。支持多配置导入与切换，敏感信息使用 Stronghold 存储。
+				</div>
+			</div>
+			<UButton
+				color="neutral"
+				variant="soft"
+				:loading="testingCurrent"
+				:disabled="!hasActiveProfile"
+				icon="i-lucide-activity"
+				@click="handleTestCurrent">
+				测试当前配置
+			</UButton>
+		</div>
 
-		<ComponentVerify />
+		<div class="grid gap-6 lg:grid-cols-[1fr,1.3fr]">
+			<UCard class="rounded-3xl bg-elevated/60 border border-default/70">
+				<template #header>
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-semibold">当前状态</div>
+						<UBadge
+							color="neutral"
+							:variant="statusBadgeVariant"
+							:class="statusBadgeClass">
+							{{ statusLabel }}
+						</UBadge>
+					</div>
+				</template>
+				<div class="space-y-2">
+					<div class="text-sm text-muted">
+						{{ statusMessage }}
+					</div>
+					<div
+						v-if="activeProfile"
+						class="rounded-2xl border border-default/70 bg-default/70 px-4 py-3">
+						<div class="text-xs text-muted">当前配置</div>
+						<div class="text-sm font-semibold truncate">{{ activeProfile.name }}</div>
+					</div>
+					<div
+						v-else
+						class="text-xs text-muted">
+						尚未选择配置。
+					</div>
+				</div>
+			</UCard>
+
+			<UCard class="rounded-3xl bg-default border border-default/70">
+				<template #header>
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-semibold">配置列表</div>
+						<div class="flex items-center gap-2">
+							<UButton
+								color="neutral"
+								variant="soft"
+								size="xs"
+								icon="i-lucide-plus"
+								@click="openCreate">
+								新建配置
+							</UButton>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="xs"
+								icon="i-lucide-upload"
+								@click="openImport">
+								导入配置
+							</UButton>
+						</div>
+					</div>
+				</template>
+				<div class="space-y-2">
+					<div
+						v-if="profiles.length === 0"
+						class="text-sm text-muted">
+						暂无配置
+					</div>
+					<div
+						v-for="profile in profiles"
+						:key="profile.id"
+						class="flex items-center justify-between gap-3 rounded-2xl border border-default/70 bg-elevated/40 px-4 py-3">
+						<div class="min-w-0">
+							<div class="flex items-center gap-2">
+								<div class="text-sm font-semibold truncate">{{ profile.name }}</div>
+								<UBadge
+									v-if="profile.id === activeProfileId"
+									color="primary"
+									variant="soft">
+									当前
+								</UBadge>
+							</div>
+							<div class="text-[11px] text-muted">
+								{{ formatProfileMeta(profile) }}
+							</div>
+						</div>
+						<div class="flex items-center gap-2">
+							<UButton
+								v-if="profile.id !== activeProfileId"
+								color="neutral"
+								variant="soft"
+								size="xs"
+								@click="setActive(profile.id)">
+								设为当前
+							</UButton>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="xs"
+								icon="i-lucide-pen"
+								@click="openEdit(profile)">
+								编辑
+							</UButton>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="xs"
+								icon="i-lucide-trash-2"
+								@click="openDelete(profile)">
+								删除
+							</UButton>
+						</div>
+					</div>
+				</div>
+			</UCard>
+		</div>
 	</section>
+
+	<UModal
+		v-model:open="createOpen"
+		title="新建配置">
+		<template #body>
+			<div class="space-y-4">
+				<UFormField
+					label="名称"
+					description="用于识别不同数据库">
+					<UInput
+						v-model="newName"
+						placeholder="例如：主库" />
+				</UFormField>
+
+				<UFormField
+					label="数据库地址"
+					description="仅支持 postgres:// 或 postgresql:// 开头的连接字符串">
+					<UTextarea
+						v-model="newUrl"
+						placeholder="postgresql://..."
+						:rows="4"
+						class="font-mono text-xs" />
+				</UFormField>
+			</div>
+		</template>
+		<template #footer>
+			<div class="flex justify-end gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					@click="createOpen = false">
+					取消
+				</UButton>
+				<UButton
+					color="neutral"
+					variant="soft"
+					:loading="testingNew"
+					:disabled="!canTestNew"
+					icon="i-lucide-activity"
+					@click="handleTestNew">
+					测试连接
+				</UButton>
+				<UButton
+					color="primary"
+					variant="solid"
+					:loading="savingNew"
+					:disabled="!canSaveNew"
+					icon="i-lucide-plus"
+					@click="handleCreateProfile">
+					保存
+				</UButton>
+			</div>
+		</template>
+	</UModal>
+
+	<UModal
+		v-model:open="editOpen"
+		title="编辑配置">
+		<template #body>
+			<div class="space-y-4">
+				<UFormField
+					label="名称">
+					<UInput
+						v-model="editName"
+						placeholder="配置名称" />
+				</UFormField>
+
+				<UFormField
+					label="数据库地址"
+					description="仅支持 postgres:// 或 postgresql:// 开头的连接字符串">
+					<UTextarea
+						v-model="editUrl"
+						placeholder="postgresql://..."
+						:rows="4"
+						class="font-mono text-xs" />
+				</UFormField>
+			</div>
+		</template>
+		<template #footer>
+			<div class="flex justify-end gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					@click="editOpen = false">
+					取消
+				</UButton>
+				<UButton
+					color="neutral"
+					variant="soft"
+					:loading="testingEdit"
+					:disabled="!canTestEdit"
+					icon="i-lucide-activity"
+					@click="handleTestEdit">
+					测试连接
+				</UButton>
+				<UButton
+					color="primary"
+					variant="solid"
+					:loading="savingEdit"
+					:disabled="!canSaveEdit"
+					icon="i-lucide-save"
+					@click="handleSaveEdit">
+					保存
+				</UButton>
+			</div>
+		</template>
+	</UModal>
+
+	<UModal
+		v-model:open="importOpen"
+		title="导入配置">
+		<template #body>
+			<div class="space-y-3">
+				<UFormField
+					label="JSON 文本"
+					description='格式示例：[{"name":"主库","url":"postgresql://..."}]'>
+					<UTextarea
+						v-model="importText"
+						placeholder="粘贴 JSON 数组"
+						:rows="6"
+						class="font-mono text-xs" />
+				</UFormField>
+				<div
+					v-if="importError"
+					class="text-xs text-error">
+					{{ importError }}
+				</div>
+			</div>
+		</template>
+		<template #footer>
+			<div class="flex justify-end gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					@click="importOpen = false">
+					取消
+				</UButton>
+				<UButton
+					color="primary"
+					variant="soft"
+					:loading="importing"
+					:disabled="!canImport"
+					icon="i-lucide-upload"
+					@click="handleImport">
+					导入
+				</UButton>
+			</div>
+		</template>
+	</UModal>
+
+	<UModal
+		v-model:open="deleteOpen"
+		title="删除配置">
+		<template #body>
+			<div class="space-y-2 text-sm text-muted">
+				<div>确认删除「{{ deleteTarget?.name }}」？</div>
+				<div class="text-xs text-muted">删除后将无法恢复，需要重新导入。</div>
+			</div>
+		</template>
+		<template #footer>
+			<div class="flex justify-end gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					@click="deleteOpen = false">
+					取消
+				</UButton>
+				<UButton
+					color="error"
+					variant="solid"
+					:loading="deleting"
+					@click="confirmDelete">
+					确认删除
+				</UButton>
+			</div>
+		</template>
+	</UModal>
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
-	import type { HomeView, InfoDensity } from '@/services/tauri/store'
-	import { useSettingsStore } from '@/stores/settings'
+import type { RemoteDbProfile, RemoteDbProfileInput } from '@/types/shared/remote-sync'
+import { useRemoteSyncStore } from '@/stores/remote-sync'
+import { tauriInvoke } from '@/services/tauri/invoke'
 
-	import PreferenceCard from './components/PreferenceCard.vue'
-	import ComponentVerify from './components/ComponentVerify.vue'
+const remoteSyncStore = useRemoteSyncStore()
+const toast = useToast()
 
-	const settingsStore = useSettingsStore()
+const createOpen = ref(false)
+const importOpen = ref(false)
+const editProfileId = ref<string | null>(null)
+const editOpen = computed({
+	get: () => !!editProfileId.value,
+	set: (val) => {
+		if (!val) editProfileId.value = null
+	},
+})
 
-	const model = computed(() => settingsStore.settings)
+const newName = ref('')
+const newUrl = ref('')
+const editName = ref('')
+const editUrl = ref('')
 
-	onMounted(async () => {
-		await settingsStore.load()
-	})
+const importText = ref('')
+const importError = ref('')
 
-	async function onHomeViewChange(v: unknown) {
-		await settingsStore.update({ homeView: v as HomeView })
+const testingCurrent = ref(false)
+const testingNew = ref(false)
+const testingEdit = ref(false)
+const savingNew = ref(false)
+const savingEdit = ref(false)
+const importing = ref(false)
+
+const deleting = ref(false)
+const deleteTarget = ref<RemoteDbProfile | null>(null)
+
+const profiles = computed(() => remoteSyncStore.profiles)
+const activeProfileId = computed(() => remoteSyncStore.activeProfileId)
+const activeProfile = computed(() => remoteSyncStore.activeProfile)
+
+const hasActiveProfile = computed(() => !!activeProfile.value)
+
+const status = ref<'missing' | 'ok' | 'error' | 'testing'>('missing')
+const statusMessage = computed(() => {
+	switch (status.value) {
+		case 'ok':
+			return '连接可用，已准备同步。'
+		case 'error':
+			return '连接不可用，请检查数据库地址或网络。'
+		case 'testing':
+			return '正在测试连接…'
+		default:
+			return '尚未配置数据库，请先新增或选择一个配置。'
 	}
+})
 
-	async function onDensityChange(v: unknown) {
-		await settingsStore.update({ density: v as InfoDensity })
+const statusLabel = computed(() => {
+	switch (status.value) {
+		case 'ok':
+			return '可用'
+		case 'error':
+			return '错误'
+		case 'testing':
+			return '测试中'
+		default:
+			return '未配置'
 	}
+})
 
-	async function onAutoStartChange(v: boolean) {
-		await settingsStore.update({ autoStart: v })
+const statusBadgeVariant = computed(() => (status.value === 'ok' ? 'soft' : 'outline'))
+const statusBadgeClass = computed(() => {
+	switch (status.value) {
+		case 'ok':
+			return 'bg-primary/10 text-primary'
+		case 'error':
+			return 'bg-error/10 text-error'
+		case 'testing':
+			return 'bg-amber-500/10 text-amber-600'
+		default:
+			return 'bg-elevated text-muted'
 	}
+})
+
+const canSaveNew = computed(() => newName.value.trim().length > 0 && validateUrl(newUrl.value))
+const canTestNew = computed(() => validateUrl(newUrl.value))
+const canSaveEdit = computed(() => editName.value.trim().length > 0 && validateUrl(editUrl.value))
+const canTestEdit = computed(() => validateUrl(editUrl.value))
+const canImport = computed(() => importText.value.trim().length > 0)
+
+const deleteOpen = computed({
+	get: () => !!deleteTarget.value,
+	set: (val) => {
+		if (!val) deleteTarget.value = null
+	},
+})
+
+function validateUrl(url: string) {
+	const trimmed = url.trim()
+	return trimmed.startsWith('postgres://') || trimmed.startsWith('postgresql://')
+}
+
+function formatProfileMeta(profile: RemoteDbProfile) {
+	const source = profile.source === 'import' ? '导入' : '手动'
+	return `${source} · ${new Date(profile.updatedAt).toLocaleString()}`
+}
+
+function openCreate() {
+	createOpen.value = true
+}
+
+function openImport() {
+	importOpen.value = true
+}
+
+async function openEdit(profile: RemoteDbProfile) {
+	editProfileId.value = profile.id
+	editName.value = profile.name
+	editUrl.value = (await remoteSyncStore.getProfileUrl(profile.id)) ?? ''
+}
+
+async function handleTestCurrent() {
+	if (!activeProfileId.value) return
+	try {
+		testingCurrent.value = true
+		status.value = 'testing'
+		const url = await remoteSyncStore.getActiveProfileUrl()
+		if (!url) throw new Error('未找到数据库地址')
+		await tauriInvoke('test_neon_connection', { databaseUrl: url })
+		status.value = 'ok'
+		toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+	} catch (error) {
+		status.value = 'error'
+		toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		testingCurrent.value = false
+	}
+}
+
+async function handleTestNew() {
+	if (!canTestNew.value) return
+	try {
+		testingNew.value = true
+		status.value = 'testing'
+		await tauriInvoke('test_neon_connection', { databaseUrl: newUrl.value.trim() })
+		status.value = 'ok'
+		toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+	} catch (error) {
+		status.value = 'error'
+		toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		testingNew.value = false
+	}
+}
+
+async function handleCreateProfile() {
+	if (!canSaveNew.value) return
+	try {
+		savingNew.value = true
+		await remoteSyncStore.addProfile({ name: newName.value.trim(), url: newUrl.value.trim() }, 'manual')
+		newName.value = ''
+		newUrl.value = ''
+		createOpen.value = false
+		status.value = 'ok'
+		toast.add({ title: '已创建配置', description: '新配置已保存并设为当前。', color: 'success' })
+	} catch (error) {
+		toast.add({ title: '创建失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		savingNew.value = false
+	}
+}
+
+async function handleTestEdit() {
+	if (!canTestEdit.value) return
+	try {
+		testingEdit.value = true
+		status.value = 'testing'
+		await tauriInvoke('test_neon_connection', { databaseUrl: editUrl.value.trim() })
+		status.value = 'ok'
+		toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+	} catch (error) {
+		status.value = 'error'
+		toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		testingEdit.value = false
+	}
+}
+
+async function handleSaveEdit() {
+	if (!editProfileId.value || !canSaveEdit.value) return
+	try {
+		savingEdit.value = true
+		await remoteSyncStore.updateProfileName(editProfileId.value, editName.value.trim())
+		await remoteSyncStore.updateProfileUrl(editProfileId.value, editUrl.value.trim())
+		editOpen.value = false
+		status.value = 'ok'
+		toast.add({ title: '保存成功', description: '配置已更新。', color: 'success' })
+	} catch (error) {
+		toast.add({ title: '保存失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		savingEdit.value = false
+	}
+}
+
+async function setActive(profileId: string) {
+	await remoteSyncStore.setActiveProfile(profileId)
+	status.value = 'missing'
+}
+
+function openDelete(profile: RemoteDbProfile) {
+	deleteTarget.value = profile
+}
+
+async function confirmDelete() {
+	if (!deleteTarget.value) return
+	try {
+		deleting.value = true
+		await remoteSyncStore.removeProfile(deleteTarget.value.id)
+		deleteTarget.value = null
+		status.value = remoteSyncStore.activeProfileId ? status.value : 'missing'
+		toast.add({ title: '已删除配置', color: 'success' })
+	} catch (error) {
+		toast.add({ title: '删除失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		deleting.value = false
+	}
+}
+
+async function handleImport() {
+	importError.value = ''
+	if (!canImport.value) return
+	try {
+		importing.value = true
+		const parsed = JSON.parse(importText.value.trim())
+		if (!Array.isArray(parsed)) {
+			importError.value = '导入内容必须是 JSON 数组'
+			return
+		}
+		const items: RemoteDbProfileInput[] = []
+		for (const item of parsed) {
+			if (!item || typeof item !== 'object') continue
+			const name = typeof item.name === 'string' ? item.name : ''
+			const url = typeof item.url === 'string' ? item.url : ''
+			if (!name || !validateUrl(url)) continue
+			items.push({ name, url })
+		}
+		if (items.length === 0) {
+			importError.value = '未找到合法的 name/url 记录'
+			return
+		}
+		await remoteSyncStore.importProfiles(items)
+		importText.value = ''
+		importOpen.value = false
+		status.value = 'ok'
+		toast.add({ title: '导入成功', description: `已导入 ${items.length} 条配置。`, color: 'success' })
+	} catch (error) {
+		importError.value = '解析失败，请确认 JSON 格式'
+		toast.add({ title: '导入失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+	} finally {
+		importing.value = false
+	}
+}
+
+onMounted(async () => {
+	await remoteSyncStore.load()
+	status.value = remoteSyncStore.activeProfileId ? 'missing' : 'missing'
+})
 </script>

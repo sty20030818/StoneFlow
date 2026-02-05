@@ -9,7 +9,7 @@ use commands::projects::{
     rebalance_project_ranks, reorder_project, restore_project,
 };
 use commands::spaces::list_spaces;
-use commands::sync::{pull_from_neon, push_to_neon};
+use commands::sync::{pull_from_neon, push_to_neon, test_neon_connection};
 use commands::tasks::{
     complete_task, create_task, delete_tasks, list_deleted_tasks, list_tasks, rebalance_ranks,
     reorder_task, restore_tasks, update_task,
@@ -24,6 +24,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
+            let salt_path = app
+                .path()
+                .app_local_data_dir()
+                .expect("could not resolve app local data path")
+                .join("salt.txt");
+            app.handle().plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
             tauri::async_runtime::block_on(async move {
                 let db_state = crate::db::init_db(app.handle()).await.map_err(Box::new)?;
                 app.manage(db_state);
@@ -51,7 +57,8 @@ pub fn run() {
             reorder_project,
             rebalance_project_ranks,
             pull_from_neon,
-            push_to_neon
+            push_to_neon,
+            test_neon_connection
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

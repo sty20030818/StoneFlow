@@ -160,7 +160,7 @@
 						icon="i-lucide-cloud-upload"
 						label="上传"
 						:loading="isPushing"
-						:disabled="isPulling"
+						:disabled="isPulling || !hasActiveProfile"
 						@click="handlePush" />
 					<UButton
 						block
@@ -170,7 +170,7 @@
 						icon="i-lucide-cloud-download"
 						label="下载"
 						:loading="isPulling"
-						:disabled="isPushing"
+						:disabled="isPushing || !hasActiveProfile"
 						@click="handlePull" />
 				</div>
 				<div class="mt-1.5 flex justify-between text-[10px] text-muted">
@@ -195,12 +195,13 @@
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { getDefaultProject } from '@/services/api/projects'
 	import type { ProjectDto } from '@/services/api/projects'
-	import { useProjectTreeStore } from '@/stores/project-tree'
-	import { useProjectsStore } from '@/stores/projects'
-	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
-	import { useViewStateStore } from '@/stores/view-state'
+import { useProjectTreeStore } from '@/stores/project-tree'
+import { useProjectsStore } from '@/stores/projects'
+import { useRemoteSyncStore } from '@/stores/remote-sync'
+import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+import { useViewStateStore } from '@/stores/view-state'
 
-	import { invoke } from '@tauri-apps/api/core'
+import { tauriInvoke } from '@/services/tauri/invoke'
 	import { formatDistanceToNow } from 'date-fns'
 	import { zhCN } from 'date-fns/locale'
 	const props = defineProps<{
@@ -254,8 +255,9 @@
 		{ to: '/diary', label: 'Diary', icon: 'i-lucide-book-open-text', iconColor: 'text-indigo-500' },
 	]
 
-	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
+const projectsStore = useProjectsStore()
+const remoteSyncStore = useRemoteSyncStore()
+const refreshSignals = useRefreshSignalsStore()
 
 	const defaultProject = ref<ProjectDto | null>(null)
 
@@ -410,11 +412,30 @@
 		return '↓ ' + formatDistanceToNow(lastPulledAt.value, { addSuffix: true, locale: zhCN })
 	})
 
+	const hasActiveProfile = computed(() => !!remoteSyncStore.activeProfileId)
+
+	async function resolveActiveDatabaseUrl() {
+		if (!remoteSyncStore.loaded) await remoteSyncStore.load()
+		const profile = remoteSyncStore.activeProfile
+		if (!profile) {
+			console.error('未配置远端数据库')
+			return null
+		}
+		const url = await remoteSyncStore.getProfileUrl(profile.id)
+		if (!url) {
+			console.error('未找到数据库地址')
+			return null
+		}
+		return url
+	}
+
 	async function handlePush() {
 		if (isPushing.value || isPulling.value) return
 		try {
+			const databaseUrl = await resolveActiveDatabaseUrl()
+			if (!databaseUrl) return
 			isPushing.value = true
-			const ts = await invoke<number>('push_to_neon')
+			const ts = await tauriInvoke<number>('push_to_neon', { databaseUrl: databaseUrl })
 			lastPushedAt.value = ts
 			localStorage.setItem('neon_last_pushed_at', String(ts))
 		} catch (error) {
@@ -427,8 +448,10 @@
 	async function handlePull() {
 		if (isPushing.value || isPulling.value) return
 		try {
+			const databaseUrl = await resolveActiveDatabaseUrl()
+			if (!databaseUrl) return
 			isPulling.value = true
-			const ts = await invoke<number>('pull_from_neon')
+			const ts = await tauriInvoke<number>('pull_from_neon', { databaseUrl: databaseUrl })
 			lastPulledAt.value = ts
 			localStorage.setItem('neon_last_pulled_at', String(ts))
 			loadProjects(true)
@@ -442,6 +465,7 @@
 	onMounted(() => {
 		projectTreeStore.load()
 		viewStateStore.load()
+		remoteSyncStore.load()
 		loadProjects()
 
 		// 恢复上次同步时间
