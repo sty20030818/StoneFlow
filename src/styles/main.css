@@ -26,6 +26,24 @@ body {
 	font-family: "MapleMono", "Lxgw", sans-serif;
 }
 
+/* 全局禁止文本选择（user-select 默认不继承，需要作用到所有元素） */
+*,
+*::before,
+*::after {
+	user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+[contenteditable="plaintext-only"] {
+	user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+}
+
 /* 全局隐藏滚动条 */
 * {
 	scrollbar-width: none; /* Firefox */

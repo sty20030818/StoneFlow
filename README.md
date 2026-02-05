@@ -24,9 +24,9 @@
 
 <p align="center">
   <img alt="version" src="https://img.shields.io/badge/version-0.1.0-blue" />
-  <img alt="tauri" src="https://img.shields.io/badge/Tauri-2.x-24C8DB" />
+  <img alt="tauri" src="https://img.shields.io/badge/Tauri-2.10.x-24C8DB" />
   <img alt="rust" src="https://img.shields.io/badge/Rust-safe%20%26%20fast-orange" />
-  <img alt="vue" src="https://img.shields.io/badge/Vue-3-42b883" />
+  <img alt="vue" src="https://img.shields.io/badge/Vue-3.5.x-42b883" />
   <img alt="local-first" src="https://img.shields.io/badge/local--first-SQLite-success" />
 </p>
 
@@ -44,7 +44,7 @@
 
 **StoneFlow 的出发点是反过来的：**
 
-> **Task 是行动，Project 是叙事，Finish List 是你走过的路。**
+> **Task** 是行动，**Project** 是叙事，**Finish List** 是你走过的路。
 
 * 不追求“清空列表”，而是积累“完成证据”🏆
 * 用稳定的结构（Space / Project / Task）承载长期主义
@@ -52,7 +52,7 @@
 
 ---
 
-## ✨ 核心卖点（给忙但认真生活的你）
+## ✨ 核心亮点（给忙但认真生活的你）
 
 * 🎯 **完成清单驱动 (Finish List)**：把“完成过”变成可回顾的资产，而不是一次性事件
 * 🧭 **项目骨架 (Space / Project / Task)**：长期目标有结构，阶段推进更有掌控感
@@ -61,7 +61,7 @@
 * 🔒 **本地优先 + 数据可控**：SQLite 本地存储，速度快、离线可用、隐私更安心
 * 🦀 **Rust 后端更可靠**：核心数据变更通过 Rust 层统一收口，减少“写坏数据”的概率
 
-> 小小吹点牛：我们把任务管理当成一个“行为档案系统”，未来会用日志和分析把你从“忙”带到“变强”。
+> 我们把任务管理当成一个“行为档案系统”，未来会用日志和分析把你从“忙”带到“变强”。
 
 ---
 
