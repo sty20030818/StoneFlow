@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="group rounded-lg border border-default/50 bg-elevated/40 px-3 py-2.5 transition-all duration-150 ease-out"
+		class="group rounded-lg border border-default/50 bg-elevated/40 px-3 py-2.5 transition-all duration-150 ease-out select-none"
 		:class="wrapperClass"
 		@click.self="focusInput">
 		<div
@@ -10,7 +10,7 @@
 				ref="inputRef"
 				v-model="title"
 				type="text"
-				class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/70"
+				class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/70 select-text"
 				:placeholder="placeholder"
 				:disabled="disabled || submitting" />
 			<span
@@ -27,7 +27,7 @@
 				ref="noteRef"
 				v-model="note"
 				rows="1"
-				class="w-full resize-none bg-transparent text-sm leading-5 outline-none placeholder:text-muted/70"
+				class="w-full resize-none bg-transparent text-sm leading-5 outline-none placeholder:text-muted/70 select-text"
 				placeholder="写点备注…"
 				:disabled="disabled || submitting"></textarea>
 		</div>

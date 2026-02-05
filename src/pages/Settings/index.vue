@@ -316,6 +316,15 @@ import { tauriInvoke } from '@/services/tauri/invoke'
 
 const remoteSyncStore = useRemoteSyncStore()
 const toast = useToast()
+const logPrefix = '[settings-remote-sync]'
+
+function log(...args: unknown[]) {
+	console.log(logPrefix, ...args)
+}
+
+function logError(...args: unknown[]) {
+	console.error(logPrefix, ...args)
+}
 
 const createOpen = ref(false)
 const importOpen = ref(false)
@@ -416,32 +425,49 @@ function formatProfileMeta(profile: RemoteDbProfile) {
 }
 
 function openCreate() {
+	log('open:create')
 	createOpen.value = true
 }
 
 function openImport() {
+	log('open:import')
 	importOpen.value = true
 }
 
 async function openEdit(profile: RemoteDbProfile) {
+	log('open:edit', { id: profile.id })
 	editProfileId.value = profile.id
 	editName.value = profile.name
-	editUrl.value = (await remoteSyncStore.getProfileUrl(profile.id)) ?? ''
+	try {
+		editUrl.value = (await remoteSyncStore.getProfileUrl(profile.id)) ?? ''
+		log('open:edit:done', { id: profile.id, hasUrl: !!editUrl.value })
+	} catch (error) {
+		editUrl.value = ''
+		toast.add({
+			title: '读取配置失败',
+			description: error instanceof Error ? error.message : '未知错误',
+			color: 'error',
+		})
+		logError('open:edit:error', error)
+	}
 }
 
 async function handleTestCurrent() {
 	if (!activeProfileId.value) return
 	try {
+		log('test:current:start', { profileId: activeProfileId.value })
 		testingCurrent.value = true
 		status.value = 'testing'
 		const url = await remoteSyncStore.getActiveProfileUrl()
 		if (!url) throw new Error('未找到数据库地址')
-		await tauriInvoke('test_neon_connection', { databaseUrl: url })
+		await tauriInvoke('test_neon_connection', { args: { databaseUrl: url } })
 		status.value = 'ok'
 		toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+		log('test:current:done')
 	} catch (error) {
 		status.value = 'error'
 		toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('test:current:error', error)
 	} finally {
 		testingCurrent.value = false
 	}
@@ -450,14 +476,17 @@ async function handleTestCurrent() {
 async function handleTestNew() {
 	if (!canTestNew.value) return
 	try {
+		log('test:new:start')
 		testingNew.value = true
 		status.value = 'testing'
-		await tauriInvoke('test_neon_connection', { databaseUrl: newUrl.value.trim() })
+		await tauriInvoke('test_neon_connection', { args: { databaseUrl: newUrl.value.trim() } })
 		status.value = 'ok'
 		toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+		log('test:new:done')
 	} catch (error) {
 		status.value = 'error'
 		toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('test:new:error', error)
 	} finally {
 		testingNew.value = false
 	}
@@ -466,6 +495,7 @@ async function handleTestNew() {
 async function handleCreateProfile() {
 	if (!canSaveNew.value) return
 	try {
+		log('create:start', { name: newName.value })
 		savingNew.value = true
 		await remoteSyncStore.addProfile({ name: newName.value.trim(), url: newUrl.value.trim() }, 'manual')
 		newName.value = ''
@@ -473,8 +503,10 @@ async function handleCreateProfile() {
 		createOpen.value = false
 		status.value = 'ok'
 		toast.add({ title: '已创建配置', description: '新配置已保存并设为当前。', color: 'success' })
+		log('create:done')
 	} catch (error) {
 		toast.add({ title: '创建失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('create:error', error)
 	} finally {
 		savingNew.value = false
 	}
@@ -483,14 +515,17 @@ async function handleCreateProfile() {
 async function handleTestEdit() {
 	if (!canTestEdit.value) return
 	try {
+		log('test:edit:start', { profileId: editProfileId.value })
 		testingEdit.value = true
 		status.value = 'testing'
-		await tauriInvoke('test_neon_connection', { databaseUrl: editUrl.value.trim() })
+		await tauriInvoke('test_neon_connection', { args: { databaseUrl: editUrl.value.trim() } })
 		status.value = 'ok'
 		toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+		log('test:edit:done')
 	} catch (error) {
 		status.value = 'error'
 		toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('test:edit:error', error)
 	} finally {
 		testingEdit.value = false
 	}
@@ -499,38 +534,56 @@ async function handleTestEdit() {
 async function handleSaveEdit() {
 	if (!editProfileId.value || !canSaveEdit.value) return
 	try {
+		log('save:edit:start', { profileId: editProfileId.value })
 		savingEdit.value = true
 		await remoteSyncStore.updateProfileName(editProfileId.value, editName.value.trim())
 		await remoteSyncStore.updateProfileUrl(editProfileId.value, editUrl.value.trim())
 		editOpen.value = false
 		status.value = 'ok'
 		toast.add({ title: '保存成功', description: '配置已更新。', color: 'success' })
+		log('save:edit:done')
 	} catch (error) {
 		toast.add({ title: '保存失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('save:edit:error', error)
 	} finally {
 		savingEdit.value = false
 	}
 }
 
 async function setActive(profileId: string) {
-	await remoteSyncStore.setActiveProfile(profileId)
-	status.value = 'missing'
+	log('setActive:start', { profileId })
+	try {
+		await remoteSyncStore.setActiveProfile(profileId)
+		status.value = 'missing'
+		log('setActive:done', { profileId })
+	} catch (error) {
+		toast.add({
+			title: '切换失败',
+			description: error instanceof Error ? error.message : '未知错误',
+			color: 'error',
+		})
+		logError('setActive:error', error)
+	}
 }
 
 function openDelete(profile: RemoteDbProfile) {
+	log('open:delete', { profileId: profile.id })
 	deleteTarget.value = profile
 }
 
 async function confirmDelete() {
 	if (!deleteTarget.value) return
 	try {
+		log('delete:start', { profileId: deleteTarget.value.id })
 		deleting.value = true
 		await remoteSyncStore.removeProfile(deleteTarget.value.id)
 		deleteTarget.value = null
 		status.value = remoteSyncStore.activeProfileId ? status.value : 'missing'
 		toast.add({ title: '已删除配置', color: 'success' })
+		log('delete:done')
 	} catch (error) {
 		toast.add({ title: '删除失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('delete:error', error)
 	} finally {
 		deleting.value = false
 	}
@@ -540,6 +593,7 @@ async function handleImport() {
 	importError.value = ''
 	if (!canImport.value) return
 	try {
+		log('import:start')
 		importing.value = true
 		const parsed = JSON.parse(importText.value.trim())
 		if (!Array.isArray(parsed)) {
@@ -563,16 +617,30 @@ async function handleImport() {
 		importOpen.value = false
 		status.value = 'ok'
 		toast.add({ title: '导入成功', description: `已导入 ${items.length} 条配置。`, color: 'success' })
+		log('import:done', { count: items.length })
 	} catch (error) {
 		importError.value = '解析失败，请确认 JSON 格式'
 		toast.add({ title: '导入失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+		logError('import:error', error)
 	} finally {
 		importing.value = false
 	}
 }
 
 onMounted(async () => {
-	await remoteSyncStore.load()
-	status.value = remoteSyncStore.activeProfileId ? 'missing' : 'missing'
+	log('mount:load:start')
+	try {
+		await remoteSyncStore.load()
+		status.value = remoteSyncStore.activeProfileId ? 'missing' : 'missing'
+		log('mount:load:done', { activeProfileId: remoteSyncStore.activeProfileId })
+	} catch (error) {
+		status.value = 'error'
+		toast.add({
+			title: '读取配置失败',
+			description: error instanceof Error ? error.message : '未知错误',
+			color: 'error',
+		})
+		logError('mount:load:error', error)
+	}
 })
 </script>

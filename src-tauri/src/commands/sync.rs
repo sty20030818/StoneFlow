@@ -4,15 +4,14 @@ use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectOptions, Database, EntityTrait, QueryFilter, Set,
 };
 use sea_orm_migration::MigratorTrait;
-use serde::Deserialize;
 // 定义常量 Key
 const KEY_LAST_PUSHED_AT: &str = "last_pushed_at";
 const KEY_LAST_PULLED_AT: &str = "last_pulled_at";
 
-#[derive(Deserialize)]
-pub(crate) struct DatabaseUrlArgs {
-    #[serde(alias = "databaseUrl")]
-    database_url: String,
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DatabaseUrlArgs {
+    pub database_url: String,
 }
 
 /// 辅助函数：获取远程连接 (复用)
@@ -82,7 +81,7 @@ async fn update_sync_time(
 /// -------------------------------------------------------------------------
 /// Command: Pull from Neon (下载)
 /// -------------------------------------------------------------------------
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn pull_from_neon(
     state: tauri::State<'_, DbState>,
     args: DatabaseUrlArgs,
@@ -263,7 +262,7 @@ pub async fn pull_from_neon(
 /// -------------------------------------------------------------------------
 /// Command: Push to Neon (上传)
 /// -------------------------------------------------------------------------
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn push_to_neon(
     state: tauri::State<'_, DbState>,
     args: DatabaseUrlArgs,
@@ -441,7 +440,7 @@ pub async fn push_to_neon(
 /// -------------------------------------------------------------------------
 /// Command: Test Neon Connection
 /// -------------------------------------------------------------------------
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn test_neon_connection(args: DatabaseUrlArgs) -> Result<(), String> {
     let _ = get_remote_db(&args.database_url).await?;
     Ok(())

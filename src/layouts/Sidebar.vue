@@ -435,7 +435,7 @@ const refreshSignals = useRefreshSignalsStore()
 			const databaseUrl = await resolveActiveDatabaseUrl()
 			if (!databaseUrl) return
 			isPushing.value = true
-			const ts = await tauriInvoke<number>('push_to_neon', { databaseUrl: databaseUrl })
+			const ts = await tauriInvoke<number>('push_to_neon', { args: { databaseUrl } })
 			lastPushedAt.value = ts
 			localStorage.setItem('neon_last_pushed_at', String(ts))
 		} catch (error) {
@@ -451,7 +451,7 @@ const refreshSignals = useRefreshSignalsStore()
 			const databaseUrl = await resolveActiveDatabaseUrl()
 			if (!databaseUrl) return
 			isPulling.value = true
-			const ts = await tauriInvoke<number>('pull_from_neon', { databaseUrl: databaseUrl })
+			const ts = await tauriInvoke<number>('pull_from_neon', { args: { databaseUrl } })
 			lastPulledAt.value = ts
 			localStorage.setItem('neon_last_pulled_at', String(ts))
 			loadProjects(true)
