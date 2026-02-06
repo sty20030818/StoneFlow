@@ -160,7 +160,7 @@
 					placeholder="这次完成有什么收获、疑问或需要改进的地方？（占位，不落库）"
 					:rows="5" />
 
-				<div class="flex items-center justify-end gap-2 pt-1">
+				<div class="pt-1">
 					<UButton
 						color="neutral"
 						variant="ghost"

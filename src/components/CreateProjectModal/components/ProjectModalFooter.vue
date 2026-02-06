@@ -1,21 +1,19 @@
 <template>
-	<div class="flex items-center justify-end gap-2">
-		<UButton
-			color="neutral"
-			variant="ghost"
-			size="sm"
-			@click="emit('close')">
-			Cancel
-		</UButton>
-		<UButton
-			color="primary"
-			size="sm"
-			:disabled="!canSubmit"
-			:loading="loading"
-			@click="emit('submit')">
-			Create Project
-		</UButton>
-	</div>
+	<UButton
+		color="neutral"
+		variant="ghost"
+		size="sm"
+		@click="emit('close')">
+		Cancel
+	</UButton>
+	<UButton
+		color="primary"
+		size="sm"
+		:disabled="!canSubmit"
+		:loading="loading"
+		@click="emit('submit')">
+		Create Project
+	</UButton>
 </template>
 
 <script setup lang="ts">

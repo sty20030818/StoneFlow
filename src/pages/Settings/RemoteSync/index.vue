@@ -183,8 +183,7 @@
 
 	<UModal
 		v-model:open="createOpen"
-		title="新建配置"
-		:ui="{ footer: 'flex justify-end gap-2' }">
+		title="新建配置">
 		<template #body>
 			<div class="space-y-4">
 				<UFormField
@@ -259,32 +258,30 @@
 			</div>
 		</template>
 		<template #footer>
-			<div class="flex justify-end gap-2">
-				<UButton
-					color="neutral"
-					variant="ghost"
-					@click="editOpen = false">
-					取消
-				</UButton>
-				<UButton
-					color="neutral"
-					variant="soft"
-					:loading="testingEdit"
-					:disabled="!canTestEdit"
-					icon="i-lucide-activity"
-					@click="handleTestEdit">
-					测试连接
-				</UButton>
-				<UButton
-					color="primary"
-					variant="solid"
-					:loading="savingEdit"
-					:disabled="!canSaveEdit"
-					icon="i-lucide-save"
-					@click="handleSaveEdit">
-					保存
-				</UButton>
-			</div>
+			<UButton
+				color="neutral"
+				variant="ghost"
+				@click="editOpen = false">
+				取消
+			</UButton>
+			<UButton
+				color="neutral"
+				variant="soft"
+				:loading="testingEdit"
+				:disabled="!canTestEdit"
+				icon="i-lucide-activity"
+				@click="handleTestEdit">
+				测试连接
+			</UButton>
+			<UButton
+				color="primary"
+				variant="solid"
+				:loading="savingEdit"
+				:disabled="!canSaveEdit"
+				icon="i-lucide-save"
+				@click="handleSaveEdit">
+				保存
+			</UButton>
 		</template>
 	</UModal>
 
@@ -310,23 +307,21 @@
 			</div>
 		</template>
 		<template #footer>
-			<div class="flex justify-end gap-2">
-				<UButton
-					color="neutral"
-					variant="ghost"
-					@click="importOpen = false">
-					取消
-				</UButton>
-				<UButton
-					color="primary"
-					variant="soft"
-					:loading="importing"
-					:disabled="!canImport"
-					icon="i-lucide-upload"
-					@click="handleImport">
-					导入
-				</UButton>
-			</div>
+			<UButton
+				color="neutral"
+				variant="ghost"
+				@click="importOpen = false">
+				取消
+			</UButton>
+			<UButton
+				color="primary"
+				variant="soft"
+				:loading="importing"
+				:disabled="!canImport"
+				icon="i-lucide-upload"
+				@click="handleImport">
+				导入
+			</UButton>
 		</template>
 	</UModal>
 
@@ -340,21 +335,19 @@
 			</div>
 		</template>
 		<template #footer>
-			<div class="flex justify-end gap-2">
-				<UButton
-					color="neutral"
-					variant="ghost"
-					@click="deleteOpen = false">
-					取消
-				</UButton>
-				<UButton
-					color="error"
-					variant="solid"
-					:loading="deleting"
-					@click="confirmDelete">
-					确认删除
-				</UButton>
-			</div>
+			<UButton
+				color="neutral"
+				variant="ghost"
+				@click="deleteOpen = false">
+				取消
+			</UButton>
+			<UButton
+				color="error"
+				variant="solid"
+				:loading="deleting"
+				@click="confirmDelete">
+				确认删除
+			</UButton>
 		</template>
 	</UModal>
 </template>

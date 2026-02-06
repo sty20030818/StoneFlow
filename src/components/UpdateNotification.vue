@@ -38,45 +38,43 @@
 		</template>
 
 		<template #footer>
-			<div class="flex w-full gap-3">
-				<UButton
-					v-if="state.status === 'idle'"
-					color="neutral"
-					variant="outline"
-					class="flex-1"
-					@click="dismiss">
-					稍后提醒
-				</UButton>
-				<UButton
-					v-if="state.status === 'idle'"
-					color="primary"
-					class="flex-1"
-					@click="handleDownloadAndInstall">
-					立即更新
-				</UButton>
-				<UButton
-					v-if="state.status === 'ready'"
-					color="primary"
-					class="flex-1"
-					@click="restartApp">
-					重启应用
-				</UButton>
-				<UButton
-					v-if="state.status === 'error'"
-					color="neutral"
-					variant="outline"
-					class="flex-1"
-					@click="dismiss">
-					关闭
-				</UButton>
-				<UButton
-					v-if="state.status === 'error'"
-					color="primary"
-					class="flex-1"
-					@click="handleDownloadAndInstall">
-					重试
-				</UButton>
-			</div>
+			<UButton
+				v-if="state.status === 'idle'"
+				color="neutral"
+				variant="outline"
+				class="flex-1"
+				@click="dismiss">
+				稍后提醒
+			</UButton>
+			<UButton
+				v-if="state.status === 'idle'"
+				color="primary"
+				class="flex-1"
+				@click="handleDownloadAndInstall">
+				立即更新
+			</UButton>
+			<UButton
+				v-if="state.status === 'ready'"
+				color="primary"
+				class="flex-1"
+				@click="restartApp">
+				重启应用
+			</UButton>
+			<UButton
+				v-if="state.status === 'error'"
+				color="neutral"
+				variant="outline"
+				class="flex-1"
+				@click="dismiss">
+				关闭
+			</UButton>
+			<UButton
+				v-if="state.status === 'error'"
+				color="primary"
+				class="flex-1"
+				@click="handleDownloadAndInstall">
+				重试
+			</UButton>
 		</template>
 	</UModal>
 </template>

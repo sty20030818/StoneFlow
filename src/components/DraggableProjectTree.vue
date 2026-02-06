@@ -98,23 +98,21 @@
 			<p class="text-sm text-muted">将删除项目“{{ deleteTarget?.label }}”，可在回收站恢复。</p>
 		</template>
 		<template #footer>
-			<div class="flex items-center justify-end gap-2">
-				<UButton
-					color="neutral"
-					variant="ghost"
-					size="sm"
-					@click="closeDeleteConfirm">
-					取消
-				</UButton>
-				<UButton
-					color="error"
-					size="sm"
-					:loading="deleting"
-					:disabled="!deleteTarget"
-					@click="confirmDelete">
-					确认删除
-				</UButton>
-			</div>
+			<UButton
+				color="neutral"
+				variant="ghost"
+				size="sm"
+				@click="closeDeleteConfirm">
+				取消
+			</UButton>
+			<UButton
+				color="error"
+				size="sm"
+				:loading="deleting"
+				:disabled="!deleteTarget"
+				@click="confirmDelete">
+				确认删除
+			</UButton>
 		</template>
 	</UModal>
 </template>
