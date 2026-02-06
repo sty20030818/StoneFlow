@@ -1,12 +1,14 @@
+export type SettingsNavId = 'about' | 'remote-sync'
+
 export type SettingsNavItem = {
-	id: 'about' | 'remote-sync'
+	id: SettingsNavId
 	label: string
 	description: string
 	icon: string
 	to: string
 }
 
-export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
+export const SETTINGS_NAV_ITEMS: ReadonlyArray<SettingsNavItem> = [
 	{
 		id: 'about',
 		label: 'About',

@@ -22,10 +22,7 @@
 		],
 		"security": {
 			"csp": null,
-			"capabilities": [
-				"default",
-				"desktop-capability"
-			]
+			"capabilities": ["default", "desktop-capability"]
 		}
 	},
 	"bundle": {

@@ -3,11 +3,7 @@ import { computed, reactive, ref } from 'vue'
 
 import type { RemoteDbProfile, RemoteDbProfileInput, RemoteSyncSettings } from '@/types/shared/remote-sync'
 import { DEFAULT_REMOTE_SYNC_SETTINGS, remoteSyncStore } from '@/services/tauri/remote-sync-store'
-import {
-	getRemoteSyncSecret,
-	removeRemoteSyncSecret,
-	setRemoteSyncSecret,
-} from '@/services/tauri/stronghold'
+import { getRemoteSyncSecret, removeRemoteSyncSecret, setRemoteSyncSecret } from '@/services/tauri/stronghold'
 
 function nowIso() {
 	return new Date().toISOString()

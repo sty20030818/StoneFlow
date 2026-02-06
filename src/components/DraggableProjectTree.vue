@@ -85,7 +85,6 @@
 		</div>
 	</VueDraggable>
 
-
 	<UModal
 		v-model:open="confirmDeleteOpen"
 		title="确认删除"
