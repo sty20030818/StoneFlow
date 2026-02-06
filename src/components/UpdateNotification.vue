@@ -51,7 +51,7 @@
 					v-if="state.status === 'idle'"
 					color="primary"
 					class="flex-1"
-					@click="downloadAndInstall">
+					@click="handleDownloadAndInstall">
 					立即更新
 				</UButton>
 				<UButton
@@ -73,7 +73,7 @@
 					v-if="state.status === 'error'"
 					color="primary"
 					class="flex-1"
-					@click="downloadAndInstall">
+					@click="handleDownloadAndInstall">
 					重试
 				</UButton>
 			</div>
@@ -85,10 +85,14 @@
 	import { computed } from 'vue'
 	import { useUpdater } from '@/composables/useUpdater'
 
-	const { state, downloadAndInstall, restartApp, dismiss } = useUpdater()
+	const { state, promptInstallEnabled, downloadAndInstall, restartApp, dismiss } = useUpdater()
+
+	async function handleDownloadAndInstall() {
+		await downloadAndInstall()
+	}
 
 	const isOpen = computed({
-		get: () => state.value.available && state.value.status !== 'checking',
+		get: () => promptInstallEnabled.value && state.value.available && state.value.status !== 'checking',
 		set: (v) => {
 			if (!v) dismiss()
 		},

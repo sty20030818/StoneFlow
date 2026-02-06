@@ -18,6 +18,8 @@ import Trash from '@/pages/Trash/index.vue'
 
 // Settings
 import Settings from '@/pages/Settings/index.vue'
+import SettingsAbout from '@/pages/Settings/About/index.vue'
+import SettingsRemoteSync from '@/pages/Settings/RemoteSync/index.vue'
 
 export const routes = [
 	{ path: '/', redirect: '/space/work' },
@@ -93,6 +95,32 @@ export const routes = [
 		path: '/settings',
 		component: Settings,
 		meta: { title: '设置', icon: 'i-lucide-settings', iconClass: 'text-gray-500', description: '应用偏好设置' },
+		children: [
+			{
+				path: '',
+				redirect: '/settings/about',
+			},
+			{
+				path: 'about',
+				component: SettingsAbout,
+				meta: {
+					title: 'About',
+					icon: 'i-lucide-info',
+					iconClass: 'text-blue-500',
+					description: '版本、更新与应用信息',
+				},
+			},
+			{
+				path: 'remote-sync',
+				component: SettingsRemoteSync,
+				meta: {
+					title: '远端同步',
+					icon: 'i-lucide-cloud',
+					iconClass: 'text-cyan-500',
+					description: '同步配置与上传下载',
+				},
+			},
+		],
 	},
 ]
 

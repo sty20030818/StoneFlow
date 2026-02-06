@@ -136,7 +136,10 @@
 		{
 			id: 'settings',
 			label: 'Settings',
-			items: [{ label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }],
+			items: [
+				{ label: 'About', icon: 'i-lucide-info', to: '/settings/about' },
+				{ label: '远端同步', icon: 'i-lucide-cloud', to: '/settings/remote-sync' },
+			],
 		},
 	])
 

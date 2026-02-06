@@ -24,7 +24,7 @@
 			</div>
 
 			<RouterLink
-				to="/settings"
+				to="/settings/about"
 				class="flex items-center justify-center w-8 h-8 rounded-full text-muted hover:bg-elevated hover:text-default transition-all duration-200">
 				<UIcon
 					name="i-lucide-settings"

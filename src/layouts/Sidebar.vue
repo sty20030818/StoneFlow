@@ -143,39 +143,10 @@
 
 			<!-- User Capsule -->
 			<div
-				class="px-3"
+				class="p-3"
 				:class="isLibraryCollapsed ? 'pt-0' : 'pt-3'">
 				<div class="pt-1.5">
 					<UserCard />
-				</div>
-			</div>
-			<!-- Sync Controls -->
-			<div class="px-3 pb-3 pt-2">
-				<div class="grid grid-cols-2 gap-2">
-					<UButton
-						block
-						size="xs"
-						color="neutral"
-						variant="soft"
-						icon="i-lucide-cloud-upload"
-						label="上传"
-						:loading="isPushing"
-						:disabled="isPulling || !hasActiveProfile"
-						@click="handlePush" />
-					<UButton
-						block
-						size="xs"
-						color="neutral"
-						variant="soft"
-						icon="i-lucide-cloud-download"
-						label="下载"
-						:loading="isPulling"
-						:disabled="isPushing || !hasActiveProfile"
-						@click="handlePull" />
-				</div>
-				<div class="mt-1.5 flex justify-between text-[10px] text-muted">
-					<span>{{ lastPushedText }}</span>
-					<span>{{ lastPulledText }}</span>
 				</div>
 			</div>
 		</div>
@@ -195,15 +166,10 @@
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { getDefaultProject } from '@/services/api/projects'
 	import type { ProjectDto } from '@/services/api/projects'
-import { useProjectTreeStore } from '@/stores/project-tree'
-import { useProjectsStore } from '@/stores/projects'
-import { useRemoteSyncStore } from '@/stores/remote-sync'
-import { useRefreshSignalsStore } from '@/stores/refresh-signals'
-import { useViewStateStore } from '@/stores/view-state'
-
-import { tauriInvoke } from '@/services/tauri/invoke'
-	import { formatDistanceToNow } from 'date-fns'
-	import { zhCN } from 'date-fns/locale'
+	import { useProjectTreeStore } from '@/stores/project-tree'
+	import { useProjectsStore } from '@/stores/projects'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+	import { useViewStateStore } from '@/stores/view-state'
 	const props = defineProps<{
 		space?: string | null
 	}>()
@@ -255,9 +221,8 @@ import { tauriInvoke } from '@/services/tauri/invoke'
 		{ to: '/diary', label: 'Diary', icon: 'i-lucide-book-open-text', iconColor: 'text-indigo-500' },
 	]
 
-const projectsStore = useProjectsStore()
-const remoteSyncStore = useRemoteSyncStore()
-const refreshSignals = useRefreshSignalsStore()
+	const projectsStore = useProjectsStore()
+	const refreshSignals = useRefreshSignalsStore()
 
 	const defaultProject = ref<ProjectDto | null>(null)
 
@@ -396,88 +361,9 @@ const refreshSignals = useRefreshSignalsStore()
 		{ immediate: true },
 	)
 
-	// --- Neon 同步逻辑 ---
-	const isPushing = ref(false)
-	const isPulling = ref(false)
-	const lastPushedAt = ref<number | null>(null)
-	const lastPulledAt = ref<number | null>(null)
-
-	const lastPushedText = computed(() => {
-		if (!lastPushedAt.value) return '未上传'
-		return '↑ ' + formatDistanceToNow(lastPushedAt.value, { addSuffix: true, locale: zhCN })
-	})
-
-	const lastPulledText = computed(() => {
-		if (!lastPulledAt.value) return '未下载'
-		return '↓ ' + formatDistanceToNow(lastPulledAt.value, { addSuffix: true, locale: zhCN })
-	})
-
-	const hasActiveProfile = computed(() => !!remoteSyncStore.activeProfileId)
-
-	async function resolveActiveDatabaseUrl() {
-		if (!remoteSyncStore.loaded) await remoteSyncStore.load()
-		const profile = remoteSyncStore.activeProfile
-		if (!profile) {
-			console.error('未配置远端数据库')
-			return null
-		}
-		const url = await remoteSyncStore.getProfileUrl(profile.id)
-		if (!url) {
-			console.error('未找到数据库地址')
-			return null
-		}
-		return url
-	}
-
-	async function handlePush() {
-		if (isPushing.value || isPulling.value) return
-		try {
-			const databaseUrl = await resolveActiveDatabaseUrl()
-			if (!databaseUrl) return
-			isPushing.value = true
-			const ts = await tauriInvoke<number>('push_to_neon', { args: { databaseUrl } })
-			lastPushedAt.value = ts
-			localStorage.setItem('neon_last_pushed_at', String(ts))
-		} catch (error) {
-			console.error('上传失败:', error)
-		} finally {
-			isPushing.value = false
-		}
-	}
-
-	async function handlePull() {
-		if (isPushing.value || isPulling.value) return
-		try {
-			const databaseUrl = await resolveActiveDatabaseUrl()
-			if (!databaseUrl) return
-			isPulling.value = true
-			const ts = await tauriInvoke<number>('pull_from_neon', { args: { databaseUrl } })
-			lastPulledAt.value = ts
-			localStorage.setItem('neon_last_pulled_at', String(ts))
-			loadProjects(true)
-		} catch (error) {
-			console.error('下载失败:', error)
-		} finally {
-			isPulling.value = false
-		}
-	}
-
 	onMounted(() => {
 		projectTreeStore.load()
 		viewStateStore.load()
-		remoteSyncStore.load()
 		loadProjects()
-
-		// 恢复上次同步时间
-		const savedPush = localStorage.getItem('neon_last_pushed_at')
-		if (savedPush) {
-			const ts = parseInt(savedPush, 10)
-			if (!isNaN(ts)) lastPushedAt.value = ts
-		}
-		const savedPull = localStorage.getItem('neon_last_pulled_at')
-		if (savedPull) {
-			const ts = parseInt(savedPull, 10)
-			if (!isNaN(ts)) lastPulledAt.value = ts
-		}
 	})
 </script>
