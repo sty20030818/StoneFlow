@@ -9,6 +9,8 @@
 		:on-toggle-select="onToggleSelect"
 		:on-card-click="onCardClick"
 		:on-request-delete="onRequestDelete"
+		:on-request-edit="onRequestEdit"
+		:on-context-menu="onContextMenu"
 		:on-complete="onComplete"
 		:format-relative-time="formatRelativeTime"
 		:format-absolute-time="formatAbsoluteTime" />
@@ -24,6 +26,8 @@
 		:on-toggle-select="onToggleSelect"
 		:on-card-click="onCardClick"
 		:on-request-delete="onRequestDelete"
+		:on-request-edit="onRequestEdit"
+		:on-context-menu="onContextMenu"
 		:format-absolute-time="formatAbsoluteTime" />
 </template>
 
@@ -43,6 +47,8 @@
 		onToggleSelect,
 		onCardClick,
 		onRequestDelete,
+		onRequestEdit,
+		onContextMenu,
 		onComplete,
 		formatRelativeTime,
 		formatAbsoluteTime,

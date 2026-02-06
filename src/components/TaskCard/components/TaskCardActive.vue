@@ -10,7 +10,8 @@
 				isEditMode && !selected ? 'opacity-80' : '',
 				isEditMode ? 'group-hover:mr-14' : '',
 			]"
-			@click="onCardClick">
+			@click="onCardClick"
+			@contextmenu.prevent.stop="onContextMenu">
 			<!-- 编辑模式：选中遮罩 -->
 			<div
 				v-if="isEditMode && selected"
@@ -144,6 +145,8 @@
 		onToggleSelect: () => void
 		onCardClick: () => void
 		onRequestDelete: () => void
+		onRequestEdit: () => void
+		onContextMenu: (event: MouseEvent) => void
 		onComplete: () => void
 		formatRelativeTime: (timestamp: number) => string
 		formatAbsoluteTime: (timestamp: number) => string

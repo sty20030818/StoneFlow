@@ -85,6 +85,7 @@
 		</div>
 	</VueDraggable>
 
+
 	<UModal
 		v-model:open="confirmDeleteOpen"
 		title="确认删除"
@@ -220,19 +221,27 @@
 	}
 
 	async function openContextMenu(item: ProjectTreeItem) {
-		// Native Context Menu
-		const menu = await Menu.new({
-			items: [
-				{
-					id: 'delete',
-					text: '删除',
-					action: () => {
-						openDeleteConfirm(item)
+		try {
+			const menu = await Menu.new({
+				items: [
+					{
+						id: 'edit',
+						text: '编辑',
+						action: () => {},
 					},
-				},
-			],
-		})
-		await menu.popup()
+					{
+						id: 'delete',
+						text: '删除',
+						action: () => {
+							openDeleteConfirm(item)
+						},
+					},
+				],
+			})
+			await menu.popup()
+		} catch (error) {
+			console.error('打开项目右键菜单失败:', error)
+		}
 	}
 
 	function openDeleteConfirm(item: ProjectTreeItem) {

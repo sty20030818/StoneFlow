@@ -9,7 +9,8 @@
 				isEditMode && !selected ? 'opacity-40' : '',
 				isEditMode ? 'group-hover:mr-14' : '',
 			]"
-			@click="onCardClick">
+			@click="onCardClick"
+			@contextmenu.prevent.stop="onContextMenu">
 			<!-- 编辑模式：选中遮罩 -->
 			<div
 				v-if="isEditMode && selected"
@@ -87,7 +88,7 @@
 <script setup lang="ts">
 	import type { TaskDto } from '@/services/api/tasks'
 
-	defineProps<{
+	const props = defineProps<{
 		task: TaskDto
 		isEditMode?: boolean
 		selected?: boolean
@@ -102,6 +103,8 @@
 		onToggleSelect: () => void
 		onCardClick: () => void
 		onRequestDelete: () => void
+		onRequestEdit: () => void
+		onContextMenu: (event: MouseEvent) => void
 		formatAbsoluteTime: (timestamp: number) => string
 	}>()
 </script>

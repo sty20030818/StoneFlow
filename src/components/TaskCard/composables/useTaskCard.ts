@@ -2,7 +2,9 @@ import { computed } from 'vue'
 
 import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/config/task'
 import type { TaskDto } from '@/services/api/tasks'
+import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { getDisplayStatus } from '@/utils/task'
+import { Menu } from '@tauri-apps/api/menu'
 
 export type TaskCardProps = {
 	task: TaskDto
@@ -21,6 +23,7 @@ export type TaskCardEmits = {
 }
 
 export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
+	const inspectorStore = useTaskInspectorStore()
 	const displayStatus = computed(() => getDisplayStatus(props.task.status))
 	const isCancelled = computed(() => props.task.doneReason === 'cancelled')
 	const doneReasonKey = computed<TaskDoneReasonValue>(() => (isCancelled.value ? 'cancelled' : 'completed'))
@@ -44,8 +47,39 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 	}
 
 	function onRequestDelete() {
-		if (!props.isEditMode) return
 		emit('request-delete', props.task.id)
+	}
+
+	function onRequestEdit() {
+		inspectorStore.open(props.task)
+	}
+
+	async function onContextMenu(event: MouseEvent) {
+		event.preventDefault()
+
+		try {
+			const menu = await Menu.new({
+				items: [
+					{
+						id: 'edit',
+						text: '编辑',
+						action: () => {
+							onRequestEdit()
+						},
+					},
+					{
+						id: 'delete',
+						text: '删除',
+						action: () => {
+							onRequestDelete()
+						},
+					},
+				],
+			})
+			await menu.popup()
+		} catch (error) {
+			console.error('打开任务右键菜单失败:', error)
+		}
 	}
 
 	function onComplete() {
@@ -105,6 +139,8 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		onToggleSelect,
 		onCardClick,
 		onRequestDelete,
+		onRequestEdit,
+		onContextMenu,
 		onComplete,
 		formatRelativeTime,
 		formatAbsoluteTime,

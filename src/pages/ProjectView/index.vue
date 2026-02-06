@@ -213,7 +213,6 @@
 	}
 
 	function requestDeleteTask(taskId: string) {
-		if (!isEditMode.value) return
 		deleteTargetIds.value = [taskId]
 		confirmDeleteOpen.value = true
 	}
