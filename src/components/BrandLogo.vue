@@ -20,5 +20,5 @@
 </template>
 
 <script setup lang="ts">
-	import avatarUrl from '@/assets/stoneflow.png'
+	import avatarUrl from '@/assets/avatar.png'
 </script>
