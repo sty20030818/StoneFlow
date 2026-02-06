@@ -14,7 +14,7 @@
 		</UChip>
 		<div class="flex flex-col gap-0.5">
 			<span class="text-sm font-semibold text-default tracking-tight">StoneFlow</span>
-			<span class="text-[11px] text-muted">v0.1.1</span>
+			<span class="text-[11px] text-muted">v0.1.2</span>
 		</div>
 	</div>
 </template>
