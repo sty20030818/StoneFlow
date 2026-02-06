@@ -14,11 +14,11 @@
 		</UChip>
 		<div class="flex flex-col gap-0.5">
 			<span class="text-sm font-semibold text-default tracking-tight">StoneFlow</span>
-			<span class="text-[11px] text-muted">v0.1.0</span>
+			<span class="text-[11px] text-muted">v0.1.1</span>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import avatarUrl from '@/assets/avatar.png'
+	import avatarUrl from '@/assets/stoneflow.png'
 </script>
