@@ -2,7 +2,7 @@ use serde::Deserialize;
 use tauri::State;
 
 use crate::db::DbState;
-use crate::repos::project_repo::ProjectRepo;
+use crate::repos::project_repo::{ProjectCreateInput, ProjectRepo};
 use crate::types::{
     dto::{LinkInputDto, ProjectDto},
     error::ApiError,
@@ -55,19 +55,20 @@ pub async fn create_project(
     state: State<'_, DbState>,
     args: CreateProjectArgs,
 ) -> Result<ProjectDto, ApiError> {
-    ProjectRepo::create(
-        &state.conn,
-        &args.space_id,
-        &args.title,
-        args.parent_id.as_deref(),
-        args.note.as_deref(),
-        args.priority.as_deref(),
-        args.rank,
-        args.tags,
-        args.links,
-    )
-    .await
-    .map_err(ApiError::from)
+    let input = ProjectCreateInput {
+        space_id: args.space_id,
+        title: args.title,
+        parent_id: args.parent_id,
+        note: args.note,
+        priority: args.priority,
+        rank: args.rank,
+        tags: args.tags,
+        links: args.links,
+    };
+
+    ProjectRepo::create(&state.conn, input)
+        .await
+        .map_err(ApiError::from)
 }
 
 /// 获取默认 Project。

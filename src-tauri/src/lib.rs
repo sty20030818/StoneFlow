@@ -30,7 +30,8 @@ pub fn run() {
                 .expect("could not resolve app local data path");
             std::fs::create_dir_all(&data_dir)?;
             let salt_path = data_dir.join("salt.txt");
-            app.handle().plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
+            app.handle()
+                .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
             tauri::async_runtime::block_on(async move {
                 let db_state = crate::db::init_db(app.handle()).await.map_err(Box::new)?;
                 app.manage(db_state);

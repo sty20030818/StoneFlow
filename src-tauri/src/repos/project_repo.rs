@@ -20,6 +20,18 @@ pub mod helpers;
 
 pub struct ProjectRepo;
 
+#[derive(Debug, Clone)]
+pub struct ProjectCreateInput {
+    pub space_id: String,
+    pub title: String,
+    pub parent_id: Option<String>,
+    pub note: Option<String>,
+    pub priority: Option<String>,
+    pub rank: Option<i64>,
+    pub tags: Option<Vec<String>>,
+    pub links: Option<Vec<LinkInputDto>>,
+}
+
 impl ProjectRepo {
     /// 列出某个 Space 下的所有 Project，按 rank ASC → created_at ASC 排序。
     pub async fn list_by_space(
@@ -100,20 +112,24 @@ impl ProjectRepo {
     /// 创建新项目。
     pub async fn create(
         conn: &DatabaseConnection,
-        space_id: &str,
-        title: &str,
-        parent_id: Option<&str>,
-        note: Option<&str>,
-        priority: Option<&str>,
-        rank: Option<i64>,
-        tags: Option<Vec<String>>,
-        links: Option<Vec<LinkInputDto>>,
+        input: ProjectCreateInput,
     ) -> Result<ProjectDto, AppError> {
+        let ProjectCreateInput {
+            space_id,
+            title,
+            parent_id,
+            note,
+            priority,
+            rank,
+            tags,
+            links,
+        } = input;
+
         let title = title.trim();
         if title.is_empty() {
             return Err(AppError::Validation("项目名称不能为空".to_string()));
         }
-        let note = note.and_then(|v| {
+        let note = note.as_deref().and_then(|v| {
             let trimmed = v.trim();
             if trimmed.is_empty() {
                 None
@@ -124,17 +140,18 @@ impl ProjectRepo {
         let tags = tags.unwrap_or_default();
         let links = links.unwrap_or_default();
 
-        let priority_enum = common_task_utils::parse_priority(priority)?;
+        let priority_enum = common_task_utils::parse_priority(priority.as_deref())?;
 
-        let path = helpers::build_project_path(conn, space_id, parent_id, title).await?;
+        let path =
+            helpers::build_project_path(conn, &space_id, parent_id.as_deref(), title).await?;
 
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
 
         let mut rank_query = projects::Entity::find()
-            .filter(projects::Column::SpaceId.eq(space_id))
+            .filter(projects::Column::SpaceId.eq(space_id.clone()))
             .filter(projects::Column::DeletedAt.is_null());
-        if let Some(pid) = parent_id {
+        if let Some(pid) = parent_id.as_deref() {
             rank_query = rank_query.filter(projects::Column::ParentId.eq(pid));
         } else {
             rank_query = rank_query.filter(projects::Column::ParentId.is_null());
@@ -151,8 +168,8 @@ impl ProjectRepo {
 
         let active_model = projects::ActiveModel {
             id: Set(id.clone()),
-            space_id: Set(space_id.to_string()),
-            parent_id: Set(parent_id.map(|s| s.to_string())),
+            space_id: Set(space_id),
+            parent_id: Set(parent_id),
             path: Set(path.clone()),
             title: Set(title.to_string()),
             note: Set(note),

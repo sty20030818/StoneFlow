@@ -2,7 +2,7 @@ use serde::Deserialize;
 use tauri::State;
 
 use crate::db::DbState;
-use crate::repos::task_repo::TaskRepo;
+use crate::repos::task_repo::{TaskRepo, TaskUpdateInput, TaskUpdatePatch as RepoTaskUpdatePatch};
 use crate::types::{
     dto::{CustomFieldsDto, LinkInputDto, TaskDto},
     error::ApiError,
@@ -119,28 +119,36 @@ pub struct UpdateTaskPatch {
     pub deleted_at: Option<Option<i64>>,
 }
 
+impl From<UpdateTaskPatch> for RepoTaskUpdatePatch {
+    fn from(value: UpdateTaskPatch) -> Self {
+        Self {
+            title: value.title,
+            status: value.status,
+            done_reason: value.done_reason,
+            priority: value.priority,
+            note: value.note,
+            tags: value.tags,
+            space_id: value.space_id,
+            project_id: value.project_id,
+            deadline_at: value.deadline_at,
+            rank: value.rank,
+            links: value.links,
+            custom_fields: value.custom_fields,
+            archived_at: value.archived_at,
+            deleted_at: value.deleted_at,
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
-    TaskRepo::update(
-        &state.conn,
-        &args.id,
-        args.patch.title.as_deref(),
-        args.patch.status.as_deref(),
-        args.patch.done_reason.as_ref().map(|v| v.as_deref()),
-        args.patch.priority.as_deref(),
-        args.patch.note.as_ref().map(|v| v.as_deref()),
-        args.patch.tags,
-        args.patch.space_id.as_deref(),
-        args.patch.project_id.as_ref().map(|v| v.as_deref()),
-        args.patch.deadline_at.as_ref().cloned(),
-        args.patch.rank,
-        args.patch.links,
-        args.patch.custom_fields,
-        args.patch.archived_at.as_ref().cloned(),
-        args.patch.deleted_at.as_ref().cloned(),
-    )
-    .await
-    .map_err(ApiError::from)
+    let input = TaskUpdateInput {
+        id: args.id,
+        patch: args.patch.into(),
+    };
+    TaskRepo::update(&state.conn, input)
+        .await
+        .map_err(ApiError::from)
 }
 
 #[derive(Debug, Deserialize)]
@@ -204,26 +212,13 @@ pub async fn reorder_task(
     state: State<'_, DbState>,
     args: ReorderTaskArgs,
 ) -> Result<(), ApiError> {
-    TaskRepo::update(
-        &state.conn,
-        &args.task_id,
-        None, // title
-        None, // status
-        None, // done_reason
-        None, // priority
-        None, // note
-        None, // tags
-        None, // space_id
-        None, // project_id
-        None, // deadline_at
-        Some(args.new_rank),
-        None, // links
-        None, // custom_fields
-        None, // archived_at
-        None, // deleted_at
-    )
-    .await
-    .map_err(ApiError::from)
+    let input = TaskUpdateInput {
+        id: args.task_id,
+        patch: RepoTaskUpdatePatch::rank_only(args.new_rank),
+    };
+    TaskRepo::update(&state.conn, input)
+        .await
+        .map_err(ApiError::from)
 }
 
 #[derive(Debug, Deserialize)]
@@ -244,26 +239,13 @@ pub async fn rebalance_ranks(
     let step = args.step.unwrap_or(1024);
     for (index, task_id) in args.task_ids.iter().enumerate() {
         let new_rank = (index as i64) * step;
-        TaskRepo::update(
-            &state.conn,
-            task_id,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(new_rank),
-            None,
-            None,
-            None,
-            None,
-        )
-        .await
-        .map_err(ApiError::from)?;
+        let input = TaskUpdateInput {
+            id: task_id.clone(),
+            patch: RepoTaskUpdatePatch::rank_only(new_rank),
+        };
+        TaskRepo::update(&state.conn, input)
+            .await
+            .map_err(ApiError::from)?;
     }
     Ok(())
 }

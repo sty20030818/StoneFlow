@@ -31,6 +31,39 @@ pub use delete::{delete_many, restore_many};
 pub use list::list;
 pub use update::update;
 
+#[derive(Debug, Clone)]
+pub struct TaskUpdateInput {
+    pub id: String,
+    pub patch: TaskUpdatePatch,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct TaskUpdatePatch {
+    pub title: Option<String>,
+    pub status: Option<String>,
+    pub done_reason: Option<Option<String>>,
+    pub priority: Option<String>,
+    pub note: Option<Option<String>>,
+    pub tags: Option<Vec<String>>,
+    pub space_id: Option<String>,
+    pub project_id: Option<Option<String>>,
+    pub deadline_at: Option<Option<i64>>,
+    pub rank: Option<i64>,
+    pub links: Option<Vec<LinkInputDto>>,
+    pub custom_fields: Option<Option<CustomFieldsDto>>,
+    pub archived_at: Option<Option<i64>>,
+    pub deleted_at: Option<Option<i64>>,
+}
+
+impl TaskUpdatePatch {
+    pub fn rank_only(new_rank: i64) -> Self {
+        Self {
+            rank: Some(new_rank),
+            ..Self::default()
+        }
+    }
+}
+
 impl TaskRepo {
     pub async fn list(
         conn: &DatabaseConnection,
@@ -94,48 +127,15 @@ impl TaskRepo {
         delete_many(conn, ids).await
     }
 
-    pub async fn restore_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
+    pub async fn restore_many(
+        conn: &DatabaseConnection,
+        ids: &[String],
+    ) -> Result<usize, AppError> {
         restore_many(conn, ids).await
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub async fn update(
-        conn: &DatabaseConnection,
-        id: &str,
-        title: Option<&str>,
-        status: Option<&str>,
-        done_reason: Option<Option<&str>>,
-        priority: Option<&str>,
-        note: Option<Option<&str>>,
-        tags: Option<Vec<String>>,
-        space_id: Option<&str>,
-        project_id: Option<Option<&str>>,
-        deadline_at: Option<Option<i64>>,
-        rank: Option<i64>,
-        links: Option<Vec<LinkInputDto>>,
-        custom_fields: Option<Option<CustomFieldsDto>>,
-        archived_at: Option<Option<i64>>,
-        deleted_at: Option<Option<i64>>,
-    ) -> Result<(), AppError> {
-        update(
-            conn,
-            id,
-            title,
-            status,
-            done_reason,
-            priority,
-            note,
-            tags,
-            space_id,
-            project_id,
-            deadline_at,
-            rank,
-            links,
-            custom_fields,
-            archived_at,
-            deleted_at,
-        )
-        .await
+    pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result<(), AppError> {
+        update(conn, input).await
     }
 }
 

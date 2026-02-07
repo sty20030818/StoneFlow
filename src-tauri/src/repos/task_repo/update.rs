@@ -11,36 +11,31 @@ use crate::db::entities::{
 };
 use crate::db::now_ms;
 
-use crate::types::{
-    dto::{CustomFieldsDto, LinkInputDto},
-    error::AppError,
-};
+use crate::types::error::AppError;
 
-use super::{custom_fields, links, stats, tags, validations};
+use super::{custom_fields, links, stats, tags, validations, TaskUpdateInput};
 
-#[allow(clippy::too_many_arguments)]
-pub async fn update(
-    conn: &DatabaseConnection,
-    id: &str,
-    title: Option<&str>,
-    status: Option<&str>,
-    done_reason: Option<Option<&str>>,
-    priority: Option<&str>,
-    note: Option<Option<&str>>,
-    tags_input: Option<Vec<String>>,
-    space_id: Option<&str>,
-    project_id: Option<Option<&str>>,
-    deadline_at: Option<Option<i64>>,
-    rank: Option<i64>,
-    links_input: Option<Vec<LinkInputDto>>,
-    custom_fields_input: Option<Option<CustomFieldsDto>>,
-    archived_at: Option<Option<i64>>,
-    deleted_at: Option<Option<i64>>,
-) -> Result<(), AppError> {
+pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result<(), AppError> {
+    let TaskUpdateInput { id, patch } = input;
+    let title = patch.title;
+    let status = patch.status;
+    let done_reason = patch.done_reason;
+    let priority = patch.priority;
+    let note = patch.note;
+    let tags_input = patch.tags;
+    let space_id = patch.space_id;
+    let project_id = patch.project_id;
+    let deadline_at = patch.deadline_at;
+    let rank = patch.rank;
+    let links_input = patch.links;
+    let custom_fields_input = patch.custom_fields;
+    let archived_at = patch.archived_at;
+    let deleted_at = patch.deleted_at;
+
     let txn = conn.begin().await.map_err(AppError::from)?;
 
     // 1. Fetch existing task
-    let task_model = tasks::Entity::find_by_id(id)
+    let task_model = tasks::Entity::find_by_id(id.as_str())
         .one(&txn)
         .await
         .map_err(AppError::from)?;
@@ -69,19 +64,20 @@ pub async fn update(
     let mut changed_any = false;
 
     // 2. Apply updates
-    if let Some(title) = title {
+    if let Some(title) = title.as_deref() {
         let title = validations::trim_and_validate_title(title)?;
         active_model.title = Set(title);
         touch_updated_at = true;
         changed_any = true;
     }
 
-    if let Some(status_str) = status {
+    if let Some(status_str) = status.as_deref() {
         let status_str = validations::normalize_status(status_str)?;
         let is_done = status_str == "done";
 
         if is_done {
-            let reason_str = validations::require_done_reason(done_reason)?;
+            let reason_str =
+                validations::require_done_reason(done_reason.as_ref().map(|v| v.as_deref()))?;
             let reason_enum = match reason_str.as_str() {
                 "completed" => DoneReason::Completed,
                 "cancelled" => DoneReason::Cancelled,
@@ -102,7 +98,7 @@ pub async fn update(
         }
         touch_updated_at = true;
         changed_any = true;
-    } else if let Some(reason_opt) = done_reason {
+    } else if let Some(reason_opt) = done_reason.as_ref() {
         // Only update reason if status is done (or keep check)
         if !current_status_is_done {
             return Err(AppError::Validation(
@@ -110,7 +106,9 @@ pub async fn update(
             ));
         }
         let reason = validations::normalize_done_reason(
-            reason_opt.ok_or_else(|| AppError::Validation("doneReason 不可为空".to_string()))?,
+            reason_opt
+                .as_deref()
+                .ok_or_else(|| AppError::Validation("doneReason 不可为空".to_string()))?,
         )?;
         let reason_enum = match reason.as_str() {
             "completed" => DoneReason::Completed,
@@ -122,7 +120,7 @@ pub async fn update(
         changed_any = true;
     }
 
-    if let Some(priority_str) = priority {
+    if let Some(priority_str) = priority.as_deref() {
         let priority_str = validations::normalize_priority(priority_str)?;
         let p_enum = match priority_str.as_str() {
             "P0" => Priority::P0,
@@ -146,7 +144,7 @@ pub async fn update(
         changed_any = true;
     }
 
-    if let Some(space_id) = space_id {
+    if let Some(space_id) = space_id.as_deref() {
         active_model.space_id = Set(space_id.to_string());
         effective_space_id = space_id.to_string();
         space_changed = effective_space_id != previous_space_id;
@@ -154,8 +152,8 @@ pub async fn update(
         changed_any = true;
     }
 
-    if let Some(project_id_opt) = project_id {
-        let next_project_id = project_id_opt.map(|s| s.to_string());
+    if let Some(project_id_opt) = project_id.as_ref() {
+        let next_project_id = project_id_opt.clone();
         active_model.project_id = Set(next_project_id.clone());
         project_changed = next_project_id != previous_project_id;
         touch_updated_at = true;
@@ -233,14 +231,14 @@ pub async fn update(
 
     // 4. Handle Associations (Links / Tags)
     if let Some(links_input) = links_input {
-        links::sync_links(&txn, id, &links_input).await?;
+        links::sync_links(&txn, &id, &links_input).await?;
         changed_any = true;
         // Note: sync_links updates updated_at in links table, but maybe task updated_at should also be touched?
         // Logic above sets touch_updated_at = true if links_input is Some.
     }
 
     if let Some(tags_input) = tags_input {
-        tags::sync_tags(&txn, id, &tags_input).await?;
+        tags::sync_tags(&txn, &id, &tags_input).await?;
         changed_any = true;
     }
 
