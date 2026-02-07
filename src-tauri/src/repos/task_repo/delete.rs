@@ -1,3 +1,6 @@
+//! Task 批量软删除/恢复。
+//! 重点：任务状态变更后需要同步刷新项目统计，且与批量更新放在同一事务。
+
 use sea_orm::{
     prelude::Expr, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect,
     TransactionTrait,
@@ -17,7 +20,7 @@ pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<us
     let now = now_ms();
     let txn = conn.begin().await.map_err(AppError::from)?;
 
-    // 1. 获取受影响的 Project ID
+    // 1) 先找受影响的项目 ID，后续刷新统计使用。
     let project_ids: Vec<String> = tasks::Entity::find()
         .select_only()
         .column(tasks::Column::ProjectId)
@@ -28,7 +31,7 @@ pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<us
         .await
         .map_err(AppError::from)?;
 
-    // 2. 软删除任务
+    // 2) 批量写 deleted_at，实现软删除。
     let res = tasks::Entity::update_many()
         .col_expr(tasks::Column::DeletedAt, Expr::value(Some(now)))
         .col_expr(tasks::Column::UpdatedAt, Expr::value(now))
@@ -39,8 +42,7 @@ pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<us
 
     let count = res.rows_affected as usize;
 
-    // 3. 刷新统计
-    // 去重 project_ids
+    // 3) 去重后刷新项目统计。
     let mut unique_pids = project_ids;
     unique_pids.sort();
     unique_pids.dedup();

@@ -1,3 +1,6 @@
+//! 默认 Space seed。
+//! 重点：仅在表为空时插入，保证幂等。
+
 use sea_orm::{
     ActiveModelTrait, DatabaseConnection, EntityTrait, PaginatorTrait, Set, TransactionTrait,
 };
@@ -13,10 +16,12 @@ pub async fn seed_default_spaces_if_empty(conn: &DatabaseConnection) -> Result<(
         .map_err(AppError::from)?;
 
     if count > 0 {
+        // 已有数据就不再注入默认值。
         return Ok(());
     }
 
     let now = now_ms();
+    // 重点：seed 使用事务，保证“要么全部插入，要么全部回滚”。
     let txn = conn.begin().await.map_err(AppError::from)?;
 
     let spaces_data = [

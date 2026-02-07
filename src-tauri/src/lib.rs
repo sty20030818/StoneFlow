@@ -1,3 +1,14 @@
+//! Tauri 后端入口（库模式）。
+//!
+//! 推荐阅读顺序（初学者）：
+//! 1) `run()` 看应用如何组装
+//! 2) `commands/*` 看前端调用 Rust 的边界
+//! 3) `repos/*` 看业务读写和事务
+//! 4) `db/*` 看数据库初始化、迁移、seed
+//! 5) `types/*` 看 DTO 与错误映射
+//!
+//! 重点：命令层不写复杂业务，只做参数接收和错误映射。
+
 mod commands;
 mod db;
 mod repos;
@@ -18,12 +29,14 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 重点：Builder 链式调用用于注册插件、生命周期钩子与命令路由。
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
+            // setup 阶段执行一次：适合做目录初始化、密钥插件注册、数据库初始化。
             let data_dir = app
                 .path()
                 .app_local_data_dir()
@@ -32,12 +45,15 @@ pub fn run() {
             let salt_path = data_dir.join("salt.txt");
             app.handle()
                 .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
+
+            // 重点：这里通过 async_runtime 阻塞等待初始化完成，确保命令注册后数据库可用。
             tauri::async_runtime::block_on(async move {
                 let db_state = crate::db::init_db(app.handle()).await.map_err(Box::new)?;
                 app.manage(db_state);
                 Ok(())
             })
         })
+        // invoke_handler 把前端可调用的 command 显式列在这里，便于审计接口边界。
         .invoke_handler(tauri::generate_handler![
             hello,
             list_projects,

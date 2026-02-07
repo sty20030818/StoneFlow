@@ -1,3 +1,6 @@
+//! Task 维度的标签适配层。
+//! 重点：这里是薄封装，复用 `tag_repo` 的通用实现。
+
 use std::collections::HashMap;
 
 use sea_orm::{ConnectionTrait, DatabaseConnection};
@@ -16,9 +19,6 @@ pub async fn sync_tags<C>(conn: &C, task_id: &str, tags: &[String]) -> Result<()
 where
     C: ConnectionTrait,
 {
-    // We can call tag_repo directly instead of common_task_utils if logic is same
-    // Existing common_task_utils::sync_task_tags probably calls tag_repo::sync_tags.
-    // Let's assume common_task_utils logic is just a wrapper for now, or check it.
-    // If I see it calls sync_tags(conn, TagEntity::Task, ...), I'll do it here directly to reduce indirection.
+    // 统一入口：任务标签同步最终委托给通用 tag_repo。
     tag_repo::sync_tags(conn, TagEntity::Task, task_id, tags, crate::db::now_ms()).await
 }

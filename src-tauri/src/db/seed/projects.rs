@@ -1,3 +1,6 @@
+//! 默认 Project seed + 历史任务回填。
+//! 重点：每个 Space 保证存在一个 default project，旧任务自动补齐 project_id。
+
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
     Set, TransactionTrait,
@@ -11,9 +14,10 @@ use crate::types::error::AppError;
 pub async fn seed_default_projects_and_backfill_tasks(
     conn: &DatabaseConnection,
 ) -> Result<(), AppError> {
-    // Assuming tables exist because migrations ran.
+    // 前置条件：迁移已完成，相关表都存在。
 
     let now = now_ms();
+    // 重点：创建默认项目 + 回填任务 + 刷新统计应在同一事务中完成。
     let txn = conn.begin().await.map_err(AppError::from)?;
 
     let spaces_list = spaces::Entity::find()
@@ -56,8 +60,7 @@ pub async fn seed_default_projects_and_backfill_tasks(
             active.insert(&txn).await.map_err(AppError::from)?;
         }
 
-        // Backfill tasks: update tasks set project_id = default where space_id = X and project_id is NULL
-        // SeaORM update many is explicit
+        // 回填：把未归属项目的任务挂到默认项目下。
         tasks::Entity::update_many()
             .col_expr(
                 tasks::Column::ProjectId,
@@ -69,7 +72,7 @@ pub async fn seed_default_projects_and_backfill_tasks(
             .await
             .map_err(AppError::from)?;
 
-        // Refresh stats
+        // 刷新默认项目统计，保证 UI 显示一致。
         stats::refresh_project_stats(&txn, &project_id, now).await?;
     }
 

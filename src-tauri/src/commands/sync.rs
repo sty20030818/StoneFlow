@@ -1,3 +1,10 @@
+//! 远程同步命令（本地 SQLite <-> Neon/Postgres）。
+//!
+//! 重点：
+//! - 本文件采用“按更新时间增量同步 + upsert”策略
+//! - 使用 app_settings 记录 last_pushed_at / last_pulled_at 水位
+//! - 当前策略偏实用，后续可演进为更严格的冲突解决
+
 use crate::db::entities::{prelude::*, *};
 use crate::db::{migrator::Migrator, DbState};
 use sea_orm::{
@@ -28,6 +35,7 @@ async fn get_remote_db(database_url: &str) -> Result<sea_orm::DatabaseConnection
         .acquire_timeout(std::time::Duration::from_secs(8))
         .idle_timeout(std::time::Duration::from_secs(8));
 
+    // 重点：先连上远端，再确保远端 schema 已迁移到最新版本。
     let db = Database::connect(opt)
         .await
         .map_err(|e| format!("连接远程数据库失败: {}", e))?;
@@ -66,7 +74,7 @@ async fn update_sync_time(
     };
     active_model.value = Set(time.to_string());
 
-    // 使用 OnConflict 来确保 Upsert (虽然后端逻辑已处理 find, 但加一层保障)
+    // 使用 OnConflict 做幂等 upsert，避免重复写入报错。
     app_settings::Entity::insert(active_model)
         .on_conflict(
             OnConflict::column(app_settings::Column::Key)
@@ -94,6 +102,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("读取本地 last_pulled_at 失败: {}", e))?;
 
+    // 重点：按 last_pulled_at 增量拉取，减小网络与写入成本。
     // 1. 同步 Spaces
     let remote_spaces = Spaces::find()
         .filter(spaces::Column::UpdatedAt.gt(last_pulled_at))
@@ -119,7 +128,7 @@ pub async fn pull_from_neon(
     }
 
     // 2. 同步 Projects
-    // 简单策略：直接 Upsert，假设依赖处理由 SeaORM/SQLite 宽容处理或应用层重试。
+    // 简单策略：直接 Upsert；冲突时以远端较新数据覆盖本地。
     let remote_projects = Projects::find()
         .filter(projects::Column::UpdatedAt.gt(last_pulled_at))
         .all(&remote_db)
@@ -251,6 +260,7 @@ pub async fn pull_from_neon(
         // TODO: 可按需补充其他关联表 TaskLinks, ProjectTags, ProjectLinks
     }
 
+    // 重点：只有本轮主要流程成功后才推进同步水位。
     // 更新时间戳
     update_sync_time(local_db, KEY_LAST_PULLED_AT, current_sync_start)
         .await
@@ -275,6 +285,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 last_pushed_at 失败: {}", e))?;
 
+    // push 与 pull 对称：读取本地增量，写入远端。
     // 1. 推送 Spaces
     let local_spaces = Spaces::find()
         .filter(spaces::Column::UpdatedAt.gt(last_pushed_at))
@@ -429,6 +440,7 @@ pub async fn push_to_neon(
         }
     }
 
+    // 重点：最后更新本地 last_pushed_at，避免“部分成功导致水位错位”。
     // 更新时间戳
     update_sync_time(local_db, KEY_LAST_PUSHED_AT, current_sync_start)
         .await

@@ -1,3 +1,6 @@
+//! custom_fields 序列化/反序列化与规范化。
+//! 重点：入库前做 key/label 去空校验，并用 BTreeMap 做稳定去重。
+
 use std::collections::BTreeMap;
 
 use crate::types::{
@@ -7,6 +10,7 @@ use crate::types::{
 use serde_json;
 
 pub fn parse_from_json_string(raw: Option<&str>) -> Option<CustomFieldsDto> {
+    // 解析失败返回 None，避免脏数据导致整个列表接口失败。
     raw.and_then(|value| serde_json::from_str::<CustomFieldsDto>(value).ok())
 }
 
@@ -32,6 +36,7 @@ pub fn normalize_custom_fields(input: CustomFieldsDto) -> Result<CustomFieldsDto
             ));
         }
         let value = item.value.map(|v| v.trim().to_string());
+        // 相同 key 后写覆盖前写，确保最终 key 唯一。
         map.insert(key.clone(), CustomFieldItemDto { key, label, value });
     }
 

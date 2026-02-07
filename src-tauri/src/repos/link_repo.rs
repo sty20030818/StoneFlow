@@ -1,3 +1,9 @@
+//! 通用链接仓储（Task/Project 共用）。
+//!
+//! 重点：
+//! - Link 主表 + junction 表的两层结构
+//! - 同步流程：删旧关联 -> upsert 链接 -> 插入新关联
+
 use std::collections::HashMap;
 
 use sea_orm::{
@@ -51,6 +57,7 @@ pub async fn load_links(
         return Ok(HashMap::new());
     }
 
+    // 统一加载接口，按 entity 选择不同关联表。
     let rows: Vec<(String, links::Model)> = match entity {
         LinkEntity::Task => task_links::Entity::find()
             .select_only()
@@ -105,7 +112,7 @@ pub async fn load_links(
         map.entry(owner_id).or_default().push(dto);
     }
 
-    // 排序逻辑 (rank 升序, created_at 升序)
+    // 排序逻辑：rank 升序，再按创建时间稳定排序。
     for list in map.values_mut() {
         list.sort_by(|a, b| {
             a.rank
@@ -129,7 +136,7 @@ where
     let now = now_ms();
     let normalized = normalize_link_inputs(links)?;
 
-    // 1. 删除现有的关联关系
+    // 1) 删除旧关联关系。
     let sql = format!(
         "DELETE FROM {} WHERE {} = $1",
         entity.junction_table(),
@@ -143,7 +150,7 @@ where
     .await
     .map_err(AppError::from)?;
 
-    // 2. 处理链接
+    // 2) 处理链接：有 id 则更新，无 id 则新建。
     for link_input in normalized {
         let link_id = if let Some(id) = &link_input.id {
             // 更新现有链接
@@ -177,7 +184,7 @@ where
             create_new_link(conn, &id, &link_input, now).await?
         };
 
-        // 插入关联表
+        // 3) 建立新关联关系。
         match entity {
             LinkEntity::Task => {
                 task_links::ActiveModel {
@@ -229,6 +236,7 @@ where
 }
 
 fn parse_kind(k: &str) -> Result<LinkKind, AppError> {
+    // 重点：字符串字段在边界处尽早转为强类型枚举，减少“字符串协议”扩散。
     match k {
         "doc" => Ok(LinkKind::Doc),
         "repoLocal" => Ok(LinkKind::RepoLocal),

@@ -1,3 +1,10 @@
+//! Project 命令边界。
+//!
+//! 学习要点：
+//! - 参数 DTO 与 repo 输入结构体的映射
+//! - `Option<Option<T>>` 在“清空字段 vs 不修改字段”场景的语义
+//! - 错误统一映射到 `ApiError`
+
 use serde::Deserialize;
 use tauri::State;
 
@@ -50,6 +57,7 @@ pub struct CreateProjectArgs {
 }
 
 /// 创建新项目。
+/// 重点：这里先构造 `ProjectCreateInput`，减少长参数列表带来的可读性问题。
 #[tauri::command]
 pub async fn create_project(
     state: State<'_, DbState>,
@@ -88,6 +96,9 @@ pub struct ReorderProjectArgs {
     pub project_id: String,
     pub new_rank: i64,
     /// 可选：如果需要更新父节点（跨层级拖拽）
+    /// - None：不修改 parent
+    /// - Some(None)：显式设为根节点
+    /// - Some(Some(x))：移动到 x 下面
     pub new_parent_id: Option<Option<String>>,
 }
 
@@ -122,6 +133,7 @@ pub async fn rebalance_project_ranks(
     state: State<'_, DbState>,
     args: RebalanceProjectRanksArgs,
 ) -> Result<(), ApiError> {
+    // 重点：`step` 用于拉开 rank 间隔，减少频繁全量重排。
     let step = args.step.unwrap_or(1024);
     ProjectRepo::rebalance_ranks(&state.conn, &args.project_ids, step)
         .await

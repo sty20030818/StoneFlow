@@ -1,3 +1,10 @@
+//! 错误类型定义。
+//!
+//! 重点：
+//! - `AppError` 是 Rust 内部语义错误
+//! - `ApiError` 是对前端稳定暴露的错误结构
+//! - 通过 `From<AppError>` 在命令层统一映射
+
 use serde::Serialize;
 use serde_json::Value;
 

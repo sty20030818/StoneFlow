@@ -1,3 +1,6 @@
+//! Task 查询逻辑（正常列表 + 回收站列表）。
+//! 重点：排序策略与过滤条件在这里集中定义，前端不重复实现。
+
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::db::entities::{sea_orm_active_enums::TaskStatus, tasks};
@@ -37,9 +40,7 @@ pub async fn list(
 
     query = query.filter(tasks::Column::DeletedAt.is_null());
 
-    // Sorting:
-    // - Done: completed_at DESC（仅按完成时间）
-    // - Others: priority ASC → rank ASC → deadline_at ASC → created_at ASC
+    // 重点：done 列表按完成时间倒序；todo 列表按优先级与 rank 排序。
     if is_done {
         query = query.order_by_desc(tasks::Column::CompletedAt);
     } else {
@@ -95,6 +96,7 @@ pub async fn list(
     }
 
     if !dtos.is_empty() {
+        // 重点：先批量查 tags/links，再按 task_id 回填，避免 N+1。
         let task_ids = dtos.iter().map(|t| t.id.clone()).collect::<Vec<_>>();
         let tag_map = tags::load_tags_for_tasks(conn, &task_ids).await?;
         let link_map = links::load_links_for_tasks(conn, &task_ids).await?;

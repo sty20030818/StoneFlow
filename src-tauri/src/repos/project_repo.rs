@@ -1,3 +1,10 @@
+//! Project 仓储（项目聚合根）。
+//!
+//! 学习要点：
+//! - DTO 聚合填充（links/tags）
+//! - 创建时默认 rank 计算
+//! - 读写逻辑与事务边界分离
+
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
     TransactionTrait,
@@ -20,6 +27,8 @@ pub mod helpers;
 
 pub struct ProjectRepo;
 
+/// 创建项目所需输入。
+/// 重点：把参数打包成结构体，避免函数签名过长。
 #[derive(Debug, Clone)]
 pub struct ProjectCreateInput {
     pub space_id: String,
@@ -140,6 +149,7 @@ impl ProjectRepo {
         let tags = tags.unwrap_or_default();
         let links = links.unwrap_or_default();
 
+        // 重点：先规范化与校验输入，再进入数据库写入阶段。
         let priority_enum = common_task_utils::parse_priority(priority.as_deref())?;
 
         let path =
@@ -148,6 +158,7 @@ impl ProjectRepo {
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
 
+        // 新项目默认插在同层级“末尾”。
         let mut rank_query = projects::Entity::find()
             .filter(projects::Column::SpaceId.eq(space_id.clone()))
             .filter(projects::Column::DeletedAt.is_null());
@@ -185,6 +196,7 @@ impl ProjectRepo {
             rank: Set(resolved_rank),
         };
 
+        // 重点：项目本体 + 标签 + 链接必须在一个事务里保持一致。
         let txn = conn.begin().await.map_err(AppError::from)?;
         let res = active_model.insert(&txn).await.map_err(AppError::from)?;
 
@@ -290,6 +302,7 @@ impl ProjectRepo {
 }
 
 fn model_to_dto(m: projects::Model) -> ProjectDto {
+    // 重点：computed_status 是展示层派生值，不单独落库。
     let computed_status = helpers::compute_status(
         m.deleted_at,
         m.archived_at,

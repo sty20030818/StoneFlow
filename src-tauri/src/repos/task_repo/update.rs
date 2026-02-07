@@ -1,3 +1,10 @@
+//! Task 更新逻辑（patch 语义）。
+//!
+//! 重点：
+//! - tri-state 字段用 `Option<Option<T>>` 表达“保持/清空/设置”
+//! - 事务内完成主表更新 + 标签/链接同步 + 项目统计刷新
+//! - `changed_any` 防止空 patch 误写入
+
 use std::collections::HashSet;
 
 use sea_orm::{
@@ -34,7 +41,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
 
     let txn = conn.begin().await.map_err(AppError::from)?;
 
-    // 1. Fetch existing task
+    // 1) 读取旧值：后续用于比较“是否需要重算 rank/刷新统计”。
     let task_model = tasks::Entity::find_by_id(id.as_str())
         .one(&txn)
         .await
@@ -63,7 +70,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
     let mut touch_updated_at = false;
     let mut changed_any = false;
 
-    // 2. Apply updates
+    // 2) 套用 patch：只处理传入字段。
     if let Some(title) = title.as_deref() {
         let title = validations::trim_and_validate_title(title)?;
         active_model.title = Set(title);
@@ -76,6 +83,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
         let is_done = status_str == "done";
 
         if is_done {
+            // 重点：任务切换到 done 时，必须有 done_reason。
             let reason_str =
                 validations::require_done_reason(done_reason.as_ref().map(|v| v.as_deref()))?;
             let reason_enum = match reason_str.as_str() {
@@ -99,7 +107,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
         touch_updated_at = true;
         changed_any = true;
     } else if let Some(reason_opt) = done_reason.as_ref() {
-        // Only update reason if status is done (or keep check)
+        // 仅当当前已是 done 才允许单独更新 done_reason。
         if !current_status_is_done {
             return Err(AppError::Validation(
                 "仅完成任务可设置 doneReason".to_string(),
@@ -173,6 +181,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
     } else if effective_status == TaskStatus::Todo
         && (priority_changed || status_changed_to_todo || space_changed || project_changed)
     {
+        // 重点：分桶字段变化（优先级/空间/项目/状态）后，rank 应落到新桶尾部。
         let max_rank_task = tasks::Entity::find()
             .filter(tasks::Column::SpaceId.eq(effective_space_id.clone()))
             .filter(tasks::Column::Status.eq(TaskStatus::Todo))
@@ -216,20 +225,17 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
         changed_any = true;
     }
 
-    // Handle touch updated at
+    // 统一更新 updated_at，避免每个分支重复写。
     if touch_updated_at {
         active_model.updated_at = Set(now);
     }
 
-    // 3. Save Active Model
-    // check changed_any? ActiveModel update only updates Set fields.
-    // If nothing set, it might error or do nothing.
-    // However, we handle links/tags separately which might set changed_any.
+    // 3) 保存主模型。
 
     let saved_model = active_model.update(&txn).await.map_err(AppError::from)?;
     let new_project_id = saved_model.project_id.clone();
 
-    // 4. Handle Associations (Links / Tags)
+    // 4) 处理关联表（links/tags）。
     if let Some(links_input) = links_input {
         links::sync_links(&txn, &id, &links_input).await?;
         changed_any = true;
@@ -242,13 +248,11 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
         changed_any = true;
     }
 
-    // We already set updated_at if touch_updated_at is true.
-
     if !changed_any {
         return Err(AppError::Validation("没有可更新的字段".to_string()));
     }
 
-    // 5. Refresh Stats
+    // 5) 刷新可能受影响的项目统计（旧项目 + 新项目）。
     let mut touched_pids = HashSet::new();
     if let Some(pid) = previous_project_id {
         touched_pids.insert(pid);

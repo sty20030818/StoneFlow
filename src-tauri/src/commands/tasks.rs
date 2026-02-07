@@ -1,3 +1,10 @@
+//! Task 命令边界。
+//!
+//! 学习要点：
+//! - patch 模式更新：只传变化字段
+//! - tri-state（`Option<Option<T>>`）表达“保持/清空/设置”
+//! - 命令层不直接碰实体，统一通过 `TaskRepo`
+
 use serde::Deserialize;
 use tauri::State;
 
@@ -120,6 +127,7 @@ pub struct UpdateTaskPatch {
 }
 
 impl From<UpdateTaskPatch> for RepoTaskUpdatePatch {
+    // 把命令层 DTO 转为 repo 层输入，避免 repo 感知 tauri 参数结构。
     fn from(value: UpdateTaskPatch) -> Self {
         Self {
             title: value.title,
@@ -142,6 +150,7 @@ impl From<UpdateTaskPatch> for RepoTaskUpdatePatch {
 
 #[tauri::command]
 pub async fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
+    // 重点：`id + patch` 模式比长参数函数更稳定、可扩展。
     let input = TaskUpdateInput {
         id: args.id,
         patch: args.patch.into(),
@@ -212,6 +221,7 @@ pub async fn reorder_task(
     state: State<'_, DbState>,
     args: ReorderTaskArgs,
 ) -> Result<(), ApiError> {
+    // 仅修改 rank，其他字段保持不变。
     let input = TaskUpdateInput {
         id: args.task_id,
         patch: RepoTaskUpdatePatch::rank_only(args.new_rank),
@@ -236,6 +246,7 @@ pub async fn rebalance_ranks(
     state: State<'_, DbState>,
     args: RebalanceRanksArgs,
 ) -> Result<(), ApiError> {
+    // 重点：这里逐条更新，逻辑简单直观；后续可按性能需求改为批量 SQL。
     let step = args.step.unwrap_or(1024);
     for (index, task_id) in args.task_ids.iter().enumerate() {
         let new_rank = (index as i64) * step;

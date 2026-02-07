@@ -1,3 +1,6 @@
+//! Task 维度的链接适配层。
+//! 重点：通过 LinkEntity 区分 Task/Project，底层逻辑可复用。
+
 use std::collections::HashMap;
 
 use sea_orm::{ConnectionTrait, DatabaseConnection};

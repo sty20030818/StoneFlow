@@ -1,3 +1,9 @@
+//! 前后端共享 DTO。
+//!
+//! 重点：
+//! - 这里定义的是“传输结构”，不是数据库实体
+//! - `serde(rename_all = "camelCase")` 保持与前端字段风格一致
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,12 +48,12 @@ pub struct TaskDto {
     pub project_id: Option<String>,
     pub title: String,
     pub note: Option<String>,
-    /// todo / done
+    /// todo / done（展示层字符串，避免前端绑定后端枚举）
     pub status: String,
     /// completed / cancelled（仅 status=done 时有效）
     pub done_reason: Option<String>,
     pub priority: String,  // P0, P1, P2, P3
-    pub tags: Vec<String>, // 从 task_tags JOIN 获取
+    pub tags: Vec<String>, // 从关联表聚合填充
     /// 外部链接列表
     pub links: Vec<LinkDto>,
     pub rank: i64,

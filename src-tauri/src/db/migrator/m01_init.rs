@@ -1,3 +1,6 @@
+//! 首个迁移：创建核心表与索引。
+//! 重点：`up` 和 `down` 必须可逆，且遵循外键依赖顺序。
+
 use sea_orm::{DbErr, Schema};
 use sea_orm_migration::prelude::*;
 
@@ -15,10 +18,8 @@ impl MigrationTrait for Migration {
         let builder = manager.get_database_backend();
         let schema = Schema::new(builder);
 
-        // 定义创建顺序 (先创建被依赖的表)
-        // Spaces -> Projects -> Tasks
-        // Tags, Links 独立
-        // 关联表 (Junctions) 最后
+        // 重点：创建顺序遵循依赖关系。
+        // Spaces -> Projects -> Tasks；Tags/Links 独立；junction 表最后创建。
 
         manager
             .create_table(
@@ -162,7 +163,7 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // 逆序删除
+        // 重点：down 必须按逆序删除，避免依赖冲突。
         manager
             .drop_table(Table::drop().table(project_links::Entity).to_owned())
             .await?;

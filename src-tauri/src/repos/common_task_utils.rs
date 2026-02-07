@@ -1,3 +1,6 @@
+//! Task/Project 共享的轻量校验与规范化工具。
+//! 重点：统一校验规则，避免命令层与 repo 层出现“同名不同义”。
+
 use crate::db::entities::sea_orm_active_enums::Priority;
 use crate::types::error::AppError;
 
@@ -16,6 +19,7 @@ pub fn parse_priority(priority: Option<&str>) -> Result<Priority, AppError> {
 }
 
 pub fn normalize_priority(priority: &str) -> String {
+    // 规范化优先级，便于后续统一比较与入库。
     priority.trim().to_uppercase()
 }
 
@@ -36,6 +40,7 @@ pub fn validate_priority(priority: &str) -> Result<(), AppError> {
 }
 
 pub fn normalize_status(status: &str) -> String {
+    // 状态字段统一小写，减少大小写分支。
     status.trim().to_lowercase()
 }
 

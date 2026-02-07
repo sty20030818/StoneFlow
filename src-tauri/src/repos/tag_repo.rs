@@ -1,3 +1,9 @@
+//! 通用标签仓储（可用于 Task 和 Project）。
+//!
+//! 重点：
+//! - `TagEntity` 把“业务实体差异”抽象为表名与 owner 列名
+//! - 同步策略是“先删关联再重建关联”，实现简单且幂等
+
 use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
@@ -39,6 +45,7 @@ pub async fn load_tags(
         return Ok(HashMap::new());
     }
 
+    // 统一查询接口，不同实体只在 junction 表不同。
     let rows: Vec<(String, String)> = match entity {
         TagEntity::Task => task_tags::Entity::find()
             .select_only()
@@ -92,7 +99,7 @@ where
 {
     let normalized = normalize_tag_names(names);
 
-    // 1. 删除现有的关联记录
+    // 1) 删除旧关联。
     let sql = format!(
         "DELETE FROM {} WHERE {} = $1",
         entity.table(),
@@ -106,7 +113,7 @@ where
     .await
     .map_err(AppError::from)?;
 
-    // 2. 插入新标签和关联
+    // 2) 确保标签存在并建立新关联。
     for name in normalized {
         let tag_id = ensure_tag(conn, &name, created_at).await?;
 
@@ -137,6 +144,7 @@ where
 }
 
 fn normalize_tag_names(tags: &[String]) -> Vec<String> {
+    // trim + 去空 + 去重（保留第一次出现的顺序）。
     let mut seen = HashSet::new();
     tags.iter()
         .map(|t| t.trim().to_string())

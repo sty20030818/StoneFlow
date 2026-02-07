@@ -1,3 +1,6 @@
+//! Task 创建逻辑。
+//! 重点：创建时默认状态为 todo、默认优先级为 P1，并计算末尾 rank。
+
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
 };
@@ -27,7 +30,7 @@ pub async fn create(
     let status = TaskStatus::Todo;
     let priority = Priority::P1;
 
-    // Find max rank to put new task at the bottom
+    // 重点：读取同分组最大 rank，把新任务插到“列表底部”。
     let max_rank_task = tasks::Entity::find()
         .filter(tasks::Column::SpaceId.eq(space_id))
         .filter(tasks::Column::Status.eq(status.clone()))

@@ -1,3 +1,6 @@
+//! Task 更新相关校验器。
+//! 重点：把校验逻辑单独抽离，减少 update 主流程的认知负担。
+
 use crate::repos::common_task_utils;
 use crate::types::error::AppError;
 
@@ -19,6 +22,10 @@ pub fn normalize_done_reason(reason: &str) -> Result<String, AppError> {
 }
 
 pub fn require_done_reason(done_reason: Option<Option<&str>>) -> Result<String, AppError> {
+    // 重点：双层 Option 的语义
+    // - None: 字段未传
+    // - Some(None): 显式清空
+    // - Some(Some(v)): 显式设置
     let reason = done_reason
         .ok_or_else(|| AppError::Validation("完成任务时必须提供 doneReason".to_string()))?
         .ok_or_else(|| AppError::Validation("完成任务时必须提供 doneReason".to_string()))?;

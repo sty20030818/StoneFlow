@@ -1,3 +1,9 @@
+//! Task 仓储入口。
+//!
+//! 重点：
+//! - 该模块把 task 的增删改查拆分为子模块，降低单文件复杂度
+//! - `TaskUpdateInput` 用 patch 模式表达“部分更新”
+
 use sea_orm::PaginatorTrait;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
@@ -33,7 +39,9 @@ pub use update::update;
 
 #[derive(Debug, Clone)]
 pub struct TaskUpdateInput {
+    /// 被更新的任务 ID。
     pub id: String,
+    /// patch 语义：只传需要修改的字段。
     pub patch: TaskUpdatePatch,
 }
 
@@ -56,6 +64,8 @@ pub struct TaskUpdatePatch {
 }
 
 impl TaskUpdatePatch {
+    /// 仅更新 rank 的快捷构造器。
+    /// 重点：避免在调用点传大量 `None`，降低出错概率。
     pub fn rank_only(new_rank: i64) -> Self {
         Self {
             rank: Some(new_rank),
