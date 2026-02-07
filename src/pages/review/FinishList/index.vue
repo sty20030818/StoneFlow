@@ -183,6 +183,7 @@
 </template>
 
 <script setup lang="ts">
+	import { refDebounced } from '@vueuse/core'
 	import { computed, onMounted, ref } from 'vue'
 
 	import { createModalLayerUi } from '@/config/ui-layer'
@@ -203,6 +204,7 @@
 	const projectFilter = ref<string>('all')
 	const dateRange = ref<string>('this-week')
 	const tagKeyword = ref('')
+	const debouncedTagKeyword = refDebounced(tagKeyword, 180)
 
 	const reflectionOpen = ref(false)
 	const reflectionTask = ref<TaskDto | null>(null)
@@ -310,8 +312,8 @@
 				const hasProject = projects.some((p) => p.id === projectFilter.value)
 				if (!hasProject) return false
 			}
-			if (tagKeyword.value.trim()) {
-				const kw = tagKeyword.value.trim().toLowerCase()
+			if (debouncedTagKeyword.value.trim()) {
+				const kw = debouncedTagKeyword.value.trim().toLowerCase()
 				if (!t.title.toLowerCase().includes(kw)) return false
 			}
 			return true

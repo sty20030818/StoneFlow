@@ -1,3 +1,4 @@
+import { useVModel } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
@@ -78,10 +79,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 
 	const loading = ref(false)
 	const tagInput = ref('')
-	const isOpen = computed({
-		get: () => props.modelValue,
-		set: (value) => emit('update:modelValue', value),
-	})
+	const isOpen = useVModel(props, 'modelValue', emit)
 
 	function normalizeSpaceId(value?: string): SpaceId {
 		const candidate = value as SpaceId | undefined

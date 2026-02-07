@@ -1,4 +1,7 @@
+import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
+import { formatDistanceToNow } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
 
 import { useUpdater } from '@/composables/useUpdater'
 import { useSettingsSystemActions } from '@/pages/Settings/composables/useSettingsSystemActions'
@@ -29,6 +32,7 @@ export function useAboutPage() {
 	const dataPath = ref('')
 
 	const advancedOpen = ref(false)
+	const now = useNow({ interval: 60_000 })
 
 	const aboutLinks = ABOUT_LINKS
 	const changelogSummary = CHANGELOG_SUMMARY
@@ -37,7 +41,9 @@ export function useAboutPage() {
 
 	const lastCheckedText = computed(() => {
 		if (!state.value.lastCheckedAt) return '尚未检查'
-		return new Date(state.value.lastCheckedAt).toLocaleString()
+		// 显式依赖 now，保证相对时间文案自动刷新。
+		void now.value
+		return formatDistanceToNow(state.value.lastCheckedAt, { addSuffix: true, locale: zhCN })
 	})
 
 	const updateStateLabel = computed(() => {

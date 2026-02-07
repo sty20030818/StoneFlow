@@ -44,7 +44,8 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+	import { useEventListener } from '@vueuse/core'
+	import { computed, provide, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
@@ -205,13 +206,8 @@
 	}
 	provide('openCreateTaskModal', handleOpenCreateTaskModal)
 
-	onMounted(() => {
-		window.addEventListener('keydown', handleKeydown)
-	})
-
-	onUnmounted(() => {
-		window.removeEventListener('keydown', handleKeydown)
-	})
+	// 统一使用 VueUse 监听，生命周期内自动清理，避免手写 add/remove 重复样板。
+	useEventListener(window, 'keydown', handleKeydown)
 
 	// 暴露给子组件使用
 	provide('commandPalette', {

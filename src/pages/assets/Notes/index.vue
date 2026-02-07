@@ -164,6 +164,7 @@
 </template>
 
 <script setup lang="ts">
+	import { refDebounced } from '@vueuse/core'
 	import { computed, onMounted, ref } from 'vue'
 
 	import type { NoteDto } from '@/services/api/notes'
@@ -175,6 +176,7 @@
 	const notes = ref<NoteDto[]>([])
 	const selectedNote = ref<NoteDto | null>(null)
 	const searchKeyword = ref('')
+	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
 
 	const editForm = ref({
 		title: '',
@@ -186,8 +188,8 @@
 	const filteredNotes = computed(() => {
 		let result = notes.value
 
-		if (searchKeyword.value.trim()) {
-			const kw = searchKeyword.value.trim().toLowerCase()
+		if (debouncedSearchKeyword.value.trim()) {
+			const kw = debouncedSearchKeyword.value.trim().toLowerCase()
 			result = result.filter((n) => {
 				if (n.title.toLowerCase().includes(kw)) return true
 				if (n.content.toLowerCase().includes(kw)) return true

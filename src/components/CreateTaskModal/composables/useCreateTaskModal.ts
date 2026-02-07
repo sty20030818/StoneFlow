@@ -1,4 +1,4 @@
-import { useToggle } from '@vueuse/core'
+import { useToggle, useVModel } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
@@ -93,10 +93,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 
 	const loading = ref(false)
 	const defaultProjectId = ref<string | null>(null)
-	const isOpen = computed({
-		get: () => props.modelValue,
-		set: (value) => emit('update:modelValue', value),
-	})
+	const isOpen = useVModel(props, 'modelValue', emit)
 
 	const statusOptionsArray = [...statusOptions]
 

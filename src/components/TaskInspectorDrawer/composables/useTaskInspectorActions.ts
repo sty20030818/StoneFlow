@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import { useTimeoutFn } from '@vueuse/core'
 
 import type { TaskDto, UpdateTaskPatch } from '@/services/api/tasks'
 import { updateTask } from '@/services/api/tasks'
@@ -15,13 +16,24 @@ export function useTaskInspectorActions(params: {
 	refreshSignals: ReturnType<typeof useRefreshSignalsStore>
 }) {
 	const { currentTask, state, store, refreshSignals } = params
-	let saveStateTimer: ReturnType<typeof setTimeout> | null = null
+	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
+		() => {
+			state.saveState.value = 'idle'
+		},
+		1200,
+		{ immediate: false },
+	)
+	const { start: startErrorTimer, stop: stopErrorTimer } = useTimeoutFn(
+		() => {
+			state.saveState.value = 'idle'
+		},
+		3000,
+		{ immediate: false },
+	)
 
 	function clearSaveStateTimer() {
-		if (saveStateTimer) {
-			clearTimeout(saveStateTimer)
-			saveStateTimer = null
-		}
+		stopSavedTimer()
+		stopErrorTimer()
 	}
 
 	function beginSave() {
@@ -36,15 +48,11 @@ export function useTaskInspectorActions(params: {
 		clearSaveStateTimer()
 		if (ok) {
 			state.saveState.value = 'saved'
-			saveStateTimer = setTimeout(() => {
-				state.saveState.value = 'idle'
-			}, 1200)
+			startSavedTimer()
 			return
 		}
 		state.saveState.value = 'error'
-		saveStateTimer = setTimeout(() => {
-			state.saveState.value = 'idle'
-		}, 3000)
+		startErrorTimer()
 	}
 
 	async function commitUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {

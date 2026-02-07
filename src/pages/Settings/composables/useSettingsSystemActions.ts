@@ -1,11 +1,19 @@
+import { useClipboard } from '@vueuse/core'
+
 import { copyText, openExternalUrl, openLocalPath } from '@/services/tauri/system-actions'
 
 export function useSettingsSystemActions() {
 	const toast = useToast()
+	const { copy: copyToClipboard, isSupported } = useClipboard()
 
 	async function copy(text: string, successMessage: string, failTitle = '复制失败') {
 		try {
-			await copyText(text)
+			// 统一由 VueUse 封装剪贴板能力，避免页面层分散实现。
+			if (!isSupported.value) {
+				await copyText(text)
+			} else {
+				await copyToClipboard(text)
+			}
 			toast.add({ title: successMessage, color: 'success' })
 		} catch (error) {
 			toast.add({

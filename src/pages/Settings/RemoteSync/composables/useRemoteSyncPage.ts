@@ -1,3 +1,4 @@
+import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -13,6 +14,7 @@ export function useRemoteSyncPage() {
 	const refreshSignals = useRefreshSignalsStore()
 	const toast = useToast()
 	const logPrefix = '[settings-remote-sync]'
+	const now = useNow({ interval: 60_000 })
 
 	const {
 		isPushing,
@@ -120,13 +122,17 @@ export function useRemoteSyncPage() {
 	})
 
 	const lastPushedText = computed(() => {
-		if (!lastPushedAt.value) return '未上传'
-		return formatDistanceToNow(lastPushedAt.value, { addSuffix: true, locale: zhCN })
+		const ts = lastPushedAt.value
+		if (!Number.isFinite(ts) || ts <= 0) return '未上传'
+		void now.value
+		return formatDistanceToNow(ts, { addSuffix: true, locale: zhCN })
 	})
 
 	const lastPulledText = computed(() => {
-		if (!lastPulledAt.value) return '未下载'
-		return formatDistanceToNow(lastPulledAt.value, { addSuffix: true, locale: zhCN })
+		const ts = lastPulledAt.value
+		if (!Number.isFinite(ts) || ts <= 0) return '未下载'
+		void now.value
+		return formatDistanceToNow(ts, { addSuffix: true, locale: zhCN })
 	})
 
 	function validateUrl(url: string) {
@@ -189,6 +195,10 @@ export function useRemoteSyncPage() {
 	}
 
 	async function handlePush() {
+		if (testingCurrent.value || testingNew.value || testingEdit.value) {
+			toast.add({ title: '请等待连接测试完成后再上传', color: 'neutral' })
+			return
+		}
 		try {
 			const ts = await pushToRemote()
 			if (!ts) return
@@ -200,6 +210,10 @@ export function useRemoteSyncPage() {
 	}
 
 	async function handlePull() {
+		if (testingCurrent.value || testingNew.value || testingEdit.value) {
+			toast.add({ title: '请等待连接测试完成后再下载', color: 'neutral' })
+			return
+		}
 		try {
 			const ts = await pullFromRemote()
 			if (!ts) return

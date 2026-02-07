@@ -29,11 +29,14 @@ async fn get_remote_db(database_url: &str) -> Result<sea_orm::DatabaseConnection
     }
 
     let mut opt = ConnectOptions::new(database_url.to_string());
-    opt.max_connections(100)
-        .min_connections(5)
-        .connect_timeout(std::time::Duration::from_secs(8))
-        .acquire_timeout(std::time::Duration::from_secs(8))
-        .idle_timeout(std::time::Duration::from_secs(8));
+    // 远端同步是“命令式短连接”场景，不需要预热大量连接。
+    // 之前 min=5 / max=100 在测试+推送连续触发时容易把 Neon 连接数打满，
+    // 进而出现 `pool timed out while waiting for an open connection`。
+    opt.max_connections(4)
+        .min_connections(0)
+        .connect_timeout(std::time::Duration::from_secs(12))
+        .acquire_timeout(std::time::Duration::from_secs(20))
+        .idle_timeout(std::time::Duration::from_secs(30));
 
     // 重点：先连上远端，再确保远端 schema 已迁移到最新版本。
     let db = Database::connect(opt)

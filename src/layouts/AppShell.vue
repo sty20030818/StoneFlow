@@ -18,7 +18,8 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, watch } from 'vue'
+	import { watchDebounced } from '@vueuse/core'
+	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
 	import Sidebar from './Sidebar.vue'
@@ -65,8 +66,8 @@
 		},
 	})
 
-	// 监听路由变化，实时持久化当前 Space 状态
-	watch(
+	// 路由高频变化时用防抖持久化，减少无效写入与启动期闪动。
+	watchDebounced(
 		() => [route.path, route.query.project],
 		() => {
 			if (!settingsStore.loaded || !viewStateStore.loaded) return
@@ -80,6 +81,10 @@
 				spaceId: currentSpaceId,
 				projectId,
 			})
+		},
+		{
+			debounce: 200,
+			maxWait: 800,
 		},
 	)
 </script>

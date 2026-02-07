@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useStorage } from '@vueuse/core'
 import { computed, reactive, ref } from 'vue'
 
 import { SPACE_IDS } from '@/config/space'
@@ -9,8 +10,9 @@ import { DEFAULT_SETTINGS, settingsStore } from '@/services/tauri/store'
 export const useSettingsStore = defineStore('settings', () => {
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
-	// 优化：从 localStorage 初始化以防止闪烁
-	const savedSpaceId = localStorage.getItem('settings_active_space_id')
+	// 用 VueUse 持久化 activeSpaceId，避免手写 localStorage 样板与闪烁。
+	const activeSpaceIdStorage = useStorage<SpaceId>('settings_active_space_id', DEFAULT_SETTINGS.activeSpaceId)
+	const savedSpaceId = activeSpaceIdStorage.value
 	const initialSpaceId =
 		savedSpaceId && (SPACE_IDS as readonly string[]).includes(savedSpaceId)
 			? (savedSpaceId as SpaceId)
@@ -29,8 +31,7 @@ export const useSettingsStore = defineStore('settings', () => {
 				next.activeSpaceId = 'work'
 			}
 			Object.assign(state, next)
-			// 同步回 localStorage
-			localStorage.setItem('settings_active_space_id', next.activeSpaceId)
+			activeSpaceIdStorage.value = next.activeSpaceId
 		}
 		loaded.value = true
 	}
@@ -55,17 +56,15 @@ export const useSettingsStore = defineStore('settings', () => {
 	}
 
 	async function save() {
-		// 同步到 localStorage
-		localStorage.setItem('settings_active_space_id', state.activeSpaceId)
+		activeSpaceIdStorage.value = state.activeSpaceId
 		await settingsStore.set('settings', { ...state })
 		await settingsStore.save()
 	}
 
 	async function update(patch: Partial<SettingsModel>) {
 		Object.assign(state, patch)
-		// 如果 activeSpaceId 改变，同步到 localStorage
 		if (patch.activeSpaceId) {
-			localStorage.setItem('settings_active_space_id', patch.activeSpaceId)
+			activeSpaceIdStorage.value = patch.activeSpaceId
 		}
 		await settingsStore.set('settings', { ...state })
 	}

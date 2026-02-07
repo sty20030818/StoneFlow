@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { uiStore, DEFAULT_UI_STATE, type UiState } from '@/services/tauri/store'
@@ -7,56 +8,20 @@ import type { LastViewState } from '@/types/shared/settings'
 const LAST_VIEW_CACHE_KEY = 'ui_last_view_v1'
 const LIBRARY_COLLAPSED_CACHE_KEY = 'ui_library_collapsed_v1'
 
-function readCachedLastViews(): Record<string, LastViewState> {
-	try {
-		const raw = localStorage.getItem(LAST_VIEW_CACHE_KEY)
-		if (!raw) return {}
-		const parsed = JSON.parse(raw)
-		return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, LastViewState>) : {}
-	} catch {
-		return {}
-	}
-}
-
-function readCachedLibraryCollapsed(): boolean {
-	try {
-		return localStorage.getItem(LIBRARY_COLLAPSED_CACHE_KEY) === '1'
-	} catch {
-		return false
-	}
-}
-
-function writeCachedLastViews(value: Record<string, LastViewState>) {
-	try {
-		localStorage.setItem(LAST_VIEW_CACHE_KEY, JSON.stringify(value))
-	} catch {
-		// ignore
-	}
-}
-
-function writeCachedLibraryCollapsed(value: boolean) {
-	try {
-		localStorage.setItem(LIBRARY_COLLAPSED_CACHE_KEY, value ? '1' : '0')
-	} catch {
-		// ignore
-	}
-}
-
 export const useViewStateStore = defineStore('view-state', () => {
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
-	const lastViews = ref<Record<string, LastViewState>>(readCachedLastViews())
-	const libraryCollapsed = ref(readCachedLibraryCollapsed())
+	// 统一由 VueUse 管理本地缓存，避免手写 get/set 的重复与容错分散。
+	const lastViews = useStorage<Record<string, LastViewState>>(LAST_VIEW_CACHE_KEY, {})
+	const libraryCollapsed = useStorage<boolean>(LIBRARY_COLLAPSED_CACHE_KEY, false)
 
 	async function loadInternal() {
 		const val = await uiStore.get<UiState>('ui')
 		if (val?.lastView) {
 			lastViews.value = { ...val.lastView }
-			writeCachedLastViews(lastViews.value)
 		}
 		if (typeof val?.libraryCollapsed === 'boolean') {
 			libraryCollapsed.value = val.libraryCollapsed
-			writeCachedLibraryCollapsed(libraryCollapsed.value)
 		}
 		loaded.value = true
 	}
@@ -90,7 +55,6 @@ export const useViewStateStore = defineStore('view-state', () => {
 			return
 		}
 		lastViews.value = { ...lastViews.value, [spaceId]: view }
-		writeCachedLastViews(lastViews.value)
 		const current = (await uiStore.get<UiState>('ui')) ?? DEFAULT_UI_STATE
 		await uiStore.set('ui', { ...current, lastView: { ...lastViews.value } })
 	}
@@ -98,7 +62,6 @@ export const useViewStateStore = defineStore('view-state', () => {
 	async function setLibraryCollapsed(collapsed: boolean) {
 		if (libraryCollapsed.value === collapsed) return
 		libraryCollapsed.value = collapsed
-		writeCachedLibraryCollapsed(collapsed)
 		const current = (await uiStore.get<UiState>('ui')) ?? DEFAULT_UI_STATE
 		await uiStore.set('ui', { ...current, libraryCollapsed: collapsed })
 	}

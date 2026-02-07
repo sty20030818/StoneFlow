@@ -1,31 +1,13 @@
 import { defineStore } from 'pinia'
+import { useStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
 import { DEFAULT_UI_STATE, uiStore, type UiState } from '@/services/tauri/store'
 
 const PROJECT_TREE_EXPANDED_CACHE_KEY = 'ui_project_tree_expanded_v1'
 
-function readCachedExpandedBySpace(): Record<string, string[]> {
-	try {
-		const raw = localStorage.getItem(PROJECT_TREE_EXPANDED_CACHE_KEY)
-		if (!raw) return {}
-		const parsed = JSON.parse(raw)
-		return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, string[]>) : {}
-	} catch {
-		return {}
-	}
-}
-
-function writeCachedExpandedBySpace(value: Record<string, string[]>) {
-	try {
-		localStorage.setItem(PROJECT_TREE_EXPANDED_CACHE_KEY, JSON.stringify(value))
-	} catch {
-		// ignore
-	}
-}
-
 export const useProjectTreeStore = defineStore('project-tree', () => {
-	const expandedBySpace = ref<Record<string, string[]>>(readCachedExpandedBySpace())
+	const expandedBySpace = useStorage<Record<string, string[]>>(PROJECT_TREE_EXPANDED_CACHE_KEY, {})
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
 
@@ -33,7 +15,6 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 		const val = await uiStore.get<UiState>('ui')
 		if (val?.projectTreeExpanded) {
 			expandedBySpace.value = val.projectTreeExpanded
-			writeCachedExpandedBySpace(expandedBySpace.value)
 		}
 		loaded.value = true
 	}
@@ -67,7 +48,6 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 			return
 		}
 		expandedBySpace.value[spaceId] = keys
-		writeCachedExpandedBySpace(expandedBySpace.value)
 		const current = (await uiStore.get<UiState>('ui')) ?? DEFAULT_UI_STATE
 		await uiStore.set('ui', { ...current, projectTreeExpanded: { ...expandedBySpace.value } })
 	}

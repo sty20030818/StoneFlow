@@ -1,4 +1,5 @@
-import { computed, onMounted, onUnmounted } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import { computed } from 'vue'
 
 import type { TaskDto } from '@/services/api/tasks'
 import { useProjectsStore } from '@/stores/projects'
@@ -45,13 +46,7 @@ export function useTaskInspectorDrawer() {
 		}
 	}
 
-	onMounted(() => {
-		window.addEventListener('keydown', onKeydown)
-	})
-
-	onUnmounted(() => {
-		window.removeEventListener('keydown', onKeydown)
-	})
+	useEventListener(window, 'keydown', onKeydown)
 
 	return {
 		currentTask,

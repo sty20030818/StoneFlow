@@ -1,16 +1,11 @@
-import { computed, onMounted, ref } from 'vue'
+import { StorageSerializers, useStorage } from '@vueuse/core'
+import { computed, ref } from 'vue'
 
 import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 
 const LAST_PUSHED_AT_KEY = 'neon_last_pushed_at'
 const LAST_PULLED_AT_KEY = 'neon_last_pulled_at'
-
-function toTimestamp(value: string | null) {
-	if (!value) return null
-	const parsed = Number.parseInt(value, 10)
-	return Number.isNaN(parsed) ? null : parsed
-}
 
 export function useRemoteSyncActions() {
 	const remoteSyncStore = useRemoteSyncStore()
@@ -19,8 +14,13 @@ export function useRemoteSyncActions() {
 	const isPulling = ref(false)
 	const syncError = ref<string | null>(null)
 
-	const lastPushedAt = ref<number | null>(null)
-	const lastPulledAt = ref<number | null>(null)
+	// 同步时间统一交给 VueUse 持久化，并强制 number 序列化，缺省值为 0（表示未同步）。
+	const lastPushedAt = useStorage<number>(LAST_PUSHED_AT_KEY, 0, undefined, {
+		serializer: StorageSerializers.number,
+	})
+	const lastPulledAt = useStorage<number>(LAST_PULLED_AT_KEY, 0, undefined, {
+		serializer: StorageSerializers.number,
+	})
 
 	const hasActiveProfile = computed(() => !!remoteSyncStore.activeProfileId)
 
@@ -42,20 +42,6 @@ export function useRemoteSyncActions() {
 		return url
 	}
 
-	function persistTimes() {
-		if (lastPushedAt.value) {
-			localStorage.setItem(LAST_PUSHED_AT_KEY, String(lastPushedAt.value))
-		}
-		if (lastPulledAt.value) {
-			localStorage.setItem(LAST_PULLED_AT_KEY, String(lastPulledAt.value))
-		}
-	}
-
-	function loadPersistedTimes() {
-		lastPushedAt.value = toTimestamp(localStorage.getItem(LAST_PUSHED_AT_KEY))
-		lastPulledAt.value = toTimestamp(localStorage.getItem(LAST_PULLED_AT_KEY))
-	}
-
 	async function pushToRemote() {
 		if (isPushing.value || isPulling.value) return null
 		isPushing.value = true
@@ -65,7 +51,6 @@ export function useRemoteSyncActions() {
 			const databaseUrl = await resolveActiveDatabaseUrl()
 			const ts = await tauriInvoke<number>('push_to_neon', { args: { databaseUrl } })
 			lastPushedAt.value = ts
-			persistTimes()
 			return ts
 		} catch (error) {
 			syncError.value = error instanceof Error ? error.message : '上传失败'
@@ -84,7 +69,6 @@ export function useRemoteSyncActions() {
 			const databaseUrl = await resolveActiveDatabaseUrl()
 			const ts = await tauriInvoke<number>('pull_from_neon', { args: { databaseUrl } })
 			lastPulledAt.value = ts
-			persistTimes()
 			return ts
 		} catch (error) {
 			syncError.value = error instanceof Error ? error.message : '下载失败'
@@ -94,10 +78,6 @@ export function useRemoteSyncActions() {
 		}
 	}
 
-	onMounted(() => {
-		loadPersistedTimes()
-	})
-
 	return {
 		isPushing,
 		isPulling,
@@ -105,7 +85,6 @@ export function useRemoteSyncActions() {
 		lastPushedAt,
 		lastPulledAt,
 		hasActiveProfile,
-		loadPersistedTimes,
 		pushToRemote,
 		pullFromRemote,
 	}

@@ -228,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+	import { refDebounced, useClipboard, useTimeoutFn } from '@vueuse/core'
 	import { computed, onMounted, ref } from 'vue'
 
 	import type { VaultEntryDto, VaultEntryType } from '@/services/api/vault'
@@ -240,7 +241,16 @@
 	const selectedEntry = ref<VaultEntryDto | null>(null)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
+	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
 	const showValue = ref(false)
+	const { copy } = useClipboard()
+	const { start: hideValueLater, stop: stopHideValueTimer } = useTimeoutFn(
+		() => {
+			showValue.value = false
+		},
+		2000,
+		{ immediate: false },
+	)
 
 	const editForm = ref({
 		name: '',
@@ -277,8 +287,8 @@
 			result = result.filter((e) => e.folder === selectedFolder.value)
 		}
 
-		if (searchKeyword.value.trim()) {
-			const kw = searchKeyword.value.trim().toLowerCase()
+		if (debouncedSearchKeyword.value.trim()) {
+			const kw = debouncedSearchKeyword.value.trim().toLowerCase()
 			result = result.filter((e) => {
 				if (e.name.toLowerCase().includes(kw)) return true
 				if (e.folder && e.folder.toLowerCase().includes(kw)) return true
@@ -321,11 +331,10 @@
 			return
 		}
 		try {
-			await navigator.clipboard.writeText(editForm.value.value)
+			await copy(editForm.value.value)
 			toast.add({ title: '已复制到剪贴板', color: 'success' })
-			setTimeout(() => {
-				showValue.value = false
-			}, 2000)
+			stopHideValueTimer()
+			hideValueLater()
 		} catch (e) {
 			toast.add({
 				title: '复制失败',

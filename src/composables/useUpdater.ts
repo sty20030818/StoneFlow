@@ -1,3 +1,4 @@
+import { useStorage, useTimeoutFn } from '@vueuse/core'
 import { onMounted, ref } from 'vue'
 
 import { check, type Update } from '@tauri-apps/plugin-updater'
@@ -39,30 +40,18 @@ const state = ref<UpdateState>({
 	lastCheckedAt: null,
 })
 
-const autoCheckEnabled = ref(readBool(AUTO_CHECK_KEY, DEFAULT_AUTO_CHECK))
-const promptInstallEnabled = ref(readBool(PROMPT_INSTALL_KEY, DEFAULT_PROMPT_INSTALL))
+const autoCheckEnabled = useStorage<boolean>(AUTO_CHECK_KEY, DEFAULT_AUTO_CHECK)
+const promptInstallEnabled = useStorage<boolean>(PROMPT_INSTALL_KEY, DEFAULT_PROMPT_INSTALL)
 
 let updateInstance: Update | null = null
 let initialized = false
-let autoCheckTimer: ReturnType<typeof setTimeout> | null = null
-
-function readBool(key: string, fallback: boolean) {
-	try {
-		const value = localStorage.getItem(key)
-		if (value === null) return fallback
-		return value === '1'
-	} catch {
-		return fallback
-	}
-}
-
-function writeBool(key: string, value: boolean) {
-	try {
-		localStorage.setItem(key, value ? '1' : '0')
-	} catch {
-		// ignore persist failure
-	}
-}
+const { start: startAutoCheckTimer, stop: stopAutoCheckTimer } = useTimeoutFn(
+	() => {
+		void checkForUpdate({ silent: true })
+	},
+	3000,
+	{ immediate: false },
+)
 
 function resetUpdatePayload() {
 	state.value.available = false
@@ -73,18 +62,14 @@ function resetUpdatePayload() {
 }
 
 function clearAutoCheckTimer() {
-	if (!autoCheckTimer) return
-	clearTimeout(autoCheckTimer)
-	autoCheckTimer = null
+	stopAutoCheckTimer()
 }
 
 function scheduleAutoCheck() {
 	clearAutoCheckTimer()
 	if (!autoCheckEnabled.value) return
-	// 延迟 3 秒检查，避免影响启动性能
-	autoCheckTimer = setTimeout(() => {
-		void checkForUpdate({ silent: true })
-	}, 3000)
+	// 延迟 3 秒检查，避免影响启动性能。
+	startAutoCheckTimer()
 }
 
 function ensureInitialized() {
@@ -181,7 +166,6 @@ function dismiss() {
 
 function setAutoCheckEnabled(value: boolean) {
 	autoCheckEnabled.value = value
-	writeBool(AUTO_CHECK_KEY, value)
 	if (value) {
 		scheduleAutoCheck()
 	} else {
@@ -191,7 +175,6 @@ function setAutoCheckEnabled(value: boolean) {
 
 function setPromptInstallEnabled(value: boolean) {
 	promptInstallEnabled.value = value
-	writeBool(PROMPT_INSTALL_KEY, value)
 }
 
 export function useUpdater() {

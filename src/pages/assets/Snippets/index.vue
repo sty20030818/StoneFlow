@@ -218,6 +218,7 @@
 </template>
 
 <script setup lang="ts">
+	import { refDebounced } from '@vueuse/core'
 	import { computed, onMounted, ref } from 'vue'
 
 	import type { SnippetDto } from '@/services/api/snippets'
@@ -230,6 +231,7 @@
 	const selectedSnippet = ref<SnippetDto | null>(null)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
+	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
 
 	const editForm = ref({
 		title: '',
@@ -256,8 +258,8 @@
 			result = result.filter((s) => s.folder === selectedFolder.value)
 		}
 
-		if (searchKeyword.value.trim()) {
-			const kw = searchKeyword.value.trim().toLowerCase()
+		if (debouncedSearchKeyword.value.trim()) {
+			const kw = debouncedSearchKeyword.value.trim().toLowerCase()
 			result = result.filter((s) => {
 				if (s.title.toLowerCase().includes(kw)) return true
 				if (s.content.toLowerCase().includes(kw)) return true
