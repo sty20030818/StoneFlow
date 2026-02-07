@@ -5,7 +5,7 @@
 			<UPopover
 				:mode="'click'"
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="{ content: 'z-100' }">
+				:ui="drawerPopoverUi">
 				<button
 					type="button"
 					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -50,7 +50,7 @@
 			<UPopover
 				:mode="'click'"
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="{ content: 'z-100' }">
+				:ui="drawerPopoverUi">
 				<button
 					type="button"
 					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -99,10 +99,12 @@
 
 <script setup lang="ts">
 	import type { PriorityOption, TaskPriorityValue } from '@/config/task'
+	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 
 	// 使用 defineModel 实现双向绑定
 	const priority = defineModel<TaskPriorityValue>('priority', { required: true })
 	const deadline = defineModel<string>('deadline', { required: true })
+	const drawerPopoverUi = createDrawerPopoverLayerUi()
 
 	type Props = {
 		priorityIcon: string

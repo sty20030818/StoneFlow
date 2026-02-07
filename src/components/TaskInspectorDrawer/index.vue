@@ -5,10 +5,7 @@
 		title="任务详情"
 		description="查看与编辑当前任务的详细信息"
 		side="right"
-		:ui="{
-			content: 'w-[560px] h-full flex flex-col bg-default/90 backdrop-blur-2xl border-l border-default z-50',
-			wrapper: 'z-50',
-		}"
+		:ui="drawerUi"
 		:close="false">
 		<template #content>
 			<div class="flex flex-col h-full">
@@ -136,6 +133,7 @@
 	import PriorityDeadlineSection from './components/PriorityDeadlineSection.vue'
 	import StatusSection from './components/StatusSection.vue'
 	import TimelineSection from './components/TimelineSection.vue'
+	import { createDrawerLayerUi } from '@/config/ui-layer'
 	import { useTaskInspectorDrawer } from './composables/useTaskInspectorDrawer'
 
 	const {
@@ -190,6 +188,10 @@
 		onNoteBlur,
 		toggleTimeline,
 	} = useTaskInspectorDrawer()
+
+	const drawerUi = createDrawerLayerUi({
+		content: 'w-[560px] h-full flex flex-col bg-default/90 backdrop-blur-2xl border-l border-default',
+	})
 
 	const handleDeadlineUpdate = (val: string) => {
 		deadlineLocal.value = val

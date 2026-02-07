@@ -14,6 +14,60 @@
 	font-display: block;
 }
 
+/* 全局层级：避免局部组件各自硬编码 z-index 导致互相遮挡 */
+:root {
+	--z-base: 0;
+	--z-sidebar: 10;
+	--z-header: 20;
+	--z-header-edit-strip: 30;
+	--z-popover: 40;
+	--z-drawer-overlay: 70;
+	--z-drawer: 80;
+	--z-drawer-popover: 90;
+	--z-modal-overlay: 100;
+	--z-modal-content: 110;
+}
+
+.z-layer-base {
+	z-index: var(--z-base);
+}
+
+.z-layer-header {
+	z-index: var(--z-header);
+}
+
+.z-layer-sidebar {
+	z-index: var(--z-sidebar);
+}
+
+.z-layer-header-edit-strip {
+	z-index: var(--z-header-edit-strip);
+}
+
+.z-layer-popover {
+	z-index: var(--z-popover);
+}
+
+.z-layer-drawer-overlay {
+	z-index: var(--z-drawer-overlay);
+}
+
+.z-layer-drawer {
+	z-index: var(--z-drawer);
+}
+
+.z-layer-drawer-popover {
+	z-index: var(--z-drawer-popover);
+}
+
+.z-layer-modal-overlay {
+	z-index: var(--z-modal-overlay);
+}
+
+.z-layer-modal-content {
+	z-index: var(--z-modal-content);
+}
+
 /* 应用级基础样式（保持最小；尽量让 Nuxt UI 主导整体样式） */
 html,
 body,

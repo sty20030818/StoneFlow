@@ -36,7 +36,7 @@
 				<UPopover
 					:mode="'click'"
 					:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
-					:ui="{ content: 'z-[120]' }">
+					:ui="popoverUi">
 					<button
 						type="button"
 						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default opacity-0 group-hover:opacity-100 outline-none focus:outline-none"
@@ -89,11 +89,7 @@
 		v-model:open="confirmDeleteOpen"
 		title="确认删除"
 		description="确认是否删除当前项目"
-		:ui="{
-			width: 'sm:max-w-lg',
-			overlay: 'z-[120]',
-			content: 'z-[121]',
-		}">
+		:ui="deleteModalUi">
 		<template #body>
 			<p class="text-sm text-muted">将删除项目“{{ deleteTarget?.label }}”，可在回收站恢复。</p>
 		</template>
@@ -123,6 +119,7 @@
 	import { VueDraggable } from 'vue-draggable-plus'
 
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
+	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { calculateInsertRank } from '@/utils/rank'
 	import { Menu } from '@tauri-apps/api/menu'
@@ -168,6 +165,10 @@
 
 	const toast = useToast()
 	const refreshSignals = useRefreshSignalsStore()
+	const popoverUi = createPopoverLayerUi()
+	const deleteModalUi = createModalLayerUi({
+		width: 'sm:max-w-lg',
+	})
 
 	// 本地项目列表副本，用于拖拽
 	const localProjects = ref<ProjectTreeItem[]>([])

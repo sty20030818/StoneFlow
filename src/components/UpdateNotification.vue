@@ -4,7 +4,8 @@
 		:title="`发现新版本 v${state.version}`"
 		description="StoneFlow 有新的更新可用"
 		:close="false"
-		:dismissible="false">
+		:dismissible="false"
+		:ui="updateModalUi">
 		<template #body>
 			<div class="space-y-4">
 				<!-- 更新日志 -->
@@ -81,9 +82,11 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useUpdater } from '@/composables/useUpdater'
 
 	const { state, promptInstallEnabled, downloadAndInstall, restartApp, dismiss } = useUpdater()
+	const updateModalUi = createModalLayerUi()
 
 	async function handleDownloadAndInstall() {
 		await downloadAndInstall()

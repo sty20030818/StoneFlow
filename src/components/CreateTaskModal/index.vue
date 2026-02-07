@@ -3,10 +3,7 @@
 		v-model:open="isOpen"
 		title="New Task"
 		description="快速创建一个新任务"
-		:ui="{
-			width: 'sm:max-w-2xl',
-			rounded: 'rounded-2xl',
-		}">
+		:ui="taskModalUi">
 		<template #body>
 			<TaskModalBody
 				v-model:form="form"
@@ -42,6 +39,7 @@
 <script setup lang="ts">
 	import TaskModalBody from './components/TaskModalBody.vue'
 	import TaskModalFooter from './components/TaskModalFooter.vue'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import {
 		useCreateTaskModal,
 		type CreateTaskModalEmits,
@@ -50,6 +48,10 @@
 
 	const props = defineProps<CreateTaskModalProps>()
 	const emit = defineEmits<CreateTaskModalEmits>()
+	const taskModalUi = createModalLayerUi({
+		width: 'sm:max-w-2xl',
+		rounded: 'rounded-2xl',
+	})
 
 	const {
 		isOpen,

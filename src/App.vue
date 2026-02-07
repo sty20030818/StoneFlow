@@ -13,7 +13,7 @@
 			v-model:open="commandPaletteOpen"
 			title="命令面板"
 			description="搜索页面并执行快捷操作"
-			:ui="{ content: 'p-0' }">
+			:ui="commandPaletteModalUi">
 			<template #content>
 				<UCommandPalette
 					:groups="commandGroups"
@@ -51,6 +51,7 @@
 
 	import CreateProjectModal from '@/components/CreateProjectModal'
 	import CreateTaskModal from '@/components/CreateTaskModal'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import UpdateNotification from './components/UpdateNotification.vue'
 	import type { ProjectDto } from './services/api/projects'
 	import type { TaskDto } from './services/api/tasks'
@@ -71,6 +72,9 @@
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
 	const inlineCreateFocusStore = useInlineCreateFocusStore()
+	const commandPaletteModalUi = createModalLayerUi({
+		content: 'p-0',
+	})
 
 	const currentSpaceId = computed(() => {
 		if (!settingsStore.loaded) return 'work'

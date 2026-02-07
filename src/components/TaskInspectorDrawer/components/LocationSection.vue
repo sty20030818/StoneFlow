@@ -5,7 +5,7 @@
 			<UPopover
 				:mode="'click'"
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="{ content: 'z-100' }">
+				:ui="drawerPopoverUi">
 				<button
 					type="button"
 					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -52,7 +52,7 @@
 			<UPopover
 				:mode="'click'"
 				:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
-				:ui="{ content: 'z-100' }">
+				:ui="drawerPopoverUi">
 				<button
 					type="button"
 					class="p-4 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 transition-all text-left w-full cursor-pointer">
@@ -93,6 +93,8 @@
 </template>
 
 <script setup lang="ts">
+	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
+
 	type SpaceOption = {
 		value: string
 		label: string
@@ -123,4 +125,6 @@
 	}
 
 	defineProps<Props>()
+
+	const drawerPopoverUi = createDrawerPopoverLayerUi()
 </script>

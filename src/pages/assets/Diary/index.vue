@@ -112,7 +112,7 @@
 			v-model="editOpen"
 			title="日记编辑"
 			description="创建或编辑日记内容"
-			:ui="{ width: 'sm:max-w-2xl' }">
+			:ui="diaryModalUi">
 			<div class="p-4 space-y-3">
 				<header class="space-y-1">
 					<div class="flex items-center gap-2">
@@ -182,12 +182,16 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import type { DiaryEntryDto } from '@/services/api/diary'
 	import { createDiaryEntry, deleteDiaryEntry, listDiaryEntries, updateDiaryEntry } from '@/services/api/diary'
 
 	const toast = useToast()
 	const router = useRouter()
+	const diaryModalUi = createModalLayerUi({
+		width: 'sm:max-w-2xl',
+	})
 
 	const loading = ref(false)
 	const entries = ref<DiaryEntryDto[]>([])

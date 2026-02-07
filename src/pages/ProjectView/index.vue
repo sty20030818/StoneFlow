@@ -47,11 +47,7 @@
 			v-model:open="confirmDeleteOpen"
 			title="确认删除"
 			description="确认是否删除选中的任务"
-			:ui="{
-				width: 'sm:max-w-lg',
-				overlay: 'z-[120]',
-				content: 'z-[121]',
-			}">
+			:ui="deleteModalUi">
 			<template #body>
 				<p class="text-sm text-muted">将删除 {{ deleteCount }} 个任务，可在回收站恢复。</p>
 			</template>
@@ -81,6 +77,7 @@
 	import { useRoute } from 'vue-router'
 
 	import TaskColumn from '@/components/TaskColumn.vue'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useProjectBreadcrumb } from '@/composables/useProjectBreadcrumb'
 	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
 	import WorkspaceLayout from './components/WorkspaceLayout.vue'
@@ -98,6 +95,9 @@
 	const refreshSignals = useRefreshSignalsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
 	const toast = useToast()
+	const deleteModalUi = createModalLayerUi({
+		width: 'sm:max-w-lg',
+	})
 
 	// 从路由参数获取 spaceId 和 projectId
 	// All Tasks 模式：spaceId=undefined, projectId=undefined

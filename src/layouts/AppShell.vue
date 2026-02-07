@@ -1,5 +1,5 @@
 <template>
-	<div class="h-full flex bg-default text-default relative overflow-hidden">
+	<div class="h-full flex bg-default text-default relative overflow-hidden z-layer-base">
 		<Sidebar v-model:space="space" />
 
 		<div class="flex-1 min-w-0 flex flex-col">

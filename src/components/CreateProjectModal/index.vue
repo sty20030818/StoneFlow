@@ -3,10 +3,7 @@
 		v-model:open="isOpen"
 		title="New Project"
 		description="创建一个新的项目容器"
-		:ui="{
-			width: 'sm:max-w-2xl',
-			rounded: 'rounded-2xl',
-		}">
+		:ui="projectModalUi">
 		<template #body>
 			<ProjectModalBody
 				v-model:form="form"
@@ -36,6 +33,7 @@
 <script setup lang="ts">
 	import ProjectModalBody from './components/ProjectModalBody.vue'
 	import ProjectModalFooter from './components/ProjectModalFooter.vue'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import {
 		useCreateProjectModal,
 		type CreateProjectModalEmits,
@@ -44,6 +42,10 @@
 
 	const props = defineProps<CreateProjectModalProps>()
 	const emit = defineEmits<CreateProjectModalEmits>()
+	const projectModalUi = createModalLayerUi({
+		width: 'sm:max-w-2xl',
+		rounded: 'rounded-2xl',
+	})
 
 	const {
 		isOpen,

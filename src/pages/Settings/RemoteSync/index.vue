@@ -49,7 +49,8 @@
 	<UModal
 		v-model:open="createOpen"
 		title="新建配置"
-		description="创建新的远端同步配置">
+		description="创建新的远端同步配置"
+		:ui="remoteSyncModalUi">
 		<template #body>
 			<RemoteSyncCreateForm
 				:name="newName"
@@ -92,7 +93,8 @@
 	<UModal
 		v-model:open="editOpen"
 		title="编辑配置"
-		description="修改当前远端同步配置">
+		description="修改当前远端同步配置"
+		:ui="remoteSyncModalUi">
 		<template #body>
 			<RemoteSyncEditForm
 				:name="editName"
@@ -135,7 +137,8 @@
 	<UModal
 		v-model:open="importOpen"
 		title="导入配置"
-		description="从文本导入远端同步配置">
+		description="从文本导入远端同步配置"
+		:ui="remoteSyncModalUi">
 		<template #body>
 			<RemoteSyncImportForm
 				:text="importText"
@@ -164,7 +167,8 @@
 	<UModal
 		v-model:open="deleteOpen"
 		title="删除配置"
-		description="确认删除当前远端同步配置">
+		description="确认删除当前远端同步配置"
+		:ui="remoteSyncModalUi">
 		<template #body>
 			<RemoteSyncDeleteBody :name="deleteTarget?.name ?? ''" />
 		</template>
@@ -187,6 +191,7 @@
 </template>
 
 <script setup lang="ts">
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import RemoteSyncActionsCard from './components/RemoteSyncActionsCard.vue'
 	import RemoteSyncCreateForm from './components/RemoteSyncCreateForm.vue'
 	import RemoteSyncDeleteBody from './components/RemoteSyncDeleteBody.vue'
@@ -249,4 +254,6 @@
 		deleting,
 		confirmDelete,
 	} = useRemoteSyncPage()
+
+	const remoteSyncModalUi = createModalLayerUi()
 </script>

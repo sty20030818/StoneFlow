@@ -1,5 +1,6 @@
 <template>
-	<aside class="w-72 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative h-full">
+	<aside
+		class="w-72 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative z-layer-sidebar h-full">
 		<!-- 顶部：Brand + Space Segmented Control -->
 		<div class="px-3 pt-3 shrink-0">
 			<div class="mb-2">
@@ -93,7 +94,7 @@
 							:projects="displayProjectsTree"
 							:space-id="spaceValue"
 							:active-project-id="activeProjectId"
-							:expanded-keys="expandedKeys"
+							:expanded-keys="effectiveExpandedKeys"
 							@update:expanded-keys="expandedKeys = $event" />
 					</div>
 					<div
@@ -330,18 +331,15 @@
 		return ancestors
 	}
 
-	function ensureAncestorsExpanded() {
-		if (currentPath.value !== `/space/${spaceValue.value}`) return
-		if (!activeProjectId.value) return
+	const effectiveExpandedKeys = computed(() => {
+		if (currentPath.value !== `/space/${spaceValue.value}`) return expandedKeys.value
+		if (!activeProjectId.value) return expandedKeys.value
 		const list = currentProjects.value
-		if (!list.length) return
+		if (!list.length) return expandedKeys.value
 		const ancestors = getAncestorIds(activeProjectId.value, list)
-		if (!ancestors.length) return
-		const next = Array.from(new Set([...expandedKeys.value, ...ancestors]))
-		if (next.length !== expandedKeys.value.length) {
-			expandedKeys.value = next
-		}
-	}
+		if (!ancestors.length) return expandedKeys.value
+		return Array.from(new Set([...expandedKeys.value, ...ancestors]))
+	})
 
 	async function loadProjects(force = false) {
 		if (force) {
@@ -367,14 +365,6 @@
 		() => {
 			void loadProjects(true)
 		},
-	)
-
-	watch(
-		() => [activeProjectId.value, currentProjects.value, currentPath.value],
-		() => {
-			ensureAncestorsExpanded()
-		},
-		{ immediate: true },
 	)
 
 	onMounted(() => {
