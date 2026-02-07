@@ -179,9 +179,12 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { useAsyncState } from '@vueuse/core'
+	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 
+	import { validateWithZod } from '@/composables/base/zod'
+	import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import type { DiaryEntryDto } from '@/services/api/diary'
@@ -193,11 +196,38 @@
 		width: 'sm:max-w-2xl',
 	})
 
-	const loading = ref(false)
 	const entries = ref<DiaryEntryDto[]>([])
 	const tasks = ref<TaskDto[]>([])
 	const selectedEntry = ref<DiaryEntryDto | null>(null)
 	const editOpen = ref(false)
+	const { isLoading: loading, execute: executeRefresh } = useAsyncState(
+		async () => {
+			const [diaryEntries, doneTasks] = await Promise.all([listDiaryEntries(), listTasks({ status: 'done' })])
+			return {
+				entries: diaryEntries,
+				tasks: doneTasks.filter((t) => t.doneReason !== 'cancelled'),
+			}
+		},
+		{
+			entries: [] as DiaryEntryDto[],
+			tasks: [] as TaskDto[],
+		},
+		{
+			immediate: true,
+			resetOnExecute: false,
+			onSuccess: ({ entries: nextEntries, tasks: nextTasks }) => {
+				entries.value = nextEntries
+				tasks.value = nextTasks
+			},
+			onError: (e) => {
+				toast.add({
+					title: '加载失败',
+					description: e instanceof Error ? e.message : '未知错误',
+					color: 'error',
+				})
+			},
+		},
+	)
 
 	const editForm = ref({
 		date: new Date().toISOString().split('T')[0],
@@ -275,8 +305,9 @@
 	}
 
 	async function onSave() {
-		if (!editForm.value.title.trim()) {
-			toast.add({ title: '标题不能为空', color: 'error' })
+		const validation = validateWithZod(diarySubmitSchema, { title: editForm.value.title })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
 			return
 		}
 
@@ -318,23 +349,6 @@
 	}
 
 	async function refresh() {
-		loading.value = true
-		try {
-			entries.value = await listDiaryEntries()
-			const doneTasks = await listTasks({ status: 'done' })
-			tasks.value = doneTasks.filter((t) => t.doneReason !== 'cancelled')
-		} catch (e) {
-			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
-				color: 'error',
-			})
-		} finally {
-			loading.value = false
-		}
+		await executeRefresh(0)
 	}
-
-	onMounted(async () => {
-		await refresh()
-	})
 </script>

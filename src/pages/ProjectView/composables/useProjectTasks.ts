@@ -1,6 +1,8 @@
-import { ref, watch, type MaybeRefOrGetter, toValue } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { refDebounced } from '@vueuse/core'
+import { computed, ref, watch, type MaybeRefOrGetter, toValue } from 'vue'
 
+import { useRuntimeGate } from '@/composables/base/runtime-gate'
+import { useTaskSnapshotState } from '@/composables/domain/task/useTaskSnapshotState'
 import { useTaskActions } from '@/composables/useTaskActions'
 import { listTasks, type TaskDto } from '@/services/api/tasks'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
@@ -20,29 +22,27 @@ export function useProjectTasks(
 ) {
 	const toast = useToast()
 	const refreshSignals = useRefreshSignalsStore()
+	const { canBackgroundRefresh } = useRuntimeGate()
 
 	const loading = ref(true)
 	const todo = ref<TaskDto[]>([])
 	const doneAll = ref<TaskDto[]>([])
-	const loadedScopes = ref<Set<string>>(new Set())
-	const snapshotByScope = useStorage<Record<string, { todo: TaskDto[]; doneAll: TaskDto[] }>>(
-		'project_tasks_snapshot_v1',
-		{},
-	)
+	const { loadedProjectScopes, projectSnapshots: snapshotByScope } = useTaskSnapshotState()
 
-	function getScopeKey() {
+	const scopeKey = computed(() => {
 		const sid = toValue(spaceId) ?? '_all_spaces'
 		const pid = toValue(projectId) ?? '_all_projects'
 		return `${sid}::${pid}`
-	}
+	})
+	const debouncedScopeKey = refDebounced(scopeKey, 80)
 
 	/**
 	 * 刷新任务列表。
 	 * @param silent 为 true 时不置 loading，避免切换 project/space 时列内容闪烁
 	 */
 	async function refresh(silent = false) {
-		const scopeKey = getScopeKey()
-		const useSilent = silent && loadedScopes.value.has(scopeKey)
+		const nextScopeKey = scopeKey.value
+		const useSilent = silent && loadedProjectScopes.value.has(nextScopeKey)
 		if (!useSilent) loading.value = true
 		try {
 			const sid = toValue(spaceId)
@@ -60,7 +60,7 @@ export function useProjectTasks(
 			doneAll.value = doneRows
 			snapshotByScope.value = {
 				...snapshotByScope.value,
-				[scopeKey]: { todo: todoRows, doneAll: doneRows },
+				[nextScopeKey]: { todo: todoRows, doneAll: doneRows },
 			}
 		} catch (e) {
 			toast.add({
@@ -69,7 +69,7 @@ export function useProjectTasks(
 				color: 'error',
 			})
 		} finally {
-			loadedScopes.value = new Set(loadedScopes.value).add(scopeKey)
+			loadedProjectScopes.value = new Set(loadedProjectScopes.value).add(nextScopeKey)
 			if (!useSilent) loading.value = false
 		}
 	}
@@ -85,15 +85,14 @@ export function useProjectTasks(
 
 	// 监听 spaceId 和 projectId 变化时自动刷新（静默，不闪烁）
 	watch(
-		() => [toValue(spaceId), toValue(projectId)],
+		debouncedScopeKey,
 		() => {
-			const scopeKey = getScopeKey()
-			const snapshot = snapshotByScope.value[scopeKey]
+			const snapshot = snapshotByScope.value[debouncedScopeKey.value]
 			if (snapshot) {
 				todo.value = snapshot.todo
 				doneAll.value = snapshot.doneAll
 				loading.value = false
-				loadedScopes.value = new Set(loadedScopes.value).add(scopeKey)
+				loadedProjectScopes.value = new Set(loadedProjectScopes.value).add(debouncedScopeKey.value)
 				void refresh(true)
 				return
 			}
@@ -106,6 +105,7 @@ export function useProjectTasks(
 	watch(
 		() => refreshSignals.taskTick,
 		() => {
+			if (!canBackgroundRefresh.value) return
 			void refresh(true)
 		},
 	)

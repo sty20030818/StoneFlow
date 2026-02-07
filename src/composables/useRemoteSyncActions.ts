@@ -9,6 +9,7 @@ const LAST_PULLED_AT_KEY = 'neon_last_pulled_at'
 
 export function useRemoteSyncActions() {
 	const remoteSyncStore = useRemoteSyncStore()
+	let syncQueue: Promise<unknown> = Promise.resolve()
 
 	const isPushing = ref(false)
 	const isPulling = ref(false)
@@ -23,6 +24,23 @@ export function useRemoteSyncActions() {
 	})
 
 	const hasActiveProfile = computed(() => !!remoteSyncStore.activeProfileId)
+
+	function normalizeSyncError(error: unknown, fallback: string) {
+		const message = error instanceof Error ? error.message : fallback
+		if (/pool timed out while waiting for an open connection/i.test(message)) {
+			return new Error('连接池超时，请稍后重试，或降低并发后再同步')
+		}
+		return new Error(message)
+	}
+
+	function enqueueSync<T>(runner: () => Promise<T>): Promise<T> {
+		const next = syncQueue.then(runner, runner)
+		syncQueue = next.then(
+			() => undefined,
+			() => undefined,
+		)
+		return next
+	}
 
 	async function ensureStoreLoaded() {
 		if (remoteSyncStore.loaded) return
@@ -43,39 +61,45 @@ export function useRemoteSyncActions() {
 	}
 
 	async function pushToRemote() {
-		if (isPushing.value || isPulling.value) return null
-		isPushing.value = true
-		syncError.value = null
+		return enqueueSync(async () => {
+			if (isPushing.value || isPulling.value) return null
+			isPushing.value = true
+			syncError.value = null
 
-		try {
-			const databaseUrl = await resolveActiveDatabaseUrl()
-			const ts = await tauriInvoke<number>('push_to_neon', { args: { databaseUrl } })
-			lastPushedAt.value = ts
-			return ts
-		} catch (error) {
-			syncError.value = error instanceof Error ? error.message : '上传失败'
-			throw error
-		} finally {
-			isPushing.value = false
-		}
+			try {
+				const databaseUrl = await resolveActiveDatabaseUrl()
+				const ts = await tauriInvoke<number>('push_to_neon', { args: { databaseUrl } })
+				lastPushedAt.value = ts
+				return ts
+			} catch (error) {
+				const normalizedError = normalizeSyncError(error, '上传失败')
+				syncError.value = normalizedError.message
+				throw normalizedError
+			} finally {
+				isPushing.value = false
+			}
+		})
 	}
 
 	async function pullFromRemote() {
-		if (isPushing.value || isPulling.value) return null
-		isPulling.value = true
-		syncError.value = null
+		return enqueueSync(async () => {
+			if (isPushing.value || isPulling.value) return null
+			isPulling.value = true
+			syncError.value = null
 
-		try {
-			const databaseUrl = await resolveActiveDatabaseUrl()
-			const ts = await tauriInvoke<number>('pull_from_neon', { args: { databaseUrl } })
-			lastPulledAt.value = ts
-			return ts
-		} catch (error) {
-			syncError.value = error instanceof Error ? error.message : '下载失败'
-			throw error
-		} finally {
-			isPulling.value = false
-		}
+			try {
+				const databaseUrl = await resolveActiveDatabaseUrl()
+				const ts = await tauriInvoke<number>('pull_from_neon', { args: { databaseUrl } })
+				lastPulledAt.value = ts
+				return ts
+			} catch (error) {
+				const normalizedError = normalizeSyncError(error, '下载失败')
+				syncError.value = normalizedError.message
+				throw normalizedError
+			} finally {
+				isPulling.value = false
+			}
+		})
 	}
 
 	return {

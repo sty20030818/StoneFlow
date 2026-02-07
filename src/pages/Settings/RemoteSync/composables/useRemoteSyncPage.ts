@@ -4,6 +4,8 @@ import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
 import { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
+import { validateWithZod } from '@/composables/base/zod'
+import { postgresUrlSchema, remoteImportListSchema, remoteProfileSchema } from '@/composables/domain/validation/forms'
 import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
@@ -108,10 +110,10 @@ export function useRemoteSyncPage() {
 		}
 	})
 
-	const canSaveNew = computed(() => newName.value.trim().length > 0 && validateUrl(newUrl.value))
-	const canTestNew = computed(() => validateUrl(newUrl.value))
-	const canSaveEdit = computed(() => editName.value.trim().length > 0 && validateUrl(editUrl.value))
-	const canTestEdit = computed(() => validateUrl(editUrl.value))
+	const canSaveNew = computed(() => validateWithZod(remoteProfileSchema, { name: newName.value, url: newUrl.value }).ok)
+	const canTestNew = computed(() => validateWithZod(postgresUrlSchema, newUrl.value).ok)
+	const canSaveEdit = computed(() => validateWithZod(remoteProfileSchema, { name: editName.value, url: editUrl.value }).ok)
+	const canTestEdit = computed(() => validateWithZod(postgresUrlSchema, editUrl.value).ok)
 	const canImport = computed(() => importText.value.trim().length > 0)
 
 	const deleteOpen = computed({
@@ -122,22 +124,23 @@ export function useRemoteSyncPage() {
 	})
 
 	const lastPushedText = computed(() => {
-		const ts = lastPushedAt.value
-		if (!Number.isFinite(ts) || ts <= 0) return '未上传'
-		void now.value
-		return formatDistanceToNow(ts, { addSuffix: true, locale: zhCN })
+		return formatRelativeTime(lastPushedAt.value, '未上传')
 	})
 
 	const lastPulledText = computed(() => {
-		const ts = lastPulledAt.value
-		if (!Number.isFinite(ts) || ts <= 0) return '未下载'
-		void now.value
-		return formatDistanceToNow(ts, { addSuffix: true, locale: zhCN })
+		return formatRelativeTime(lastPulledAt.value, '未下载')
 	})
 
-	function validateUrl(url: string) {
-		const trimmed = url.trim()
-		return trimmed.startsWith('postgres://') || trimmed.startsWith('postgresql://')
+	function formatRelativeTime(timestamp: number, fallback: string) {
+		if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback
+		const date = new Date(timestamp)
+		if (!Number.isFinite(date.getTime())) return fallback
+		void now.value
+		try {
+			return formatDistanceToNow(date, { addSuffix: true, locale: zhCN })
+		} catch {
+			return fallback
+		}
 	}
 
 	function formatProfileMeta(profile: RemoteDbProfile) {
@@ -199,10 +202,24 @@ export function useRemoteSyncPage() {
 			toast.add({ title: '请等待连接测试完成后再上传', color: 'neutral' })
 			return
 		}
+		if (status.value === 'missing') {
+			toast.add({ title: '请先配置并测试连接', color: 'neutral' })
+			return
+		}
+		if (status.value === 'error') {
+			toast.add({ title: '连接状态异常，请先测试连接', color: 'warning' })
+			return
+		}
 		try {
+			log('sync:push:start', { profileId: activeProfileId.value })
 			const ts = await pushToRemote()
-			if (!ts) return
+			if (!ts) {
+				toast.add({ title: '同步进行中，请稍候', color: 'neutral' })
+				return
+			}
+			status.value = 'ok'
 			toast.add({ title: '上传成功', description: `同步时间：${new Date(ts).toLocaleString()}`, color: 'success' })
+			log('sync:push:done', { ts })
 		} catch (error) {
 			toast.add({ title: '上传失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
 			logError('sync:push:error', error)
@@ -214,11 +231,25 @@ export function useRemoteSyncPage() {
 			toast.add({ title: '请等待连接测试完成后再下载', color: 'neutral' })
 			return
 		}
+		if (status.value === 'missing') {
+			toast.add({ title: '请先配置并测试连接', color: 'neutral' })
+			return
+		}
+		if (status.value === 'error') {
+			toast.add({ title: '连接状态异常，请先测试连接', color: 'warning' })
+			return
+		}
 		try {
+			log('sync:pull:start', { profileId: activeProfileId.value })
 			const ts = await pullFromRemote()
-			if (!ts) return
+			if (!ts) {
+				toast.add({ title: '同步进行中，请稍候', color: 'neutral' })
+				return
+			}
 			refreshSignals.bumpProject()
+			status.value = 'ok'
 			toast.add({ title: '下载成功', description: `同步时间：${new Date(ts).toLocaleString()}`, color: 'success' })
+			log('sync:pull:done', { ts })
 		} catch (error) {
 			toast.add({ title: '下载失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
 			logError('sync:pull:error', error)
@@ -227,6 +258,11 @@ export function useRemoteSyncPage() {
 
 	async function handleTestNew() {
 		if (!canTestNew.value) return
+		const validation = validateWithZod(postgresUrlSchema, newUrl.value)
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
 		try {
 			log('test:new:start')
 			testingNew.value = true
@@ -246,6 +282,11 @@ export function useRemoteSyncPage() {
 
 	async function handleCreateProfile() {
 		if (!canSaveNew.value) return
+		const validation = validateWithZod(remoteProfileSchema, { name: newName.value, url: newUrl.value })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
 		try {
 			log('create:start', { name: newName.value })
 			savingNew.value = true
@@ -266,6 +307,11 @@ export function useRemoteSyncPage() {
 
 	async function handleTestEdit() {
 		if (!canTestEdit.value) return
+		const validation = validateWithZod(postgresUrlSchema, editUrl.value)
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
 		try {
 			log('test:edit:start', { profileId: editProfileId.value })
 			testingEdit.value = true
@@ -285,6 +331,11 @@ export function useRemoteSyncPage() {
 
 	async function handleSaveEdit() {
 		if (!editProfileId.value || !canSaveEdit.value) return
+		const validation = validateWithZod(remoteProfileSchema, { name: editName.value, url: editUrl.value })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
 		try {
 			log('save:edit:start', { profileId: editProfileId.value })
 			savingEdit.value = true
@@ -348,22 +399,15 @@ export function useRemoteSyncPage() {
 			log('import:start')
 			importing.value = true
 			const parsed = JSON.parse(importText.value.trim())
-			if (!Array.isArray(parsed)) {
-				importError.value = '导入内容必须是 JSON 数组'
+			const validation = validateWithZod(remoteImportListSchema, parsed)
+			if (!validation.ok) {
+				importError.value = validation.message
 				return
 			}
-			const items: RemoteDbProfileInput[] = []
-			for (const item of parsed) {
-				if (!item || typeof item !== 'object') continue
-				const name = typeof item.name === 'string' ? item.name : ''
-				const url = typeof item.url === 'string' ? item.url : ''
-				if (!name || !validateUrl(url)) continue
-				items.push({ name, url })
-			}
-			if (items.length === 0) {
-				importError.value = '未找到合法的 name/url 记录'
-				return
-			}
+			const items: RemoteDbProfileInput[] = validation.data.map((item) => ({
+				name: item.name,
+				url: item.url,
+			}))
 			await remoteSyncStore.importProfiles(items)
 			importText.value = ''
 			importOpen.value = false

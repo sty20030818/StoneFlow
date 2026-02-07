@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 	import { computed, nextTick, ref, watch } from 'vue'
-	import { useEventListener } from '@vueuse/core'
+	import { refDebounced, useEventListener } from '@vueuse/core'
 
 	import type { TaskPriorityValue } from '@/config/task'
 	import { getDefaultProject } from '@/services/api/projects'
@@ -67,6 +67,7 @@
 	const inputRef = ref<HTMLInputElement | null>(null)
 	const noteRef = ref<HTMLTextAreaElement | null>(null)
 	const title = ref('')
+	const debouncedTitle = refDebounced(title, 90)
 	const note = ref('')
 	const priority = ref<TaskPriorityValue | null>(null)
 	const expanded = ref(false)
@@ -174,7 +175,7 @@
 	}
 
 	async function handleSubmit() {
-		const nextTitle = title.value.trim()
+		const nextTitle = (debouncedTitle.value || title.value).trim()
 		if (!nextTitle || submitting.value || props.disabled) return
 		if (!props.spaceId) return
 		const nextNote = note.value.trim()

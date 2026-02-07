@@ -97,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useAsyncState } from '@vueuse/core'
 	import { computed, onMounted, provide, ref, watch } from 'vue'
 
 	import TimeDisplay from '@/components/TimeDisplay.vue'
@@ -114,7 +115,6 @@
 	const refreshSignals = useRefreshSignalsStore()
 
 	const viewMode = ref<'projects' | 'tasks'>('projects')
-	const loading = ref(false)
 	const deletedProjects = ref<ProjectDto[]>([])
 	const deletedTasks = ref<TaskDto[]>([])
 	const restoringProjectIds = ref<Set<string>>(new Set())
@@ -164,26 +164,35 @@
 		return projectNameMap.value.get(projectId) ?? '已删除项目'
 	}
 
-	async function refresh() {
-		loading.value = true
-		try {
+	const { isLoading: loading, execute: refresh } = useAsyncState(
+		async () => {
 			await projectsStore.ensureLoaded(activeSpaceId.value)
 			const [projects, tasks] = await Promise.all([
 				listDeletedProjects({ spaceId: activeSpaceId.value }),
 				listDeletedTasks({ spaceId: activeSpaceId.value }),
 			])
-			deletedProjects.value = projects
-			deletedTasks.value = tasks
-		} catch (e) {
+			return { projects, tasks }
+		},
+		{
+			projects: [] as ProjectDto[],
+			tasks: [] as TaskDto[],
+		},
+		{
+			immediate: false,
+			resetOnExecute: false,
+			onSuccess: ({ projects, tasks }) => {
+				deletedProjects.value = projects
+				deletedTasks.value = tasks
+			},
+			onError: (e) => {
 			toast.add({
 				title: '加载失败',
 				description: e instanceof Error ? e.message : '未知错误',
 				color: 'error',
 			})
-		} finally {
-			loading.value = false
-		}
-	}
+			},
+		},
+	)
 
 	async function restoreProjectItem(project: ProjectDto) {
 		if (restoringProjectIds.value.has(project.id)) return
@@ -243,13 +252,13 @@
 		if (!settingsStore.loaded) {
 			await settingsStore.load()
 		}
-		await refresh()
+		await refresh(0)
 	})
 
 	watch(
 		() => settingsStore.settings.activeSpaceId,
 		() => {
-			refresh()
+			void refresh(0)
 		},
 	)
 </script>

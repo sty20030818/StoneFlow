@@ -18,7 +18,9 @@
 	},
 	"dependencies": {
 		"@iconify-json/lucide": "^1.2.89",
+		"@vueuse/math": "^14.2.0",
 		"@vueuse/core": "^14.2.0",
+		"@vueuse/router": "^14.2.0",
 		"@nuxt/ui": "^4.4.0",
 		"@tailwindcss/vite": "^4.1.18",
 		"@tauri-apps/api": "^2.10.1",
@@ -32,7 +34,8 @@
 		"tailwindcss": "^4.1.18",
 		"vue": "^3.5.27",
 		"vue-draggable-plus": "^0.6.1",
-		"vue-router": "^5.0.2"
+		"vue-router": "^5.0.2",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@tauri-apps/cli": "^2.10.0",
@@ -50,5 +53,5 @@
 		"vue-eslint-parser": "^10.2.0",
 		"vue-tsc": "^3.2.4"
 	},
-	"packageManager": "pnpm@10.28.2"
+	"packageManager": "pnpm@10.29.1"
 }

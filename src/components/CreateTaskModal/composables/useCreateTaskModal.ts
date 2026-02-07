@@ -1,4 +1,4 @@
-import { useToggle, useVModel } from '@vueuse/core'
+import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
@@ -22,6 +22,8 @@ import {
 } from '@/config/project'
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/config/task'
+import { validateWithZod } from '@/composables/base/zod'
+import { taskSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { statusOptions } from '@/utils/task'
@@ -88,6 +90,7 @@ const TASK_LINK_KIND_OPTIONS: LinkKindOption[] = [
 ]
 
 export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTaskModalEmits) {
+	const toast = useToast()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
@@ -246,7 +249,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		return options
 	})
 
-	watch(
+	watchDebounced(
 		() => form.value.spaceId,
 		async (newSpaceId, oldSpaceId) => {
 			if (oldSpaceId && newSpaceId !== oldSpaceId) {
@@ -261,6 +264,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				console.error('加载默认项目失败:', error)
 			}
 		},
+		{ debounce: 80, maxWait: 240 },
 	)
 
 	watch(
@@ -303,6 +307,11 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 
 	async function handleSubmit() {
 		if (!canSubmit.value || loading.value) return
+		const validation = validateWithZod(taskSubmitSchema, { title: form.value.title })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
 
 		loading.value = true
 		try {

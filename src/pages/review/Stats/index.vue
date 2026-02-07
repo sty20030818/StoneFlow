@@ -150,7 +150,8 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { useAsyncState } from '@vueuse/core'
+	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 
 	import {
@@ -165,8 +166,24 @@
 	const toast = useToast()
 	const router = useRouter()
 
-	const loading = ref(true)
-	const tasks = ref<TaskDto[]>([])
+	const { state: tasks, isLoading: loading } = useAsyncState(
+		async () => {
+			const [todo, done] = await Promise.all([listTasks({ status: 'todo' }), listTasks({ status: 'done' })])
+			return [...todo, ...done]
+		},
+		[] as TaskDto[],
+		{
+			immediate: true,
+			resetOnExecute: false,
+			onError: (e) => {
+				toast.add({
+					title: '加载统计失败',
+					description: e instanceof Error ? e.message : '未知错误',
+					color: 'error',
+				})
+			},
+		},
+	)
 
 	const spaceCards = computed(() => {
 		const ids = SPACE_IDS
@@ -276,22 +293,6 @@
 		return slices
 	})
 
-	async function refresh() {
-		loading.value = true
-		try {
-			const [todo, done] = await Promise.all([listTasks({ status: 'todo' }), listTasks({ status: 'done' })])
-			tasks.value = [...todo, ...done]
-		} catch (e) {
-			toast.add({
-				title: '加载统计失败',
-				description: e instanceof Error ? e.message : '未知错误',
-				color: 'error',
-			})
-		} finally {
-			loading.value = false
-		}
-	}
-
 	function goToFinishList(_spaceId: string) {
 		router.push({ path: '/finish-list' })
 	}
@@ -300,7 +301,4 @@
 		router.push({ path: '/logs' })
 	}
 
-	onMounted(async () => {
-		await refresh()
-	})
 </script>

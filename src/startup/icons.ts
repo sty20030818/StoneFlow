@@ -1,4 +1,5 @@
 import { addCollection, loadIcons } from '@iconify/vue'
+import { useTimeoutFn } from '@vueuse/core'
 
 let iconsBootstrapPromise: Promise<void> | null = null
 let iconsBootstrapped = false
@@ -103,18 +104,19 @@ async function registerLocalLucideCollection(): Promise<boolean> {
 
 async function preloadRemoteIcons(timeoutMs = 1200): Promise<void> {
 	await new Promise<void>((resolve) => {
+		const { start, stop } = useTimeoutFn(() => finish(), timeoutMs, {
+			immediate: false,
+		})
 		let settled = false
-		const finish = () => {
+		function finish() {
 			if (settled) return
 			settled = true
+			stop()
 			resolve()
 		}
 
-		const timer = window.setTimeout(finish, timeoutMs)
-		loadIcons([...LUCIDE_ICONS_TO_PRELOAD], () => {
-			window.clearTimeout(timer)
-			finish()
-		})
+		start()
+		loadIcons([...LUCIDE_ICONS_TO_PRELOAD], finish)
 	})
 }
 

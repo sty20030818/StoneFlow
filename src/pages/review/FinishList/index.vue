@@ -183,8 +183,8 @@
 </template>
 
 <script setup lang="ts">
-	import { refDebounced } from '@vueuse/core'
-	import { computed, onMounted, ref } from 'vue'
+	import { refDebounced, useAsyncState } from '@vueuse/core'
+	import { computed, ref } from 'vue'
 
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
@@ -197,8 +197,20 @@
 		width: 'sm:max-w-md',
 	})
 
-	const loading = ref(false)
-	const tasks = ref<TaskDto[]>([])
+	const {
+		state: tasks,
+		isLoading: loading,
+	} = useAsyncState(() => listTasks({ status: 'done' }), [] as TaskDto[], {
+		immediate: true,
+		resetOnExecute: false,
+		onError: (e) => {
+			toast.add({
+				title: '加载失败',
+				description: e instanceof Error ? e.message : '未知错误',
+				color: 'error',
+			})
+		},
+	})
 
 	const spaceFilter = ref<string>('all')
 	const projectFilter = ref<string>('all')
@@ -388,21 +400,6 @@
 		}
 	})
 
-	async function refresh() {
-		loading.value = true
-		try {
-			tasks.value = await listTasks({ status: 'done' })
-		} catch (e) {
-			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
-				color: 'error',
-			})
-		} finally {
-			loading.value = false
-		}
-	}
-
 	function onOpenReflection(t: TaskDto) {
 		reflectionTask.value = t
 		reflectionText.value = ''
@@ -418,7 +415,4 @@
 		reflectionOpen.value = false
 	}
 
-	onMounted(async () => {
-		await refresh()
-	})
 </script>

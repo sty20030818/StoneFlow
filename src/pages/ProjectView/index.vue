@@ -73,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+	import { watchDebounced, watchThrottled } from '@vueuse/core'
 	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
@@ -226,7 +227,7 @@
 	const showSpaceLabel = computed(() => !spaceId.value)
 
 	// 监听路由变化，加载项目列表
-	watch(
+	watchDebounced(
 		() => [route.params.spaceId, route.query.project],
 		() => {
 			exitEditMode()
@@ -234,7 +235,11 @@
 				void projectsStore.load(spaceId.value)
 			}
 		},
-		{ immediate: true },
+		{
+			immediate: true,
+			debounce: 80,
+			maxWait: 240,
+		},
 	)
 
 	function pruneSelection() {
@@ -247,9 +252,9 @@
 		})
 	}
 
-	watch([todo, doneAll], () => {
+	watchThrottled([todo, doneAll], () => {
 		pruneSelection()
-	})
+	}, { throttle: 120, trailing: true })
 
 	watch(confirmDeleteOpen, (open) => {
 		if (!open) {
@@ -257,12 +262,12 @@
 		}
 	})
 
-	watch([isEditMode, selectedCount], () => {
+	watchThrottled([isEditMode, selectedCount], () => {
 		workspaceEditStore.setState({
 			isEditMode: isEditMode.value,
 			selectedCount: selectedCount.value,
 		})
-	})
+	}, { throttle: 120, trailing: true })
 
 	const viewMode = ref<'list' | 'board'>('list')
 

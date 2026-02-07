@@ -1,4 +1,4 @@
-import { useVModel } from '@vueuse/core'
+import { useVModel, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
@@ -13,6 +13,8 @@ import {
 	type ProjectPriorityValue,
 } from '@/config/project'
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
+import { validateWithZod } from '@/composables/base/zod'
+import { projectSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 
@@ -74,6 +76,7 @@ const PROJECT_LINK_KIND_OPTIONS: LinkKindOption[] = [
 ]
 
 export function useCreateProjectModal(props: CreateProjectModalProps, emit: CreateProjectModalEmits) {
+	const toast = useToast()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
@@ -215,7 +218,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		currentParentProjectOptions.value = buildParentProjectOptions(form.spaceId)
 	}
 
-	watch(
+	watchDebounced(
 		() => form.spaceId,
 		async (newSpaceId, oldSpaceId) => {
 			if (oldSpaceId && newSpaceId !== oldSpaceId) {
@@ -223,6 +226,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 			}
 			await refreshParentProjectOptions()
 		},
+		{ debounce: 80, maxWait: 240 },
 	)
 
 	watch(
@@ -248,6 +252,11 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 
 	async function handleSubmit() {
 		if (!canSubmit.value || loading.value) return
+		const validation = validateWithZod(projectSubmitSchema, { title: form.title })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
 
 		loading.value = true
 		try {

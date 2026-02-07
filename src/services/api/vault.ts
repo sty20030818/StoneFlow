@@ -1,3 +1,5 @@
+import { useSharedStorage } from '@/composables/base/storage'
+
 export type VaultEntryType = 'api_key' | 'token' | 'password' | 'config'
 
 export type VaultEntryDto = {
@@ -13,28 +15,26 @@ export type VaultEntryDto = {
 
 const STORAGE_KEY = 'stoneflow_vault'
 
+function useVaultStorage() {
+	return useSharedStorage<Partial<VaultEntryDto>[]>(STORAGE_KEY, [])
+}
+
 /**
  * 临时实现：使用 localStorage 存储密钥（未加密，仅占位）。
  * 后续需迁移到后端加密存储。
  */
 export async function listVaultEntries(): Promise<VaultEntryDto[]> {
-	const raw = localStorage.getItem(STORAGE_KEY)
-	if (!raw) return []
-	try {
-		const parsed = JSON.parse(raw) as Partial<VaultEntryDto>[]
-		return parsed.map((entry) => ({
-			id: entry.id ?? '',
-			name: entry.name ?? '',
-			type: entry.type ?? 'config',
-			value: entry.value ?? '',
-			folder: entry.folder ?? null,
-			note: entry.note ?? null,
-			createdAt: entry.createdAt ?? (entry as { created_at?: number }).created_at ?? 0,
-			updatedAt: entry.updatedAt ?? (entry as { updated_at?: number }).updated_at ?? 0,
-		}))
-	} catch {
-		return []
-	}
+	const parsed = useVaultStorage().value
+	return parsed.map((entry) => ({
+		id: entry.id ?? '',
+		name: entry.name ?? '',
+		type: entry.type ?? 'config',
+		value: entry.value ?? '',
+		folder: entry.folder ?? null,
+		note: entry.note ?? null,
+		createdAt: entry.createdAt ?? (entry as { created_at?: number }).created_at ?? 0,
+		updatedAt: entry.updatedAt ?? (entry as { updated_at?: number }).updated_at ?? 0,
+	}))
 }
 
 export async function createVaultEntry(data: {
@@ -58,7 +58,7 @@ export async function createVaultEntry(data: {
 
 	const all = await listVaultEntries()
 	all.push(entry)
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+	useVaultStorage().value = all
 	return entry
 }
 
@@ -67,11 +67,11 @@ export async function updateVaultEntry(id: string, patch: Partial<VaultEntryDto>
 	const idx = all.findIndex((e) => e.id === id)
 	if (idx < 0) throw new Error('Vault entry not found')
 	all[idx] = { ...all[idx], ...patch, updatedAt: Date.now() }
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+	useVaultStorage().value = all
 }
 
 export async function deleteVaultEntry(id: string): Promise<void> {
 	const all = await listVaultEntries()
 	const filtered = all.filter((e) => e.id !== id)
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+	useVaultStorage().value = filtered
 }

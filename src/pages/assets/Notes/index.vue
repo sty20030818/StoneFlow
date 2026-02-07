@@ -164,19 +164,34 @@
 </template>
 
 <script setup lang="ts">
-	import { refDebounced } from '@vueuse/core'
-	import { computed, onMounted, ref } from 'vue'
+	import { refDebounced, useAsyncState } from '@vueuse/core'
+	import { computed, ref } from 'vue'
 
+	import { validateWithZod } from '@/composables/base/zod'
+	import { noteSubmitSchema } from '@/composables/domain/validation/forms'
 	import type { NoteDto } from '@/services/api/notes'
 	import { createNote, deleteNote, listNotes, updateNote } from '@/services/api/notes'
 
 	const toast = useToast()
 
-	const loading = ref(false)
-	const notes = ref<NoteDto[]>([])
 	const selectedNote = ref<NoteDto | null>(null)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
+	const {
+		state: notes,
+		isLoading: loading,
+		execute: executeRefresh,
+	} = useAsyncState(() => listNotes(), [] as NoteDto[], {
+		immediate: true,
+		resetOnExecute: false,
+		onError: (e) => {
+			toast.add({
+				title: '加载失败',
+				description: e instanceof Error ? e.message : '未知错误',
+				color: 'error',
+			})
+		},
+	})
 
 	const editForm = ref({
 		title: '',
@@ -225,8 +240,9 @@
 
 	async function onSave() {
 		if (!selectedNote.value) return
-		if (!editForm.value.title.trim()) {
-			toast.add({ title: '标题不能为空', color: 'error' })
+		const validation = validateWithZod(noteSubmitSchema, { title: editForm.value.title })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
 			return
 		}
 
@@ -267,21 +283,6 @@
 	}
 
 	async function refresh() {
-		loading.value = true
-		try {
-			notes.value = await listNotes()
-		} catch (e) {
-			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
-				color: 'error',
-			})
-		} finally {
-			loading.value = false
-		}
+		await executeRefresh(0)
 	}
-
-	onMounted(async () => {
-		await refresh()
-	})
 </script>

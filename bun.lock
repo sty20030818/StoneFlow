@@ -15,12 +15,15 @@
         "@tauri-apps/plugin-stronghold": "^2.3.1",
         "@tauri-apps/plugin-updater": "~2.10.0",
         "@vueuse/core": "^14.2.0",
+        "@vueuse/math": "^14.2.0",
+        "@vueuse/router": "^14.2.0",
         "date-fns": "^4.1.0",
         "pinia": "^3.0.4",
         "tailwindcss": "^4.1.18",
         "vue": "^3.5.27",
         "vue-draggable-plus": "^0.6.1",
         "vue-router": "^5.0.2",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@tauri-apps/cli": "^2.10.0",
@@ -463,7 +466,11 @@
 
     "@vueuse/integrations": ["@vueuse/integrations@14.1.0", "https://registry.npmmirror.com/@vueuse/integrations/-/integrations-14.1.0.tgz", { "dependencies": { "@vueuse/core": "14.1.0", "@vueuse/shared": "14.1.0" }, "optionalDependencies": { "fuse.js": "7.1.0" }, "peerDependencies": { "vue": "3.5.26" } }, "sha512-eNQPdisnO9SvdydTIXnTE7c29yOsJBD/xkwEyQLdhDC/LKbqrFpXHb3uS//7NcIrQO3fWVuvMGp8dbK6mNEMCA=="],
 
+    "@vueuse/math": ["@vueuse/math@14.2.0", "https://registry.npmmirror.com/@vueuse/math/-/math-14.2.0.tgz", { "dependencies": { "@vueuse/shared": "14.2.0" }, "peerDependencies": { "vue": "^3.5.0" } }, "sha512-Kut47ss0YuxaEREuV1nhFqntW9ST01BR9zflhEdF62cCHM8TdAQAuIzLg96gUh8wB1LE+MYz+qzvwQwuEe1VFA=="],
+
     "@vueuse/metadata": ["@vueuse/metadata@14.2.0", "https://registry.npmmirror.com/@vueuse/metadata/-/metadata-14.2.0.tgz", {}, "sha512-i3axTGjU8b13FtyR4Keeama+43iD+BwX9C2TmzBVKqjSHArF03hjkp2SBZ1m72Jk2UtrX0aYCugBq2R1fhkuAQ=="],
+
+    "@vueuse/router": ["@vueuse/router@14.2.0", "https://registry.npmmirror.com/@vueuse/router/-/router-14.2.0.tgz", { "dependencies": { "@vueuse/shared": "14.2.0" }, "peerDependencies": { "vue": "^3.5.0", "vue-router": "^4.0.0 || ^5.0.0" } }, "sha512-5cTINBtMOF04ByLm0n6V7bOnBhYCD8j2JNSectSA4qIFk6SMfs3MunVExDz7bUk4/wy9t4l7RNs3SEWGSDb9DA=="],
 
     "@vueuse/shared": ["@vueuse/shared@14.1.0", "https://registry.npmmirror.com/@vueuse/shared/-/shared-14.1.0.tgz", { "peerDependencies": { "vue": "3.5.26" } }, "sha512-EcKxtYvn6gx1F8z9J5/rsg3+lTQnvOruQd8fUecW99DCK04BkWD7z5KQ/wTAx+DazyoEE9dJt/zV8OIEQbM6kw=="],
 
@@ -1001,6 +1008,8 @@
 
     "yocto-queue": ["yocto-queue@0.1.0", "https://registry.npmmirror.com/yocto-queue/-/yocto-queue-0.1.0.tgz", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
 
+    "zod": ["zod@4.3.6", "https://registry.npmmirror.com/zod/-/zod-4.3.6.tgz", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
+
     "@babel/generator/@babel/parser": ["@babel/parser@7.28.6", "https://registry.npmmirror.com/@babel/parser/-/parser-7.28.6.tgz", { "dependencies": { "@babel/types": "^7.28.6" }, "bin": "./bin/babel-parser.js" }, "sha512-TeR9zWR18BvbfPmGbLampPMW+uW1NZnJlRuuHso8i87QZNq2JRF9i6RgxRqtEq+wQGsS19NNTWr2duhnE49mfQ=="],
 
     "@babel/parser/@babel/types": ["@babel/types@7.28.5", "https://registry.npmmirror.com/@babel/types/-/types-7.28.5.tgz", { "dependencies": { "@babel/helper-string-parser": "7.27.1", "@babel/helper-validator-identifier": "7.28.5" } }, "sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA=="],
@@ -1040,6 +1049,10 @@
     "@vueuse/core/@vueuse/shared": ["@vueuse/shared@14.2.0", "https://registry.npmmirror.com/@vueuse/shared/-/shared-14.2.0.tgz", { "peerDependencies": { "vue": "^3.5.0" } }, "sha512-Z0bmluZTlAXgUcJ4uAFaML16JcD8V0QG00Db3quR642I99JXIDRa2MI2LGxiLVhcBjVnL1jOzIvT5TT2lqJlkA=="],
 
     "@vueuse/integrations/@vueuse/core": ["@vueuse/core@14.1.0", "https://registry.npmmirror.com/@vueuse/core/-/core-14.1.0.tgz", { "dependencies": { "@types/web-bluetooth": "0.0.21", "@vueuse/metadata": "14.1.0", "@vueuse/shared": "14.1.0" }, "peerDependencies": { "vue": "3.5.26" } }, "sha512-rgBinKs07hAYyPF834mDTigH7BtPqvZ3Pryuzt1SD/lg5wEcWqvwzXXYGEDb2/cP0Sj5zSvHl3WkmMELr5kfWw=="],
+
+    "@vueuse/math/@vueuse/shared": ["@vueuse/shared@14.2.0", "https://registry.npmmirror.com/@vueuse/shared/-/shared-14.2.0.tgz", { "peerDependencies": { "vue": "^3.5.0" } }, "sha512-Z0bmluZTlAXgUcJ4uAFaML16JcD8V0QG00Db3quR642I99JXIDRa2MI2LGxiLVhcBjVnL1jOzIvT5TT2lqJlkA=="],
+
+    "@vueuse/router/@vueuse/shared": ["@vueuse/shared@14.2.0", "https://registry.npmmirror.com/@vueuse/shared/-/shared-14.2.0.tgz", { "peerDependencies": { "vue": "^3.5.0" } }, "sha512-Z0bmluZTlAXgUcJ4uAFaML16JcD8V0QG00Db3quR642I99JXIDRa2MI2LGxiLVhcBjVnL1jOzIvT5TT2lqJlkA=="],
 
     "anymatch/picomatch": ["picomatch@2.3.1", "https://registry.npmmirror.com/picomatch/-/picomatch-2.3.1.tgz", {}, "sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA=="],
 

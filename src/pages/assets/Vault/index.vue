@@ -228,20 +228,35 @@
 </template>
 
 <script setup lang="ts">
-	import { refDebounced, useClipboard, useTimeoutFn } from '@vueuse/core'
-	import { computed, onMounted, ref } from 'vue'
+	import { refDebounced, useAsyncState, useClipboard, useTimeoutFn } from '@vueuse/core'
+	import { computed, ref } from 'vue'
 
+	import { validateWithZod } from '@/composables/base/zod'
+	import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
 	import type { VaultEntryDto, VaultEntryType } from '@/services/api/vault'
 	import { createVaultEntry, deleteVaultEntry, listVaultEntries, updateVaultEntry } from '@/services/api/vault'
 
 	const toast = useToast()
 
-	const loading = ref(false)
-	const entries = ref<VaultEntryDto[]>([])
 	const selectedEntry = ref<VaultEntryDto | null>(null)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
+	const {
+		state: entries,
+		isLoading: loading,
+		execute: executeRefresh,
+	} = useAsyncState(() => listVaultEntries(), [] as VaultEntryDto[], {
+		immediate: true,
+		resetOnExecute: false,
+		onError: (e) => {
+			toast.add({
+				title: '加载失败',
+				description: e instanceof Error ? e.message : '未知错误',
+				color: 'error',
+			})
+		},
+	})
 	const showValue = ref(false)
 	const { copy } = useClipboard()
 	const { start: hideValueLater, stop: stopHideValueTimer } = useTimeoutFn(
@@ -346,12 +361,12 @@
 
 	async function onSave() {
 		if (!selectedEntry.value) return
-		if (!editForm.value.name.trim()) {
-			toast.add({ title: '名称不能为空', color: 'error' })
-			return
-		}
-		if (!editForm.value.value.trim()) {
-			toast.add({ title: '值不能为空', color: 'error' })
+		const validation = validateWithZod(vaultSubmitSchema, {
+			name: editForm.value.name,
+			value: editForm.value.value,
+		})
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
 			return
 		}
 
@@ -392,21 +407,6 @@
 	}
 
 	async function refresh() {
-		loading.value = true
-		try {
-			entries.value = await listVaultEntries()
-		} catch (e) {
-			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
-				color: 'error',
-			})
-		} finally {
-			loading.value = false
-		}
+		await executeRefresh(0)
 	}
-
-	onMounted(async () => {
-		await refresh()
-	})
 </script>

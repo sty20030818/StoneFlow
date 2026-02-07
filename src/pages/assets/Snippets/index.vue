@@ -218,20 +218,35 @@
 </template>
 
 <script setup lang="ts">
-	import { refDebounced } from '@vueuse/core'
-	import { computed, onMounted, ref } from 'vue'
+	import { refDebounced, useAsyncState } from '@vueuse/core'
+	import { computed, ref } from 'vue'
 
+	import { validateWithZod } from '@/composables/base/zod'
+	import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
 	import type { SnippetDto } from '@/services/api/snippets'
 	import { createSnippet, deleteSnippet, listSnippets, updateSnippet } from '@/services/api/snippets'
 
 	const toast = useToast()
 
-	const loading = ref(false)
-	const snippets = ref<SnippetDto[]>([])
 	const selectedSnippet = ref<SnippetDto | null>(null)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
+	const {
+		state: snippets,
+		isLoading: loading,
+		execute: executeRefresh,
+	} = useAsyncState(() => listSnippets(), [] as SnippetDto[], {
+		immediate: true,
+		resetOnExecute: false,
+		onError: (e) => {
+			toast.add({
+				title: '加载失败',
+				description: e instanceof Error ? e.message : '未知错误',
+				color: 'error',
+			})
+		},
+	})
 
 	const editForm = ref({
 		title: '',
@@ -308,8 +323,9 @@
 
 	async function onSave() {
 		if (!selectedSnippet.value) return
-		if (!editForm.value.title.trim()) {
-			toast.add({ title: '标题不能为空', color: 'error' })
+		const validation = validateWithZod(snippetSubmitSchema, { title: editForm.value.title })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
 			return
 		}
 
@@ -351,21 +367,6 @@
 	}
 
 	async function refresh() {
-		loading.value = true
-		try {
-			snippets.value = await listSnippets()
-		} catch (e) {
-			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
-				color: 'error',
-			})
-		} finally {
-			loading.value = false
-		}
+		await executeRefresh(0)
 	}
-
-	onMounted(async () => {
-		await refresh()
-	})
 </script>
