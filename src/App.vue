@@ -50,6 +50,7 @@
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
 
+	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import CreateProjectModal from '@/components/CreateProjectModal'
 	import CreateTaskModal from '@/components/CreateTaskModal'
 	import { createModalLayerUi } from '@/config/ui-layer'
@@ -65,6 +66,7 @@
 
 	const router = useRouter()
 	const route = useRoute()
+	const routeProjectId = useNullableStringRouteQuery('project')
 	const commandPaletteOpen = ref(false)
 	const createTaskModalOpen = ref(false)
 	const createProjectModalOpen = ref(false)
@@ -87,8 +89,7 @@
 	})
 
 	const currentRouteProjectId = computed<string | undefined>(() => {
-		const pid = route.query.project
-		return typeof pid === 'string' ? pid : undefined
+		return routeProjectId.value ?? undefined
 	})
 
 	// 定义命令组

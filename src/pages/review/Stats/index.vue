@@ -154,6 +154,7 @@
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 
+	import { toBoundedPercent } from '@/composables/base/percent'
 	import {
 		TASK_DONE_REASON_COLORS,
 		TASK_DONE_REASON_LABELS,
@@ -232,7 +233,7 @@
 
 		const max = days.reduce((m, d) => (d.count > m ? d.count : m), 0)
 		for (const d of days) {
-			d.percent = max > 0 ? Math.max(6, Math.round((d.count / max) * 100)) : 0
+			d.percent = max > 0 ? toBoundedPercent((d.count / max) * 100, 6, 100) : 0
 		}
 		return days
 	})
@@ -276,7 +277,7 @@
 
 		for (const b of buckets) {
 			const count = tasks.value.filter(b.match).length
-			const percent = Math.round((count / total) * 100)
+			const percent = toBoundedPercent((count / total) * 100)
 			if (percent <= 0) continue
 			const slice: Slice = {
 				key: b.key,

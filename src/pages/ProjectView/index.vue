@@ -78,6 +78,7 @@
 	import { useRoute } from 'vue-router'
 
 	import TaskColumn from '@/components/TaskColumn.vue'
+	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useProjectBreadcrumb } from '@/composables/useProjectBreadcrumb'
 	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
@@ -91,6 +92,7 @@
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
 	const route = useRoute()
+	const routeProjectId = useNullableStringRouteQuery('project')
 	const projectsStore = useProjectsStore()
 	const settingsStore = useSettingsStore()
 	const refreshSignals = useRefreshSignalsStore()
@@ -109,10 +111,7 @@
 	})
 
 	const projectId = computed(() => {
-		// 如果路由有 project 参数，使用它
-		const pid = route.query.project
-		if (typeof pid === 'string') return pid
-		return null
+		return routeProjectId.value
 	})
 
 	const taskSpaceId = computed(() => {
@@ -228,7 +227,7 @@
 
 	// 监听路由变化，加载项目列表
 	watchDebounced(
-		() => [route.params.spaceId, route.query.project],
+		() => [route.params.spaceId, routeProjectId.value],
 		() => {
 			exitEditMode()
 			if (spaceId.value) {

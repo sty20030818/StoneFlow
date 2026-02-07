@@ -22,6 +22,7 @@
 	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
+	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import Sidebar from './Sidebar.vue'
 	import Header from './Header.vue'
 
@@ -32,6 +33,7 @@
 
 	const route = useRoute()
 	const router = useRouter()
+	const routeProjectId = useNullableStringRouteQuery('project')
 	const settingsStore = useSettingsStore()
 	const viewStateStore = useViewStateStore()
 
@@ -42,7 +44,7 @@
 
 			// 1. 切换前，保存旧 Space 状态 (Persist old space state)
 			const oldSpaceId = settingsStore.settings.activeSpaceId
-			const currentProjectId = typeof route.query.project === 'string' ? route.query.project : null
+			const currentProjectId = routeProjectId.value
 
 			// 确保存的是合规的 space 路由
 			await viewStateStore.setLastView(oldSpaceId, {
@@ -68,12 +70,12 @@
 
 	// 路由高频变化时用防抖持久化，减少无效写入与启动期闪动。
 	watchDebounced(
-		() => [route.path, route.query.project],
+		() => [route.path, routeProjectId.value],
 		() => {
 			if (!settingsStore.loaded || !viewStateStore.loaded) return
 
 			const currentSpaceId = settingsStore.settings.activeSpaceId
-			const projectId = typeof route.query.project === 'string' ? route.query.project : null
+			const projectId = routeProjectId.value
 
 			// 记录任意页面状态
 			void viewStateStore.setLastView(currentSpaceId, {
