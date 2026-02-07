@@ -20,18 +20,18 @@ pub struct ProjectDto {
     pub title: String,
     pub note: Option<String>,
     pub priority: String,
-    pub todo_task_count: i64,
-    pub done_task_count: i64,
-    pub last_task_updated_at: Option<i64>,
+    pub tags: Vec<String>,
+    pub links: Vec<LinkDto>,
+    pub rank: i64,
     pub created_at: i64,
     pub updated_at: i64,
     pub archived_at: Option<i64>,
     pub deleted_at: Option<i64>,
     pub create_by: String,
-    pub rank: i64,
     pub computed_status: String,
-    pub tags: Vec<String>,
-    pub links: Vec<LinkDto>,
+    pub todo_task_count: i64,
+    pub done_task_count: i64,
+    pub last_task_updated_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +48,8 @@ pub struct TaskDto {
     pub done_reason: Option<String>,
     pub priority: String,  // P0, P1, P2, P3
     pub tags: Vec<String>, // 从 task_tags JOIN 获取
+    /// 外部链接列表
+    pub links: Vec<LinkDto>,
     pub rank: i64,
     pub created_at: i64,
     pub updated_at: i64,
@@ -58,8 +60,6 @@ pub struct TaskDto {
     pub archived_at: Option<i64>,
     /// 软删除时间（时间戳毫秒）
     pub deleted_at: Option<i64>,
-    /// 外部链接列表
-    pub links: Vec<LinkDto>,
     /// 自定义字段
     pub custom_fields: Option<CustomFieldsDto>,
     /// 创建者

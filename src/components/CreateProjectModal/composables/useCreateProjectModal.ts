@@ -2,6 +2,7 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
 import { createProject } from '@/services/api/projects'
+import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
@@ -25,12 +26,22 @@ export type CreateProjectModalEmits = {
 	(e: 'created', project: ProjectDto): void
 }
 
+export type ProjectLinkFormItem = {
+	id?: string
+	title: string
+	url: string
+	kind: LinkDto['kind']
+	rank: string
+}
+
 export type CreateProjectFormState = {
 	title: string
 	spaceId: SpaceId
 	parentId: string | null
 	note: string | null
 	priority: ProjectPriorityValue
+	tags: string[]
+	links: ProjectLinkFormItem[]
 }
 
 export type SelectOption<TValue extends string | null = string | null> = {
@@ -48,11 +59,26 @@ export type ParentProjectOption = SelectOption<string | null> & {
 	depth: number
 }
 
+export type LinkKindOption = {
+	value: LinkDto['kind']
+	label: string
+}
+
+const PROJECT_LINK_KIND_OPTIONS: LinkKindOption[] = [
+	{ value: 'web', label: 'Web' },
+	{ value: 'doc', label: 'Doc' },
+	{ value: 'design', label: 'Design' },
+	{ value: 'repoLocal', label: 'Repo (Local)' },
+	{ value: 'repoRemote', label: 'Repo (Remote)' },
+	{ value: 'other', label: 'Other' },
+]
+
 export function useCreateProjectModal(props: CreateProjectModalProps, emit: CreateProjectModalEmits) {
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
 	const loading = ref(false)
+	const tagInput = ref('')
 	const isOpen = computed({
 		get: () => props.modelValue,
 		set: (value) => emit('update:modelValue', value),
@@ -70,12 +96,15 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		parentId: null,
 		note: null,
 		priority: 'P1',
+		tags: [],
+		links: [],
 	})
 
 	const canSubmit = computed(() => form.title.trim().length > 0)
 
 	const spaceOptions: SpaceOption[] = SPACE_OPTIONS
 	const priorityOptions: PriorityOption[] = PROJECT_PRIORITY_OPTIONS
+	const linkKindOptions: LinkKindOption[] = PROJECT_LINK_KIND_OPTIONS
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
 	const projectRootLabel = PROJECT_ROOT_LABEL
@@ -132,6 +161,62 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		return options
 	}
 
+	function normalizeTags(values: string[]): string[] {
+		const seen = new Set<string>()
+		const result: string[] = []
+		for (const raw of values) {
+			const tag = raw.trim()
+			if (!tag || seen.has(tag)) continue
+			seen.add(tag)
+			result.push(tag)
+		}
+		return result
+	}
+
+	function normalizeLinks(values: ProjectLinkFormItem[]): LinkInput[] {
+		const result: LinkInput[] = []
+		for (const link of values) {
+			const url = link.url.trim()
+			if (!url) continue
+			const title = link.title.trim()
+			const rankInput = link.rank.trim()
+			const parsedRank = rankInput ? Number.parseInt(rankInput, 10) : Number.NaN
+			result.push({
+				id: link.id,
+				title,
+				url,
+				kind: link.kind,
+				rank: Number.isFinite(parsedRank) ? parsedRank : undefined,
+			})
+		}
+		return result
+	}
+
+	function addTag() {
+		const tag = tagInput.value.trim()
+		if (!tag || form.tags.includes(tag)) return
+		form.tags.push(tag)
+		tagInput.value = ''
+	}
+
+	function removeTag(tag: string) {
+		form.tags = form.tags.filter((t) => t !== tag)
+	}
+
+	function addLink() {
+		form.links.push({
+			title: '',
+			url: '',
+			kind: 'web',
+			rank: '',
+		})
+	}
+
+	function removeLink(index: number) {
+		if (index < 0 || index >= form.links.length) return
+		form.links.splice(index, 1)
+	}
+
 	async function refreshParentProjectOptions() {
 		await projectsStore.loadForSpace(form.spaceId)
 		currentParentProjectOptions.value = buildParentProjectOptions(form.spaceId)
@@ -161,6 +246,9 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		form.parentId = null
 		form.note = null
 		form.priority = 'P1'
+		form.tags = []
+		form.links = []
+		tagInput.value = ''
 		form.spaceId = normalizeSpaceId(props.spaceId)
 		await refreshParentProjectOptions()
 	})
@@ -176,6 +264,8 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 				parentId: form.parentId,
 				note: form.note?.trim() || null,
 				priority: form.priority,
+				tags: normalizeTags(form.tags),
+				links: normalizeLinks(form.links),
 			})
 
 			await projectsStore.loadForSpace(form.spaceId, true)
@@ -196,12 +286,18 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	return {
 		isOpen,
 		form,
+		tagInput,
 		loading,
 		canSubmit,
 		spaceOptions,
 		priorityOptions,
+		linkKindOptions,
 		currentParentProjectOptions,
 		projectRootLabel,
+		addTag,
+		removeTag,
+		addLink,
+		removeLink,
 		handleSubmit,
 		close,
 	}

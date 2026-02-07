@@ -1,8 +1,17 @@
+import { useToggle } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
 import { getDefaultProject } from '@/services/api/projects'
-import type { TaskDoneReason, TaskDto, TaskStatus, UpdateTaskPatch } from '@/services/api/tasks'
+import type {
+	CustomFieldItem,
+	LinkDto,
+	LinkInput,
+	TaskDoneReason,
+	TaskDto,
+	TaskStatus,
+	UpdateTaskPatch,
+} from '@/services/api/tasks'
 import { createTask, updateTask } from '@/services/api/tasks'
 import {
 	PROJECT_ICON,
@@ -29,6 +38,20 @@ export type CreateTaskModalEmits = {
 	(e: 'created', task: TaskDto): void
 }
 
+export type TaskLinkFormItem = {
+	id?: string
+	title: string
+	url: string
+	kind: LinkDto['kind']
+	rank: string
+}
+
+export type TaskCustomFieldFormItem = {
+	key: string
+	label: string
+	value: string
+}
+
 export type CreateTaskFormState = {
 	title: string
 	spaceId: SpaceId
@@ -38,7 +61,9 @@ export type CreateTaskFormState = {
 	priority: TaskPriorityValue
 	deadlineDate: string
 	tags: string[]
+	links: TaskLinkFormItem[]
 	note: string
+	customFields: TaskCustomFieldFormItem[]
 }
 
 export type ProjectOption = {
@@ -48,6 +73,20 @@ export type ProjectOption = {
 	iconClass: string
 	depth: number
 }
+
+export type LinkKindOption = {
+	value: LinkDto['kind']
+	label: string
+}
+
+const TASK_LINK_KIND_OPTIONS: LinkKindOption[] = [
+	{ value: 'web', label: 'Web' },
+	{ value: 'doc', label: 'Doc' },
+	{ value: 'design', label: 'Design' },
+	{ value: 'repoLocal', label: 'Repo (Local)' },
+	{ value: 'repoRemote', label: 'Repo (Remote)' },
+	{ value: 'other', label: 'Other' },
+]
 
 export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTaskModalEmits) {
 	const projectsStore = useProjectsStore()
@@ -77,30 +116,108 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		priority: 'P1',
 		deadlineDate: '',
 		tags: [],
+		links: [],
 		note: '',
+		customFields: [],
 	})
 
 	const tagInput = ref('')
+	const advancedOpen = ref(false)
+	const toggleAdvanced = useToggle(advancedOpen)
 
 	const canSubmit = computed(() => form.value.title.trim().length > 0)
 
 	const spaceOptions = SPACE_OPTIONS
 	const priorityOptions = TASK_PRIORITY_OPTIONS
 	const doneReasonOptions = TASK_DONE_REASON_OPTIONS
+	const linkKindOptions = TASK_LINK_KIND_OPTIONS
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
 	const uncategorizedLabel = UNCATEGORIZED_LABEL
 
+	function normalizeTags(values: string[]): string[] {
+		const seen = new Set<string>()
+		const result: string[] = []
+		for (const raw of values) {
+			const tag = raw.trim()
+			if (!tag || seen.has(tag)) continue
+			seen.add(tag)
+			result.push(tag)
+		}
+		return result
+	}
+
+	function normalizeLinks(values: TaskLinkFormItem[]): LinkInput[] {
+		const result: LinkInput[] = []
+		for (const link of values) {
+			const url = link.url.trim()
+			if (!url) continue
+			const title = link.title.trim()
+			const rankInput = link.rank.trim()
+			const parsedRank = rankInput ? Number.parseInt(rankInput, 10) : Number.NaN
+			result.push({
+				id: link.id,
+				title,
+				url,
+				kind: link.kind,
+				rank: Number.isFinite(parsedRank) ? parsedRank : undefined,
+			})
+		}
+		return result
+	}
+
+	function normalizeCustomFields(values: TaskCustomFieldFormItem[]): CustomFieldItem[] {
+		const result: CustomFieldItem[] = []
+		for (const item of values) {
+			const key = item.key.trim()
+			const label = item.label.trim()
+			if (!key || !label) continue
+			const rawValue = item.value.trim()
+			result.push({
+				key,
+				label,
+				value: rawValue ? rawValue : null,
+			})
+		}
+		return result
+	}
+
 	function addTag() {
 		const tag = tagInput.value.trim()
-		if (tag && !form.value.tags.includes(tag)) {
-			form.value.tags.push(tag)
-			tagInput.value = ''
-		}
+		if (!tag || form.value.tags.includes(tag)) return
+		form.value.tags.push(tag)
+		tagInput.value = ''
 	}
 
 	function removeTag(tag: string) {
 		form.value.tags = form.value.tags.filter((t) => t !== tag)
+	}
+
+	function addLink() {
+		form.value.links.push({
+			title: '',
+			url: '',
+			kind: 'web',
+			rank: '',
+		})
+	}
+
+	function removeLink(index: number) {
+		if (index < 0 || index >= form.value.links.length) return
+		form.value.links.splice(index, 1)
+	}
+
+	function addCustomField() {
+		form.value.customFields.push({
+			key: '',
+			label: '',
+			value: '',
+		})
+	}
+
+	function removeCustomField(index: number) {
+		if (index < 0 || index >= form.value.customFields.length) return
+		form.value.customFields.splice(index, 1)
 	}
 
 	const projectOptions = computed<ProjectOption[]>(() => {
@@ -171,8 +288,11 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		form.value.priority = 'P1'
 		form.value.deadlineDate = ''
 		form.value.tags = []
+		form.value.links = []
 		form.value.note = ''
+		form.value.customFields = []
 		tagInput.value = ''
+		advancedOpen.value = false
 		form.value.spaceId = normalizeSpaceId(props.spaceId)
 
 		await projectsStore.loadForSpace(form.value.spaceId)
@@ -224,8 +344,19 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				updatePatch.deadlineAt = date.getTime()
 			}
 
-			if (form.value.tags.length > 0) {
-				updatePatch.tags = form.value.tags
+			const tags = normalizeTags(form.value.tags)
+			if (tags.length > 0) {
+				updatePatch.tags = tags
+			}
+
+			const links = normalizeLinks(form.value.links)
+			if (links.length > 0) {
+				updatePatch.links = links
+			}
+
+			const customFields = normalizeCustomFields(form.value.customFields)
+			if (customFields.length > 0) {
+				updatePatch.customFields = { fields: customFields }
 			}
 
 			if (Object.keys(updatePatch).length > 0) {
@@ -236,6 +367,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				if (updatePatch.priority) task.priority = updatePatch.priority
 				if (updatePatch.note !== undefined) task.note = updatePatch.note
 				if (updatePatch.tags) task.tags = updatePatch.tags
+				if (updatePatch.customFields !== undefined) task.customFields = updatePatch.customFields
 			}
 
 			refreshSignals.bumpTask()
@@ -256,6 +388,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		isOpen,
 		form,
 		tagInput,
+		advancedOpen,
 		loading,
 		canSubmit,
 		spaceOptions,
@@ -263,9 +396,15 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		statusOptionsArray,
 		priorityOptions,
 		doneReasonOptions,
+		linkKindOptions,
 		uncategorizedLabel,
+		toggleAdvanced,
 		addTag,
 		removeTag,
+		addLink,
+		removeLink,
+		addCustomField,
+		removeCustomField,
 		handleSubmit,
 		close,
 	}

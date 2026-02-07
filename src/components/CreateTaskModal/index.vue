@@ -16,10 +16,17 @@
 				:status-options="statusOptionsArray"
 				:priority-options="priorityOptions"
 				:done-reason-options="doneReasonOptions"
+				:link-kind-options="linkKindOptions"
+				:advanced-open="advancedOpen"
 				:uncategorized-label="uncategorizedLabel"
 				@submit="handleSubmit"
+				@toggle-advanced="toggleAdvanced()"
 				@add-tag="addTag"
-				@remove-tag="removeTag" />
+				@remove-tag="removeTag"
+				@add-link="addLink"
+				@remove-link="removeLink"
+				@add-custom-field="addCustomField"
+				@remove-custom-field="removeCustomField" />
 		</template>
 
 		<template #footer>
@@ -48,6 +55,7 @@
 		isOpen,
 		form,
 		tagInput,
+		advancedOpen,
 		loading,
 		canSubmit,
 		spaceOptions,
@@ -55,9 +63,15 @@
 		statusOptionsArray,
 		priorityOptions,
 		doneReasonOptions,
+		linkKindOptions,
 		uncategorizedLabel,
+		toggleAdvanced,
 		addTag,
 		removeTag,
+		addLink,
+		removeLink,
+		addCustomField,
+		removeCustomField,
 		handleSubmit,
 		close,
 	} = useCreateTaskModal(props, emit)

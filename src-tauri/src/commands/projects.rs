@@ -3,7 +3,10 @@ use tauri::State;
 
 use crate::db::DbState;
 use crate::repos::project_repo::ProjectRepo;
-use crate::types::{dto::ProjectDto, error::ApiError};
+use crate::types::{
+    dto::{LinkInputDto, ProjectDto},
+    error::ApiError,
+};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,6 +44,9 @@ pub struct CreateProjectArgs {
     pub parent_id: Option<String>,
     pub note: Option<String>,
     pub priority: Option<String>,
+    pub rank: Option<i64>,
+    pub tags: Option<Vec<String>>,
+    pub links: Option<Vec<LinkInputDto>>,
 }
 
 /// 创建新项目。
@@ -56,6 +62,9 @@ pub async fn create_project(
         args.parent_id.as_deref(),
         args.note.as_deref(),
         args.priority.as_deref(),
+        args.rank,
+        args.tags,
+        args.links,
     )
     .await
     .map_err(ApiError::from)

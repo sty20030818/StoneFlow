@@ -1,12 +1,20 @@
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+    TransactionTrait,
 };
 use uuid::Uuid;
 
 use crate::db::entities::{projects, sea_orm_active_enums::Priority};
 use crate::db::now_ms;
-use crate::repos::common_task_utils;
-use crate::types::{dto::ProjectDto, error::AppError};
+use crate::repos::{
+    common_task_utils,
+    link_repo::{self, LinkEntity},
+    tag_repo::{self, TagEntity},
+};
+use crate::types::{
+    dto::{LinkInputDto, ProjectDto},
+    error::AppError,
+};
 
 pub mod helpers;
 
@@ -97,11 +105,24 @@ impl ProjectRepo {
         parent_id: Option<&str>,
         note: Option<&str>,
         priority: Option<&str>,
+        rank: Option<i64>,
+        tags: Option<Vec<String>>,
+        links: Option<Vec<LinkInputDto>>,
     ) -> Result<ProjectDto, AppError> {
         let title = title.trim();
         if title.is_empty() {
             return Err(AppError::Validation("项目名称不能为空".to_string()));
         }
+        let note = note.and_then(|v| {
+            let trimmed = v.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        });
+        let tags = tags.unwrap_or_default();
+        let links = links.unwrap_or_default();
 
         let priority_enum = common_task_utils::parse_priority(priority)?;
 
@@ -125,7 +146,8 @@ impl ProjectRepo {
             .await
             .map_err(AppError::from)?;
 
-        let rank = max_rank_project.map(|p| p.rank + 1024).unwrap_or(1024);
+        let default_rank = max_rank_project.map(|p| p.rank + 1024).unwrap_or(1024);
+        let resolved_rank = rank.unwrap_or(default_rank);
 
         let active_model = projects::ActiveModel {
             id: Set(id.clone()),
@@ -133,7 +155,7 @@ impl ProjectRepo {
             parent_id: Set(parent_id.map(|s| s.to_string())),
             path: Set(path.clone()),
             title: Set(title.to_string()),
-            note: Set(note.map(|s| s.to_string())),
+            note: Set(note),
             priority: Set(priority_enum),
             todo_task_count: Set(0),
             done_task_count: Set(0),
@@ -143,12 +165,25 @@ impl ProjectRepo {
             archived_at: Set(None),
             deleted_at: Set(None),
             create_by: Set("stonefish".to_string()),
-            rank: Set(rank),
+            rank: Set(resolved_rank),
         };
 
-        let res = active_model.insert(conn).await.map_err(AppError::from)?;
+        let txn = conn.begin().await.map_err(AppError::from)?;
+        let res = active_model.insert(&txn).await.map_err(AppError::from)?;
 
-        Ok(model_to_dto(res))
+        if !tags.is_empty() {
+            tag_repo::sync_tags(&txn, TagEntity::Project, &id, &tags, now).await?;
+        }
+        if !links.is_empty() {
+            link_repo::sync_links(&txn, LinkEntity::Project, &id, &links).await?;
+        }
+
+        txn.commit().await.map_err(AppError::from)?;
+
+        let mut dto = model_to_dto(res);
+        helpers::attach_links(conn, std::slice::from_mut(&mut dto)).await?;
+        helpers::attach_tags(conn, std::slice::from_mut(&mut dto)).await?;
+        Ok(dto)
     }
 
     /// 更新项目的 rank 和可选的 parentId（用于拖拽排序）。

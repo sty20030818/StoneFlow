@@ -10,11 +10,17 @@
 		<template #body>
 			<ProjectModalBody
 				v-model:form="form"
+				v-model:tag-input="tagInput"
 				:space-options="spaceOptions"
 				:parent-options="currentParentProjectOptions"
 				:priority-options="priorityOptions"
+				:link-kind-options="linkKindOptions"
 				:project-root-label="projectRootLabel"
-				@submit="handleSubmit" />
+				@submit="handleSubmit"
+				@add-tag="addTag"
+				@remove-tag="removeTag"
+				@add-link="addLink"
+				@remove-link="removeLink" />
 		</template>
 
 		<template #footer>
@@ -42,12 +48,18 @@
 	const {
 		isOpen,
 		form,
+		tagInput,
 		loading,
 		canSubmit,
 		spaceOptions,
 		priorityOptions,
+		linkKindOptions,
 		currentParentProjectOptions,
 		projectRootLabel,
+		addTag,
+		removeTag,
+		addLink,
+		removeLink,
 		handleSubmit,
 		close,
 	} = useCreateProjectModal(props, emit)
