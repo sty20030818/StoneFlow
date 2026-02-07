@@ -138,6 +138,8 @@
 		<!-- 完成感想记录入口（占位） -->
 		<UModal
 			v-model="reflectionOpen"
+			title="完成感想"
+			description="记录任务完成后的感想与复盘"
 			:ui="{ width: 'sm:max-w-md' }">
 			<div class="p-4 space-y-3">
 				<header class="space-y-1">

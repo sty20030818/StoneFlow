@@ -110,6 +110,8 @@
 		<!-- 编辑模态框 -->
 		<UModal
 			v-model="editOpen"
+			title="日记编辑"
+			description="创建或编辑日记内容"
 			:ui="{ width: 'sm:max-w-2xl' }">
 			<div class="p-4 space-y-3">
 				<header class="space-y-1">

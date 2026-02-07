@@ -206,7 +206,7 @@
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
 					</div>
-					<div class="grid grid-cols-3 gap-2">
+					<div class="grid grid-cols-2 gap-2">
 						<USelectMenu
 							v-model="link.kind"
 							:items="linkKindOptions"
@@ -216,12 +216,6 @@
 							class="w-full"
 							:search-input="false"
 							:ui="{ rounded: 'rounded-lg', width: 'w-full' }" />
-						<UInput
-							v-model="link.rank"
-							placeholder="Rank"
-							size="sm"
-							class="w-full"
-							:ui="{ rounded: 'rounded-lg' }" />
 						<UButton
 							color="neutral"
 							variant="soft"

@@ -60,8 +60,6 @@ pub async fn load_links(
     // 统一加载接口，按 entity 选择不同关联表。
     let rows: Vec<(String, links::Model)> = match entity {
         LinkEntity::Task => task_links::Entity::find()
-            .select_only()
-            .column(task_links::Column::TaskId)
             .join(
                 sea_orm::JoinType::InnerJoin,
                 task_links::Relation::Links.def(),
@@ -75,8 +73,6 @@ pub async fn load_links(
             .filter_map(|(tl, link)| link.map(|l| (tl.task_id, l)))
             .collect(),
         LinkEntity::Project => project_links::Entity::find()
-            .select_only()
-            .column(project_links::Column::ProjectId)
             .join(
                 sea_orm::JoinType::InnerJoin,
                 project_links::Relation::Links.def(),

@@ -46,6 +46,7 @@
 		<UModal
 			v-model:open="confirmDeleteOpen"
 			title="确认删除"
+			description="确认是否删除选中的任务"
 			:ui="{
 				width: 'sm:max-w-lg',
 				overlay: 'z-[120]',

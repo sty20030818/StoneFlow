@@ -11,6 +11,8 @@
 		<!-- 命令面板 -->
 		<UModal
 			v-model:open="commandPaletteOpen"
+			title="命令面板"
+			description="搜索页面并执行快捷操作"
 			:ui="{ content: 'p-0' }">
 			<template #content>
 				<UCommandPalette

@@ -2,6 +2,8 @@
 	<USlideover
 		v-if="currentTask"
 		v-model:open="isOpen"
+		title="任务详情"
+		description="查看与编辑当前任务的详细信息"
 		side="right"
 		:ui="{
 			content: 'w-[560px] h-full flex flex-col bg-default/90 backdrop-blur-2xl border-l border-default z-50',

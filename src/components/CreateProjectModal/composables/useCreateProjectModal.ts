@@ -31,7 +31,6 @@ export type ProjectLinkFormItem = {
 	title: string
 	url: string
 	kind: LinkDto['kind']
-	rank: string
 }
 
 export type CreateProjectFormState = {
@@ -179,14 +178,11 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 			const url = link.url.trim()
 			if (!url) continue
 			const title = link.title.trim()
-			const rankInput = link.rank.trim()
-			const parsedRank = rankInput ? Number.parseInt(rankInput, 10) : Number.NaN
 			result.push({
 				id: link.id,
 				title,
 				url,
 				kind: link.kind,
-				rank: Number.isFinite(parsedRank) ? parsedRank : undefined,
 			})
 		}
 		return result
@@ -208,7 +204,6 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 			title: '',
 			url: '',
 			kind: 'web',
-			rank: '',
 		})
 	}
 

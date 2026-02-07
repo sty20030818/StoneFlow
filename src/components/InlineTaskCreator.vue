@@ -179,6 +179,7 @@
 		if (!props.spaceId) return
 		const nextNote = note.value.trim()
 		const nextPriority = priority.value ?? 'P1'
+		let shouldRefocus = false
 
 		submitting.value = true
 		try {
@@ -208,12 +209,21 @@
 			note.value = ''
 			priority.value = null
 			expanded.value = false
-			await nextTick()
-			inputRef.value?.focus()
+			shouldRefocus = true
 		} catch (error) {
 			console.error('内联创建任务失败:', error)
 		} finally {
 			submitting.value = false
+			if (shouldRefocus && !props.disabled) {
+				await nextTick()
+				requestAnimationFrame(() => {
+					const input = inputRef.value
+					if (!input) return
+					input.focus()
+					const caret = input.value.length
+					input.setSelectionRange(caret, caret)
+				})
+			}
 		}
 	}
 </script>

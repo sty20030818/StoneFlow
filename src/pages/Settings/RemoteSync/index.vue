@@ -48,7 +48,8 @@
 
 	<UModal
 		v-model:open="createOpen"
-		title="新建配置">
+		title="新建配置"
+		description="创建新的远端同步配置">
 		<template #body>
 			<RemoteSyncCreateForm
 				:name="newName"
@@ -90,7 +91,8 @@
 
 	<UModal
 		v-model:open="editOpen"
-		title="编辑配置">
+		title="编辑配置"
+		description="修改当前远端同步配置">
 		<template #body>
 			<RemoteSyncEditForm
 				:name="editName"
@@ -132,7 +134,8 @@
 
 	<UModal
 		v-model:open="importOpen"
-		title="导入配置">
+		title="导入配置"
+		description="从文本导入远端同步配置">
 		<template #body>
 			<RemoteSyncImportForm
 				:text="importText"
@@ -160,7 +163,8 @@
 
 	<UModal
 		v-model:open="deleteOpen"
-		title="删除配置">
+		title="删除配置"
+		description="确认删除当前远端同步配置">
 		<template #body>
 			<RemoteSyncDeleteBody :name="deleteTarget?.name ?? ''" />
 		</template>
