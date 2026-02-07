@@ -1,7 +1,7 @@
 <template>
 	<VueDraggable
 		v-model="localProjects"
-		:animation="150"
+		:animation="0"
 		:disabled="disabled"
 		:force-fallback="true"
 		:fallback-tolerance="5"

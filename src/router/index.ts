@@ -1,25 +1,21 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-// ProjectView
-import ProjectView from '@/pages/ProjectView/index.vue'
+const ProjectView = () => import('@/pages/ProjectView/index.vue')
 
-// Review
-import FinishList from '@/pages/review/FinishList/index.vue'
-import Stats from '@/pages/review/Stats/index.vue'
-import Logs from '@/pages/review/Logs/index.vue'
+const FinishList = () => import('@/pages/review/FinishList/index.vue')
+const Stats = () => import('@/pages/review/Stats/index.vue')
+const Logs = () => import('@/pages/review/Logs/index.vue')
 
-// Assets Library
-import Snippets from '@/pages/assets/Snippets/index.vue'
-import Vault from '@/pages/assets/Vault/index.vue'
-import Notes from '@/pages/assets/Notes/index.vue'
-import Diary from '@/pages/assets/Diary/index.vue'
-import Toolbox from '@/pages/assets/Toolbox/index.vue'
-import Trash from '@/pages/Trash/index.vue'
+const Snippets = () => import('@/pages/assets/Snippets/index.vue')
+const Vault = () => import('@/pages/assets/Vault/index.vue')
+const Notes = () => import('@/pages/assets/Notes/index.vue')
+const Diary = () => import('@/pages/assets/Diary/index.vue')
+const Toolbox = () => import('@/pages/assets/Toolbox/index.vue')
+const Trash = () => import('@/pages/Trash/index.vue')
 
-// Settings
-import Settings from '@/pages/Settings/index.vue'
-import SettingsAbout from '@/pages/Settings/About/index.vue'
-import SettingsRemoteSync from '@/pages/Settings/RemoteSync/index.vue'
+const Settings = () => import('@/pages/Settings/index.vue')
+const SettingsAbout = () => import('@/pages/Settings/About/index.vue')
+const SettingsRemoteSync = () => import('@/pages/Settings/RemoteSync/index.vue')
 
 export const routes = [
 	{ path: '/', redirect: '/space/work' },

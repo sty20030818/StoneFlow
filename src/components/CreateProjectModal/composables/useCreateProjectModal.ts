@@ -218,7 +218,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	}
 
 	async function refreshParentProjectOptions() {
-		await projectsStore.loadForSpace(form.spaceId)
+		await projectsStore.load(form.spaceId)
 		currentParentProjectOptions.value = buildParentProjectOptions(form.spaceId)
 	}
 
@@ -268,7 +268,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 				links: normalizeLinks(form.links),
 			})
 
-			await projectsStore.loadForSpace(form.spaceId, true)
+			await projectsStore.load(form.spaceId, { force: true })
 			refreshSignals.bumpProject()
 			emit('created', project)
 			close()

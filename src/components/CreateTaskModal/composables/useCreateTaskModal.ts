@@ -260,7 +260,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			if (oldSpaceId && newSpaceId !== oldSpaceId) {
 				form.value.projectId = null
 			}
-			await projectsStore.loadForSpace(newSpaceId)
+			await projectsStore.load(newSpaceId)
 			try {
 				const defaultProject = await getDefaultProject(newSpaceId)
 				defaultProjectId.value = defaultProject.id
@@ -295,7 +295,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		advancedOpen.value = false
 		form.value.spaceId = normalizeSpaceId(props.spaceId)
 
-		await projectsStore.loadForSpace(form.value.spaceId)
+		await projectsStore.load(form.value.spaceId)
 		try {
 			const defaultProject = await getDefaultProject(form.value.spaceId)
 			defaultProjectId.value = defaultProject.id

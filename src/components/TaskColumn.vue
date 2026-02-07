@@ -28,24 +28,8 @@
 
 		<!-- 任务列表 -->
 		<template v-if="loading">
-			<div class="space-y-3">
-				<div
-					v-for="i in skeletonCount"
-					:key="i"
-					class="p-3 rounded-md border border-default bg-elevated flex items-center justify-between gap-3">
-					<div class="space-y-2 flex-1">
-						<USkeleton class="h-4 w-3/4" />
-						<USkeleton
-							v-if="showSpaceLabel"
-							class="h-3 w-16" />
-					</div>
-					<USkeleton
-						v-if="showCompleteButton"
-						class="h-8 w-14 rounded-md" />
-					<USkeleton
-						v-if="showTime"
-						class="h-3 w-12" />
-				</div>
+			<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">
+				加载中...
 			</div>
 		</template>
 		<template v-else>
@@ -128,7 +112,6 @@
 		showCompleteButton?: boolean
 		showTime?: boolean
 		showSpaceLabel?: boolean
-		skeletonCount?: number
 		showInlineCreator?: boolean
 		spaceId?: string
 		projectId?: string | null

@@ -1,4 +1,5 @@
-import { onMounted, ref, watch, type MaybeRefOrGetter, toValue } from 'vue'
+import { ref, watch, type MaybeRefOrGetter, toValue } from 'vue'
+import { useStorage } from '@vueuse/core'
 
 import { useTaskActions } from '@/composables/useTaskActions'
 import { listTasks, type TaskDto } from '@/services/api/tasks'
@@ -20,16 +21,29 @@ export function useProjectTasks(
 	const toast = useToast()
 	const refreshSignals = useRefreshSignalsStore()
 
-	const loading = ref(false)
+	const loading = ref(true)
 	const todo = ref<TaskDto[]>([])
 	const doneAll = ref<TaskDto[]>([])
+	const loadedScopes = ref<Set<string>>(new Set())
+	const snapshotByScope = useStorage<Record<string, { todo: TaskDto[]; doneAll: TaskDto[] }>>(
+		'project_tasks_snapshot_v1',
+		{},
+	)
+
+	function getScopeKey() {
+		const sid = toValue(spaceId) ?? '_all_spaces'
+		const pid = toValue(projectId) ?? '_all_projects'
+		return `${sid}::${pid}`
+	}
 
 	/**
 	 * 刷新任务列表。
-	 * @param silent 为 true 时不置 loading，避免切换 project/space 时三列框闪 skeleton
+	 * @param silent 为 true 时不置 loading，避免切换 project/space 时列内容闪烁
 	 */
 	async function refresh(silent = false) {
-		if (!silent) loading.value = true
+		const scopeKey = getScopeKey()
+		const useSilent = silent && loadedScopes.value.has(scopeKey)
+		if (!useSilent) loading.value = true
 		try {
 			const sid = toValue(spaceId)
 			const pid = toValue(projectId)
@@ -44,6 +58,10 @@ export function useProjectTasks(
 
 			todo.value = todoRows
 			doneAll.value = doneRows
+			snapshotByScope.value = {
+				...snapshotByScope.value,
+				[scopeKey]: { todo: todoRows, doneAll: doneRows },
+			}
 		} catch (e) {
 			toast.add({
 				title: '加载失败',
@@ -51,7 +69,8 @@ export function useProjectTasks(
 				color: 'error',
 			})
 		} finally {
-			if (!silent) loading.value = false
+			loadedScopes.value = new Set(loadedScopes.value).add(scopeKey)
+			if (!useSilent) loading.value = false
 		}
 	}
 
@@ -64,25 +83,32 @@ export function useProjectTasks(
 		}
 	}
 
-	// 监听 spaceId 和 projectId 变化时自动刷新（静默，不闪 skeleton）
+	// 监听 spaceId 和 projectId 变化时自动刷新（静默，不闪烁）
 	watch(
 		() => [toValue(spaceId), toValue(projectId)],
 		() => {
-			refresh(true)
+			const scopeKey = getScopeKey()
+			const snapshot = snapshotByScope.value[scopeKey]
+			if (snapshot) {
+				todo.value = snapshot.todo
+				doneAll.value = snapshot.doneAll
+				loading.value = false
+				loadedScopes.value = new Set(loadedScopes.value).add(scopeKey)
+				void refresh(true)
+				return
+			}
+			void refresh(false)
 		},
+		{ immediate: true },
 	)
 
 	// 监听任务刷新信号，确保创建/更新后列数据一致（静默刷新）
 	watch(
 		() => refreshSignals.taskTick,
 		() => {
-			refresh(true)
+			void refresh(true)
 		},
 	)
-
-	onMounted(async () => {
-		await refresh()
-	})
 
 	return {
 		loading,

@@ -87,17 +87,20 @@
 			<section>
 				<div class="space-y-0.5">
 					<div
-						v-if="projectsTree.length === 0"
+						v-if="displayProjectsTree.length > 0"
+						class="space-y-0.5">
+						<DraggableProjectTree
+							:projects="displayProjectsTree"
+							:space-id="spaceValue"
+							:active-project-id="activeProjectId"
+							:expanded-keys="expandedKeys"
+							@update:expanded-keys="expandedKeys = $event" />
+					</div>
+					<div
+						v-else-if="showProjectsEmpty"
 						class="text-[12px] text-muted px-2.5 py-1.5 rounded-md bg-elevated/60 border border-dashed border-default/70">
 						当前 Space 暂无项目
 					</div>
-					<DraggableProjectTree
-						v-else
-						:projects="projectsTree"
-						:space-id="spaceValue"
-						:active-project-id="activeProjectId"
-						:expanded-keys="expandedKeys"
-						@update:expanded-keys="expandedKeys = $event" />
 				</div>
 			</section>
 		</div>
@@ -154,17 +157,14 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref, watch } from 'vue'
+	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
-
-	import { inject } from 'vue'
 
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
 	import UserCard from '@/components/UserCard.vue'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-	import { getDefaultProject } from '@/services/api/projects'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
@@ -224,12 +224,13 @@
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
-	const defaultProject = ref<ProjectDto | null>(null)
-
 	// 通过 inject 获取全局的创建项目弹窗控制函数
 	const openCreateProjectModal = inject<(spaceId?: string) => void>('openCreateProjectModal')
 
 	const currentProjects = computed(() => projectsStore.getProjectsOfSpace(spaceValue.value))
+	const defaultProject = computed(() => currentProjects.value.find((p) => p.id.endsWith('_default')) ?? null)
+	const isProjectsLoaded = computed(() => projectsStore.isSpaceLoaded(spaceValue.value))
+	const isProjectsLoading = computed(() => projectsStore.isSpaceLoading(spaceValue.value))
 
 	/**
 	 * 构建项目树（用于嵌套拖拽）
@@ -278,6 +279,31 @@
 		return buildTree(null, 0)
 	})
 
+	const projectsTreeCacheBySpace = ref<Record<string, ProjectTreeItem[]>>({})
+
+	// 缓存最近一次非空项目树，避免刷新时在“项目树/占位文案”之间来回切换造成闪动
+	watch(
+		() => [spaceValue.value, projectsTree.value] as const,
+		([spaceId, tree]) => {
+			if (tree.length === 0) return
+			projectsTreeCacheBySpace.value = {
+				...projectsTreeCacheBySpace.value,
+				[spaceId]: tree,
+			}
+		},
+		{ immediate: true },
+	)
+
+	const cachedProjectsTree = computed<ProjectTreeItem[]>(() => projectsTreeCacheBySpace.value[spaceValue.value] ?? [])
+	const displayProjectsTree = computed<ProjectTreeItem[]>(() => {
+		if (projectsTree.value.length > 0) return projectsTree.value
+		if (isProjectsLoading.value && cachedProjectsTree.value.length > 0) return cachedProjectsTree.value
+		return projectsTree.value
+	})
+	const showProjectsEmpty = computed(
+		() => displayProjectsTree.value.length === 0 && isProjectsLoaded.value && !isProjectsLoading.value,
+	)
+
 	const projectTreeStore = useProjectTreeStore()
 
 	const expandedKeys = computed<string[]>({
@@ -317,22 +343,12 @@
 		}
 	}
 
-	async function loadDefaultProject() {
-		try {
-			const project = await getDefaultProject(spaceValue.value)
-			defaultProject.value = project
-		} catch (error) {
-			console.error('加载默认项目失败:', error)
-		}
-	}
-
 	async function loadProjects(force = false) {
 		if (force) {
-			await projectsStore.loadForSpace(spaceValue.value, true)
+			await projectsStore.load(spaceValue.value, { force: true })
 		} else {
 			await projectsStore.ensureLoaded(spaceValue.value)
 		}
-		await loadDefaultProject()
 	}
 
 	function handleOpenCreateProjectModal() {
@@ -342,14 +358,14 @@
 	}
 
 	watch(spaceValue, () => {
-		loadProjects()
+		void loadProjects()
 	})
 
 	// 监听项目刷新信号，强制刷新当前 Space 的项目树与默认项目
 	watch(
 		() => refreshSignals.projectTick,
 		() => {
-			loadProjects(true)
+			void loadProjects(true)
 		},
 	)
 
@@ -362,8 +378,6 @@
 	)
 
 	onMounted(() => {
-		projectTreeStore.load()
-		viewStateStore.load()
-		loadProjects()
+		void loadProjects()
 	})
 </script>

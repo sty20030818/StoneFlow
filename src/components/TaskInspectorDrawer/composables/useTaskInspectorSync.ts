@@ -43,7 +43,7 @@ export function useTaskInspectorSync(params: {
 		() => currentTask.value,
 		async (task) => {
 			if (task) {
-				await projectsStore.loadForSpace(task.spaceId)
+				await projectsStore.load(task.spaceId)
 				syncFromTask()
 			}
 		},

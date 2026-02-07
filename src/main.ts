@@ -6,19 +6,27 @@ import ui from '@nuxt/ui/vue-plugin'
 
 import { router } from './router'
 import './styles/main.css'
+import { initializeAppStartup } from '@/startup/initialize'
+import { initializeIcons } from '@/startup/icons'
 
-import { useViewStateStore } from '@/stores/view-state'
+async function bootstrap() {
+	const app = createApp(App)
+	const pinia = createPinia()
 
-const app = createApp(App)
-const pinia = createPinia()
+	app.use(pinia).use(router).use(ui)
 
-app.use(pinia).use(router).use(ui)
+	try {
+		await Promise.allSettled([initializeAppStartup(router), initializeIcons('critical')])
+	} catch (error) {
+		console.warn('[startup] degraded boot path', error)
+	}
 
-async function init() {
-	const viewState = useViewStateStore()
-	// 等待 UI 状态加载完成，防止闪烁
-	await viewState.load()
 	app.mount('#app')
+
+	// 图标预热不再阻塞首屏，放到挂载后后台执行
+	void initializeIcons('full').catch((error) => {
+		console.warn('[startup] icon warmup failed', error)
+	})
 }
 
-init().catch(console.error)
+void bootstrap()

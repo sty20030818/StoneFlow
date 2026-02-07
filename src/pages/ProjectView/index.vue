@@ -17,7 +17,6 @@
 					:show-inline-creator="true"
 					:space-id="taskSpaceId"
 					:project-id="projectId"
-					:skeleton-count="2"
 					:is-edit-mode="isEditMode"
 					:selected-task-id-set="selectedTaskIds"
 					@complete="onComplete"
@@ -35,7 +34,6 @@
 					empty-text="暂无完成记录"
 					:show-time="true"
 					:show-space-label="showSpaceLabel"
-					:skeleton-count="2"
 					:is-edit-mode="isEditMode"
 					:selected-task-id-set="selectedTaskIds"
 					@task-click="onTaskClick"
@@ -229,10 +227,10 @@
 	// 监听路由变化，加载项目列表
 	watch(
 		() => [route.params.spaceId, route.query.project],
-		async () => {
+		() => {
 			exitEditMode()
 			if (spaceId.value) {
-				await projectsStore.ensureLoaded(spaceId.value)
+				void projectsStore.load(spaceId.value)
 			}
 		},
 		{ immediate: true },

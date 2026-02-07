@@ -16,13 +16,33 @@ export type SpacePageState = {
 
 export const useSpacesStore = defineStore('spaces', () => {
 	const loaded = ref(false)
+	const loadingPromise = ref<Promise<void> | null>(null)
 	const spaces = ref<SpaceDto[]>([])
 	// 存储每个 space 的页面状态
 	const spacePageStates = ref<Map<string, SpacePageState>>(new Map())
 
-	async function load() {
+	async function loadInternal() {
 		spaces.value = await listSpaces()
 		loaded.value = true
+	}
+
+	async function load(options: { force?: boolean } = {}) {
+		const { force = false } = options
+		if (force) {
+			loaded.value = false
+		}
+		if (loaded.value) return
+		if (loadingPromise.value) {
+			return await loadingPromise.value
+		}
+		loadingPromise.value = (async () => {
+			try {
+				await loadInternal()
+			} finally {
+				loadingPromise.value = null
+			}
+		})()
+		return await loadingPromise.value
 	}
 
 	/**

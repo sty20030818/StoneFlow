@@ -10,7 +10,8 @@
 @font-face {
 	font-family: "Lxgw";
 	src: url("/fonts/Lxgw.woff2") format("woff2");
-	font-display: swap;
+	/* 强制使用 Lxgw，避免先系统字体后换字的闪动 */
+	font-display: block;
 }
 
 /* 应用级基础样式（保持最小；尽量让 Nuxt UI 主导整体样式） */
@@ -23,7 +24,7 @@ body,
 
 body {
 	margin: 0;
-	font-family: "MapleMono", "Lxgw", sans-serif;
+	font-family: "MapleMono", "Lxgw", "PingFang SC", "Microsoft YaHei UI", "Noto Sans CJK SC", "Segoe UI", sans-serif;
 }
 
 /* 全局禁止文本选择（user-select 默认不继承，需要作用到所有元素） */

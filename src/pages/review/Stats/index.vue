@@ -37,12 +37,7 @@
 					</div>
 				</template>
 
-				<template v-if="loading">
-					<USkeleton class="h-7 w-20" />
-				</template>
-				<div
-					v-else
-					class="flex items-end justify-between gap-2">
+				<div class="flex items-end justify-between gap-2">
 					<div>
 						<div class="text-xs text-muted mb-0.5">本周完成</div>
 						<div class="text-2xl font-bold">{{ s.thisWeekDone }}</div>
@@ -69,17 +64,7 @@
 					</div>
 				</template>
 
-				<div
-					v-if="loading"
-					class="space-y-2">
-					<USkeleton
-						v-for="i in 4"
-						:key="i"
-						class="h-4 w-full" />
-				</div>
-				<div
-					v-else
-					class="space-y-1">
+				<div class="space-y-1">
 					<div
 						v-for="d in last7d"
 						:key="d.date"
@@ -106,17 +91,7 @@
 					</div>
 				</template>
 
-				<div
-					v-if="loading"
-					class="space-y-2">
-					<USkeleton class="h-24 w-24 rounded-full mx-auto" />
-					<USkeleton class="h-4 w-full" />
-					<USkeleton class="h-4 w-full" />
-					<USkeleton class="h-4 w-full" />
-				</div>
-				<div
-					v-else
-					class="space-y-3">
+				<div class="space-y-3">
 					<div class="relative w-28 h-28 mx-auto">
 						<svg
 							viewBox="0 0 36 36"
@@ -163,6 +138,11 @@
 							<div class="text-muted">{{ s.count }} · {{ s.percent }}%</div>
 						</div>
 					</div>
+					<div
+						v-if="loading"
+						class="text-xs text-muted">
+						正在加载统计数据...
+					</div>
 				</div>
 			</UCard>
 		</div>
@@ -185,7 +165,7 @@
 	const toast = useToast()
 	const router = useRouter()
 
-	const loading = ref(false)
+	const loading = ref(true)
 	const tasks = ref<TaskDto[]>([])
 
 	const spaceCards = computed(() => {

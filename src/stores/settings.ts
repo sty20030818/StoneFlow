@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS, settingsStore } from '@/services/tauri/store'
 
 export const useSettingsStore = defineStore('settings', () => {
 	const loaded = ref(false)
+	const loadingPromise = ref<Promise<void> | null>(null)
 	// 优化：从 localStorage 初始化以防止闪烁
 	const savedSpaceId = localStorage.getItem('settings_active_space_id')
 	const initialSpaceId =
@@ -20,7 +21,7 @@ export const useSettingsStore = defineStore('settings', () => {
 		activeSpaceId: initialSpaceId,
 	})
 
-	async function load() {
+	async function loadInternal() {
 		const val = await settingsStore.get<SettingsModel>('settings')
 		if (val) {
 			const next = { ...val }
@@ -32,6 +33,25 @@ export const useSettingsStore = defineStore('settings', () => {
 			localStorage.setItem('settings_active_space_id', next.activeSpaceId)
 		}
 		loaded.value = true
+	}
+
+	async function load(options: { force?: boolean } = {}) {
+		const { force = false } = options
+		if (force) {
+			loaded.value = false
+		}
+		if (loaded.value) return
+		if (loadingPromise.value) {
+			return await loadingPromise.value
+		}
+		loadingPromise.value = (async () => {
+			try {
+				await loadInternal()
+			} finally {
+				loadingPromise.value = null
+			}
+		})()
+		return await loadingPromise.value
 	}
 
 	async function save() {

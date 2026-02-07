@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+	import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
@@ -82,22 +82,6 @@
 	const currentRouteProjectId = computed<string | undefined>(() => {
 		const pid = route.query.project
 		return typeof pid === 'string' ? pid : undefined
-	})
-
-	// 初始化时加载 settings 和项目
-	onMounted(async () => {
-		await settingsStore.load()
-		const spaceId = currentSpaceId.value
-		if (spaceId) {
-			await projectsStore.ensureLoaded(spaceId)
-		}
-	})
-
-	// 监听 space 变化，自动加载项目
-	watch(currentSpaceId, async (spaceId) => {
-		if (spaceId && settingsStore.loaded) {
-			await projectsStore.ensureLoaded(spaceId)
-		}
 	})
 
 	// 定义命令组
@@ -197,7 +181,7 @@
 
 	async function onProjectCreated(project: ProjectDto) {
 		// 项目创建成功，强制刷新项目列表
-		await projectsStore.loadForSpace(project.spaceId, true)
+		await projectsStore.load(project.spaceId, { force: true })
 	}
 
 	// 提供全局的创建项目弹窗控制函数

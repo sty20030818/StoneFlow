@@ -17,6 +17,7 @@
 		"release:json": "node scripts/release-prepare.mjs --json-only"
 	},
 	"dependencies": {
+		"@iconify-json/lucide": "^1.2.89",
 		"@vueuse/core": "^14.2.0",
 		"@nuxt/ui": "^4.4.0",
 		"@tailwindcss/vite": "^4.1.18",
@@ -40,7 +41,7 @@
 		"@typescript-eslint/eslint-plugin": "^8.54.0",
 		"@typescript-eslint/parser": "^8.54.0",
 		"@vitejs/plugin-vue": "^6.0.4",
-		"eslint": "^9.39.2",
+		"eslint": "^10.0.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-vue": "^10.7.0",
 		"prettier": "^3.8.1",
