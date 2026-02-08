@@ -6,8 +6,8 @@
 
 use sea_orm::PaginatorTrait;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
-    Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,
+    IntoActiveModel, QueryFilter, Set, TransactionTrait,
 };
 
 use crate::db::entities::{
@@ -135,6 +135,17 @@ impl TaskRepo {
 
     pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
         delete_many(conn, ids).await
+    }
+
+    pub async fn soft_delete_by_project_ids<C>(
+        conn: &C,
+        project_ids: &[String],
+        now: i64,
+    ) -> Result<usize, AppError>
+    where
+        C: ConnectionTrait,
+    {
+        delete::soft_delete_by_project_ids(conn, project_ids, now).await
     }
 
     pub async fn restore_many(

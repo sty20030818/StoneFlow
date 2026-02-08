@@ -1,6 +1,5 @@
 <template>
-	<header
-		class="relative z-layer-header shrink-0 px-6 sticky top-0 bg-default/85 backdrop-blur-xl border-b border-default/80">
+	<header class="z-layer-header shrink-0 px-6 sticky top-0 bg-default/85 backdrop-blur-xl border-b border-default/80">
 		<div class="h-16 flex items-center justify-between">
 			<!-- 左侧：面包屑 -->
 			<div class="flex items-center gap-2 min-w-0 flex-1">

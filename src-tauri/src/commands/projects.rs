@@ -5,14 +5,18 @@
 //! - `Option<Option<T>>` 在“清空字段 vs 不修改字段”场景的语义
 //! - 错误统一映射到 `ApiError`
 
+use sea_orm::TransactionTrait;
 use serde::Deserialize;
 use tauri::State;
 
-use crate::db::DbState;
-use crate::repos::project_repo::{ProjectCreateInput, ProjectRepo};
+use crate::db::{now_ms, DbState};
+use crate::repos::{
+    project_repo::{ProjectCreateInput, ProjectRepo},
+    task_repo::TaskRepo,
+};
 use crate::types::{
     dto::{LinkInputDto, ProjectDto},
-    error::ApiError,
+    error::{ApiError, AppError},
 };
 
 #[derive(Debug, Deserialize)]
@@ -152,9 +156,32 @@ pub async fn delete_project(
     state: State<'_, DbState>,
     args: DeleteProjectArgs,
 ) -> Result<(), ApiError> {
-    ProjectRepo::soft_delete(&state.conn, &args.project_id)
+    // 重点：单事务内完成“收集子树 -> 删除任务 -> 删除项目”，避免半成功。
+    let txn = state
+        .conn
+        .begin()
         .await
-        .map_err(ApiError::from)
+        .map_err(AppError::from)
+        .map_err(ApiError::from)?;
+
+    let subtree_project_ids = ProjectRepo::collect_subtree_ids(&txn, &args.project_id)
+        .await
+        .map_err(ApiError::from)?;
+
+    let now = now_ms();
+    TaskRepo::soft_delete_by_project_ids(&txn, &subtree_project_ids, now)
+        .await
+        .map_err(ApiError::from)?;
+    ProjectRepo::soft_delete_by_ids(&txn, &subtree_project_ids, now)
+        .await
+        .map_err(ApiError::from)?;
+
+    txn.commit()
+        .await
+        .map_err(AppError::from)
+        .map_err(ApiError::from)?;
+
+    Ok(())
 }
 
 /// 恢复软删除项目。

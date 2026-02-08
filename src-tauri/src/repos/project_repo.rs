@@ -6,8 +6,8 @@
 //! - 读写逻辑与事务边界分离
 
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
-    TransactionTrait,
+    prelude::Expr, ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,
+    QueryFilter, QueryOrder, Set, TransactionTrait,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use uuid::Uuid;
@@ -43,6 +43,97 @@ pub struct ProjectCreateInput {
 }
 
 impl ProjectRepo {
+    /// 收集目标项目与其全部后代项目 ID（仅在同一 Space 内递归）。
+    ///
+    /// 重点：
+    /// - 该函数只负责“递归收集”，不执行删除写入
+    /// - 可被删除编排复用，避免查询逻辑重复
+    pub async fn collect_subtree_ids<C>(conn: &C, project_id: &str) -> Result<Vec<String>, AppError>
+    where
+        C: ConnectionTrait,
+    {
+        let root_model = projects::Entity::find_by_id(project_id)
+            .one(conn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        let all_projects = projects::Entity::find()
+            .filter(projects::Column::SpaceId.eq(root_model.space_id))
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        Ok(Self::collect_descendant_ids(project_id, &all_projects))
+    }
+
+    /// 根据项目 ID 集合执行软删除（不负责递归收集）。
+    ///
+    /// 重点：
+    /// - 删除动作独立封装，便于命令层按事务编排调用
+    /// - 只更新未删除记录，避免重复写入
+    pub async fn soft_delete_by_ids<C>(
+        conn: &C,
+        project_ids: &[String],
+        now: i64,
+    ) -> Result<usize, AppError>
+    where
+        C: ConnectionTrait,
+    {
+        if project_ids.is_empty() {
+            return Ok(0);
+        }
+
+        let mut unique_project_ids = project_ids.to_vec();
+        unique_project_ids.sort();
+        unique_project_ids.dedup();
+
+        let res = projects::Entity::update_many()
+            .col_expr(projects::Column::DeletedAt, Expr::value(Some(now)))
+            .col_expr(projects::Column::UpdatedAt, Expr::value(now))
+            .filter(projects::Column::Id.is_in(unique_project_ids))
+            .filter(projects::Column::DeletedAt.is_null())
+            .exec(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        Ok(res.rows_affected as usize)
+    }
+
+    /// 内部工具：在已加载的同空间项目集合中，按 BFS 收集“根 + 全部后代”。
+    fn collect_descendant_ids(
+        root_project_id: &str,
+        all_projects: &[projects::Model],
+    ) -> Vec<String> {
+        let mut children_by_parent: HashMap<Option<String>, Vec<String>> = HashMap::new();
+        for project in all_projects {
+            children_by_parent
+                .entry(project.parent_id.clone())
+                .or_default()
+                .push(project.id.clone());
+        }
+
+        let mut queue = VecDeque::from([root_project_id.to_string()]);
+        let mut visited = HashSet::new();
+        let mut subtree_ids = Vec::new();
+
+        while let Some(current_id) = queue.pop_front() {
+            if !visited.insert(current_id.clone()) {
+                continue;
+            }
+
+            subtree_ids.push(current_id.clone());
+
+            if let Some(children) = children_by_parent.get(&Some(current_id)) {
+                for child_id in children {
+                    queue.push_back(child_id.clone());
+                }
+            }
+        }
+
+        subtree_ids
+    }
+
     /// 列出某个 Space 下的所有 Project，按 rank ASC → created_at ASC 排序。
     pub async fn list_by_space(
         conn: &DatabaseConnection,
@@ -266,71 +357,6 @@ impl ProjectRepo {
                 active_model.update(conn).await.map_err(AppError::from)?;
             }
         }
-        Ok(())
-    }
-
-    /// 软删除项目。
-    pub async fn soft_delete(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
-        // 1) 先校验根项目存在，且拿到 space_id（后续递归只在同一空间内进行）。
-        let root_model = projects::Entity::find_by_id(project_id)
-            .one(conn)
-            .await
-            .map_err(AppError::from)?
-            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
-
-        // 2) 一次性加载当前 Space 的全部项目，避免递归过程中 N+1 查询。
-        let all_projects = projects::Entity::find()
-            .filter(projects::Column::SpaceId.eq(root_model.space_id.clone()))
-            .all(conn)
-            .await
-            .map_err(AppError::from)?;
-
-        // 3) 构建 parent -> children 索引，便于按父节点快速找到所有子节点。
-        let mut children_by_parent: HashMap<Option<String>, Vec<String>> = HashMap::new();
-        for project in &all_projects {
-            children_by_parent
-                .entry(project.parent_id.clone())
-                .or_default()
-                .push(project.id.clone());
-        }
-
-        // 4) 从根节点出发做 BFS，收集“根 + 全部后代”子树 ID。
-        //    使用 visited 防御异常数据导致的重复遍历。
-        let mut queue = VecDeque::from([project_id.to_string()]);
-        let mut visited = HashSet::new();
-        let mut subtree_ids = Vec::new();
-
-        while let Some(current_id) = queue.pop_front() {
-            if !visited.insert(current_id.clone()) {
-                continue;
-            }
-
-            subtree_ids.push(current_id.clone());
-
-            if let Some(children) = children_by_parent.get(&Some(current_id)) {
-                for child_id in children {
-                    queue.push_back(child_id.clone());
-                }
-            }
-        }
-
-        // 5) 在单事务内批量写 deleted_at/updated_at，保证整棵子树删除一致性。
-        let now = now_ms();
-        let txn = conn.begin().await.map_err(AppError::from)?;
-        let models_to_delete = projects::Entity::find()
-            .filter(projects::Column::Id.is_in(subtree_ids))
-            .all(&txn)
-            .await
-            .map_err(AppError::from)?;
-
-        for model in models_to_delete {
-            let mut active_model: projects::ActiveModel = model.into();
-            active_model.deleted_at = Set(Some(now));
-            active_model.updated_at = Set(now);
-            active_model.update(&txn).await.map_err(AppError::from)?;
-        }
-
-        txn.commit().await.map_err(AppError::from)?;
         Ok(())
     }
 

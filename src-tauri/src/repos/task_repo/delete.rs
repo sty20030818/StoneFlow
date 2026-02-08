@@ -2,8 +2,8 @@
 //! 重点：任务状态变更后需要同步刷新项目统计，且与批量更新放在同一事务。
 
 use sea_orm::{
-    prelude::Expr, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect,
-    TransactionTrait,
+    prelude::Expr, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QuerySelect, TransactionTrait,
 };
 
 use crate::db::entities::tasks;
@@ -11,6 +11,39 @@ use crate::db::now_ms;
 use crate::types::error::AppError;
 
 use super::stats;
+
+/// 按项目 ID 集合软删除任务（不负责开启/提交事务）。
+///
+/// 重点：
+/// - 删除动作与“递归项目收集”解耦，便于在项目删除编排中复用
+/// - 只更新未删除任务，避免重复写入
+pub async fn soft_delete_by_project_ids<C>(
+    conn: &C,
+    project_ids: &[String],
+    now: i64,
+) -> Result<usize, AppError>
+where
+    C: ConnectionTrait,
+{
+    if project_ids.is_empty() {
+        return Ok(0);
+    }
+
+    let mut unique_project_ids = project_ids.to_vec();
+    unique_project_ids.sort();
+    unique_project_ids.dedup();
+
+    let res = tasks::Entity::update_many()
+        .col_expr(tasks::Column::DeletedAt, Expr::value(Some(now)))
+        .col_expr(tasks::Column::UpdatedAt, Expr::value(now))
+        .filter(tasks::Column::ProjectId.is_in(unique_project_ids))
+        .filter(tasks::Column::DeletedAt.is_null())
+        .exec(conn)
+        .await
+        .map_err(AppError::from)?;
+
+    Ok(res.rows_affected as usize)
+}
 
 pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
     if ids.is_empty() {
