@@ -25,7 +25,7 @@
 					size="md"
 					class="w-full"
 					:search-input="false"
-					:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+					:ui="selectMenuUi">
 					<template #item="{ item }">
 						<div class="flex items-center gap-2 py-0.5">
 							<UIcon
@@ -48,7 +48,7 @@
 					class="w-full"
 					:placeholder="uncategorizedLabel"
 					:search-input="false"
-					:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+					:ui="selectMenuUi">
 					<template #item="{ item }">
 						<div
 							class="flex items-center gap-2 py-1"
@@ -74,7 +74,7 @@
 					size="md"
 					class="w-full"
 					:search-input="false"
-					:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+					:ui="selectMenuUi">
 					<template #item="{ item }">
 						<div
 							v-if="item"
@@ -98,7 +98,7 @@
 					size="md"
 					class="w-full"
 					:search-input="false"
-					:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+					:ui="selectMenuUi">
 					<template #item="{ item }">
 						<div class="flex items-center gap-2 py-0.5">
 							<UIcon
@@ -137,7 +137,7 @@
 				size="md"
 				class="w-full"
 				:search-input="false"
-				:ui="{ rounded: 'rounded-xl', width: 'w-full' }">
+				:ui="selectMenuUi">
 				<template #item="{ item }">
 					<div class="flex items-center gap-2 py-0.5">
 						<UIcon
@@ -215,7 +215,7 @@
 							size="sm"
 							class="w-full"
 							:search-input="false"
-							:ui="{ rounded: 'rounded-lg', width: 'w-full' }" />
+							:ui="compactSelectMenuUi" />
 						<UButton
 							color="neutral"
 							variant="soft"
@@ -356,4 +356,16 @@
 		'add-custom-field': []
 		'remove-custom-field': [index: number]
 	}>()
+
+	const selectMenuUi = {
+		rounded: 'rounded-xl',
+		width: 'w-full',
+		content: 'z-layer-modal-popover',
+	}
+
+	const compactSelectMenuUi = {
+		rounded: 'rounded-lg',
+		width: 'w-full',
+		content: 'z-layer-modal-popover',
+	}
 </script>

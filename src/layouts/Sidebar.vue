@@ -162,13 +162,13 @@
 	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
+	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { useRuntimeGate } from '@/composables/base/runtime-gate'
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
 	import UserCard from '@/components/UserCard.vue'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-	import type { ProjectDto } from '@/services/api/projects'
 	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
@@ -182,6 +182,7 @@
 	}>()
 
 	const route = useRoute()
+	const routeProjectId = useNullableStringRouteQuery('project')
 	const currentPath = computed(() => route.path)
 
 	const spaceValue = computed(() => props.space ?? 'work')
@@ -322,31 +323,25 @@
 		},
 	})
 
-	const activeProjectId = computed(() => (typeof route.query.project === 'string' ? route.query.project : null))
+	const activeProjectId = computed(() => routeProjectId.value)
 
 	function isActiveProject(projectId: string) {
 		return currentPath.value === `/space/${spaceValue.value}` && activeProjectId.value === projectId
 	}
 
-	function getAncestorIds(projectId: string, list: ProjectDto[]) {
-		const byId = new Map(list.map((p) => [p.id, p]))
-		const ancestors: string[] = []
-		let curr = byId.get(projectId)
-		while (curr?.parentId) {
-			ancestors.unshift(curr.parentId)
-			curr = byId.get(curr.parentId)
+	const routeProjectTarget = computed(() => {
+		if (currentPath.value !== `/space/${spaceValue.value}`) return null
+		if (!activeProjectId.value) return null
+		return {
+			spaceId: spaceValue.value,
+			projectId: activeProjectId.value,
 		}
-		return ancestors
-	}
+	})
 
 	const effectiveExpandedKeys = computed(() => {
-		if (currentPath.value !== `/space/${spaceValue.value}`) return expandedKeys.value
-		if (!activeProjectId.value) return expandedKeys.value
-		const list = currentProjects.value
-		if (!list.length) return expandedKeys.value
-		const ancestors = getAncestorIds(activeProjectId.value, list)
-		if (!ancestors.length) return expandedKeys.value
-		return Array.from(new Set([...expandedKeys.value, ...ancestors]))
+		const target = routeProjectTarget.value
+		if (!target) return expandedKeys.value
+		return projectTreeStore.resolveExpandedWithAncestors(target.spaceId, target.projectId, currentProjects.value)
 	})
 
 	async function loadProjects(force = false) {
@@ -366,6 +361,25 @@
 	watchDebounced(spaceValue, () => {
 		void loadProjects()
 	}, { debounce: 80, maxWait: 240 })
+
+	// 路由驱动祖先展开：目标变化即应用；树延迟加载后会基于同一目标补偿应用。
+	watchDebounced(
+		() => [
+			routeProjectTarget.value?.spaceId ?? null,
+			routeProjectTarget.value?.projectId ?? null,
+			currentProjects.value.length,
+		] as const,
+		([spaceId, projectId]) => {
+			if (!spaceId || !projectId) return
+			if (!projectTreeStore.hasMissingAncestorsInExpanded(spaceId, projectId, currentProjects.value)) return
+			void projectTreeStore.ensureProjectVisible(spaceId, projectId, currentProjects.value)
+		},
+		{
+			immediate: true,
+			debounce: 40,
+			maxWait: 160,
+		},
+	)
 
 	// 项目刷新信号使用可暂停监听，窗口不可见或离线时不触发后台刷新。
 	const { pause: pauseProjectRefreshWatch, resume: resumeProjectRefreshWatch } = watchPausable(

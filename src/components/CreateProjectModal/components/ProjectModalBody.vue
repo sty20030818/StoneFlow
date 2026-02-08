@@ -158,7 +158,7 @@
 							size="sm"
 							class="w-full"
 							:search-input="false"
-							:ui="{ rounded: 'rounded-lg', width: 'w-full' }" />
+							:ui="linkSelectMenuUi" />
 						<UButton
 							color="neutral"
 							variant="soft"
@@ -226,6 +226,13 @@
 	const selectMenuUi = {
 		rounded: 'rounded-xl',
 		width: 'w-full',
+		content: 'z-layer-modal-popover',
+	}
+
+	const linkSelectMenuUi = {
+		rounded: 'rounded-lg',
+		width: 'w-full',
+		content: 'z-layer-modal-popover',
 	}
 
 	function isSelectOption(item: unknown): item is SelectOption {

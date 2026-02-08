@@ -58,6 +58,7 @@
 	import type { ProjectDto } from './services/api/projects'
 	import type { TaskDto } from './services/api/tasks'
 	import { useInlineCreateFocusStore } from './stores/inline-create-focus'
+	import { useProjectTreeStore } from './stores/project-tree'
 	import { useProjectsStore } from './stores/projects'
 	import { useSettingsStore } from './stores/settings'
 	import { SPACE_DISPLAY, SPACE_IDS } from './config/space'
@@ -73,6 +74,7 @@
 	const createProjectModalSpaceId = ref<string>('work')
 
 	const settingsStore = useSettingsStore()
+	const projectTreeStore = useProjectTreeStore()
 	const projectsStore = useProjectsStore()
 	const inlineCreateFocusStore = useInlineCreateFocusStore()
 	const commandPaletteModalUi = createModalLayerUi({
@@ -187,9 +189,24 @@
 		console.log('任务创建成功:', task)
 	}
 
+	function resolveTargetSpaceId(spaceId: string) {
+		if ((SPACE_IDS as readonly string[]).includes(spaceId)) {
+			return spaceId as (typeof SPACE_IDS)[number]
+		}
+		return settingsStore.settings.activeSpaceId
+	}
+
 	async function onProjectCreated(project: ProjectDto) {
-		// 项目创建成功，强制刷新项目列表
-		await projectsStore.load(project.spaceId, { force: true })
+		const targetSpaceId = resolveTargetSpaceId(project.spaceId)
+		if (settingsStore.settings.activeSpaceId !== targetSpaceId) {
+			await settingsStore.update({ activeSpaceId: targetSpaceId })
+		}
+		await projectsStore.load(targetSpaceId, { force: true })
+		await router.push({
+			path: `/space/${targetSpaceId}`,
+			query: { project: project.id },
+		})
+		await projectTreeStore.ensureProjectVisible(targetSpaceId, project.id, projectsStore.getProjectsOfSpace(targetSpaceId))
 	}
 
 	// 提供全局的创建项目弹窗控制函数

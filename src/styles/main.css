@@ -26,6 +26,7 @@
 	--z-drawer-popover: 90;
 	--z-modal-overlay: 100;
 	--z-modal-content: 110;
+	--z-modal-popover: 120;
 }
 
 .z-layer-base {
@@ -66,6 +67,10 @@
 
 .z-layer-modal-content {
 	z-index: var(--z-modal-content);
+}
+
+.z-layer-modal-popover {
+	z-index: var(--z-modal-popover);
 }
 
 /* 应用级基础样式（保持最小；尽量让 Nuxt UI 主导整体样式） */
