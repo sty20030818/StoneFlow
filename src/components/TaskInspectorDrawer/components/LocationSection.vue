@@ -1,6 +1,5 @@
 <template>
-	<section class="space-y-2">
-		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">位置分类</label>
+	<section>
 		<div class="grid grid-cols-2 gap-3">
 			<UPopover
 				:mode="'click'"

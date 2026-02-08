@@ -1,6 +1,10 @@
 import { ref } from 'vue'
 
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
+import type {
+	TaskCustomFieldFormItem,
+	TaskLinkFormItem,
+} from './taskFieldNormalization'
 
 export function useTaskInspectorState() {
 	const titleLocal = ref('')
@@ -16,6 +20,9 @@ export function useTaskInspectorState() {
 	const pendingSaves = ref(0)
 	const spaceIdLocal = ref('')
 	const projectIdLocal = ref<string | null>(null)
+	const linksLocal = ref<TaskLinkFormItem[]>([])
+	const customFieldsLocal = ref<TaskCustomFieldFormItem[]>([])
+	const advancedCollapsed = ref(true)
 
 	return {
 		titleLocal,
@@ -31,6 +38,9 @@ export function useTaskInspectorState() {
 		pendingSaves,
 		spaceIdLocal,
 		projectIdLocal,
+		linksLocal,
+		customFieldsLocal,
+		advancedCollapsed,
 	}
 }
 

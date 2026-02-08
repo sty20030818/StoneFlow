@@ -30,6 +30,7 @@
 						:on-done-reason-change="onDoneReasonChange" />
 
 					<section class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">标题</label>
 						<UInput
 							v-model="titleLocal"
 							placeholder="任务标题..."
@@ -55,35 +56,6 @@
 						@update:priority="onPriorityChange"
 						@update:deadline="handleDeadlineUpdate" />
 
-					<section class="space-y-2">
-						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Tags</label>
-						<div class="flex flex-wrap gap-2 items-center">
-							<div
-								v-for="tag in tagsLocal"
-								:key="tag"
-								class="group relative px-3 py-1.5 bg-white rounded-lg text-xs font-bold shadow-sm border border-default/40 text-default flex items-center justify-center cursor-default hover:border-primary/50 transition-colors overflow-hidden">
-								<span>#{{ tag }}</span>
-								<div
-									class="hidden group-hover:flex absolute inset-0 bg-white/95 items-center justify-center cursor-pointer transition-opacity"
-									@click="removeTag(tag)">
-									<UIcon
-										name="i-lucide-x"
-										class="size-3 text-red-500" />
-								</div>
-							</div>
-
-							<div class="flex items-center">
-								<input
-									v-model="tagInput"
-									type="text"
-									placeholder="+ New Tag"
-									class="bg-transparent border-none text-xs font-medium placeholder:text-muted/60 focus:ring-0 focus:outline-none w-[100px] h-8 px-2"
-									@keydown.enter.prevent="addTag"
-									@blur="onTagInputBlur" />
-							</div>
-						</div>
-					</section>
-
 					<LocationSection
 						:space-options="spaceOptions"
 						:project-options="projectOptions"
@@ -97,23 +69,33 @@
 						:on-space-change="onSpaceChange"
 						:on-project-change="onProjectChange" />
 
-					<section class="space-y-2">
-						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Note</label>
-						<div class="p-4 rounded-2xl border bg-elevated/50 border-default/60 hover:bg-elevated/80 transition-all">
-							<UTextarea
-								v-model="noteLocal"
-								placeholder="记录一些背景信息、想法或链接…"
-								:rows="6"
-								size="sm"
-								autoresize
-								variant="none"
-								:ui="{
-									root: 'w-full',
-									base: 'p-0 text-sm leading-relaxed bg-transparent border-none focus:ring-0 placeholder:text-muted/40',
-								}"
-								@blur="onNoteBlur" />
-						</div>
-					</section>
+					<TagsSection
+						v-model:tag-input="tagInput"
+						:tags="tagsLocal"
+						:on-add-tag="addTag"
+						:on-remove-tag="removeTag"
+						:on-tag-input-blur="onTagInputBlur" />
+
+					<NoteSection
+						v-model:note="noteLocal"
+						:on-note-blur="onNoteBlur" />
+
+					<LinksSection
+						v-model:links="linksLocal"
+						:link-kind-options="linkKindOptions"
+						:on-add-link="addLink"
+						:on-remove-link="removeLink"
+						:on-links-input="onLinksInput"
+						:on-links-blur="onLinksBlur" />
+
+					<AdvancedSection
+						v-model:custom-fields="customFieldsLocal"
+						:advanced-collapsed="advancedCollapsed"
+						:on-toggle-advanced="toggleAdvanced"
+						:on-add-custom-field="addCustomField"
+						:on-remove-custom-field="removeCustomField"
+						:on-custom-fields-input="onCustomFieldsInput"
+						:on-custom-fields-blur="onCustomFieldsBlur" />
 
 					<TimelineSection
 						:timeline-items="timelineItems"
@@ -129,9 +111,13 @@
 	import { computed } from 'vue'
 
 	import DrawerHeader from './components/DrawerHeader.vue'
+	import AdvancedSection from './components/AdvancedSection.vue'
+	import LinksSection from './components/LinksSection.vue'
 	import LocationSection from './components/LocationSection.vue'
+	import NoteSection from './components/NoteSection.vue'
 	import PriorityDeadlineSection from './components/PriorityDeadlineSection.vue'
 	import StatusSection from './components/StatusSection.vue'
+	import TagsSection from './components/TagsSection.vue'
 	import TimelineSection from './components/TimelineSection.vue'
 	import { createDrawerLayerUi } from '@/config/ui-layer'
 	import { useTaskInspectorDrawer } from './composables/useTaskInspectorDrawer'
@@ -149,14 +135,18 @@
 		tagsLocal,
 		tagInput,
 		timelineCollapsed,
+		advancedCollapsed,
 		saveState,
 		spaceIdLocal,
 		projectIdLocal,
+		linksLocal,
+		customFieldsLocal,
 		statusSegmentOptions,
 		doneReasonOptions,
 		priorityOptions,
 		spaceOptions,
 		projectOptions,
+		linkKindOptions,
 		priorityIcon,
 		priorityLabel,
 		priorityCardClass,
@@ -183,6 +173,15 @@
 		addTag,
 		removeTag,
 		onTagInputBlur,
+		addLink,
+		removeLink,
+		onLinksInput,
+		onLinksBlur,
+		addCustomField,
+		removeCustomField,
+		onCustomFieldsInput,
+		onCustomFieldsBlur,
+		toggleAdvanced,
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,

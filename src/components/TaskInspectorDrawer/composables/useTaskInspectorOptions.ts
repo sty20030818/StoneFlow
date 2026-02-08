@@ -9,7 +9,22 @@ import {
 	UNCATEGORIZED_LABEL,
 } from '@/config/project'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS_SEGMENT_OPTIONS } from '@/config/task'
+import type { LinkDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
+
+export type LinkKindOption = {
+	value: LinkDto['kind']
+	label: string
+}
+
+const TASK_LINK_KIND_OPTIONS: LinkKindOption[] = [
+	{ value: 'web', label: 'Web' },
+	{ value: 'doc', label: 'Doc' },
+	{ value: 'design', label: 'Design' },
+	{ value: 'repoLocal', label: 'Repo (Local)' },
+	{ value: 'repoRemote', label: 'Repo (Remote)' },
+	{ value: 'other', label: 'Other' },
+]
 
 export function useTaskInspectorOptions(params: {
 	spaceIdLocal: Ref<string>
@@ -21,6 +36,7 @@ export function useTaskInspectorOptions(params: {
 	const doneReasonOptions = TASK_DONE_REASON_OPTIONS
 	const priorityOptions = TASK_PRIORITY_OPTIONS
 	const spaceOptions = computed(() => SPACE_OPTIONS)
+	const linkKindOptions = TASK_LINK_KIND_OPTIONS
 
 	const projectOptions = computed(() => {
 		const sid = spaceIdLocal.value
@@ -62,5 +78,6 @@ export function useTaskInspectorOptions(params: {
 		priorityOptions,
 		spaceOptions,
 		projectOptions,
+		linkKindOptions,
 	}
 }

@@ -22,7 +22,7 @@ export function useTaskInspectorDrawer() {
 	const state = useTaskInspectorState()
 	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, projectsStore })
 	const derived = useTaskInspectorDerived({ currentTask, state, projectsStore })
-	const actions = useTaskInspectorActions({ currentTask, state, store, refreshSignals })
+	const actions = useTaskInspectorActions({ currentTask, state, store, projectsStore, refreshSignals })
 
 	useTaskInspectorSync({ currentTask, projectsStore, state })
 
