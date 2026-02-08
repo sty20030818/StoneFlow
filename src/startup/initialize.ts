@@ -40,6 +40,11 @@ function resolveLastViewPath(router: Router, spaceId: string, lastView: LastView
 	if (resolved.matched.length === 0) {
 		return resolveFallbackPath(spaceId)
 	}
+	const resolvedSpaceId = resolved.params.spaceId
+	// 仅允许恢复到当前 Space 对应的 workspace 路由，避免“路由在 A、侧栏在 B”的错位。
+	if (typeof resolvedSpaceId === 'string' && resolvedSpaceId !== spaceId) {
+		return resolveFallbackPath(spaceId)
+	}
 
 	return { path: resolved.path, query }
 }

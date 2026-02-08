@@ -19,10 +19,11 @@
 
 <script setup lang="ts">
 	import { watchDebounced } from '@vueuse/core'
-	import { computed } from 'vue'
+	import { computed, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
+	import { SPACE_IDS, type SpaceId } from '@/config/space'
 	import Sidebar from './Sidebar.vue'
 	import Header from './Header.vue'
 
@@ -37,13 +38,23 @@
 	const settingsStore = useSettingsStore()
 	const viewStateStore = useViewStateStore()
 
+	function isKnownSpaceId(value: string): value is SpaceId {
+		return (SPACE_IDS as readonly string[]).includes(value)
+	}
+
+	function resolveRouteSpaceId(): SpaceId {
+		const sid = route.params.spaceId
+		if (typeof sid === 'string' && isKnownSpaceId(sid)) return sid
+		return settingsStore.settings.activeSpaceId
+	}
+
 	const space = computed({
 		get: () => settingsStore.settings.activeSpaceId,
 		set: async (newSpaceId) => {
 			if (newSpaceId === settingsStore.settings.activeSpaceId) return
 
 			// 1. 切换前，保存旧 Space 状态 (Persist old space state)
-			const oldSpaceId = settingsStore.settings.activeSpaceId
+			const oldSpaceId = resolveRouteSpaceId()
 			const currentProjectId = routeProjectId.value
 
 			// 确保存的是合规的 space 路由
@@ -68,13 +79,24 @@
 		},
 	})
 
+	// 路由驱动 activeSpace，避免启动期或外部跳转后出现“路由与侧栏 space 不一致”。
+	watch(
+		() => route.params.spaceId,
+		(spaceIdFromRoute) => {
+			if (typeof spaceIdFromRoute !== 'string' || !isKnownSpaceId(spaceIdFromRoute)) return
+			if (spaceIdFromRoute === settingsStore.settings.activeSpaceId) return
+			void settingsStore.update({ activeSpaceId: spaceIdFromRoute })
+		},
+		{ immediate: true },
+	)
+
 	// 路由高频变化时用防抖持久化，减少无效写入与启动期闪动。
 	watchDebounced(
 		() => [route.path, routeProjectId.value],
 		() => {
 			if (!settingsStore.loaded || !viewStateStore.loaded) return
 
-			const currentSpaceId = settingsStore.settings.activeSpaceId
+			const currentSpaceId = resolveRouteSpaceId()
 			const projectId = routeProjectId.value
 
 			// 记录任意页面状态
