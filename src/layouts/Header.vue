@@ -201,7 +201,6 @@
 	const currentSpaceId = computed(() => {
 		const sid = route.params.spaceId
 		if (typeof sid === 'string') return sid
-		if (!settingsStore.loaded) return null
 		return settingsStore.settings.activeSpaceId ?? 'work'
 	})
 

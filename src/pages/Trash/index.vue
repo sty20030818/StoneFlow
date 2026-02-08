@@ -1,6 +1,8 @@
 <template>
 	<div class="space-y-6">
-		<Teleport to="#header-actions-portal">
+		<Teleport
+			defer
+			to="#header-actions-portal">
 			<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
 				<button
 					v-for="opt in viewOptions"
@@ -97,8 +99,8 @@
 </template>
 
 <script setup lang="ts">
-	import { useAsyncState } from '@vueuse/core'
-	import { computed, onMounted, provide, ref, watch } from 'vue'
+	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
+	import { computed, provide, ref, watch } from 'vue'
 
 	import TimeDisplay from '@/components/TimeDisplay.vue'
 	import type { ProjectDto } from '@/services/api/projects'
@@ -114,11 +116,19 @@
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
+	type TrashSnapshot = {
+		projects: ProjectDto[]
+		tasks: TaskDto[]
+	}
+
 	const viewMode = ref<'projects' | 'tasks'>('projects')
+	const loading = ref(true)
 	const deletedProjects = ref<ProjectDto[]>([])
 	const deletedTasks = ref<TaskDto[]>([])
 	const restoringProjectIds = ref<Set<string>>(new Set())
 	const restoringTaskIds = ref<Set<string>>(new Set())
+	const trashSnapshots = useStorage<Record<string, TrashSnapshot>>('trash_snapshot_v1', {})
+	const loadedTrashScopes = ref(new Set<string>())
 
 	const viewOptions = [
 		{
@@ -138,6 +148,8 @@
 	]
 
 	const activeSpaceId = computed(() => settingsStore.settings.activeSpaceId ?? 'work')
+	const scopeKey = computed(() => activeSpaceId.value)
+	const debouncedScopeKey = refDebounced(scopeKey, 80)
 
 	const projectNameMap = computed(() => {
 		const map = new Map<string, string>()
@@ -164,35 +176,69 @@
 		return projectNameMap.value.get(projectId) ?? '已删除项目'
 	}
 
-	const { isLoading: loading, execute: refresh } = useAsyncState(
-		async () => {
-			await projectsStore.ensureLoaded(activeSpaceId.value)
-			const [projects, tasks] = await Promise.all([
-				listDeletedProjects({ spaceId: activeSpaceId.value }),
-				listDeletedTasks({ spaceId: activeSpaceId.value }),
-			])
-			return { projects, tasks }
-		},
-		{
-			projects: [] as ProjectDto[],
-			tasks: [] as TaskDto[],
-		},
-		{
-			immediate: false,
-			resetOnExecute: false,
-			onSuccess: ({ projects, tasks }) => {
-				deletedProjects.value = projects
-				deletedTasks.value = tasks
+	function writeSnapshot(spaceId: string, projects: ProjectDto[], tasks: TaskDto[]) {
+		trashSnapshots.value = {
+			...trashSnapshots.value,
+			[spaceId]: {
+				projects,
+				tasks,
 			},
-			onError: (e) => {
+		}
+	}
+
+	function applySnapshot(spaceId: string): boolean {
+		const snapshot = trashSnapshots.value[spaceId]
+		if (!snapshot) return false
+		deletedProjects.value = snapshot.projects
+		deletedTasks.value = snapshot.tasks
+		return true
+	}
+
+	function markScopeLoaded(spaceId: string) {
+		loadedTrashScopes.value = new Set(loadedTrashScopes.value).add(spaceId)
+	}
+
+	function refreshCurrentSnapshot() {
+		const spaceId = scopeKey.value
+		writeSnapshot(spaceId, deletedProjects.value, deletedTasks.value)
+	}
+
+	async function withTimeout<T>(promise: Promise<T>, timeoutMs = 12000): Promise<T> {
+		let timer: ReturnType<typeof setTimeout> | null = null
+		const timeoutPromise = new Promise<never>((_, reject) => {
+			timer = setTimeout(() => {
+				reject(new Error('回收站加载超时，请稍后重试'))
+			}, timeoutMs)
+		})
+		try {
+			return await Promise.race([promise, timeoutPromise])
+		} finally {
+			if (timer) clearTimeout(timer)
+		}
+	}
+
+	async function refreshTrash(silent = false) {
+		const spaceId = scopeKey.value
+		const useSilent = silent && loadedTrashScopes.value.has(spaceId)
+		if (!useSilent) loading.value = true
+		try {
+			const [projects, tasks] = await withTimeout(
+				Promise.all([listDeletedProjects({ spaceId }), listDeletedTasks({ spaceId })]),
+			)
+			deletedProjects.value = projects
+			deletedTasks.value = tasks
+			writeSnapshot(spaceId, projects, tasks)
+		} catch (e) {
 			toast.add({
 				title: '加载失败',
 				description: e instanceof Error ? e.message : '未知错误',
 				color: 'error',
 			})
-			},
-		},
-	)
+		} finally {
+			markScopeLoaded(spaceId)
+			if (!useSilent) loading.value = false
+		}
+	}
 
 	async function restoreProjectItem(project: ProjectDto) {
 		if (restoringProjectIds.value.has(project.id)) return
@@ -202,6 +248,7 @@
 		try {
 			await restoreProject(project.id)
 			deletedProjects.value = deletedProjects.value.filter((p) => p.id !== project.id)
+			refreshCurrentSnapshot()
 			refreshSignals.bumpProject()
 			toast.add({
 				title: '已恢复项目',
@@ -229,6 +276,7 @@
 		try {
 			await restoreTasks([task.id])
 			deletedTasks.value = deletedTasks.value.filter((t) => t.id !== task.id)
+			refreshCurrentSnapshot()
 			refreshSignals.bumpTask()
 			toast.add({
 				title: '已恢复任务',
@@ -248,17 +296,31 @@
 		}
 	}
 
-	onMounted(async () => {
-		if (!settingsStore.loaded) {
-			await settingsStore.load()
-		}
-		await refresh(0)
-	})
-
 	watch(
-		() => settingsStore.settings.activeSpaceId,
+		debouncedScopeKey,
+		(nextScope) => {
+			const hasSnapshot = applySnapshot(nextScope)
+			if (hasSnapshot) {
+				loading.value = false
+				markScopeLoaded(nextScope)
+				void refreshTrash(true)
+				return
+			}
+			void refreshTrash(false)
+		},
+		{ immediate: true },
+	)
+
+	// 监听删除刷新信号：回收站停留期间，外部删除后自动可见。
+	watchDebounced(
+		() => [refreshSignals.projectTick, refreshSignals.taskTick] as const,
 		() => {
-			void refresh(0)
+			void refreshTrash(true)
+		},
+		{
+			debounce: 80,
+			maxWait: 200,
 		},
 	)
+
 </script>

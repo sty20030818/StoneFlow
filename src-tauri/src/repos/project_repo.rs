@@ -334,7 +334,7 @@ impl ProjectRepo {
         Ok(())
     }
 
-    /// 恢复软删除项目。
+    /// 恢复软删除项目（仅当前节点，不递归恢复子项目）。
     pub async fn restore(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
         let model = projects::Entity::find_by_id(project_id)
             .one(conn)
@@ -342,6 +342,7 @@ impl ProjectRepo {
             .map_err(AppError::from)?
             .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
 
+        // 产品约束：恢复逻辑保持单节点恢复，不自动恢复后代。
         let now = now_ms();
         let mut active_model: projects::ActiveModel = model.into();
         active_model.deleted_at = Set(None);
