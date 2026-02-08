@@ -14,11 +14,13 @@ function normalizeName(name: string) {
 }
 
 function log(...args: unknown[]) {
-	console.log('[remote-sync-store]', ...args)
+	// console.log('[remote-sync-store]', ...args)
+	void args
 }
 
 function logError(...args: unknown[]) {
-	console.error('[remote-sync-store]', ...args)
+	// console.error('[remote-sync-store]', ...args)
+	void args
 }
 
 export const useRemoteSyncStore = defineStore('remote-sync', () => {

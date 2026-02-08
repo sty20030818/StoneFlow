@@ -15,16 +15,17 @@ const PROFILE_PREFIX = 'profile:'
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 const OP_TIMEOUT_MS = 20000
-const logPrefix = '[stronghold]'
 
 let clientPromise: Promise<{ stronghold: Stronghold; client: Client }> | null = null
 
 function log(...args: unknown[]) {
-	console.log(logPrefix, ...args)
+	// console.log('[stronghold]', ...args)
+	void args
 }
 
 function logError(...args: unknown[]) {
-	console.error(logPrefix, ...args)
+	// console.error('[stronghold]', ...args)
+	void args
 }
 
 function withTimeout<T>(promise: Promise<T>, label: string) {

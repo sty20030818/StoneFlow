@@ -15,7 +15,7 @@ export function useRemoteSyncPage() {
 	const remoteSyncStore = useRemoteSyncStore()
 	const refreshSignals = useRefreshSignalsStore()
 	const toast = useToast()
-	const logPrefix = '[settings-remote-sync]'
+	// const logPrefix = '[settings-remote-sync]'
 	const now = useNow({ interval: 60_000 })
 
 	const {
@@ -30,11 +30,13 @@ export function useRemoteSyncPage() {
 	} = useRemoteSyncActions()
 
 	function log(...args: unknown[]) {
-		console.log(logPrefix, ...args)
+		// console.log(logPrefix, ...args)
+		void args
 	}
 
 	function logError(...args: unknown[]) {
-		console.error(logPrefix, ...args)
+		// console.error(logPrefix, ...args)
+		void args
 	}
 
 	const createOpen = ref(false)
@@ -112,7 +114,9 @@ export function useRemoteSyncPage() {
 
 	const canSaveNew = computed(() => validateWithZod(remoteProfileSchema, { name: newName.value, url: newUrl.value }).ok)
 	const canTestNew = computed(() => validateWithZod(postgresUrlSchema, newUrl.value).ok)
-	const canSaveEdit = computed(() => validateWithZod(remoteProfileSchema, { name: editName.value, url: editUrl.value }).ok)
+	const canSaveEdit = computed(
+		() => validateWithZod(remoteProfileSchema, { name: editName.value, url: editUrl.value }).ok,
+	)
 	const canTestEdit = computed(() => validateWithZod(postgresUrlSchema, editUrl.value).ok)
 	const canImport = computed(() => importText.value.trim().length > 0)
 
