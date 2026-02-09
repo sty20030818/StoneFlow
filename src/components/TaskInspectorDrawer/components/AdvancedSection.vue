@@ -48,14 +48,24 @@
 					class="w-full"
 					:ui="{ rounded: 'rounded-lg' }"
 					@input="onDraftTitleInput" />
-				<UButton
-					color="primary"
-					variant="solid"
-					size="sm"
-					class="justify-center"
-					@click="onConfirmClick">
-					确认
-				</UButton>
+				<div class="flex items-center gap-2">
+					<UButton
+						color="primary"
+						variant="solid"
+						size="sm"
+						class="justify-center"
+						@click="onConfirmClick">
+						确认
+					</UButton>
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="sm"
+						class="justify-center"
+						@click="onCancelClick">
+						取消
+					</UButton>
+				</div>
 			</div>
 			<div class="space-y-1">
 				<UInput
@@ -101,5 +111,12 @@
 	function onConfirmClick() {
 		const ok = props.onConfirmCustomField()
 		showTitleError.value = !ok
+	}
+
+	function onCancelClick() {
+		customFieldDraftTitle.value = ''
+		customFieldDraftValue.value = ''
+		customFieldDraftVisible.value = false
+		showTitleError.value = false
 	}
 </script>

@@ -41,7 +41,7 @@
 		</div>
 
 		<div class="rounded-xl border border-default p-3 space-y-2 bg-elevated/20">
-			<div class="grid grid-cols-[1fr_auto_auto] gap-2">
+			<div class="grid grid-cols-[1fr_auto_auto_auto] gap-2">
 				<UInput
 					v-model="draftTitle"
 					placeholder="标题（可选）"
@@ -64,6 +64,14 @@
 					class="justify-center"
 					@click="onConfirmClick">
 					确认
+				</UButton>
+				<UButton
+					color="neutral"
+					variant="ghost"
+					size="sm"
+					class="justify-center"
+					@click="onCancelClick">
+					取消
 				</UButton>
 			</div>
 			<div class="space-y-1">
@@ -122,6 +130,13 @@
 	function onConfirmClick() {
 		const ok = props.onConfirmLink()
 		showDraftUrlError.value = !ok
+	}
+
+	function onCancelClick() {
+		draftTitle.value = ''
+		draftUrl.value = ''
+		draftKind.value = 'web'
+		showDraftUrlError.value = false
 	}
 
 	const compactSelectMenuUi = {
