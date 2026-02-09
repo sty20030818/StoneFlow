@@ -22,8 +22,8 @@ export type LinkInput = {
 }
 
 export type CustomFieldItem = {
-	key: string
-	label: string
+	rank: number
+	title: string
 	value: string | null
 }
 

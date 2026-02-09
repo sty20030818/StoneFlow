@@ -53,6 +53,7 @@
 						:priority-icon-class="priorityIconClass"
 						:priority-text-class="priorityTextClass"
 						:deadline-label="deadlineLabel"
+						:on-add-custom-field="addCustomField"
 						@update:priority="onPriorityChange"
 						@update:deadline="handleDeadlineUpdate" />
 
@@ -69,6 +70,15 @@
 						:on-space-change="onSpaceChange"
 						:on-project-change="onProjectChange" />
 
+					<AdvancedSection
+						v-model:custom-fields="customFieldsLocal"
+						v-model:draft-title="customFieldDraftTitle"
+						v-model:draft-value="customFieldDraftValue"
+						v-model:draft-visible="customFieldDraftVisible"
+						:on-confirm-custom-field="confirmCustomField"
+						:on-remove-custom-field="removeCustomField"
+					/>
+
 					<TagsSection
 						v-model:tag-input="tagInput"
 						:tags="tagsLocal"
@@ -82,20 +92,12 @@
 
 					<LinksSection
 						v-model:links="linksLocal"
+						v-model:draft-title="linkDraftTitle"
+						v-model:draft-kind="linkDraftKind"
+						v-model:draft-url="linkDraftUrl"
 						:link-kind-options="linkKindOptions"
-						:on-add-link="addLink"
-						:on-remove-link="removeLink"
-						:on-links-input="onLinksInput"
-						:on-links-blur="onLinksBlur" />
-
-					<AdvancedSection
-						v-model:custom-fields="customFieldsLocal"
-						:advanced-collapsed="advancedCollapsed"
-						:on-toggle-advanced="toggleAdvanced"
-						:on-add-custom-field="addCustomField"
-						:on-remove-custom-field="removeCustomField"
-						:on-custom-fields-input="onCustomFieldsInput"
-						:on-custom-fields-blur="onCustomFieldsBlur" />
+						:on-confirm-link="addLink"
+						:on-remove-link="removeLink" />
 
 					<TimelineSection
 						:timeline-items="timelineItems"
@@ -135,12 +137,17 @@
 		tagsLocal,
 		tagInput,
 		timelineCollapsed,
-		advancedCollapsed,
 		saveState,
 		spaceIdLocal,
 		projectIdLocal,
 		linksLocal,
+		linkDraftTitle,
+		linkDraftKind,
+		linkDraftUrl,
 		customFieldsLocal,
+		customFieldDraftTitle,
+		customFieldDraftValue,
+		customFieldDraftVisible,
 		statusSegmentOptions,
 		doneReasonOptions,
 		priorityOptions,
@@ -175,13 +182,9 @@
 		onTagInputBlur,
 		addLink,
 		removeLink,
-		onLinksInput,
-		onLinksBlur,
 		addCustomField,
+		confirmCustomField,
 		removeCustomField,
-		onCustomFieldsInput,
-		onCustomFieldsBlur,
-		toggleAdvanced,
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,

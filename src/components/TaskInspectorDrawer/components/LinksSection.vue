@@ -2,14 +2,6 @@
 	<section class="space-y-2">
 		<div class="flex items-center justify-between">
 			<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">关联链接</label>
-			<UButton
-				color="neutral"
-				variant="soft"
-				size="xs"
-				icon="i-lucide-plus"
-				@click="onAddLink">
-				新增
-			</UButton>
 		</div>
 
 		<div
@@ -18,68 +10,119 @@
 			暂无链接
 		</div>
 
-		<div
-			v-for="(link, index) in linksModel"
-			:key="link.id ?? `draft-${index}`"
-			class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30">
-			<div class="grid grid-cols-2 gap-2">
+		<div class="space-y-2">
+			<div
+				v-for="(link, index) in linksModel"
+				:key="link.id ?? `confirmed-${index}`"
+				class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30">
+				<div class="flex items-start justify-between gap-2">
+					<div class="min-w-0 flex items-center gap-2">
+						<div class="truncate text-sm font-medium text-default">
+							{{ link.title.trim() || '未命名链接' }}
+						</div>
+						<UBadge
+							size="xs"
+							color="neutral"
+							variant="soft">
+							{{ getKindLabel(link.kind) }}
+						</UBadge>
+					</div>
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="xs"
+						icon="i-lucide-trash-2"
+						@click="onRemoveLink(index)" />
+				</div>
+				<div class="break-all text-xs text-muted">
+					{{ link.url }}
+				</div>
+			</div>
+		</div>
+
+		<div class="rounded-xl border border-default p-3 space-y-2 bg-elevated/20">
+			<div class="grid grid-cols-[1fr_auto_auto] gap-2">
 				<UInput
-					v-model="link.title"
+					v-model="draftTitle"
 					placeholder="标题（可选）"
 					size="sm"
 					class="w-full"
-					:ui="{ rounded: 'rounded-lg' }"
-					@input="onLinksInput"
-					@blur="onLinksBlur" />
-				<UInput
-					v-model="link.url"
-					placeholder="URL（必填）"
-					size="sm"
-					class="w-full"
-					:ui="{ rounded: 'rounded-lg' }"
-					@input="onLinksInput"
-					@blur="onLinksBlur" />
-			</div>
-			<div class="grid grid-cols-2 gap-2">
+					:ui="{ rounded: 'rounded-lg' }" />
 				<USelectMenu
-					v-model="link.kind"
+					v-model="draftKind"
 					:items="linkKindOptions"
 					value-key="value"
 					label-key="label"
 					size="sm"
-					class="w-full"
+					class="w-36"
 					:search-input="false"
-					:ui="compactSelectMenuUi"
-					@update:model-value="onLinksInput"
-					@blur="onLinksBlur" />
+					:ui="compactSelectMenuUi" />
 				<UButton
-					color="neutral"
-					variant="soft"
+					color="primary"
+					variant="solid"
 					size="sm"
 					class="justify-center"
-					@click="onRemoveLink(index)">
-					移除
+					@click="onConfirmClick">
+					确认
 				</UButton>
+			</div>
+			<div class="space-y-1">
+				<UInput
+					v-model="draftUrl"
+					placeholder="URL"
+					size="sm"
+					class="w-full"
+					:ui="{ rounded: 'rounded-lg' }"
+					@input="onDraftUrlInput" />
+				<div
+					v-if="showDraftUrlError"
+					class="text-[11px] text-red-500">
+					URL 不能为空
+				</div>
 			</div>
 		</div>
 	</section>
 </template>
 
 <script setup lang="ts">
+	import { computed, ref } from 'vue'
+
 	import type { LinkKindOption } from '../composables/useTaskInspectorOptions'
 	import type { TaskLinkFormItem } from '../composables/taskFieldNormalization'
 
 	const linksModel = defineModel<TaskLinkFormItem[]>('links', { required: true })
+	const draftTitle = defineModel<string>('draftTitle', { required: true })
+	const draftKind = defineModel<TaskLinkFormItem['kind']>('draftKind', { required: true })
+	const draftUrl = defineModel<string>('draftUrl', { required: true })
 
 	type Props = {
 		linkKindOptions: LinkKindOption[]
-		onAddLink: () => void
+		onConfirmLink: () => boolean
 		onRemoveLink: (index: number) => void
-		onLinksInput: () => void
-		onLinksBlur: () => void
 	}
 
-	defineProps<Props>()
+	const props = defineProps<Props>()
+
+	const showDraftUrlError = ref(false)
+
+	const kindLabelMap = computed(() => {
+		return new Map(props.linkKindOptions.map((item) => [item.value, item.label]))
+	})
+
+	function getKindLabel(kind: TaskLinkFormItem['kind']): string {
+		return kindLabelMap.value.get(kind) ?? kind
+	}
+
+	function onDraftUrlInput() {
+		if (showDraftUrlError.value && draftUrl.value.trim()) {
+			showDraftUrlError.value = false
+		}
+	}
+
+	function onConfirmClick() {
+		const ok = props.onConfirmLink()
+		showDraftUrlError.value = !ok
+	}
 
 	const compactSelectMenuUi = {
 		rounded: 'rounded-lg',

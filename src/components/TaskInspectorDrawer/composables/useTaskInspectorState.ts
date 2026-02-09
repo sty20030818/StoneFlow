@@ -21,8 +21,13 @@ export function useTaskInspectorState() {
 	const spaceIdLocal = ref('')
 	const projectIdLocal = ref<string | null>(null)
 	const linksLocal = ref<TaskLinkFormItem[]>([])
+	const linkDraftTitle = ref('')
+	const linkDraftUrl = ref('')
+	const linkDraftKind = ref<TaskLinkFormItem['kind']>('web')
 	const customFieldsLocal = ref<TaskCustomFieldFormItem[]>([])
-	const advancedCollapsed = ref(true)
+	const customFieldDraftTitle = ref('')
+	const customFieldDraftValue = ref('')
+	const customFieldDraftVisible = ref(false)
 
 	return {
 		titleLocal,
@@ -39,8 +44,13 @@ export function useTaskInspectorState() {
 		spaceIdLocal,
 		projectIdLocal,
 		linksLocal,
+		linkDraftTitle,
+		linkDraftUrl,
+		linkDraftKind,
 		customFieldsLocal,
-		advancedCollapsed,
+		customFieldDraftTitle,
+		customFieldDraftValue,
+		customFieldDraftVisible,
 	}
 }
 

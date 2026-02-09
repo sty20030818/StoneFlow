@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { useDebounceFn, useTimeoutFn } from '@vueuse/core'
+import { useTimeoutFn } from '@vueuse/core'
 
 import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/services/api/tasks'
 import { updateTask } from '@/services/api/tasks'
@@ -12,6 +12,7 @@ import type { TaskInspectorState } from './useTaskInspectorState'
 import {
 	areCustomFieldsEqual,
 	areLinkPatchesEqual,
+	getNextCustomFieldRank,
 	normalizeOptionalText,
 	normalizeProjectId,
 	toCustomFieldsPatch,
@@ -191,38 +192,57 @@ export function useTaskInspectorActions(params: {
 		await commitUpdate({ note: nextNote }, { note: nextNote })
 	}
 
-	function addLink() {
+	function addLink(): boolean {
+		const url = state.linkDraftUrl.value.trim()
+		if (!url) return false
+		const title = state.linkDraftTitle.value.trim()
 		state.linksLocal.value.push({
-			title: '',
-			url: '',
-			kind: 'web',
+			title,
+			url,
+			kind: state.linkDraftKind.value,
 		})
-		scheduleLinksCommit()
+		state.linkDraftTitle.value = ''
+		state.linkDraftUrl.value = ''
+		state.linkDraftKind.value = 'web'
+		void commitLinks()
+		return true
 	}
 
 	function removeLink(index: number) {
 		if (index < 0 || index >= state.linksLocal.value.length) return
 		state.linksLocal.value.splice(index, 1)
-		scheduleLinksCommit()
+		void commitLinks()
 	}
 
 	function addCustomField() {
+		state.customFieldDraftVisible.value = true
+		if (!state.customFieldDraftTitle.value.trim() && !state.customFieldDraftValue.value.trim()) {
+			state.customFieldDraftTitle.value = ''
+			state.customFieldDraftValue.value = ''
+		}
+	}
+
+	function confirmCustomField(): boolean {
+		const title = state.customFieldDraftTitle.value.trim()
+		if (!title) return false
+		const rank = getNextCustomFieldRank(state.customFieldsLocal.value)
+		const value = state.customFieldDraftValue.value.trim()
 		state.customFieldsLocal.value.push({
-			key: '',
-			label: '',
-			value: '',
+			rank,
+			title,
+			value,
 		})
-		scheduleCustomFieldsCommit()
+		state.customFieldDraftTitle.value = ''
+		state.customFieldDraftValue.value = ''
+		state.customFieldDraftVisible.value = false
+		void commitCustomFields()
+		return true
 	}
 
 	function removeCustomField(index: number) {
 		if (index < 0 || index >= state.customFieldsLocal.value.length) return
 		state.customFieldsLocal.value.splice(index, 1)
-		scheduleCustomFieldsCommit()
-	}
-
-	function toggleAdvanced() {
-		state.advancedCollapsed.value = !state.advancedCollapsed.value
+		void commitCustomFields()
 	}
 
 	async function commitLinks() {
@@ -239,30 +259,6 @@ export function useTaskInspectorActions(params: {
 		const nextCustomFields = toCustomFieldsPatch(state.customFieldsLocal.value)
 		if (areCustomFieldsEqual(nextCustomFields, currentTask.value.customFields)) return
 		await commitUpdate({ customFields: nextCustomFields }, { customFields: nextCustomFields })
-	}
-
-	const scheduleLinksCommit = useDebounceFn(() => {
-		void commitLinks()
-	}, 320)
-
-	const scheduleCustomFieldsCommit = useDebounceFn(() => {
-		void commitCustomFields()
-	}, 320)
-
-	function onLinksInput() {
-		scheduleLinksCommit()
-	}
-
-	function onCustomFieldsInput() {
-		scheduleCustomFieldsCommit()
-	}
-
-	async function onLinksBlur() {
-		await commitLinks()
-	}
-
-	async function onCustomFieldsBlur() {
-		await commitCustomFields()
 	}
 
 	function toggleTimeline() {
@@ -300,13 +296,9 @@ export function useTaskInspectorActions(params: {
 		onTagInputBlur,
 		addLink,
 		removeLink,
-		onLinksInput,
-		onLinksBlur,
 		addCustomField,
+		confirmCustomField,
 		removeCustomField,
-		onCustomFieldsInput,
-		onCustomFieldsBlur,
-		toggleAdvanced,
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,

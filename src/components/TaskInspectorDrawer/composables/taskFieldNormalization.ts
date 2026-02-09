@@ -8,9 +8,23 @@ export type TaskLinkFormItem = {
 }
 
 export type TaskCustomFieldFormItem = {
-	key: string
-	label: string
+	rank: number
+	title: string
 	value: string
+}
+
+type LegacyCustomFieldItem = {
+	rank?: number | null
+	title?: string | null
+	key?: string | null
+	label?: string | null
+	value?: string | null
+}
+
+function toNonNegativeInt(value: unknown, fallback: number): number {
+	if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+	const normalized = Math.trunc(value)
+	return normalized >= 0 ? normalized : fallback
 }
 
 export function normalizeProjectId(value: string | null | undefined): string | null {
@@ -84,27 +98,51 @@ export function areLinkPatchesEqual(left: LinkInput[], right: LinkInput[]): bool
 
 export function toCustomFieldsFormItems(customFields: CustomFields | null | undefined): TaskCustomFieldFormItem[] {
 	if (!customFields?.fields?.length) return []
-	return customFields.fields.map((item) => ({
-		key: item.key ?? '',
-		label: item.label ?? '',
-		value: item.value ?? '',
-	}))
+
+	return customFields.fields
+		.map((item, index) => {
+			const legacy = item as unknown as LegacyCustomFieldItem
+			const rank = toNonNegativeInt(legacy.rank, index)
+			const title = String(legacy.title ?? legacy.label ?? legacy.key ?? '').trim()
+			const value = String(legacy.value ?? '').trim()
+			return {
+				rank,
+				title,
+				value,
+			}
+		})
+		.sort((a, b) => a.rank - b.rank)
 }
 
 export function toCustomFieldItems(values: TaskCustomFieldFormItem[]): CustomFieldItem[] {
+	const sorted = values
+		.map((item, index) => ({ item, index }))
+		.sort((left, right) => {
+			const rankDiff = left.item.rank - right.item.rank
+			if (rankDiff !== 0) return rankDiff
+			return left.index - right.index
+		})
+
 	const result: CustomFieldItem[] = []
-	for (const item of values) {
-		const key = item.key.trim()
-		const label = item.label.trim()
-		if (!key || !label) continue
+	for (const { item } of sorted) {
+		const title = item.title.trim()
+		if (!title) continue
 		const value = normalizeOptionalText(item.value)
 		result.push({
-			key,
-			label,
+			rank: result.length,
+			title,
 			value,
 		})
 	}
 	return result
+}
+
+export function getNextCustomFieldRank(values: TaskCustomFieldFormItem[]): number {
+	if (values.length === 0) return 0
+	return values.reduce((maxRank, item, index) => {
+		const rank = toNonNegativeInt(item.rank, index)
+		return Math.max(maxRank, rank)
+	}, 0) + 1
 }
 
 export function toCustomFieldsPatch(values: TaskCustomFieldFormItem[]): CustomFields | null {
@@ -121,8 +159,8 @@ export function areCustomFieldsEqual(left: CustomFields | null | undefined, righ
 		const l = leftFields[index]
 		const r = rightFields[index]
 		if (!l || !r) return false
-		if (l.key !== r.key) return false
-		if (l.label !== r.label) return false
+		if (l.rank !== r.rank) return false
+		if (l.title !== r.title) return false
 		if ((l.value ?? null) !== (r.value ?? null)) return false
 	}
 	return true

@@ -103,7 +103,7 @@ pub struct CustomFieldsDto {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomFieldItemDto {
-    pub key: String,
-    pub label: String,
+    pub rank: i64,
+    pub title: String,
     pub value: Option<String>,
 }

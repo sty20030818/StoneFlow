@@ -273,22 +273,16 @@
 					v-for="(field, index) in form.customFields"
 					:key="`field-${index}`"
 					class="rounded-lg border border-default p-2 space-y-2">
-					<div class="grid grid-cols-3 gap-2">
+					<div class="grid grid-cols-2 gap-2">
 						<UInput
-							v-model="field.key"
-							placeholder="Key"
-							size="sm"
-							class="w-full"
-							:ui="{ rounded: 'rounded-lg' }" />
-						<UInput
-							v-model="field.label"
-							placeholder="Label"
+							v-model="field.title"
+							placeholder="标题"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
 						<UInput
 							v-model="field.value"
-							placeholder="Value（可选）"
+							placeholder="内容（可选）"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />

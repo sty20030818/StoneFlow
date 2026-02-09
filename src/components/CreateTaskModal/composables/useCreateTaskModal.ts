@@ -48,8 +48,8 @@ export type TaskLinkFormItem = {
 }
 
 export type TaskCustomFieldFormItem = {
-	key: string
-	label: string
+	rank: number
+	title: string
 	value: string
 }
 
@@ -163,19 +163,23 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	}
 
 	function normalizeCustomFields(values: TaskCustomFieldFormItem[]): CustomFieldItem[] {
-		const result: CustomFieldItem[] = []
-		for (const item of values) {
-			const key = item.key.trim()
-			const label = item.label.trim()
-			if (!key || !label) continue
-			const rawValue = item.value.trim()
-			result.push({
-				key,
-				label,
-				value: rawValue ? rawValue : null,
+		return values
+			.map((item, index) => ({ item, index }))
+			.sort((left, right) => {
+				const rankDiff = left.item.rank - right.item.rank
+				if (rankDiff !== 0) return rankDiff
+				return left.index - right.index
 			})
-		}
-		return result
+			.flatMap(({ item }, normalizedRank) => {
+				const title = item.title.trim()
+				if (!title) return []
+				const rawValue = item.value.trim()
+				return [{
+					rank: normalizedRank,
+					title,
+					value: rawValue ? rawValue : null,
+				}]
+			})
 	}
 
 	function addTag() {
@@ -203,9 +207,12 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	}
 
 	function addCustomField() {
+		const nextRank = form.value.customFields.length
+			? Math.max(...form.value.customFields.map((item, index) => (Number.isFinite(item.rank) ? item.rank : index))) + 1
+			: 0
 		form.value.customFields.push({
-			key: '',
-			label: '',
+			rank: nextRank,
+			title: '',
 			value: '',
 		})
 	}

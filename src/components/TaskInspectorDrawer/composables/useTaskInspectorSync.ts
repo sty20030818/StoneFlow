@@ -36,8 +36,13 @@ export function useTaskInspectorSync(params: {
 		state.spaceIdLocal.value = t.spaceId
 		state.projectIdLocal.value = normalizeProjectId(t.projectId)
 		state.linksLocal.value = toLinksFormItems(t.links)
+		state.linkDraftTitle.value = ''
+		state.linkDraftUrl.value = ''
+		state.linkDraftKind.value = 'web'
 		state.customFieldsLocal.value = toCustomFieldsFormItems(t.customFields)
-		state.advancedCollapsed.value = true
+		state.customFieldDraftTitle.value = ''
+		state.customFieldDraftValue.value = ''
+		state.customFieldDraftVisible.value = false
 	}
 
 	watch(

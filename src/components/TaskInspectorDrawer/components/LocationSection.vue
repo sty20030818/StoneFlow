@@ -9,23 +9,23 @@
 					type="button"
 					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
 					:class="spaceCardClass">
-					<div class="flex items-center justify-between">
-						<div class="flex flex-col gap-1">
-							<span
-								class="text-[10px] font-bold uppercase tracking-wider"
+					<div class="flex items-center gap-2.5">
+						<UIcon
+							name="i-lucide-orbit"
+							class="size-4 shrink-0"
+							:class="spaceCardLabelClass" />
+						<div class="min-w-0 flex-1">
+							<div
+								class="text-[11px] mb-1"
 								:class="spaceCardLabelClass">
 								所属 Space
-							</span>
-							<span
-								class="text-sm font-bold"
+							</div>
+							<div
+								class="text-xs font-semibold truncate"
 								:class="spaceCardValueClass">
 								{{ currentSpaceLabel }}
-							</span>
+							</div>
 						</div>
-						<UIcon
-							name="i-lucide-chevron-right"
-							class="size-4"
-							:class="spaceCardLabelClass" />
 					</div>
 				</button>
 				<template #content>
@@ -54,17 +54,17 @@
 				:ui="drawerPopoverUi">
 				<button
 					type="button"
-					class="p-4 rounded-2xl bg-elevated/50 border border-default/60 hover:bg-elevated/80 transition-all text-left w-full cursor-pointer">
-					<div class="flex items-center justify-between">
-						<div class="flex flex-col gap-1">
-							<span class="text-[10px] font-bold text-muted uppercase tracking-wider">所属 Project</span>
-							<span class="text-sm font-bold text-default truncate max-w-[120px]">
-								{{ currentProjectLabel }}
-							</span>
-						</div>
+					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80">
+					<div class="flex items-center gap-2.5">
 						<UIcon
-							name="i-lucide-chevron-right"
-							class="size-4 text-muted" />
+							name="i-lucide-folder-tree"
+							class="size-4 shrink-0 text-muted" />
+						<div class="min-w-0 flex-1">
+							<div class="text-[11px] text-muted mb-1">所属 Project</div>
+							<div class="text-xs font-semibold text-default truncate">
+								{{ currentProjectLabel }}
+							</div>
+						</div>
 					</div>
 				</button>
 				<template #content>

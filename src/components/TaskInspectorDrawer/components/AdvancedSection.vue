@@ -1,82 +1,73 @@
 <template>
-	<section class="space-y-2">
-		<button
-			type="button"
-			class="flex items-center justify-between w-full"
-			@click="onToggleAdvanced">
-			<div class="flex items-center gap-2">
-				<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">高级属性</label>
-				<UBadge
-					size="xs"
-					color="neutral"
-					variant="soft">
-					{{ customFieldsModel.length }}
-				</UBadge>
-			</div>
-			<UIcon
-				name="i-lucide-chevron-down"
-				class="size-4 text-muted transition-transform duration-200"
-				:class="advancedCollapsed ? '' : 'rotate-180'" />
-		</button>
-
+	<section
+		v-if="customFieldDraftVisible || customFieldsModel.length > 0"
+		class="space-y-2">
 		<div
-			v-show="!advancedCollapsed"
-			class="rounded-xl border border-default p-3 space-y-2 bg-elevated/20">
-			<div class="flex items-center justify-end">
+			v-if="customFieldDraftVisible"
+			class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60 space-y-2">
+			<div class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+				<UIcon
+					name="i-lucide-list-plus"
+					class="size-3.5 shrink-0" />
+				新建字段
+			</div>
+			<div class="grid grid-cols-[1fr_auto] gap-2">
+				<UInput
+					v-model="customFieldDraftTitle"
+					placeholder="标题"
+					size="sm"
+					class="w-full"
+					:ui="{ rounded: 'rounded-lg' }"
+					@input="onDraftTitleInput" />
 				<UButton
-					color="neutral"
-					variant="soft"
-					size="xs"
-					icon="i-lucide-plus"
-					@click="onAddCustomField">
-					新增字段
+					color="primary"
+					variant="solid"
+					size="sm"
+					class="justify-center"
+					@click="onConfirmClick">
+					确认
 				</UButton>
 			</div>
-
-			<div
-				v-if="customFieldsModel.length === 0"
-				class="text-xs text-muted px-1 py-1">
-				暂无自定义字段
+			<div class="space-y-1">
+				<UInput
+					v-model="customFieldDraftValue"
+					placeholder="内容（可选）"
+					size="sm"
+					class="w-full"
+					:ui="{ rounded: 'rounded-lg' }" />
+				<div
+					v-if="showTitleError"
+					class="text-[11px] text-red-500">
+					标题不能为空
+				</div>
 			</div>
+		</div>
 
+		<div
+			v-if="customFieldsModel.length > 0"
+			class="grid grid-cols-2 gap-3">
 			<div
 				v-for="(field, index) in customFieldsModel"
-				:key="`${field.key}-${index}`"
-				class="rounded-lg border border-default p-2 space-y-2 bg-default/70">
-				<div class="grid grid-cols-3 gap-2">
-					<UInput
-						v-model="field.key"
-						placeholder="Key"
-						size="sm"
-						class="w-full"
-						:ui="{ rounded: 'rounded-lg' }"
-						@input="onCustomFieldsInput"
-						@blur="onCustomFieldsBlur" />
-					<UInput
-						v-model="field.label"
-						placeholder="Label"
-						size="sm"
-						class="w-full"
-						:ui="{ rounded: 'rounded-lg' }"
-						@input="onCustomFieldsInput"
-						@blur="onCustomFieldsBlur" />
-					<UInput
-						v-model="field.value"
-						placeholder="Value（可选）"
-						size="sm"
-						class="w-full"
-						:ui="{ rounded: 'rounded-lg' }"
-						@input="onCustomFieldsInput"
-						@blur="onCustomFieldsBlur" />
-				</div>
-				<div class="flex justify-end">
+				:key="`${field.rank}-${index}`"
+				class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60">
+				<div class="flex items-center justify-between gap-2">
+					<div class="min-w-0 flex flex-1 items-center gap-2.5">
+						<UIcon
+							name="i-lucide-list-plus"
+							class="size-4 shrink-0 text-muted" />
+						<div class="min-w-0 flex-1">
+							<div class="text-[11px] text-muted mb-1 truncate">{{ field.title }}</div>
+							<div class="text-xs font-semibold text-default wrap-break-words">
+								{{ field.value || '未填写内容' }}
+							</div>
+						</div>
+					</div>
 					<UButton
 						color="neutral"
-						variant="soft"
+						variant="ghost"
 						size="xs"
-						@click="onRemoveCustomField(index)">
-						移除字段
-					</UButton>
+						icon="i-lucide-trash-2"
+						@click="onRemoveCustomField(index)" />
 				</div>
 			</div>
 		</div>
@@ -84,18 +75,31 @@
 </template>
 
 <script setup lang="ts">
+	import { ref } from 'vue'
+
 	import type { TaskCustomFieldFormItem } from '../composables/taskFieldNormalization'
 
 	const customFieldsModel = defineModel<TaskCustomFieldFormItem[]>('customFields', { required: true })
+	const customFieldDraftTitle = defineModel<string>('draftTitle', { required: true })
+	const customFieldDraftValue = defineModel<string>('draftValue', { required: true })
+	const customFieldDraftVisible = defineModel<boolean>('draftVisible', { required: true })
 
 	type Props = {
-		advancedCollapsed: boolean
-		onToggleAdvanced: () => void
-		onAddCustomField: () => void
+		onConfirmCustomField: () => boolean
 		onRemoveCustomField: (index: number) => void
-		onCustomFieldsInput: () => void
-		onCustomFieldsBlur: () => void
 	}
 
-	defineProps<Props>()
+	const props = defineProps<Props>()
+	const showTitleError = ref(false)
+
+	function onDraftTitleInput() {
+		if (showTitleError.value && customFieldDraftTitle.value.trim()) {
+			showTitleError.value = false
+		}
+	}
+
+	function onConfirmClick() {
+		const ok = props.onConfirmCustomField()
+		showTitleError.value = !ok
+	}
 </script>

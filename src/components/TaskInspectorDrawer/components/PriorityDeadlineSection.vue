@@ -1,5 +1,15 @@
 <template>
 	<section>
+		<div class="mb-2 flex items-center justify-between">
+			<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">属性</label>
+			<button
+				type="button"
+				class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-default/60 bg-elevated/60 text-sm font-semibold text-muted transition-colors hover:bg-elevated"
+				aria-label="新增自定义字段"
+				@click="onAddCustomField">
+				+
+			</button>
+		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<UPopover
 				:mode="'click'"
@@ -113,6 +123,7 @@
 		priorityIconClass: string
 		priorityTextClass: string
 		deadlineLabel: string
+		onAddCustomField: () => void
 	}
 
 	defineProps<Props>()
