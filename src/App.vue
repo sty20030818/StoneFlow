@@ -44,12 +44,12 @@
 </template>
 
 <script setup lang="ts">
-	import { useEventListener } from '@vueuse/core'
 	import { computed, provide, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
 
+	import { useAppShortcuts } from '@/composables/app/useAppShortcuts'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import CreateProjectModal from '@/components/CreateProjectModal'
 	import CreateTaskModal from '@/components/CreateTaskModal'
@@ -144,46 +144,6 @@
 		}
 	}
 
-	function isEditableTarget(target: EventTarget | null) {
-		return (
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			(target as HTMLElement | null)?.isContentEditable
-		)
-	}
-
-	function isInteractiveTarget(target: EventTarget | null) {
-		if (!(target instanceof HTMLElement)) return false
-		const tag = target.tagName
-		return tag === 'BUTTON' || tag === 'A' || tag === 'SELECT' || target.getAttribute('role') === 'button'
-	}
-
-	// 监听快捷键
-	function handleKeydown(e: KeyboardEvent) {
-		// ⌘K / Ctrl+K: 打开命令面板
-		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-			e.preventDefault()
-			commandPaletteOpen.value = !commandPaletteOpen.value
-			return
-		}
-
-		if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
-			if (isEditableTarget(e.target)) return
-			e.preventDefault()
-			createTaskModalOpen.value = true
-			return
-		}
-
-		if (e.key === 'Enter') {
-			if (isEditableTarget(e.target) || isInteractiveTarget(e.target)) return
-			const isWorkspaceRoute = route.path === '/all-tasks' || route.path.startsWith('/space/')
-			if (isWorkspaceRoute) {
-				e.preventDefault()
-				inlineCreateFocusStore.bumpTodoFocus()
-			}
-		}
-	}
-
 	function onTaskCreated(task: TaskDto) {
 		// 任务创建成功，可以在这里添加后续处理（如刷新列表、显示提示等）
 		console.log('任务创建成功:', task)
@@ -224,8 +184,23 @@
 	}
 	provide('openCreateTaskModal', handleOpenCreateTaskModal)
 
-	// 统一使用 VueUse 监听，生命周期内自动清理，避免手写 add/remove 重复样板。
-	useEventListener(window, 'keydown', handleKeydown)
+	useAppShortcuts(
+		{ routePath: computed(() => route.path) },
+		{
+			toggleCommandPalette: () => {
+				commandPaletteOpen.value = !commandPaletteOpen.value
+			},
+			openCreateProject: () => {
+				handleOpenCreateProjectModal()
+			},
+			openCreateTask: () => {
+				handleOpenCreateTaskModal()
+			},
+			focusInlineTaskCreator: () => {
+				inlineCreateFocusStore.bumpTodoFocus()
+			},
+		},
+	)
 
 	// 暴露给子组件使用
 	provide('commandPalette', {
