@@ -12,7 +12,8 @@
 					rounded: 'rounded-xl',
 				}"
 				autofocus
-				@keydown.enter="emit('submit')" />
+				@keydown.meta.enter.prevent="emit('submit')"
+				@keydown.ctrl.enter.prevent="emit('submit')" />
 		</UFormField>
 
 		<div class="grid grid-cols-1 gap-4">

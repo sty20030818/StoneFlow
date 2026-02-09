@@ -12,7 +12,8 @@
 					rounded: 'rounded-xl',
 				}"
 				autofocus
-				@keydown.enter="emit('submit')" />
+				@keydown.meta.enter.prevent="emit('submit')"
+				@keydown.ctrl.enter.prevent="emit('submit')" />
 		</UFormField>
 
 		<div class="grid grid-cols-1 gap-4">
@@ -319,11 +320,7 @@
 	// 复用边界约束：该组件只负责字段渲染与事件分发，业务流程统一留在 composable。
 	import type { DoneReasonOption, PriorityOption, StatusOption } from '@/config/task'
 	import type { SpaceId } from '@/config/space'
-	import type {
-		CreateTaskFormState,
-		LinkKindOption,
-		ProjectOption,
-	} from '../composables/useCreateTaskModal'
+	import type { CreateTaskFormState, LinkKindOption, ProjectOption } from '../composables/useCreateTaskModal'
 
 	type SpaceOption = {
 		value: SpaceId
