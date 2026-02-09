@@ -1,12 +1,16 @@
 import { computed, type Ref } from 'vue'
 
 import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
-import { UNCATEGORIZED_LABEL, UNKNOWN_PROJECT_LABEL } from '@/config/project'
+import { UNKNOWN_PROJECT_LABEL } from '@/config/project'
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
 import type { TaskDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
 
 import type { TaskInspectorState } from './useTaskInspectorState'
+
+function getDefaultProject<T extends { id: string }>(projects: T[]): T | undefined {
+	return projects.find((project) => project.id.endsWith('_default'))
+}
 
 export function useTaskInspectorDerived(params: {
 	currentTask: Ref<TaskDto | null>
@@ -56,10 +60,11 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const currentProjectLabel = computed(() => {
-		if (!state.projectIdLocal.value) return UNCATEGORIZED_LABEL
 		const projects = projectsStore.getProjectsOfSpace(state.spaceIdLocal.value)
+		const defaultProject = getDefaultProject(projects)
+		if (!state.projectIdLocal.value) return defaultProject?.title ?? UNKNOWN_PROJECT_LABEL
 		const proj = projects.find((p) => p.id === state.projectIdLocal.value)
-		return proj?.title ?? UNKNOWN_PROJECT_LABEL
+		return proj?.title ?? defaultProject?.title ?? UNKNOWN_PROJECT_LABEL
 	})
 
 	const deadlineLabel = computed(() => {
@@ -91,9 +96,12 @@ export function useTaskInspectorDerived(params: {
 
 	const projectPath = computed(() => {
 		const task = currentTask.value
-		if (!task?.projectId) return UNCATEGORIZED_LABEL
+		if (!task) return UNKNOWN_PROJECT_LABEL
 		const projects = projectsStore.getProjectsOfSpace(task.spaceId)
-		const project = projects.find((p) => p.id === task.projectId)
+		const defaultProject = getDefaultProject(projects)
+		const project = task.projectId
+			? projects.find((p) => p.id === task.projectId)
+			: defaultProject
 		if (!project) return UNKNOWN_PROJECT_LABEL
 		return project.path || project.title
 	})
@@ -101,7 +109,7 @@ export function useTaskInspectorDerived(params: {
 	const projectTrail = computed(() => {
 		const raw = projectPath.value?.trim()
 		if (!raw) return []
-		if (raw === UNCATEGORIZED_LABEL || raw === UNKNOWN_PROJECT_LABEL) return [raw]
+		if (raw === UNKNOWN_PROJECT_LABEL) return [raw]
 		const parts = raw
 			.split('/')
 			.map((item) => item.trim())

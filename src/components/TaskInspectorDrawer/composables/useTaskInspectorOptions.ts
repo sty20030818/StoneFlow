@@ -4,9 +4,6 @@ import { SPACE_OPTIONS } from '@/config/space'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
-	PROJECT_UNCATEGORIZED_ICON,
-	PROJECT_UNCATEGORIZED_ICON_CLASS,
-	UNCATEGORIZED_LABEL,
 } from '@/config/project'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS_SEGMENT_OPTIONS } from '@/config/task'
 import type { LinkDto } from '@/services/api/tasks'
@@ -45,18 +42,12 @@ export function useTaskInspectorOptions(params: {
 		const levelColors = PROJECT_LEVEL_TEXT_CLASSES
 
 		const options: Array<{ value: string | null; label: string; icon: string; iconClass: string; depth: number }> = []
+		const defaultProject = projects.find((project) => project.id.endsWith('_default'))
 
-		options.push({
-			value: null,
-			label: UNCATEGORIZED_LABEL,
-			icon: PROJECT_UNCATEGORIZED_ICON,
-			iconClass: PROJECT_UNCATEGORIZED_ICON_CLASS,
-			depth: 0,
-		})
-
-		function addProjects(parentId: string | null, depth: number) {
+		function addProjects(parentId: string | null, depth: number, skipProjectId?: string) {
 			const children = projects.filter((p) => p.parentId === parentId)
 			for (const proj of children) {
+				if (skipProjectId && proj.id === skipProjectId) continue
 				options.push({
 					value: proj.id,
 					label: proj.title,
@@ -67,7 +58,19 @@ export function useTaskInspectorOptions(params: {
 				addProjects(proj.id, depth + 1)
 			}
 		}
-		addProjects(null, 0)
+
+		if (defaultProject) {
+			options.push({
+				value: defaultProject.id,
+				label: defaultProject.title,
+				icon: PROJECT_ICON,
+				iconClass: levelColors[0],
+				depth: 0,
+			})
+			addProjects(defaultProject.id, 1)
+		}
+
+		addProjects(null, 0, defaultProject?.id)
 
 		return options
 	})
