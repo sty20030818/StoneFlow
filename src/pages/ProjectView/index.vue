@@ -251,9 +251,13 @@
 		})
 	}
 
-	watchThrottled([todo, doneAll], () => {
-		pruneSelection()
-	}, { throttle: 120, trailing: true })
+	watchThrottled(
+		[todo, doneAll],
+		() => {
+			pruneSelection()
+		},
+		{ throttle: 120, trailing: true },
+	)
 
 	watch(confirmDeleteOpen, (open) => {
 		if (!open) {
@@ -261,12 +265,16 @@
 		}
 	})
 
-	watchThrottled([isEditMode, selectedCount], () => {
-		workspaceEditStore.setState({
-			isEditMode: isEditMode.value,
-			selectedCount: selectedCount.value,
-		})
-	}, { throttle: 120, trailing: true })
+	watchThrottled(
+		[isEditMode, selectedCount],
+		() => {
+			workspaceEditStore.setState({
+				isEditMode: isEditMode.value,
+				selectedCount: selectedCount.value,
+			})
+		},
+		{ throttle: 120, trailing: true },
+	)
 
 	const viewMode = ref<'list' | 'board'>('list')
 

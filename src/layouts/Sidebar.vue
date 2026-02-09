@@ -358,17 +358,22 @@
 		}
 	}
 
-	watchDebounced(spaceValue, () => {
-		void loadProjects()
-	}, { debounce: 80, maxWait: 240 })
+	watchDebounced(
+		spaceValue,
+		() => {
+			void loadProjects()
+		},
+		{ debounce: 80, maxWait: 240 },
+	)
 
 	// 路由驱动祖先展开：目标变化即应用；树延迟加载后会基于同一目标补偿应用。
 	watchDebounced(
-		() => [
-			routeProjectTarget.value?.spaceId ?? null,
-			routeProjectTarget.value?.projectId ?? null,
-			currentProjects.value.length,
-		] as const,
+		() =>
+			[
+				routeProjectTarget.value?.spaceId ?? null,
+				routeProjectTarget.value?.projectId ?? null,
+				currentProjects.value.length,
+			] as const,
 		([spaceId, projectId]) => {
 			if (!spaceId || !projectId) return
 			if (!projectTreeStore.hasMissingAncestorsInExpanded(spaceId, projectId, currentProjects.value)) return

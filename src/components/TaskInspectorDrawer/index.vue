@@ -76,8 +76,7 @@
 						v-model:draft-value="customFieldDraftValue"
 						v-model:draft-visible="customFieldDraftVisible"
 						:on-confirm-custom-field="confirmCustomField"
-						:on-remove-custom-field="removeCustomField"
-					/>
+						:on-remove-custom-field="removeCustomField" />
 
 					<TagsSection
 						v-model:tag-input="tagInput"

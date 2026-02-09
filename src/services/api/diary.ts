@@ -29,7 +29,8 @@ export async function listDiaryEntries(): Promise<DiaryEntryDto[]> {
 		title: entry.title ?? '',
 		content: entry.content ?? '',
 		linkedTaskIds: entry.linkedTaskIds ?? (entry as { linked_task_ids?: string[] }).linked_task_ids ?? [],
-		linkedProjectId: entry.linkedProjectId ?? (entry as { linked_project_id?: string | null }).linked_project_id ?? null,
+		linkedProjectId:
+			entry.linkedProjectId ?? (entry as { linked_project_id?: string | null }).linked_project_id ?? null,
 		createdAt: entry.createdAt ?? (entry as { created_at?: number }).created_at ?? 0,
 		updatedAt: entry.updatedAt ?? (entry as { updated_at?: number }).updated_at ?? 0,
 	}))

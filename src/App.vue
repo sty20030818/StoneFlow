@@ -166,7 +166,11 @@
 			path: `/space/${targetSpaceId}`,
 			query: { project: project.id },
 		})
-		await projectTreeStore.ensureProjectVisible(targetSpaceId, project.id, projectsStore.getProjectsOfSpace(targetSpaceId))
+		await projectTreeStore.ensureProjectVisible(
+			targetSpaceId,
+			project.id,
+			projectsStore.getProjectsOfSpace(targetSpaceId),
+		)
 	}
 
 	// 提供全局的创建项目弹窗控制函数

@@ -1,10 +1,7 @@
 import { ref } from 'vue'
 
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
-import type {
-	TaskCustomFieldFormItem,
-	TaskLinkFormItem,
-} from './taskFieldNormalization'
+import type { TaskCustomFieldFormItem, TaskLinkFormItem } from './taskFieldNormalization'
 
 export function useTaskInspectorState() {
 	const titleLocal = ref('')

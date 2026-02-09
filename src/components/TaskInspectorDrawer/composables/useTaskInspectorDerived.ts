@@ -99,9 +99,7 @@ export function useTaskInspectorDerived(params: {
 		if (!task) return UNKNOWN_PROJECT_LABEL
 		const projects = projectsStore.getProjectsOfSpace(task.spaceId)
 		const defaultProject = getDefaultProject(projects)
-		const project = task.projectId
-			? projects.find((p) => p.id === task.projectId)
-			: defaultProject
+		const project = task.projectId ? projects.find((p) => p.id === task.projectId) : defaultProject
 		if (!project) return UNKNOWN_PROJECT_LABEL
 		return project.path || project.title
 	})

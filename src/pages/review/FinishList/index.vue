@@ -197,10 +197,7 @@
 		width: 'sm:max-w-md',
 	})
 
-	const {
-		state: tasks,
-		isLoading: loading,
-	} = useAsyncState(() => listTasks({ status: 'done' }), [] as TaskDto[], {
+	const { state: tasks, isLoading: loading } = useAsyncState(() => listTasks({ status: 'done' }), [] as TaskDto[], {
 		immediate: true,
 		resetOnExecute: false,
 		onError: (e) => {
@@ -414,5 +411,4 @@
 		})
 		reflectionOpen.value = false
 	}
-
 </script>

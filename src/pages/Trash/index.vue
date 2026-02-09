@@ -322,5 +322,4 @@
 			maxWait: 200,
 		},
 	)
-
 </script>

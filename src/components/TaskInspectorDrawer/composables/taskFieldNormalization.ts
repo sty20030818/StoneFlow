@@ -139,10 +139,12 @@ export function toCustomFieldItems(values: TaskCustomFieldFormItem[]): CustomFie
 
 export function getNextCustomFieldRank(values: TaskCustomFieldFormItem[]): number {
 	if (values.length === 0) return 0
-	return values.reduce((maxRank, item, index) => {
-		const rank = toNonNegativeInt(item.rank, index)
-		return Math.max(maxRank, rank)
-	}, 0) + 1
+	return (
+		values.reduce((maxRank, item, index) => {
+			const rank = toNonNegativeInt(item.rank, index)
+			return Math.max(maxRank, rank)
+		}, 0) + 1
+	)
 }
 
 export function toCustomFieldsPatch(values: TaskCustomFieldFormItem[]): CustomFields | null {
@@ -151,7 +153,10 @@ export function toCustomFieldsPatch(values: TaskCustomFieldFormItem[]): CustomFi
 	return { fields }
 }
 
-export function areCustomFieldsEqual(left: CustomFields | null | undefined, right: CustomFields | null | undefined): boolean {
+export function areCustomFieldsEqual(
+	left: CustomFields | null | undefined,
+	right: CustomFields | null | undefined,
+): boolean {
 	const leftFields = toCustomFieldItems(toCustomFieldsFormItems(left))
 	const rightFields = toCustomFieldItems(toCustomFieldsFormItems(right))
 	if (leftFields.length !== rightFields.length) return false

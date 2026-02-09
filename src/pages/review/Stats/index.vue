@@ -301,5 +301,4 @@
 	function goToLogs(_spaceId: string) {
 		router.push({ path: '/logs' })
 	}
-
 </script>

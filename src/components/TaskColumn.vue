@@ -28,9 +28,7 @@
 
 		<!-- 任务列表 -->
 		<template v-if="loading">
-			<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">
-				加载中...
-			</div>
+			<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">加载中...</div>
 		</template>
 		<template v-else>
 			<div class="space-y-3">

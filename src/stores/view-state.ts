@@ -48,9 +48,9 @@ export const useViewStateStore = defineStore('view-state', () => {
 	async function setLastView(spaceId: string, view: LastViewState) {
 		const prev = lastViews.value[spaceId]
 		if (
-			prev?.route === view.route
-			&& prev?.spaceId === view.spaceId
-			&& (prev?.projectId ?? null) === (view.projectId ?? null)
+			prev?.route === view.route &&
+			prev?.spaceId === view.spaceId &&
+			(prev?.projectId ?? null) === (view.projectId ?? null)
 		) {
 			return
 		}

@@ -1,12 +1,14 @@
 import { z } from 'zod'
 
-const requiredTrimmed = (label: string) =>
-	z.string().trim().min(1, `${label}不能为空`)
+const requiredTrimmed = (label: string) => z.string().trim().min(1, `${label}不能为空`)
 
-export const postgresUrlSchema = z.string().trim().refine(
-	(value) => value.startsWith('postgres://') || value.startsWith('postgresql://'),
-	'数据库地址必须以 postgres:// 或 postgresql:// 开头',
-)
+export const postgresUrlSchema = z
+	.string()
+	.trim()
+	.refine(
+		(value) => value.startsWith('postgres://') || value.startsWith('postgresql://'),
+		'数据库地址必须以 postgres:// 或 postgresql:// 开头',
+	)
 
 export const remoteProfileSchema = z.object({
 	name: requiredTrimmed('名称'),

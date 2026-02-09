@@ -174,11 +174,13 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				const title = item.title.trim()
 				if (!title) return []
 				const rawValue = item.value.trim()
-				return [{
-					rank: normalizedRank,
-					title,
-					value: rawValue ? rawValue : null,
-				}]
+				return [
+					{
+						rank: normalizedRank,
+						title,
+						value: rawValue ? rawValue : null,
+					},
+				]
 			})
 	}
 
