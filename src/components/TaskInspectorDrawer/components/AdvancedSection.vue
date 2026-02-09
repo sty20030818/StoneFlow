@@ -5,30 +5,62 @@
 		<div
 			v-if="customFieldsModel.length > 0"
 			class="grid grid-cols-2 gap-3">
-			<div
+			<UPopover
 				v-for="(field, index) in customFieldsModel"
 				:key="`${field.rank}-${index}`"
-				class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60">
-				<div class="flex items-center justify-between gap-2">
-					<div class="min-w-0 flex flex-1 items-center gap-2.5">
-						<UIcon
-							name="i-lucide-list-plus"
-							class="size-4 shrink-0 text-muted" />
-						<div class="min-w-0 flex-1">
-							<div class="text-[11px] text-muted mb-1 truncate">{{ field.title }}</div>
-							<div class="text-xs font-semibold text-default wrap-break-words">
-								{{ field.value || '未填写内容' }}
+				:mode="'click'"
+				:open="editingIndex === index"
+				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+				:ui="drawerPopoverUi"
+				@update:open="(open) => onEditOpenChange(index, open)">
+				<div class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60 cursor-pointer hover:bg-elevated/80">
+					<div class="flex items-center justify-between gap-2">
+						<div class="min-w-0 flex flex-1 items-center gap-2.5">
+							<UIcon
+								name="i-lucide-list-plus"
+								class="size-4 shrink-0 text-muted" />
+							<div class="min-w-0 flex-1">
+								<div class="text-[11px] text-muted mb-1 truncate">{{ field.title }}</div>
+								<div class="text-xs font-semibold text-default wrap-break-words">
+									{{ field.value || '未填写内容' }}
+								</div>
+							</div>
+						</div>
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="xs"
+							icon="i-lucide-trash-2"
+							@click.stop="onRemoveCustomField(index)" />
+					</div>
+				</div>
+
+				<template #content>
+					<div class="p-3 min-w-[320px] space-y-2">
+						<UInput
+							v-model="customFieldsModel[index].title"
+							placeholder="标题"
+							size="sm"
+							class="w-full"
+							:ui="{ rounded: 'rounded-lg' }"
+							@input="onCustomFieldInput(index)" />
+						<div class="space-y-1">
+							<UInput
+								v-model="customFieldsModel[index].value"
+								placeholder="内容（可选）"
+								size="sm"
+								class="w-full"
+								:ui="{ rounded: 'rounded-lg' }"
+								@input="onCustomFieldInput(index)" />
+							<div
+								v-if="editingErrorIndex === index"
+								class="text-[11px] text-red-500">
+								标题不能为空
 							</div>
 						</div>
 					</div>
-					<UButton
-						color="neutral"
-						variant="ghost"
-						size="xs"
-						icon="i-lucide-trash-2"
-						@click="onRemoveCustomField(index)" />
-				</div>
-			</div>
+				</template>
+			</UPopover>
 		</div>
 
 		<div
@@ -87,6 +119,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
+	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import type { TaskCustomFieldFormItem } from '../composables/taskFieldNormalization'
 
 	const customFieldsModel = defineModel<TaskCustomFieldFormItem[]>('customFields', { required: true })
@@ -95,12 +128,17 @@
 	const customFieldDraftVisible = defineModel<boolean>('draftVisible', { required: true })
 
 	type Props = {
+		editingErrorIndex: number | null
 		onConfirmCustomField: () => boolean
 		onRemoveCustomField: (index: number) => void
+		onCustomFieldInput: (index: number) => void
+		onFlushCustomFieldEdits: () => void
 	}
 
 	const props = defineProps<Props>()
 	const showTitleError = ref(false)
+	const editingIndex = ref<number | null>(null)
+	const drawerPopoverUi = createDrawerPopoverLayerUi()
 
 	function onDraftTitleInput() {
 		if (showTitleError.value && customFieldDraftTitle.value.trim()) {
@@ -118,5 +156,21 @@
 		customFieldDraftValue.value = ''
 		customFieldDraftVisible.value = false
 		showTitleError.value = false
+	}
+
+	function onEditOpenChange(index: number, open: boolean) {
+		if (open) {
+			editingIndex.value = index
+			props.onCustomFieldInput(index)
+			return
+		}
+		if (editingIndex.value === index) {
+			editingIndex.value = null
+		}
+		props.onFlushCustomFieldEdits()
+	}
+
+	function onCustomFieldInput(index: number) {
+		props.onCustomFieldInput(index)
 	}
 </script>

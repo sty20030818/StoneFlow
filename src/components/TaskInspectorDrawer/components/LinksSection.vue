@@ -18,33 +18,77 @@
 		</div>
 
 		<div class="space-y-2">
-			<div
+			<UPopover
 				v-for="(link, index) in linksModel"
 				:key="link.id ?? `confirmed-${index}`"
-				class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30">
-				<div class="flex items-start justify-between gap-2">
-					<div class="min-w-0 flex items-center gap-2">
-						<div class="truncate text-sm font-medium text-default">
-							{{ link.title.trim() || '未命名链接' }}
+				:mode="'click'"
+				:open="editingIndex === index"
+				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+				:ui="drawerPopoverUi"
+				@update:open="(open) => onEditOpenChange(index, open)">
+				<div class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30 cursor-pointer transition-colors hover:bg-elevated/50">
+					<div class="flex items-start justify-between gap-2">
+						<div class="min-w-0 flex items-center gap-2">
+							<div class="truncate text-sm font-medium text-default">
+								{{ link.title.trim() || '未命名链接' }}
+							</div>
+							<UBadge
+								size="xs"
+								color="neutral"
+								variant="soft">
+								{{ getKindLabel(link.kind) }}
+							</UBadge>
 						</div>
-						<UBadge
-							size="xs"
+						<UButton
 							color="neutral"
-							variant="soft">
-							{{ getKindLabel(link.kind) }}
-						</UBadge>
+							variant="ghost"
+							size="xs"
+							icon="i-lucide-trash-2"
+							@click.stop="onRemoveLink(index)" />
 					</div>
-					<UButton
-						color="neutral"
-						variant="ghost"
-						size="xs"
-						icon="i-lucide-trash-2"
-						@click="onRemoveLink(index)" />
+					<div class="break-all text-xs text-muted">
+						{{ link.url }}
+					</div>
 				</div>
-				<div class="break-all text-xs text-muted">
-					{{ link.url }}
-				</div>
-			</div>
+
+				<template #content>
+					<div class="p-3 min-w-[360px] space-y-2">
+						<div class="grid grid-cols-[1fr_auto] gap-2">
+							<UInput
+								v-model="linksModel[index].title"
+								placeholder="标题（可选）"
+								size="sm"
+								class="w-full"
+								:ui="{ rounded: 'rounded-lg' }"
+								@input="onLinkInput(index)" />
+							<USelectMenu
+								v-model="linksModel[index].kind"
+								:items="linkKindOptions"
+								value-key="value"
+								label-key="label"
+								size="sm"
+								class="w-36"
+								:search-input="false"
+								:ui="compactSelectMenuUi"
+								@update:model-value="onLinkInput(index)" />
+						</div>
+						<div class="space-y-1">
+							<UInput
+								v-model="linksModel[index].url"
+								placeholder="URL"
+								size="sm"
+								class="w-full"
+								:ui="{ rounded: 'rounded-lg' }"
+								@input="onLinkInput(index)" />
+							<div
+								v-if="editingErrorIndex === index"
+								class="text-[11px] text-red-500">
+								URL 不能为空
+							</div>
+						</div>
+					</div>
+				</template>
+			</UPopover>
 		</div>
 
 		<div
@@ -104,6 +148,7 @@
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
 
+	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import type { LinkKindOption } from '../composables/useTaskInspectorOptions'
 	import type { TaskLinkFormItem } from '../composables/taskFieldNormalization'
 
@@ -115,14 +160,18 @@
 
 	type Props = {
 		linkKindOptions: LinkKindOption[]
+		editingErrorIndex: number | null
 		onAddLinkDraft: () => void
 		onConfirmLink: () => boolean
 		onRemoveLink: (index: number) => void
+		onLinkInput: (index: number) => void
+		onFlushLinkEdits: () => void
 	}
 
 	const props = defineProps<Props>()
-
 	const showDraftUrlError = ref(false)
+	const editingIndex = ref<number | null>(null)
+	const drawerPopoverUi = createDrawerPopoverLayerUi()
 
 	const kindLabelMap = computed(() => {
 		return new Map(props.linkKindOptions.map((item) => [item.value, item.label]))
@@ -154,6 +203,22 @@
 		draftKind.value = 'web'
 		draftVisible.value = false
 		showDraftUrlError.value = false
+	}
+
+	function onEditOpenChange(index: number, open: boolean) {
+		if (open) {
+			editingIndex.value = index
+			props.onLinkInput(index)
+			return
+		}
+		if (editingIndex.value === index) {
+			editingIndex.value = null
+		}
+		props.onFlushLinkEdits()
+	}
+
+	function onLinkInput(index: number) {
+		props.onLinkInput(index)
 	}
 
 	const compactSelectMenuUi = {

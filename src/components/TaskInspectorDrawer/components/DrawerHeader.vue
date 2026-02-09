@@ -39,6 +39,14 @@
 					:class="saveStateDotClass"></span>
 				<span>{{ saveStateLabel }}</span>
 			</div>
+			<UButton
+				v-if="canRetrySave"
+				color="neutral"
+				variant="ghost"
+				size="xs"
+				@click="onRetrySave">
+				重试
+			</UButton>
 			<div class="h-4 w-px bg-default/70"></div>
 
 			<UButton
@@ -63,6 +71,8 @@
 		saveStateLabel: string
 		saveStateClass: string
 		saveStateDotClass: string
+		canRetrySave: boolean
+		onRetrySave: () => void
 	}
 
 	defineProps<Props>()

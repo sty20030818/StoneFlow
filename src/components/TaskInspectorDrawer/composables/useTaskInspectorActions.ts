@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { useTimeoutFn } from '@vueuse/core'
+import { useDebounceFn, useTimeoutFn, watchDebounced } from '@vueuse/core'
 
 import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/services/api/tasks'
 import { updateTask } from '@/services/api/tasks'
@@ -20,6 +20,13 @@ import {
 	toLinkPatch,
 } from './taskFieldNormalization'
 
+const TEXT_AUTOSAVE_DEBOUNCE = 600
+const TEXT_AUTOSAVE_MAX_WAIT = 2000
+
+function hasPatchValue(patch: UpdateTaskPatch): boolean {
+	return Object.keys(patch).length > 0
+}
+
 export function useTaskInspectorActions(params: {
 	currentTask: Ref<TaskDto | null>
 	state: TaskInspectorState
@@ -28,6 +35,12 @@ export function useTaskInspectorActions(params: {
 	refreshSignals: ReturnType<typeof useRefreshSignalsStore>
 }) {
 	const { currentTask, state, store, projectsStore, refreshSignals } = params
+
+	let stagedPatch: UpdateTaskPatch = {}
+	let stagedStorePatch: Partial<TaskDto> = {}
+	let queueRunning = false
+	let retrySnapshot: { patch: UpdateTaskPatch; storePatch: Partial<TaskDto> } | null = null
+
 	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
 		() => {
 			state.saveState.value = 'idle'
@@ -41,6 +54,14 @@ export function useTaskInspectorActions(params: {
 		},
 		3000,
 		{ immediate: false },
+	)
+
+	const debouncedProcessQueuedUpdates = useDebounceFn(
+		() => {
+			void processQueuedUpdates()
+		},
+		TEXT_AUTOSAVE_DEBOUNCE,
+		{ maxWait: TEXT_AUTOSAVE_MAX_WAIT },
 	)
 
 	function clearSaveStateTimer() {
@@ -67,25 +88,202 @@ export function useTaskInspectorActions(params: {
 		startErrorTimer()
 	}
 
-	async function commitUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
-		if (!currentTask.value) return
-		beginSave()
-		try {
-			await updateTask(currentTask.value.id, patch)
-			if (Object.keys(storePatch).length > 0) store.patchTask(storePatch)
-			refreshSignals.bumpTask()
-			endSave(true)
-		} catch (error) {
-			console.error('更新任务失败:', error)
-			endSave(false)
+	function stageUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
+		if (!hasPatchValue(patch)) return
+		stagedPatch = {
+			...stagedPatch,
+			...patch,
+		}
+		stagedStorePatch = {
+			...stagedStorePatch,
+			...storePatch,
 		}
 	}
 
-	async function onTitleBlur() {
+	function queueImmediateUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
+		stageUpdate(patch, storePatch)
+		void processQueuedUpdates()
+	}
+
+	function queueDebouncedUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
+		stageUpdate(patch, storePatch)
+		debouncedProcessQueuedUpdates()
+	}
+
+	async function commitUpdateNow(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): Promise<boolean> {
+		if (!currentTask.value || !hasPatchValue(patch)) return true
+		beginSave()
+
+		let ok = false
+		let lastError: unknown = null
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			try {
+				await updateTask(currentTask.value.id, patch)
+				ok = true
+				break
+			} catch (error) {
+				lastError = error
+			}
+		}
+
+		if (ok) {
+			if (Object.keys(storePatch).length > 0) {
+				store.patchTask(storePatch)
+			}
+			refreshSignals.bumpTask()
+			endSave(true)
+			return true
+		}
+
+		console.error('更新任务失败:', lastError)
+		endSave(false)
+		return false
+	}
+
+	async function processQueuedUpdates() {
+		if (queueRunning) return
+		queueRunning = true
+
+		try {
+			while (hasPatchValue(stagedPatch)) {
+				const nextPatch = stagedPatch
+				const nextStorePatch = stagedStorePatch
+				stagedPatch = {}
+				stagedStorePatch = {}
+
+				const ok = await commitUpdateNow(nextPatch, nextStorePatch)
+				if (!ok) {
+					stageUpdate(nextPatch, nextStorePatch)
+					retrySnapshot = {
+						patch: { ...stagedPatch },
+						storePatch: { ...stagedStorePatch },
+					}
+					state.retrySaveAvailable.value = true
+					break
+				}
+
+				retrySnapshot = null
+				state.retrySaveAvailable.value = false
+			}
+		} finally {
+			queueRunning = false
+		}
+	}
+
+	function findInvalidLinkIndex(): number {
+		return state.linksLocal.value.findIndex((item) => !item.url.trim())
+	}
+
+	function findInvalidCustomFieldIndex(): number {
+		return state.customFieldsLocal.value.findIndex((item) => !item.title.trim())
+	}
+
+	function stageTitleUpdate(mode: 'debounced' | 'immediate') {
 		if (!currentTask.value) return
 		const nextTitle = state.titleLocal.value.trim()
 		if (!nextTitle || nextTitle === currentTask.value.title) return
-		await commitUpdate({ title: nextTitle }, { title: nextTitle })
+		const patch = { title: nextTitle }
+		if (mode === 'immediate') {
+			queueImmediateUpdate(patch, patch)
+			return
+		}
+		queueDebouncedUpdate(patch, patch)
+	}
+
+	function stageNoteUpdate(mode: 'debounced' | 'immediate') {
+		if (!currentTask.value) return
+		const nextNote = normalizeOptionalText(state.noteLocal.value)
+		if (nextNote === (currentTask.value.note || null)) return
+		const patch = { note: nextNote }
+		if (mode === 'immediate') {
+			queueImmediateUpdate(patch, patch)
+			return
+		}
+		queueDebouncedUpdate(patch, patch)
+	}
+
+	function stageLinksUpdate(mode: 'debounced' | 'immediate'): boolean {
+		if (!currentTask.value) return false
+		const invalidIndex = findInvalidLinkIndex()
+		if (invalidIndex >= 0) {
+			state.linkValidationErrorIndex.value = invalidIndex
+			return false
+		}
+
+		state.linkValidationErrorIndex.value = null
+		const nextLinks = toLinkPatch(state.linksLocal.value)
+		const currentLinks = toLinkPatch(currentTask.value.links ?? [])
+		if (areLinkPatchesEqual(nextLinks, currentLinks)) return false
+		const storeLinks = buildStoreLinks(currentTask.value.links ?? [], nextLinks)
+		if (mode === 'immediate') {
+			queueImmediateUpdate({ links: nextLinks }, { links: storeLinks })
+			return true
+		}
+		queueDebouncedUpdate({ links: nextLinks }, { links: storeLinks })
+		return true
+	}
+
+	function stageCustomFieldsUpdate(mode: 'debounced' | 'immediate'): boolean {
+		if (!currentTask.value) return false
+		const invalidIndex = findInvalidCustomFieldIndex()
+		if (invalidIndex >= 0) {
+			state.customFieldValidationErrorIndex.value = invalidIndex
+			return false
+		}
+
+		state.customFieldValidationErrorIndex.value = null
+		const nextCustomFields = toCustomFieldsPatch(state.customFieldsLocal.value)
+		if (areCustomFieldsEqual(nextCustomFields, currentTask.value.customFields)) return false
+		if (mode === 'immediate') {
+			queueImmediateUpdate({ customFields: nextCustomFields }, { customFields: nextCustomFields })
+			return true
+		}
+		queueDebouncedUpdate({ customFields: nextCustomFields }, { customFields: nextCustomFields })
+		return true
+	}
+
+	watchDebounced(
+		() => state.titleLocal.value,
+		() => {
+			stageTitleUpdate('debounced')
+		},
+		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT },
+	)
+
+	watchDebounced(
+		() => state.noteLocal.value,
+		() => {
+			stageNoteUpdate('debounced')
+		},
+		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT },
+	)
+
+	watchDebounced(
+		() => state.linksLocal.value,
+		() => {
+			stageLinksUpdate('debounced')
+		},
+		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT, deep: true },
+	)
+
+	watchDebounced(
+		() => state.customFieldsLocal.value,
+		() => {
+			stageCustomFieldsUpdate('debounced')
+		},
+		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT, deep: true },
+	)
+
+	async function flushPendingUpdates() {
+		stageTitleUpdate('immediate')
+		stageNoteUpdate('immediate')
+		stageLinksUpdate('immediate')
+		stageCustomFieldsUpdate('immediate')
+		await processQueuedUpdates()
+	}
+
+	async function onTitleBlur() {
+		await flushPendingUpdates()
 	}
 
 	async function onStatusChange(value: unknown) {
@@ -95,7 +293,7 @@ export function useTaskInspectorActions(params: {
 
 		if (displayStatus === 'done') {
 			const nextReason = state.doneReasonLocal.value ?? 'completed'
-			await commitUpdate(
+			queueImmediateUpdate(
 				{ status: 'done', doneReason: nextReason },
 				{
 					status: 'done',
@@ -103,30 +301,37 @@ export function useTaskInspectorActions(params: {
 					completedAt: currentTask.value.completedAt ?? Date.now(),
 				},
 			)
+			await processQueuedUpdates()
 			state.statusLocal.value = 'done'
 			state.doneReasonLocal.value = nextReason
 			return
 		}
 
-		await commitUpdate({ status: 'todo', doneReason: null }, { status: 'todo', doneReason: null, completedAt: null })
+		queueImmediateUpdate(
+			{ status: 'todo', doneReason: null },
+			{ status: 'todo', doneReason: null, completedAt: null },
+		)
+		await processQueuedUpdates()
 		state.statusLocal.value = 'todo'
 	}
 
 	function onStatusSegmentClick(value: TaskStatusValue) {
 		if (state.statusLocal.value === value) return
-		onStatusChange(value)
+		void onStatusChange(value)
 	}
 
 	async function onDoneReasonChange(value: TaskDoneReasonValue) {
 		if (!currentTask.value || state.statusLocal.value !== 'done') return
 		if (state.doneReasonLocal.value === value) return
-		await commitUpdate({ doneReason: value }, { doneReason: value })
+		queueImmediateUpdate({ doneReason: value }, { doneReason: value })
+		await processQueuedUpdates()
 		state.doneReasonLocal.value = value
 	}
 
 	async function onPriorityChange(value: TaskPriorityValue) {
 		if (!currentTask.value || value === state.priorityLocal.value) return
-		await commitUpdate({ priority: value }, { priority: value })
+		queueImmediateUpdate({ priority: value }, { priority: value })
+		await processQueuedUpdates()
 		state.priorityLocal.value = value
 	}
 
@@ -134,7 +339,8 @@ export function useTaskInspectorActions(params: {
 		if (!currentTask.value) return
 		const nextDeadlineAt = toDeadlineTimestamp(state.deadlineLocal.value)
 		if ((currentTask.value.deadlineAt ?? null) === nextDeadlineAt) return
-		await commitUpdate({ deadlineAt: nextDeadlineAt }, { deadlineAt: nextDeadlineAt })
+		queueImmediateUpdate({ deadlineAt: nextDeadlineAt }, { deadlineAt: nextDeadlineAt })
+		await processQueuedUpdates()
 	}
 
 	async function onDeadlineClear() {
@@ -147,13 +353,13 @@ export function useTaskInspectorActions(params: {
 		if (tag && !state.tagsLocal.value.includes(tag)) {
 			state.tagsLocal.value.push(tag)
 			state.tagInput.value = ''
-			onTagsChange()
+			void onTagsChange()
 		}
 	}
 
 	function removeTag(tag: string) {
 		state.tagsLocal.value = state.tagsLocal.value.filter((t) => t !== tag)
-		onTagsChange()
+		void onTagsChange()
 	}
 
 	function onTagInputBlur() {
@@ -164,7 +370,8 @@ export function useTaskInspectorActions(params: {
 
 	async function onTagsChange() {
 		if (!currentTask.value) return
-		await commitUpdate({ tags: state.tagsLocal.value }, { tags: state.tagsLocal.value })
+		queueImmediateUpdate({ tags: state.tagsLocal.value }, { tags: state.tagsLocal.value })
+		await processQueuedUpdates()
 	}
 
 	async function onSpaceChange(value: string) {
@@ -173,7 +380,8 @@ export function useTaskInspectorActions(params: {
 		state.projectIdLocal.value = null
 		await projectsStore.load(value)
 
-		await commitUpdate({ spaceId: value, projectId: null }, { spaceId: value, projectId: null })
+		queueImmediateUpdate({ spaceId: value, projectId: null }, { spaceId: value, projectId: null })
+		await processQueuedUpdates()
 	}
 
 	async function onProjectChange(value: string | null) {
@@ -182,14 +390,12 @@ export function useTaskInspectorActions(params: {
 		if ((currentTask.value.projectId ?? null) === nextProjectId) return
 		state.projectIdLocal.value = nextProjectId
 
-		await commitUpdate({ projectId: nextProjectId }, { projectId: nextProjectId })
+		queueImmediateUpdate({ projectId: nextProjectId }, { projectId: nextProjectId })
+		await processQueuedUpdates()
 	}
 
 	async function onNoteBlur() {
-		if (!currentTask.value) return
-		const nextNote = normalizeOptionalText(state.noteLocal.value)
-		if (nextNote === (currentTask.value.note || null)) return
-		await commitUpdate({ note: nextNote }, { note: nextNote })
+		await flushPendingUpdates()
 	}
 
 	function addLink(): boolean {
@@ -205,7 +411,8 @@ export function useTaskInspectorActions(params: {
 		state.linkDraftUrl.value = ''
 		state.linkDraftKind.value = 'web'
 		state.linkDraftVisible.value = false
-		void commitLinks()
+		stageLinksUpdate('immediate')
+		void processQueuedUpdates()
 		return true
 	}
 
@@ -216,7 +423,14 @@ export function useTaskInspectorActions(params: {
 	function removeLink(index: number) {
 		if (index < 0 || index >= state.linksLocal.value.length) return
 		state.linksLocal.value.splice(index, 1)
-		void commitLinks()
+		stageLinksUpdate('immediate')
+		void processQueuedUpdates()
+	}
+
+	function clearLinkValidationError(index?: number) {
+		if (index === undefined || state.linkValidationErrorIndex.value === index) {
+			state.linkValidationErrorIndex.value = null
+		}
 	}
 
 	function addCustomField() {
@@ -240,30 +454,28 @@ export function useTaskInspectorActions(params: {
 		state.customFieldDraftTitle.value = ''
 		state.customFieldDraftValue.value = ''
 		state.customFieldDraftVisible.value = false
-		void commitCustomFields()
+		stageCustomFieldsUpdate('immediate')
+		void processQueuedUpdates()
 		return true
 	}
 
 	function removeCustomField(index: number) {
 		if (index < 0 || index >= state.customFieldsLocal.value.length) return
 		state.customFieldsLocal.value.splice(index, 1)
-		void commitCustomFields()
+		stageCustomFieldsUpdate('immediate')
+		void processQueuedUpdates()
 	}
 
-	async function commitLinks() {
-		if (!currentTask.value) return
-		const nextLinks = toLinkPatch(state.linksLocal.value)
-		const currentLinks = toLinkPatch(currentTask.value.links ?? [])
-		if (areLinkPatchesEqual(nextLinks, currentLinks)) return
-		const storeLinks = buildStoreLinks(currentTask.value.links ?? [], nextLinks)
-		await commitUpdate({ links: nextLinks }, { links: storeLinks })
+	function clearCustomFieldValidationError(index?: number) {
+		if (index === undefined || state.customFieldValidationErrorIndex.value === index) {
+			state.customFieldValidationErrorIndex.value = null
+		}
 	}
 
-	async function commitCustomFields() {
-		if (!currentTask.value) return
-		const nextCustomFields = toCustomFieldsPatch(state.customFieldsLocal.value)
-		if (areCustomFieldsEqual(nextCustomFields, currentTask.value.customFields)) return
-		await commitUpdate({ customFields: nextCustomFields }, { customFields: nextCustomFields })
+	async function onRetrySave() {
+		if (!retrySnapshot) return
+		queueImmediateUpdate(retrySnapshot.patch, retrySnapshot.storePatch)
+		await processQueuedUpdates()
 	}
 
 	function toggleTimeline() {
@@ -289,7 +501,6 @@ export function useTaskInspectorActions(params: {
 	}
 
 	return {
-		commitUpdate,
 		onTitleBlur,
 		onStatusSegmentClick,
 		onDoneReasonChange,
@@ -302,12 +513,16 @@ export function useTaskInspectorActions(params: {
 		addLinkDraft,
 		addLink,
 		removeLink,
+		clearLinkValidationError,
 		addCustomField,
 		confirmCustomField,
 		removeCustomField,
+		clearCustomFieldValidationError,
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,
+		onRetrySave,
+		flushPendingUpdates,
 		toggleTimeline,
 	}
 }

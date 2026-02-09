@@ -32,15 +32,18 @@ export function useTaskInspectorSync(params: {
 		state.tagInput.value = ''
 		state.timelineCollapsed.value = true
 		state.deadlineLocal.value = toDeadlineInputValue(t.deadlineAt)
+		state.retrySaveAvailable.value = false
 
 		state.spaceIdLocal.value = t.spaceId
 		state.projectIdLocal.value = normalizeProjectId(t.projectId)
 		state.linksLocal.value = toLinksFormItems(t.links)
+		state.linkValidationErrorIndex.value = null
 		state.linkDraftTitle.value = ''
 		state.linkDraftUrl.value = ''
 		state.linkDraftKind.value = 'web'
 		state.linkDraftVisible.value = false
 		state.customFieldsLocal.value = toCustomFieldsFormItems(t.customFields)
+		state.customFieldValidationErrorIndex.value = null
 		state.customFieldDraftTitle.value = ''
 		state.customFieldDraftValue.value = ''
 		state.customFieldDraftVisible.value = false

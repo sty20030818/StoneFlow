@@ -15,14 +15,17 @@ export function useTaskInspectorState() {
 	const timelineCollapsed = ref(true)
 	const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 	const pendingSaves = ref(0)
+	const retrySaveAvailable = ref(false)
 	const spaceIdLocal = ref('')
 	const projectIdLocal = ref<string | null>(null)
 	const linksLocal = ref<TaskLinkFormItem[]>([])
+	const linkValidationErrorIndex = ref<number | null>(null)
 	const linkDraftTitle = ref('')
 	const linkDraftUrl = ref('')
 	const linkDraftKind = ref<TaskLinkFormItem['kind']>('web')
 	const linkDraftVisible = ref(false)
 	const customFieldsLocal = ref<TaskCustomFieldFormItem[]>([])
+	const customFieldValidationErrorIndex = ref<number | null>(null)
 	const customFieldDraftTitle = ref('')
 	const customFieldDraftValue = ref('')
 	const customFieldDraftVisible = ref(false)
@@ -39,14 +42,17 @@ export function useTaskInspectorState() {
 		timelineCollapsed,
 		saveState,
 		pendingSaves,
+		retrySaveAvailable,
 		spaceIdLocal,
 		projectIdLocal,
 		linksLocal,
+		linkValidationErrorIndex,
 		linkDraftTitle,
 		linkDraftUrl,
 		linkDraftKind,
 		linkDraftVisible,
 		customFieldsLocal,
+		customFieldValidationErrorIndex,
 		customFieldDraftTitle,
 		customFieldDraftValue,
 		customFieldDraftVisible,

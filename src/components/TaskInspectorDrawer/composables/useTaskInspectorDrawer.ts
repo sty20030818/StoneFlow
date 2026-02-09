@@ -30,19 +30,20 @@ export function useTaskInspectorDrawer() {
 		get: () => store.isOpen as boolean,
 		set: (value) => {
 			if (!value) {
-				store.close()
+				void close()
 			}
 		},
 	})
 
-	function close() {
+	async function close() {
+		await actions.flushPendingUpdates()
 		store.close()
 	}
 
 	function onKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape' && isOpen.value) {
 			e.preventDefault()
-			close()
+			void close()
 		}
 	}
 

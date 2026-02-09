@@ -18,6 +18,8 @@
 					:save-state-label="saveStateLabel"
 					:save-state-class="saveStateClass"
 					:save-state-dot-class="saveStateDotClass"
+					:can-retry-save="retrySaveAvailable"
+					:on-retry-save="onRetrySave"
 					@close="close" />
 
 				<div class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
@@ -75,8 +77,11 @@
 						v-model:draft-title="customFieldDraftTitle"
 						v-model:draft-value="customFieldDraftValue"
 						v-model:draft-visible="customFieldDraftVisible"
+						:editing-error-index="customFieldValidationErrorIndex"
 						:on-confirm-custom-field="confirmCustomField"
-						:on-remove-custom-field="removeCustomField" />
+						:on-remove-custom-field="removeCustomField"
+						:on-custom-field-input="clearCustomFieldValidationError"
+						:on-flush-custom-field-edits="flushPendingUpdates" />
 
 					<TagsSection
 						v-model:tag-input="tagInput"
@@ -96,9 +101,12 @@
 						v-model:draft-url="linkDraftUrl"
 						v-model:draft-visible="linkDraftVisible"
 						:link-kind-options="linkKindOptions"
+						:editing-error-index="linkValidationErrorIndex"
 						:on-add-link-draft="addLinkDraft"
 						:on-confirm-link="addLink"
-						:on-remove-link="removeLink" />
+						:on-remove-link="removeLink"
+						:on-link-input="clearLinkValidationError"
+						:on-flush-link-edits="flushPendingUpdates" />
 
 					<TimelineSection
 						:timeline-items="timelineItems"
@@ -139,14 +147,17 @@
 		tagInput,
 		timelineCollapsed,
 		saveState,
+		retrySaveAvailable,
 		spaceIdLocal,
 		projectIdLocal,
 		linksLocal,
+		linkValidationErrorIndex,
 		linkDraftTitle,
 		linkDraftKind,
 		linkDraftUrl,
 		linkDraftVisible,
 		customFieldsLocal,
+		customFieldValidationErrorIndex,
 		customFieldDraftTitle,
 		customFieldDraftValue,
 		customFieldDraftVisible,
@@ -185,12 +196,16 @@
 		addLinkDraft,
 		addLink,
 		removeLink,
+		clearLinkValidationError,
 		addCustomField,
 		confirmCustomField,
 		removeCustomField,
+		clearCustomFieldValidationError,
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,
+		onRetrySave,
+		flushPendingUpdates,
 		toggleTimeline,
 	} = useTaskInspectorDrawer()
 
