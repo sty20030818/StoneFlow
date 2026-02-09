@@ -44,26 +44,26 @@
 				<!--第一行:标题 | 优先级 | 截止日期 -->
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-start gap-2 min-w-0 flex-1">
+						<!-- 优先级徽章（标题左侧，提升扫读效率） -->
+						<UBadge
+							v-if="priorityConfig"
+							variant="soft"
+							size="xs"
+							class="shrink-0 font-bold px-1.5 py-0.5 rounded h-5"
+							:class="priorityConfig.badgeClass">
+							{{ task.priority }}
+						</UBadge>
+
 						<SpaceLabel
 							v-if="showSpaceLabel"
 							:space-id="task.spaceId"
 							size="xs" />
 
 						<h3
-							class="font-bold text-slate-800 text-base line-clamp-2 leading-tight"
+							class="min-w-0 flex-1 font-extrabold text-slate-800 text-base line-clamp-2 leading-tight"
 							:class="{ 'text-slate-400': isEditMode && !selected }">
 							{{ task.title }}
 						</h3>
-
-						<!-- 优先级徽章 -->
-						<UBadge
-							v-if="priorityConfig"
-							variant="soft"
-							size="xs"
-							class="font-mono px-1.5 py-0.5 rounded h-5"
-							:class="priorityConfig.badgeClass">
-							{{ task.priority }}
-						</UBadge>
 					</div>
 
 					<!-- 右侧:时间 + 操作 -->

@@ -128,7 +128,7 @@ export const TASK_PRIORITY_STYLES: Record<
 		cardBorderClass: 'hover:border-red-500/60',
 		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(239,68,68,0.15)]',
 		badgeColor: 'red',
-		badgeClass: 'bg-red-100 text-red-600',
+		badgeClass: 'bg-red-200 text-red-600',
 	},
 	P1: {
 		cardClass: 'bg-amber-50/50 border-amber-200 hover:bg-amber-50/80',
@@ -137,7 +137,7 @@ export const TASK_PRIORITY_STYLES: Record<
 		cardBorderClass: 'hover:border-amber-500/60',
 		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]',
 		badgeColor: 'orange',
-		badgeClass: 'bg-amber-100 text-amber-600',
+		badgeClass: 'bg-amber-200 text-amber-600',
 	},
 	P2: {
 		cardClass: 'bg-blue-50/50 border-blue-200 hover:bg-blue-50/80',
@@ -146,7 +146,7 @@ export const TASK_PRIORITY_STYLES: Record<
 		cardBorderClass: 'hover:border-blue-500/60',
 		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]',
 		badgeColor: 'blue',
-		badgeClass: 'bg-blue-100 text-blue-600',
+		badgeClass: 'bg-blue-200 text-blue-600',
 	},
 	P3: {
 		cardClass: 'bg-elevated/50 border-default/60 hover:bg-elevated/80',
@@ -155,7 +155,7 @@ export const TASK_PRIORITY_STYLES: Record<
 		cardBorderClass: 'hover:border-slate-300',
 		cardShadowClass: '',
 		badgeColor: 'gray',
-		badgeClass: 'bg-slate-100 text-slate-500',
+		badgeClass: 'bg-slate-200 text-slate-500',
 	},
 	default: {
 		cardClass: 'bg-elevated/50 border-default/60 hover:bg-elevated/80',
@@ -164,7 +164,7 @@ export const TASK_PRIORITY_STYLES: Record<
 		cardBorderClass: 'hover:border-slate-300',
 		cardShadowClass: '',
 		badgeColor: 'gray',
-		badgeClass: 'bg-slate-100 text-slate-500',
+		badgeClass: 'bg-slate-200 text-slate-500',
 	},
 }
 
