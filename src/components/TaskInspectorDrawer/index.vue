@@ -40,7 +40,7 @@
 							variant="none"
 							:ui="{
 								root: 'w-full',
-								base: 'px-0 py-0 text-2xl font-semibold leading-tight bg-transparent border-none focus:ring-0 placeholder:text-muted/40',
+								base: 'px-0 py-0 text-2xl font-semibold leading-tight bg-transparent border-none rounded-none focus:ring-0 placeholder:text-muted/40',
 							}"
 							@blur="onTitleBlur" />
 					</section>

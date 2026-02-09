@@ -11,7 +11,7 @@
 				variant="none"
 				:ui="{
 					root: 'w-full',
-					base: 'p-0 text-sm leading-relaxed bg-transparent border-none focus:ring-0 placeholder:text-muted/40',
+					base: 'p-0 text-sm leading-relaxed bg-transparent border-none rounded-none focus:ring-0 placeholder:text-muted/40',
 				}"
 				@blur="onNoteBlur" />
 		</div>
