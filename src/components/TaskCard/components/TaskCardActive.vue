@@ -86,22 +86,14 @@
 					</div>
 				</div>
 
-				<!-- 第二行:备注 | 标签 | 链接 (永远显示) -->
+				<!-- 第二行:备注 | 元信息徽章 | 标签 -->
 				<div class="flex items-center justify-between gap-4 min-h-[20px]">
 					<p class="text-xs text-slate-400 truncate grow pr-4 font-medium">
 						{{ task.note || '暂无备注' }}
 					</p>
 
 					<div class="flex items-center gap-2 shrink-0">
-						<!-- 链接数量 -->
-						<div
-							v-if="(task.links?.length ?? 0) > 0"
-							class="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-							<UIcon
-								name="i-lucide-link-2"
-								class="size-3" />
-							<span class="font-medium">{{ task.links.length }}</span>
-						</div>
+						<TaskCardMetaBadges :task="task" />
 
 						<!-- 标签 -->
 						<div class="flex gap-1.5">
@@ -135,6 +127,7 @@
 	import { TASK_PRIORITY_STYLES } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
 	import { computed } from 'vue'
+	import TaskCardMetaBadges from './TaskCardMetaBadges.vue'
 
 	const props = defineProps<{
 		task: TaskDto
