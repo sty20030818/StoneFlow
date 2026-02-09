@@ -204,8 +204,13 @@ export function useTaskInspectorActions(params: {
 		state.linkDraftTitle.value = ''
 		state.linkDraftUrl.value = ''
 		state.linkDraftKind.value = 'web'
+		state.linkDraftVisible.value = false
 		void commitLinks()
 		return true
+	}
+
+	function addLinkDraft() {
+		state.linkDraftVisible.value = true
 	}
 
 	function removeLink(index: number) {
@@ -294,6 +299,7 @@ export function useTaskInspectorActions(params: {
 		addTag,
 		removeTag,
 		onTagInputBlur,
+		addLinkDraft,
 		addLink,
 		removeLink,
 		addCustomField,

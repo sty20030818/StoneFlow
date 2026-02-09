@@ -21,6 +21,7 @@ export function useTaskInspectorState() {
 	const linkDraftTitle = ref('')
 	const linkDraftUrl = ref('')
 	const linkDraftKind = ref<TaskLinkFormItem['kind']>('web')
+	const linkDraftVisible = ref(false)
 	const customFieldsLocal = ref<TaskCustomFieldFormItem[]>([])
 	const customFieldDraftTitle = ref('')
 	const customFieldDraftValue = ref('')
@@ -44,6 +45,7 @@ export function useTaskInspectorState() {
 		linkDraftTitle,
 		linkDraftUrl,
 		linkDraftKind,
+		linkDraftVisible,
 		customFieldsLocal,
 		customFieldDraftTitle,
 		customFieldDraftValue,

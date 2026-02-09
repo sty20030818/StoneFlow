@@ -94,7 +94,9 @@
 						v-model:draft-title="linkDraftTitle"
 						v-model:draft-kind="linkDraftKind"
 						v-model:draft-url="linkDraftUrl"
+						v-model:draft-visible="linkDraftVisible"
 						:link-kind-options="linkKindOptions"
+						:on-add-link-draft="addLinkDraft"
 						:on-confirm-link="addLink"
 						:on-remove-link="removeLink" />
 
@@ -143,6 +145,7 @@
 		linkDraftTitle,
 		linkDraftKind,
 		linkDraftUrl,
+		linkDraftVisible,
 		customFieldsLocal,
 		customFieldDraftTitle,
 		customFieldDraftValue,
@@ -179,6 +182,7 @@
 		addTag,
 		removeTag,
 		onTagInputBlur,
+		addLinkDraft,
 		addLink,
 		removeLink,
 		addCustomField,

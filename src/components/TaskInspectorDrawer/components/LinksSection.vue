@@ -2,10 +2,17 @@
 	<section class="space-y-2">
 		<div class="flex items-center justify-between">
 			<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">关联链接</label>
+			<button
+				type="button"
+				class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-default/60 bg-elevated/60 text-sm font-semibold text-muted transition-colors hover:bg-elevated"
+				aria-label="新增链接"
+				@click="onAddLinkDraft">
+				+
+			</button>
 		</div>
 
 		<div
-			v-if="linksModel.length === 0"
+			v-if="linksModel.length === 0 && !draftVisible"
 			class="rounded-xl border border-dashed border-default/70 px-3 py-2 text-xs text-muted">
 			暂无链接
 		</div>
@@ -40,7 +47,9 @@
 			</div>
 		</div>
 
-		<div class="rounded-xl border border-default p-3 space-y-2 bg-elevated/20">
+		<div
+			v-if="draftVisible"
+			class="rounded-xl border border-default p-3 space-y-2 bg-elevated/20">
 			<div class="grid grid-cols-[1fr_auto_auto_auto] gap-2">
 				<UInput
 					v-model="draftTitle"
@@ -102,9 +111,11 @@
 	const draftTitle = defineModel<string>('draftTitle', { required: true })
 	const draftKind = defineModel<TaskLinkFormItem['kind']>('draftKind', { required: true })
 	const draftUrl = defineModel<string>('draftUrl', { required: true })
+	const draftVisible = defineModel<boolean>('draftVisible', { required: true })
 
 	type Props = {
 		linkKindOptions: LinkKindOption[]
+		onAddLinkDraft: () => void
 		onConfirmLink: () => boolean
 		onRemoveLink: (index: number) => void
 	}
@@ -127,6 +138,11 @@
 		}
 	}
 
+	function onAddLinkDraft() {
+		props.onAddLinkDraft()
+		showDraftUrlError.value = false
+	}
+
 	function onConfirmClick() {
 		const ok = props.onConfirmLink()
 		showDraftUrlError.value = !ok
@@ -136,6 +152,7 @@
 		draftTitle.value = ''
 		draftUrl.value = ''
 		draftKind.value = 'web'
+		draftVisible.value = false
 		showDraftUrlError.value = false
 	}
 

@@ -39,6 +39,7 @@ export function useTaskInspectorSync(params: {
 		state.linkDraftTitle.value = ''
 		state.linkDraftUrl.value = ''
 		state.linkDraftKind.value = 'web'
+		state.linkDraftVisible.value = false
 		state.customFieldsLocal.value = toCustomFieldsFormItems(t.customFields)
 		state.customFieldDraftTitle.value = ''
 		state.customFieldDraftValue.value = ''
