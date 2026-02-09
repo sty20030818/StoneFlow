@@ -102,27 +102,34 @@ pub struct UpdateTaskPatch {
     pub title: Option<String>,
     pub status: Option<String>,
     /// Some(None) 表示清空 doneReason
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub done_reason: Option<Option<String>>,
     pub priority: Option<String>,
     /// Some(None) 表示清空 note
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub note: Option<Option<String>>,
     /// 标签名数组（传空数组表示清空）
     pub tags: Option<Vec<String>>,
     /// 切换所属 Space
     pub space_id: Option<String>,
     /// Some(None) 表示设为未分类
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub project_id: Option<Option<String>>,
     /// Some(None) 表示清空截止日期
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub deadline_at: Option<Option<i64>>,
     /// 更新排序权重
     pub rank: Option<i64>,
     /// 外部链接列表（传空数组表示清空）
     pub links: Option<Vec<LinkInputDto>>,
     /// Some(None) 表示清空 customFields
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub custom_fields: Option<Option<CustomFieldsDto>>,
     /// Some(None) 表示清空归档时间
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub archived_at: Option<Option<i64>>,
     /// Some(None) 表示清空删除时间
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub deleted_at: Option<Option<i64>>,
 }
 

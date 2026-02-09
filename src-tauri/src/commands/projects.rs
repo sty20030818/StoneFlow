@@ -103,6 +103,7 @@ pub struct ReorderProjectArgs {
     /// - None：不修改 parent
     /// - Some(None)：显式设为根节点
     /// - Some(Some(x))：移动到 x 下面
+    #[serde(default, with = "::serde_with::rust::double_option")]
     pub new_parent_id: Option<Option<String>>,
 }
 
