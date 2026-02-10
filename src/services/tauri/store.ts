@@ -4,7 +4,15 @@ import type { SettingsModel, UiState } from '@/types/shared/settings'
 
 export type ActiveSpaceId = SettingsModel['activeSpaceId']
 
-export type { HomeView, InfoDensity, LaunchIntent, SettingsModel, StartupSnapshotV2, UiState } from '@/types/shared/settings'
+export type {
+	ExitMode,
+	HomeView,
+	InfoDensity,
+	LibraryLastView,
+	SettingsModel,
+	UiState,
+	WorkspaceLastView,
+} from '@/types/shared/settings'
 
 export const DEFAULT_SETTINGS: SettingsModel = {
 	homeView: 'today',
@@ -15,9 +23,15 @@ export const DEFAULT_SETTINGS: SettingsModel = {
 
 export const DEFAULT_UI_STATE: UiState = {
 	projectTreeExpanded: {},
-	lastView: {},
 	libraryCollapsed: false,
-	startupSnapshot: null,
+	workspaceLastViews: {
+		work: null,
+		personal: null,
+		study: null,
+	},
+	workspaceLastActiveSpaceId: 'work',
+	libraryLastView: null,
+	lastExitMode: 'unknown',
 }
 
 export const settingsStore = new LazyStore('settings.json', {

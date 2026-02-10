@@ -18,14 +18,17 @@
 </template>
 
 <script setup lang="ts">
-	import { watchDebounced } from '@vueuse/core'
-	import { computed, watch } from 'vue'
-	import { useRoute, useRouter } from 'vue-router'
+	import { computed, onBeforeUnmount, watch } from 'vue'
+	import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 
-	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'
 	import { useStartupReady } from '@/startup/initialize'
-	import { buildStartupSnapshotV2 } from '@/startup/session-snapshot'
+	import {
+		classifyRouteScope,
+		extractWorkspacePayload,
+		isWorkspaceRoute,
+		toWorkspaceRouteTarget,
+	} from '@/startup/route-memory-policy'
 	import Sidebar from './Sidebar.vue'
 	import Header from './Header.vue'
 
@@ -37,7 +40,6 @@
 	const route = useRoute()
 	const router = useRouter()
 	const startupReady = useStartupReady()
-	const routeProjectId = useNullableStringRouteQuery('project')
 	const settingsStore = useSettingsStore()
 	const viewStateStore = useViewStateStore()
 
@@ -51,33 +53,78 @@
 		return settingsStore.settings.activeSpaceId
 	}
 
+	function resolveSpaceIdFromRoute(target: Pick<RouteLocationNormalizedLoaded, 'params'>): SpaceId {
+		const sid = target.params.spaceId
+		if (typeof sid === 'string' && isKnownSpaceId(sid)) return sid
+		return settingsStore.settings.activeSpaceId
+	}
+
+	function resolveProjectIdFromRoute(target: Pick<RouteLocationNormalizedLoaded, 'query'>): string | null {
+		const maybeProject = target.query.project
+		if (typeof maybeProject === 'string') return maybeProject
+		if (Array.isArray(maybeProject) && typeof maybeProject[0] === 'string') return maybeProject[0]
+		return null
+	}
+
+	function persistRouteMemory(target: Pick<RouteLocationNormalizedLoaded, 'path' | 'params' | 'query'>) {
+		const scope = classifyRouteScope(target.path)
+		if (scope === 'settings') return
+
+		if (scope === 'workspace') {
+			const payload = extractWorkspacePayload({
+				path: target.path,
+				projectId: resolveProjectIdFromRoute(target),
+				fallbackSpaceId: resolveSpaceIdFromRoute(target),
+			})
+			if (payload) {
+				void viewStateStore.recordWorkspaceExit(payload)
+			}
+			return
+		}
+
+		if (scope === 'library') {
+			void viewStateStore.recordLibraryExit(target.path)
+			return
+		}
+
+		void viewStateStore.recordUnknownExit()
+	}
+
+	function normalizeInputSpaceId(value: string): SpaceId {
+		if (isKnownSpaceId(value)) return value
+		return settingsStore.settings.activeSpaceId
+	}
+
 	const space = computed({
 		get: () => settingsStore.settings.activeSpaceId,
 		set: async (newSpaceId) => {
-			if (newSpaceId === settingsStore.settings.activeSpaceId) return
+			const targetSpaceId = normalizeInputSpaceId(newSpaceId)
+			if (targetSpaceId === settingsStore.settings.activeSpaceId) return
 
 			// 1. 切换前，保存旧 Space 状态 (Persist old space state)
 			const oldSpaceId = resolveRouteSpaceId()
-			const currentProjectId = routeProjectId.value
-
-			// 确保存的是合规的 space 路由
-			await viewStateStore.setLastView(oldSpaceId, {
-				route: route.path,
-				spaceId: oldSpaceId,
-				projectId: currentProjectId,
-			})
+			const oldScope = classifyRouteScope(route.path)
+			if (oldScope === 'workspace') {
+				const payload = extractWorkspacePayload({
+					path: route.path,
+					projectId: resolveProjectIdFromRoute(route),
+					fallbackSpaceId: oldSpaceId,
+				})
+				if (payload) {
+					await viewStateStore.recordWorkspaceExit(payload)
+				}
+			}
 
 			// 2. 更新 Active Space
-			await settingsStore.update({ activeSpaceId: newSpaceId })
+			await settingsStore.update({ activeSpaceId: targetSpaceId })
 
 			// 3. 恢复新 Space 状态 (Restore new space state)
-			const lastView = viewStateStore.getLastView(newSpaceId)
-			if (lastView) {
-				const query = lastView.projectId ? { project: lastView.projectId } : {}
-				await router.push({ path: lastView.route, query })
+			const restoreTarget = viewStateStore.getWorkspaceRestoreTarget(targetSpaceId)
+			if (restoreTarget) {
+				await router.push(toWorkspaceRouteTarget(restoreTarget))
 			} else {
 				// 默认 fallback
-				await router.push(`/space/${newSpaceId}`)
+				await router.push(`/space/${targetSpaceId}`)
 			}
 		},
 	})
@@ -87,6 +134,7 @@
 		() => [route.params.spaceId, startupReady.value] as const,
 		([spaceIdFromRoute, ready]) => {
 			if (!ready) return
+			if (!isWorkspaceRoute(route.path)) return
 			if (typeof spaceIdFromRoute !== 'string' || !isKnownSpaceId(spaceIdFromRoute)) return
 			if (spaceIdFromRoute === settingsStore.settings.activeSpaceId) return
 			void settingsStore.update({ activeSpaceId: spaceIdFromRoute })
@@ -94,33 +142,13 @@
 		{ immediate: true },
 	)
 
-	// 路由高频变化时用防抖持久化，减少无效写入与启动期闪动。
-	watchDebounced(
-		() => [route.path, route.fullPath, routeProjectId.value, startupReady.value],
-		() => {
-			if (!startupReady.value) return
+	const stopAfterEach = router.afterEach((to, from) => {
+		if (!startupReady.value) return
+		persistRouteMemory(from)
+		persistRouteMemory(to)
+	})
 
-			const currentSpaceId = resolveRouteSpaceId()
-			const projectId = routeProjectId.value
-
-			// 记录任意页面状态
-			void viewStateStore.setLastView(currentSpaceId, {
-				route: route.path,
-				spaceId: currentSpaceId,
-				projectId,
-			})
-			void viewStateStore.setStartupSnapshot(
-				buildStartupSnapshotV2({
-					fullPath: route.fullPath,
-					route: route.path,
-					activeSpaceId: currentSpaceId,
-					projectId,
-				}),
-			)
-		},
-		{
-			debounce: 200,
-			maxWait: 800,
-		},
-	)
+	onBeforeUnmount(() => {
+		stopAfterEach()
+	})
 </script>
