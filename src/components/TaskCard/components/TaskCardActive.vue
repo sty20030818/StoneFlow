@@ -49,7 +49,7 @@
 							v-if="priorityConfig"
 							variant="soft"
 							size="xs"
-							class="shrink-0 font-bold px-1.5 py-0.5 rounded h-5"
+							class="shrink-0 font-bold px-1.5 py-0.5 rounded h-5 text-[11px]"
 							:class="priorityConfig.badgeClass">
 							{{ task.priority }}
 						</UBadge>
@@ -60,7 +60,7 @@
 							size="xs" />
 
 						<h3
-							class="min-w-0 flex-1 font-extrabold text-slate-800 text-base line-clamp-2 leading-tight"
+							class="min-w-0 flex-1 font-bold text-slate-800 line-clamp-2 leading-tight"
 							:class="{ 'text-slate-400': isEditMode && !selected }">
 							{{ task.title }}
 						</h3>
