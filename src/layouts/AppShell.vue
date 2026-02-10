@@ -24,6 +24,8 @@
 
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'
+	import { useStartupReady } from '@/startup/initialize'
+	import { buildStartupSnapshotV2 } from '@/startup/session-snapshot'
 	import Sidebar from './Sidebar.vue'
 	import Header from './Header.vue'
 
@@ -34,6 +36,7 @@
 
 	const route = useRoute()
 	const router = useRouter()
+	const startupReady = useStartupReady()
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const settingsStore = useSettingsStore()
 	const viewStateStore = useViewStateStore()
@@ -81,8 +84,9 @@
 
 	// 路由驱动 activeSpace，避免启动期或外部跳转后出现“路由与侧栏 space 不一致”。
 	watch(
-		() => route.params.spaceId,
-		(spaceIdFromRoute) => {
+		() => [route.params.spaceId, startupReady.value] as const,
+		([spaceIdFromRoute, ready]) => {
+			if (!ready) return
 			if (typeof spaceIdFromRoute !== 'string' || !isKnownSpaceId(spaceIdFromRoute)) return
 			if (spaceIdFromRoute === settingsStore.settings.activeSpaceId) return
 			void settingsStore.update({ activeSpaceId: spaceIdFromRoute })
@@ -92,9 +96,9 @@
 
 	// 路由高频变化时用防抖持久化，减少无效写入与启动期闪动。
 	watchDebounced(
-		() => [route.path, routeProjectId.value],
+		() => [route.path, route.fullPath, routeProjectId.value, startupReady.value],
 		() => {
-			if (!settingsStore.loaded || !viewStateStore.loaded) return
+			if (!startupReady.value) return
 
 			const currentSpaceId = resolveRouteSpaceId()
 			const projectId = routeProjectId.value
@@ -105,6 +109,14 @@
 				spaceId: currentSpaceId,
 				projectId,
 			})
+			void viewStateStore.setStartupSnapshot(
+				buildStartupSnapshotV2({
+					fullPath: route.fullPath,
+					route: route.path,
+					activeSpaceId: currentSpaceId,
+					projectId,
+				}),
+			)
 		},
 		{
 			debounce: 200,

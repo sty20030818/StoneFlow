@@ -16,9 +16,14 @@ const Trash = () => import('@/pages/Trash/index.vue')
 const Settings = () => import('@/pages/Settings/index.vue')
 const SettingsAbout = () => import('@/pages/Settings/About/index.vue')
 const SettingsRemoteSync = () => import('@/pages/Settings/RemoteSync/index.vue')
+const StartupGate = () => import('@/startup/StartupGate.vue')
 
 export const routes = [
-	{ path: '/', redirect: '/space/work' },
+	{
+		path: '/',
+		component: StartupGate,
+		meta: { title: 'Startup Gate', description: '启动路由占位，由启动流程决定最终目标页面' },
+	},
 
 	// ProjectView (统一的项目视图)
 	{

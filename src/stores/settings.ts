@@ -7,16 +7,19 @@ import type { SpaceId } from '@/types/domain/space'
 import type { SettingsModel } from '@/services/tauri/store'
 import { DEFAULT_SETTINGS, settingsStore } from '@/services/tauri/store'
 
+function normalizeSpaceId(value: string | null | undefined): SpaceId {
+	if (typeof value === 'string' && (SPACE_IDS as readonly string[]).includes(value)) {
+		return value as SpaceId
+	}
+	return DEFAULT_SETTINGS.activeSpaceId
+}
+
 export const useSettingsStore = defineStore('settings', () => {
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
 	// 用 VueUse 持久化 activeSpaceId，避免手写 localStorage 样板与闪烁。
 	const activeSpaceIdStorage = useStorage<SpaceId>('settings_active_space_id', DEFAULT_SETTINGS.activeSpaceId)
-	const savedSpaceId = activeSpaceIdStorage.value
-	const initialSpaceId =
-		savedSpaceId && (SPACE_IDS as readonly string[]).includes(savedSpaceId)
-			? (savedSpaceId as SpaceId)
-			: DEFAULT_SETTINGS.activeSpaceId
+	const initialSpaceId = normalizeSpaceId(activeSpaceIdStorage.value)
 
 	const state = reactive<SettingsModel>({
 		...DEFAULT_SETTINGS,
@@ -26,9 +29,9 @@ export const useSettingsStore = defineStore('settings', () => {
 	async function loadInternal() {
 		const val = await settingsStore.get<SettingsModel>('settings')
 		if (val) {
-			const next = { ...val }
-			if (!SPACE_IDS.includes(next.activeSpaceId)) {
-				next.activeSpaceId = 'work'
+			const next = {
+				...val,
+				activeSpaceId: normalizeSpaceId(val.activeSpaceId),
 			}
 			Object.assign(state, next)
 			activeSpaceIdStorage.value = next.activeSpaceId
@@ -55,16 +58,24 @@ export const useSettingsStore = defineStore('settings', () => {
 		return await loadingPromise.value
 	}
 
-	async function save() {
+	async function flush() {
 		activeSpaceIdStorage.value = state.activeSpaceId
 		await settingsStore.set('settings', { ...state })
 		await settingsStore.save()
 	}
 
+	async function save() {
+		await flush()
+	}
+
 	async function update(patch: Partial<SettingsModel>) {
-		Object.assign(state, patch)
+		const nextPatch = { ...patch }
+		if (patch.activeSpaceId !== undefined) {
+			nextPatch.activeSpaceId = normalizeSpaceId(patch.activeSpaceId)
+		}
+		Object.assign(state, nextPatch)
 		if (patch.activeSpaceId) {
-			activeSpaceIdStorage.value = patch.activeSpaceId
+			activeSpaceIdStorage.value = normalizeSpaceId(patch.activeSpaceId)
 		}
 		await settingsStore.set('settings', { ...state })
 	}
@@ -74,6 +85,7 @@ export const useSettingsStore = defineStore('settings', () => {
 		settings: computed(() => state),
 		load,
 		save,
+		flush,
 		update,
 	}
 })
