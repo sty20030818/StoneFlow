@@ -14,6 +14,7 @@
 			:is-downloading="state.status === 'downloading'"
 			:on-toggle-advanced="toggleAdvanced"
 			:on-check-update="handleCheckUpdate"
+			:on-preview-update-modal="handlePreviewUpdateModal"
 			:on-download-update="handleDownloadUpdate"
 			:on-restart="handleRestart"
 			:on-open-release-page="openReleasePage"
@@ -72,6 +73,7 @@
 		lastCheckedText,
 		updateStateLabel,
 		handleCheckUpdate,
+		handlePreviewUpdateModal,
 		handleDownloadUpdate,
 		handleRestart,
 		openReleasePage,

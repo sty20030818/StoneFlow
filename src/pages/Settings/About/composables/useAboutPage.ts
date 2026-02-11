@@ -7,8 +7,54 @@ import { useUpdater } from '@/composables/useUpdater'
 import { useSettingsSystemActions } from '@/pages/Settings/composables/useSettingsSystemActions'
 import { getIdentifier, getName, getVersion } from '@tauri-apps/api/app'
 import { appLocalDataDir, executableDir } from '@tauri-apps/api/path'
+import changelogSource from '../../../../../changelog/changelog.md?raw'
 
-import { ABOUT_LINKS, CHANGELOG_SUMMARY, CHANGELOG_URL, LICENSE_URL, PRIVACY_URL, RELEASE_PAGE_URL } from '../config'
+import { ABOUT_LINKS, CHANGELOG_URL, LICENSE_URL, PRIVACY_URL, RELEASE_PAGE_URL } from '../config'
+
+type ChangelogEntry = {
+	version: string
+	date: string
+	items: string
+}
+
+function parseChangelogSummary(markdown: string): ChangelogEntry[] {
+	const lines = markdown.split('\n')
+	const headingPattern = /^##\s+(\d+\.\d+\.\d+)(?:\s*[·|-]\s*([0-9]{4}-[0-9]{2}-[0-9]{2}))?\s*$/
+	const entries: ChangelogEntry[] = []
+	let current: ChangelogEntry | null = null
+	let buffer: string[] = []
+
+	const flush = () => {
+		if (!current) return
+		const items = buffer.join('\n').trim()
+		entries.push({
+			...current,
+			items: items || '- 暂无更新内容',
+		})
+		buffer = []
+	}
+
+	for (const rawLine of lines) {
+		const line = rawLine.trimEnd()
+		const matched = line.match(headingPattern)
+		if (matched) {
+			flush()
+			current = {
+				version: matched[1],
+				date: matched[2] || '',
+				items: '',
+			}
+			continue
+		}
+
+		if (current) {
+			buffer.push(rawLine)
+		}
+	}
+
+	flush()
+	return entries
+}
 
 export function useAboutPage() {
 	const toast = useToast()
@@ -33,11 +79,13 @@ export function useAboutPage() {
 
 	const advancedOpen = ref(false)
 	const now = useNow({ interval: 60_000 })
+	const parsedChangelogEntries = parseChangelogSummary(changelogSource)
 
 	const aboutLinks = ABOUT_LINKS
-	const changelogSummary = CHANGELOG_SUMMARY
+	const changelogSummary = parsedChangelogEntries
 	const licenseUrl = LICENSE_URL
 	const privacyUrl = PRIVACY_URL
+	const previewNotesFallback = changelogSummary[0]?.items?.trim() || '暂无更新日志'
 
 	const lastCheckedText = computed(() => {
 		if (!state.value.lastCheckedAt) return '尚未检查'
@@ -69,6 +117,17 @@ export function useAboutPage() {
 		if (ok) {
 			toast.add({ title: '更新下载完成', description: '可重启应用完成安装。', color: 'success' })
 		}
+	}
+
+	function handlePreviewUpdateModal() {
+		const notes = state.value.notes.trim() || previewNotesFallback
+		state.value.available = true
+		state.value.version = state.value.version || currentVersion.value
+		state.value.notes = notes
+		state.value.date = new Date().toISOString()
+		state.value.progress = 0
+		state.value.status = 'idle'
+		state.value.error = null
 	}
 
 	async function handleRestart() {
@@ -181,6 +240,7 @@ export function useAboutPage() {
 		lastCheckedText,
 		updateStateLabel,
 		handleCheckUpdate,
+		handlePreviewUpdateModal,
 		handleDownloadUpdate,
 		handleRestart,
 		openReleasePage,

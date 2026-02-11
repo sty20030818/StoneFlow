@@ -307,10 +307,7 @@ export function useTaskInspectorActions(params: {
 			return
 		}
 
-		queueImmediateUpdate(
-			{ status: 'todo', doneReason: null },
-			{ status: 'todo', doneReason: null, completedAt: null },
-		)
+		queueImmediateUpdate({ status: 'todo', doneReason: null }, { status: 'todo', doneReason: null, completedAt: null })
 		await processQueuedUpdates()
 		state.statusLocal.value = 'todo'
 	}

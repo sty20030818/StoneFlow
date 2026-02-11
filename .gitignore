@@ -38,6 +38,7 @@ src-tauri/.tauri
 
 Docs
 scripts
+changelog
 release-output
 version.json
 design

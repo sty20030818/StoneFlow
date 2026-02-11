@@ -26,7 +26,8 @@
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
 				:ui="drawerPopoverUi"
 				@update:open="(open) => onEditOpenChange(index, open)">
-				<div class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30 cursor-pointer transition-colors hover:bg-elevated/50">
+				<div
+					class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30 cursor-pointer transition-colors hover:bg-elevated/50">
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0 flex items-center gap-2">
 							<div class="truncate text-sm font-medium text-default">

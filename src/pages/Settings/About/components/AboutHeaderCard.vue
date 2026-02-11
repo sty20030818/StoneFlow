@@ -69,6 +69,13 @@
 								@click="onCheckUpdate">
 								检查更新
 							</UButton>
+							<!-- <UButton
+								color="neutral"
+								variant="soft"
+								icon="i-lucide-flask-conical"
+								@click="onPreviewUpdateModal">
+								测试更新弹窗
+							</UButton> -->
 							<UButton
 								color="neutral"
 								variant="ghost"
@@ -187,6 +194,7 @@
 		isDownloading: boolean
 		onToggleAdvanced: () => void
 		onCheckUpdate: () => void
+		onPreviewUpdateModal: () => void
 		onDownloadUpdate: () => void
 		onRestart: () => void
 		onOpenReleasePage: () => void

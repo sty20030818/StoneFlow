@@ -13,7 +13,8 @@
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
 				:ui="drawerPopoverUi"
 				@update:open="(open) => onEditOpenChange(index, open)">
-				<div class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60 cursor-pointer hover:bg-elevated/80">
+				<div
+					class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60 cursor-pointer hover:bg-elevated/80">
 					<div class="flex items-center justify-between gap-2">
 						<div class="min-w-0 flex flex-1 items-center gap-2.5">
 							<UIcon

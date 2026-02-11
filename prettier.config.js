@@ -49,7 +49,7 @@ export default {
 			files: '*.md',
 			options: {
 				printWidth: 80,
-				proseWrap: 'always',
+				proseWrap: 'preserve',
 			},
 		},
 		{

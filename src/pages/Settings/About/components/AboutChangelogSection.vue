@@ -20,29 +20,38 @@
 				:key="entry.version"
 				class="rounded-2xl border border-default/70 bg-elevated/20 px-4 py-3">
 				<div class="text-sm font-medium text-default">v{{ entry.version }}（{{ entry.date }}）</div>
-				<ul class="mt-2 space-y-1 text-sm text-muted">
-					<li
-						v-for="item in entry.items"
-						:key="item">
-						- {{ item }}
-					</li>
-				</ul>
+				<div
+					class="mt-2 text-sm text-muted leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_a]:text-primary [&_a]:underline"
+					v-html="renderEntryMarkdown(entry.items)" />
 			</div>
 		</div>
 	</SettingsSectionCard>
 </template>
 
 <script setup lang="ts">
+	import DOMPurify from 'dompurify'
+	import { createMarkdownExit } from 'markdown-exit'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 
 	type ChangelogEntry = {
 		version: string
 		date: string
-		items: string[]
+		items: string
 	}
+	const markdown = createMarkdownExit({
+		html: false,
+		linkify: true,
+		breaks: true,
+	})
 
 	defineProps<{
 		entries: ChangelogEntry[]
 		onOpenChangelog: () => void
 	}>()
+
+	function renderEntryMarkdown(markdownText: string) {
+		const source = markdownText.trim()
+		if (!source) return ''
+		return DOMPurify.sanitize(markdown.render(source), { USE_PROFILES: { html: true } })
+	}
 </script>

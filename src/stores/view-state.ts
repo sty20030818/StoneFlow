@@ -108,7 +108,10 @@ export const useViewStateStore = defineStore('view-state', () => {
 		WORKSPACE_LAST_ACTIVE_SPACE_CACHE_KEY,
 		DEFAULT_UI_STATE.workspaceLastActiveSpaceId,
 	)
-	const libraryLastView = useStorage<LibraryLastView | null>(LIBRARY_LAST_VIEW_CACHE_KEY, DEFAULT_UI_STATE.libraryLastView)
+	const libraryLastView = useStorage<LibraryLastView | null>(
+		LIBRARY_LAST_VIEW_CACHE_KEY,
+		DEFAULT_UI_STATE.libraryLastView,
+	)
 	const lastExitMode = useStorage<ExitMode>(LAST_EXIT_MODE_CACHE_KEY, DEFAULT_UI_STATE.lastExitMode)
 
 	function buildUiState(projectTreeExpanded: Record<string, string[]>): UiState {

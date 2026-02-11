@@ -34,11 +34,7 @@ function resolveFallbackTarget(spaceId: string | null | undefined): StartupRoute
 	return { path: `/space/${sid}` }
 }
 
-function resolveValidatedStartupTarget(
-	router: Router,
-	target: StartupRouteTarget,
-	fallbackSpaceId: string,
-) {
+function resolveValidatedStartupTarget(router: Router, target: StartupRouteTarget, fallbackSpaceId: string) {
 	const resolvedTarget = router.resolve(target)
 	if (resolvedTarget.matched.length > 0) {
 		return target

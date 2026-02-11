@@ -7,6 +7,7 @@ dist
 Docs
 release-output
 openspec
+changelog/*.md
 
 AGENTS.md
 COMMIT_MSG.md
