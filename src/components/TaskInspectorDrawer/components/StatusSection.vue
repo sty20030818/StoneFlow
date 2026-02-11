@@ -1,6 +1,6 @@
 <template>
 	<section class="space-y-2">
-		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">状态</label>
+		<!-- <label class="text-[10px] font-semibold text-muted uppercase tracking-widest">状态</label> -->
 		<div class="flex items-center gap-2.5">
 			<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1 flex-1">
 				<button

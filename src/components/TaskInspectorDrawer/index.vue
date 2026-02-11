@@ -19,8 +19,7 @@
 					:save-state-class="saveStateClass"
 					:save-state-dot-class="saveStateDotClass"
 					:can-retry-save="retrySaveAvailable"
-					:on-retry-save="onRetrySave"
-					@close="close" />
+					:on-retry-save="onRetrySave" />
 
 				<div class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
 					<StatusSection
@@ -32,7 +31,7 @@
 						:on-done-reason-change="onDoneReasonChange" />
 
 					<section class="space-y-2">
-						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">标题</label>
+						<!-- <label class="text-[10px] font-semibold text-muted uppercase tracking-widest">标题</label> -->
 						<UInput
 							v-model="titleLocal"
 							placeholder="任务标题..."
@@ -45,43 +44,45 @@
 							@blur="onTitleBlur" />
 					</section>
 
-					<PriorityDeadlineSection
-						:priority="priorityLocal"
-						:deadline="deadlineLocal"
-						:priority-icon="priorityIcon"
-						:priority-label="priorityLabel"
-						:priority-options="priorityOptions"
-						:priority-card-class="priorityCardClass"
-						:priority-icon-class="priorityIconClass"
-						:priority-text-class="priorityTextClass"
-						:deadline-label="deadlineLabel"
-						:on-add-custom-field="addCustomField"
-						@update:priority="onPriorityChange"
-						@update:deadline="handleDeadlineUpdate" />
+					<div class="space-y-3">
+						<PriorityDeadlineSection
+							:priority="priorityLocal"
+							:deadline="deadlineLocal"
+							:priority-icon="priorityIcon"
+							:priority-label="priorityLabel"
+							:priority-options="priorityOptions"
+							:priority-card-class="priorityCardClass"
+							:priority-icon-class="priorityIconClass"
+							:priority-text-class="priorityTextClass"
+							:deadline-label="deadlineLabel"
+							:on-add-custom-field="addCustomField"
+							@update:priority="onPriorityChange"
+							@update:deadline="handleDeadlineUpdate" />
 
-					<LocationSection
-						:space-options="spaceOptions"
-						:project-options="projectOptions"
-						:space-id-local="spaceIdLocal"
-						:project-id-local="projectIdLocal"
-						:space-card-class="spaceCardClass"
-						:space-card-label-class="spaceCardLabelClass"
-						:space-card-value-class="spaceCardValueClass"
-						:current-space-label="currentSpaceLabel"
-						:current-project-label="currentProjectLabel"
-						:on-space-change="onSpaceChange"
-						:on-project-change="onProjectChange" />
+						<LocationSection
+							:space-options="spaceOptions"
+							:project-options="projectOptions"
+							:space-id-local="spaceIdLocal"
+							:project-id-local="projectIdLocal"
+							:space-card-class="spaceCardClass"
+							:space-card-label-class="spaceCardLabelClass"
+							:space-card-value-class="spaceCardValueClass"
+							:current-space-label="currentSpaceLabel"
+							:current-project-label="currentProjectLabel"
+							:on-space-change="onSpaceChange"
+							:on-project-change="onProjectChange" />
 
-					<AdvancedSection
-						v-model:custom-fields="customFieldsLocal"
-						v-model:draft-title="customFieldDraftTitle"
-						v-model:draft-value="customFieldDraftValue"
-						v-model:draft-visible="customFieldDraftVisible"
-						:editing-error-index="customFieldValidationErrorIndex"
-						:on-confirm-custom-field="confirmCustomField"
-						:on-remove-custom-field="removeCustomField"
-						:on-custom-field-input="clearCustomFieldValidationError"
-						:on-flush-custom-field-edits="flushPendingUpdates" />
+						<AdvancedSection
+							v-model:custom-fields="customFieldsLocal"
+							v-model:draft-title="customFieldDraftTitle"
+							v-model:draft-value="customFieldDraftValue"
+							v-model:draft-visible="customFieldDraftVisible"
+							:editing-error-index="customFieldValidationErrorIndex"
+							:on-confirm-custom-field="confirmCustomField"
+							:on-remove-custom-field="removeCustomField"
+							:on-custom-field-input="clearCustomFieldValidationError"
+							:on-flush-custom-field-edits="flushPendingUpdates" />
+					</div>
 
 					<TagsSection
 						v-model:tag-input="tagInput"
@@ -113,6 +114,20 @@
 						:timeline-collapsed="timelineCollapsed"
 						:toggle-timeline="toggleTimeline" />
 				</div>
+
+				<footer class="px-6 py-3 border-t border-default bg-elevated/40 flex items-center justify-between gap-3">
+					<div class="flex items-center gap-2 min-w-0">
+						<UAvatar
+							:src="avatarUrl"
+							alt="Stonefish"
+							size="sm"
+							:ui="{
+								root: 'rounded-full ring-1 ring-default/40',
+							}" />
+						<span class="text-xs font-semibold text-default truncate">Stonefish</span>
+					</div>
+					<div class="text-[11px] font-medium text-default">{{ createdAtFooterLabel }}</div>
+				</footer>
 			</div>
 		</template>
 	</USlideover>
@@ -121,6 +136,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
+	import avatarUrl from '@/assets/avatar.png'
 	import DrawerHeader from './components/DrawerHeader.vue'
 	import AdvancedSection from './components/AdvancedSection.vue'
 	import LinksSection from './components/LinksSection.vue'
@@ -136,7 +152,6 @@
 	const {
 		currentTask,
 		isOpen,
-		close,
 		titleLocal,
 		statusLocal,
 		doneReasonLocal,
@@ -210,7 +225,8 @@
 	} = useTaskInspectorDrawer()
 
 	const drawerUi = createDrawerLayerUi({
-		content: 'w-[560px] h-full flex flex-col bg-default/90 backdrop-blur-2xl border-l border-default',
+		content:
+			'w-[480px] max-w-[calc(100vw-1.5rem)] h-[calc(100%-1.5rem)] my-3 mr-3 flex flex-col rounded-3xl border border-default bg-default/92 backdrop-blur-2xl shadow-2xl overflow-hidden',
 	})
 
 	const handleDeadlineUpdate = (val: string) => {
@@ -219,4 +235,22 @@
 	}
 
 	const saveStateVisible = computed(() => saveState.value !== 'idle')
+
+	const createdAtFooterLabel = computed(() => {
+		const timestamp = currentTask.value?.createdAt
+		if (!timestamp) return '创建时间未知'
+
+		const date = new Date(timestamp)
+		if (Number.isNaN(date.getTime())) return '创建时间未知'
+
+		const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] as const
+		const year = date.getFullYear()
+		const month = date.getMonth() + 1
+		const day = date.getDate()
+		const hour = String(date.getHours()).padStart(2, '0')
+		const minute = String(date.getMinutes()).padStart(2, '0')
+		const weekday = weekdays[date.getDay()]
+
+		return `${year}.${month}.${day} ${weekday} ${hour}:${minute}`
+	})
 </script>

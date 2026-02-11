@@ -47,16 +47,6 @@
 				@click="onRetrySave">
 				重试
 			</UButton>
-			<div class="h-4 w-px bg-default/70"></div>
-
-			<UButton
-				color="neutral"
-				variant="ghost"
-				icon="i-lucide-x"
-				size="sm"
-				@click="emit('close')">
-				<span class="sr-only">关闭</span>
-			</UButton>
 		</div>
 	</header>
 </template>
@@ -76,6 +66,4 @@
 	}
 
 	defineProps<Props>()
-
-	const emit = defineEmits<{ (e: 'close'): void }>()
 </script>
