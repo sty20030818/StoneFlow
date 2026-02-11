@@ -9,5 +9,6 @@ pub use super::projects::Entity as Projects;
 pub use super::spaces::Entity as Spaces;
 pub use super::tags::Entity as Tags;
 pub use super::task_links::Entity as TaskLinks;
+pub use super::task_activity_logs::Entity as TaskActivityLogs;
 pub use super::task_tags::Entity as TaskTags;
 pub use super::tasks::Entity as Tasks;

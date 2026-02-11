@@ -3,6 +3,7 @@
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+    TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -13,7 +14,7 @@ use crate::db::entities::{
 use crate::db::now_ms;
 use crate::types::{dto::TaskDto, error::AppError};
 
-use super::{stats, validations};
+use super::{activity_logs, stats, validations};
 
 pub async fn create(
     conn: &DatabaseConnection,
@@ -22,6 +23,8 @@ pub async fn create(
     auto_start: bool,
     project_id: Option<&str>,
 ) -> Result<TaskDto, AppError> {
+    let txn = conn.begin().await.map_err(AppError::from)?;
+
     let title = validations::trim_and_validate_title(title)?;
 
     let now = now_ms();
@@ -35,8 +38,9 @@ pub async fn create(
         .filter(tasks::Column::SpaceId.eq(space_id))
         .filter(tasks::Column::Status.eq(status.clone()))
         .filter(tasks::Column::Priority.eq(priority.clone()))
+        .filter(tasks::Column::DeletedAt.is_null())
         .order_by_desc(tasks::Column::Rank)
-        .one(conn)
+        .one(&txn)
         .await
         .map_err(AppError::from)?;
 
@@ -65,11 +69,26 @@ pub async fn create(
         create_by: Set(create_by.to_string()),
     };
 
-    active_model.insert(conn).await.map_err(AppError::from)?;
+    active_model.insert(&txn).await.map_err(AppError::from)?;
+
+    activity_logs::append_created(
+        &txn,
+        activity_logs::TaskLogCtx {
+            task_id: &id,
+            space_id,
+            project_id,
+            create_by,
+            created_at: now,
+        },
+        &title,
+    )
+    .await?;
 
     if let Some(project_id) = project_id {
-        stats::refresh_project_stats(conn, project_id, now).await?;
+        stats::refresh_project_stats(&txn, project_id, now).await?;
     }
+
+    txn.commit().await.map_err(AppError::from)?;
 
     Ok(TaskDto {
         id,

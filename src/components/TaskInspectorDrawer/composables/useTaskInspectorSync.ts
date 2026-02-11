@@ -1,4 +1,4 @@
-import { watch, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 
 import type { TaskDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
@@ -19,6 +19,7 @@ export function useTaskInspectorSync(params: {
 	state: TaskInspectorState
 }) {
 	const { currentTask, projectsStore, state } = params
+	const syncedTaskId = ref<string | null>(null)
 
 	function syncFromTask() {
 		const t = currentTask.value
@@ -30,7 +31,6 @@ export function useTaskInspectorSync(params: {
 		state.noteLocal.value = normalizeOptionalText(t.note) ?? ''
 		state.tagsLocal.value = [...(t.tags ?? [])]
 		state.tagInput.value = ''
-		state.timelineCollapsed.value = true
 		state.deadlineLocal.value = toDeadlineInputValue(t.deadlineAt)
 		state.retrySaveAvailable.value = false
 
@@ -53,6 +53,10 @@ export function useTaskInspectorSync(params: {
 		() => currentTask.value,
 		async (task) => {
 			if (task) {
+				if (syncedTaskId.value !== task.id) {
+					state.timelineCollapsed.value = true
+					syncedTaskId.value = task.id
+				}
 				await projectsStore.load(task.spaceId)
 				syncFromTask()
 			}

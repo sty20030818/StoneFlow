@@ -110,8 +110,12 @@
 						:on-flush-link-edits="flushPendingUpdates" />
 
 					<TimelineSection
-						:timeline-items="timelineItems"
+						:timeline-logs="timelineLogs"
+						:timeline-loading="timelineLoading"
+						:timeline-empty="timelineEmpty"
+						:timeline-error-message="timelineErrorMessage"
 						:timeline-collapsed="timelineCollapsed"
+						:reload-timeline="reloadTimeline"
 						:toggle-timeline="toggleTimeline" />
 				</div>
 
@@ -199,7 +203,11 @@
 		saveStateLabel,
 		saveStateClass,
 		saveStateDotClass,
-		timelineItems,
+		timelineLogs,
+		timelineLoading,
+		timelineEmpty,
+		timelineErrorMessage,
+		reloadTimeline,
 		onTitleBlur,
 		onStatusSegmentClick,
 		onDoneReasonChange,

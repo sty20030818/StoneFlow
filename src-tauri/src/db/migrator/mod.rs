@@ -4,6 +4,7 @@
 use sea_orm_migration::prelude::*;
 
 mod m01_init;
+mod m02_task_activity_logs;
 
 pub struct Migrator;
 
@@ -11,6 +12,9 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         // 新迁移按时间/版本顺序追加。
-        vec![Box::new(m01_init::Migration)]
+        vec![
+            Box::new(m01_init::Migration),
+            Box::new(m02_task_activity_logs::Migration),
+        ]
     }
 }

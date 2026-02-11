@@ -8,6 +8,7 @@
 //! 重点：命令层应调用 repo，而不是直接操作 SeaORM Entity。
 
 pub mod common_task_utils;
+pub mod activity_log_repo;
 pub mod link_repo;
 pub mod project_repo;
 pub mod space_repo;

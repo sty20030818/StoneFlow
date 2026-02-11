@@ -23,6 +23,7 @@ use crate::types::{
 pub struct TaskRepo;
 
 pub mod create;
+pub mod activity_logs;
 pub mod custom_fields;
 pub mod delete;
 pub mod links;
@@ -124,6 +125,21 @@ impl TaskRepo {
         active.updated_at = Set(now);
 
         active.update(&txn).await.map_err(AppError::from)?;
+
+        if task.status != TaskStatus::Done {
+            activity_logs::append_completed(
+                &txn,
+                activity_logs::TaskLogCtx {
+                    task_id: &task.id,
+                    space_id: &task.space_id,
+                    project_id: task.project_id.as_deref(),
+                    create_by: &task.create_by,
+                    created_at: now,
+                },
+                &task.title,
+            )
+            .await?;
+        }
 
         if let Some(pid) = &task.project_id {
             stats::refresh_project_stats(&txn, pid, now).await?;

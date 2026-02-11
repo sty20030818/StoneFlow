@@ -1,4 +1,4 @@
-import { listTasks } from '@/services/api/tasks'
+import { tauriInvoke } from '@/services/tauri/invoke'
 
 export type ActivityLogEntityType = 'task' | 'project'
 
@@ -7,76 +7,74 @@ export type ActivityLogEntry = {
 	entityType: ActivityLogEntityType
 	entityId: string
 	action: string
+	actionLabel: string
+	fieldKey: string | null
+	fieldLabel: string | null
+	beforeValue: string | null
+	afterValue: string | null
 	createdAt: number
 	spaceId: string
+	projectId: string | null
 	projectName: string
 	detail: string
 }
 
 export type ListActivityLogsArgs = {
 	entityType?: ActivityLogEntityType
+	taskId?: string
 	spaceId?: string
 	projectId?: string
 	from?: number
 	to?: number
 }
 
-/**
- * 临时实现：基于 Task 数据构造近似的 ActivityLog 视图。
- * 后续可切换为后端真实 activity_logs 表的查询结果。
- */
+type ActivityLogDto = {
+	id: string
+	entityType: string
+	entityId: string
+	action: string
+	actionLabel: string
+	fieldKey: string | null
+	fieldLabel: string | null
+	beforeValue: string | null
+	afterValue: string | null
+	detail: string
+	createdAt: number
+	spaceId: string
+	projectId: string | null
+	projectName: string
+}
+
+function normalizeEntityType(value: string): ActivityLogEntityType {
+	return value === 'project' ? 'project' : 'task'
+}
+
 export async function listActivityLogs(args: ListActivityLogsArgs = {}): Promise<ActivityLogEntry[]> {
-	const tasks = await listTasks({})
+	const logs = await tauriInvoke<ActivityLogDto[]>('list_activity_logs', {
+		args: {
+			entityType: args.entityType,
+			taskId: args.taskId,
+			spaceId: args.spaceId,
+			projectId: args.projectId,
+			from: args.from,
+			to: args.to,
+		},
+	})
 
-	const entries: ActivityLogEntry[] = []
-
-	for (const t of tasks) {
-		entries.push({
-			id: `${t.id}-created`,
-			entityType: 'task',
-			entityId: t.id,
-			action: 'task_created',
-			createdAt: t.createdAt,
-			spaceId: t.spaceId,
-			projectName: '当前 Space 默认 Project',
-			detail: `创建任务「${t.title}」`,
-		})
-
-		if (t.completedAt) {
-			entries.push({
-				id: `${t.id}-completed`,
-				entityType: 'task',
-				entityId: t.id,
-				action: 'task_completed',
-				createdAt: t.completedAt,
-				spaceId: t.spaceId,
-				projectName: '当前 Space 默认 Project',
-				detail: `完成任务「${t.title}」`,
-			})
-		}
-	}
-
-	let filtered = entries
-
-	if (args.entityType) {
-		filtered = filtered.filter((e) => e.entityType === args.entityType)
-	}
-
-	if (args.spaceId) {
-		filtered = filtered.filter((e) => e.spaceId === args.spaceId)
-	}
-
-	if (args.from !== undefined) {
-		const from = args.from
-		filtered = filtered.filter((e) => e.createdAt >= from)
-	}
-
-	if (args.to !== undefined) {
-		const to = args.to
-		filtered = filtered.filter((e) => e.createdAt <= to)
-	}
-
-	filtered.sort((a, b) => b.createdAt - a.createdAt)
-
-	return filtered
+	return logs.map((item) => ({
+		id: item.id,
+		entityType: normalizeEntityType(item.entityType),
+		entityId: item.entityId,
+		action: item.action,
+		actionLabel: item.actionLabel,
+		fieldKey: item.fieldKey,
+		fieldLabel: item.fieldLabel,
+		beforeValue: item.beforeValue,
+		afterValue: item.afterValue,
+		detail: item.detail,
+		createdAt: item.createdAt,
+		spaceId: item.spaceId,
+		projectId: item.projectId,
+		projectName: item.projectName || '当前 Space 默认 Project',
+	}))
 }

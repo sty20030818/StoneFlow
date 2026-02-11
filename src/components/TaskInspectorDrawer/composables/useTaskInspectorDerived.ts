@@ -136,32 +136,6 @@ export function useTaskInspectorDerived(params: {
 		return 'bg-muted'
 	})
 
-	const timelineItems = computed(() => {
-		const t = currentTask.value
-		if (!t) return []
-
-		const created = new Date(t.createdAt)
-		const completed = t.completedAt ? new Date(t.completedAt) : null
-
-		const items = [
-			{
-				label: '创建',
-				content: created.toLocaleString(),
-				icon: 'i-lucide-circle-dot',
-			},
-		]
-
-		if (completed) {
-			items.push({
-				label: '完成',
-				content: completed.toLocaleString(),
-				icon: 'i-lucide-check-circle-2',
-			})
-		}
-
-		return items
-	})
-
 	return {
 		priorityIcon,
 		priorityLabel,
@@ -180,6 +154,5 @@ export function useTaskInspectorDerived(params: {
 		saveStateLabel,
 		saveStateClass,
 		saveStateDotClass,
-		timelineItems,
 	}
 }

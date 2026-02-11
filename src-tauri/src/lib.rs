@@ -15,6 +15,7 @@ mod repos;
 mod types;
 
 use commands::hello::hello;
+use commands::logs::list_activity_logs;
 use commands::projects::{
     create_project, delete_project, get_default_project, list_deleted_projects, list_projects,
     rebalance_project_ranks, reorder_project, restore_project,
@@ -63,6 +64,7 @@ pub fn run() {
             delete_project,
             restore_project,
             list_spaces,
+            list_activity_logs,
             list_tasks,
             list_deleted_tasks,
             create_task,

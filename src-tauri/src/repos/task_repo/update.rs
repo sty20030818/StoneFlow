@@ -8,19 +8,124 @@
 use std::collections::HashSet;
 
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
-    QueryOrder, Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,
+    IntoActiveModel, JoinType, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Set,
+    TransactionTrait,
 };
 
 use crate::db::entities::{
-    sea_orm_active_enums::{DoneReason, Priority, TaskStatus},
-    tasks,
+    links as link_entities,
+    sea_orm_active_enums::{DoneReason, LinkKind, Priority, TaskStatus},
+    tags as tag_entities, task_links, task_tags, tasks,
 };
 use crate::db::now_ms;
 
 use crate::types::error::AppError;
 
-use super::{custom_fields, links, stats, tags, validations, TaskUpdateInput};
+use super::{activity_logs, custom_fields, links, stats, tags, validations, TaskUpdateInput};
+
+fn priority_to_value(priority: &Priority) -> String {
+    match priority {
+        Priority::P0 => "P0".to_string(),
+        Priority::P1 => "P1".to_string(),
+        Priority::P2 => "P2".to_string(),
+        Priority::P3 => "P3".to_string(),
+    }
+}
+
+fn done_reason_to_value(done_reason: &Option<DoneReason>) -> Option<String> {
+    done_reason.as_ref().map(|x| match x {
+        DoneReason::Completed => "completed".to_string(),
+        DoneReason::Cancelled => "cancelled".to_string(),
+    })
+}
+
+fn normalize_tags_for_log(tags: &[String]) -> Vec<String> {
+    let mut normalized = Vec::new();
+    for tag in tags {
+        let value = tag.trim();
+        if value.is_empty() || normalized.iter().any(|item: &String| item == value) {
+            continue;
+        }
+        normalized.push(value.to_string());
+    }
+    normalized
+}
+
+fn link_kind_to_value(kind: &LinkKind) -> &'static str {
+    match kind {
+        LinkKind::Doc => "doc",
+        LinkKind::RepoLocal => "repoLocal",
+        LinkKind::RepoRemote => "repoRemote",
+        LinkKind::Web => "web",
+        LinkKind::Design => "design",
+        LinkKind::Other => "other",
+    }
+}
+
+fn format_link_for_log(kind: &str, title: &str, url: &str) -> String {
+    format!("{}:{}<{}>", kind, title.trim(), url.trim())
+}
+
+fn to_optional_join(values: Vec<String>, separator: &str) -> Option<String> {
+    if values.is_empty() {
+        None
+    } else {
+        Some(values.join(separator))
+    }
+}
+
+fn normalize_links_for_log(links: &[crate::types::dto::LinkInputDto]) -> Vec<String> {
+    links
+        .iter()
+        .map(|item| format_link_for_log(item.kind.as_str(), item.title.as_str(), item.url.as_str()))
+        .collect()
+}
+
+async fn load_task_tags_for_log<C>(conn: &C, task_id: &str) -> Result<Vec<String>, AppError>
+where
+    C: ConnectionTrait,
+{
+    task_tags::Entity::find()
+        .select_only()
+        .column(tag_entities::Column::Name)
+        .join(JoinType::InnerJoin, task_tags::Relation::Tags.def())
+        .filter(task_tags::Column::TaskId.eq(task_id))
+        .order_by_asc(tag_entities::Column::Name)
+        .order_by_asc(tag_entities::Column::CreatedAt)
+        .into_tuple()
+        .all(conn)
+        .await
+        .map_err(AppError::from)
+}
+
+async fn load_task_links_for_log<C>(conn: &C, task_id: &str) -> Result<Vec<String>, AppError>
+where
+    C: ConnectionTrait,
+{
+    let rows: Vec<(String, String, LinkKind, i64, i64)> = task_links::Entity::find()
+        .select_only()
+        .column(link_entities::Column::Title)
+        .column(link_entities::Column::Url)
+        .column(link_entities::Column::Kind)
+        .column(link_entities::Column::Rank)
+        .column(link_entities::Column::CreatedAt)
+        .join(JoinType::InnerJoin, task_links::Relation::Links.def())
+        .filter(task_links::Column::TaskId.eq(task_id))
+        .order_by_asc(link_entities::Column::Rank)
+        .order_by_asc(link_entities::Column::CreatedAt)
+        .into_tuple()
+        .all(conn)
+        .await
+        .map_err(AppError::from)?;
+
+    Ok(rows
+        .into_iter()
+        .map(|(title, url, kind, _rank, _created_at)| {
+            format_link_for_log(link_kind_to_value(&kind), &title, &url)
+        })
+        .collect())
+}
 
 pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result<(), AppError> {
     let TaskUpdateInput { id, patch } = input;
@@ -38,6 +143,8 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
     let custom_fields_input = patch.custom_fields;
     let archived_at = patch.archived_at;
     let deleted_at = patch.deleted_at;
+    let tags_input_for_log = tags_input.clone();
+    let links_input_for_log = links_input.clone();
 
     let txn = conn.begin().await.map_err(AppError::from)?;
 
@@ -51,6 +158,27 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
         Some(m) => m,
         None => return Err(AppError::Validation("任务不存在".to_string())),
     };
+    let previous_task = task_model.clone();
+    let previous_tags_for_log = if tags_input_for_log.is_some() {
+        to_optional_join(load_task_tags_for_log(&txn, &id).await?, ",")
+    } else {
+        None
+    };
+    let previous_links_for_log = if links_input_for_log.is_some() {
+        to_optional_join(load_task_links_for_log(&txn, &id).await?, ", ")
+    } else {
+        None
+    };
+    let next_tags_for_log = tags_input_for_log
+        .as_ref()
+        .map(|items| to_optional_join(normalize_tags_for_log(items), ","))
+        .unwrap_or(None);
+    let next_links_for_log = links_input_for_log
+        .as_ref()
+        .map(|items| to_optional_join(normalize_links_for_log(items), ", "))
+        .unwrap_or(None);
+    let tags_changed = tags_input_for_log.is_some() && previous_tags_for_log != next_tags_for_log;
+    let links_changed = links_input_for_log.is_some() && previous_links_for_log != next_links_for_log;
 
     let previous_project_id = task_model.project_id.clone();
     let current_status_is_done = task_model.status == TaskStatus::Done;
@@ -64,6 +192,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
     let mut status_changed_to_todo = false;
     let mut space_changed = false;
     let mut project_changed = false;
+    let mut rank_changed_by_auto_bucket = false;
 
     let mut active_model = task_model.into_active_model();
     let now = now_ms();
@@ -194,6 +323,7 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
 
         let new_rank = max_rank_task.map(|t| t.rank + 1024).unwrap_or(1024);
         active_model.rank = Set(new_rank);
+        rank_changed_by_auto_bucket = true;
         touch_updated_at = true;
         changed_any = true;
     }
@@ -236,20 +366,172 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
     let new_project_id = saved_model.project_id.clone();
 
     // 4) 处理关联表（links/tags）。
-    if let Some(links_input) = links_input {
-        links::sync_links(&txn, &id, &links_input).await?;
-        changed_any = true;
-        // Note: sync_links updates updated_at in links table, but maybe task updated_at should also be touched?
-        // Logic above sets touch_updated_at = true if links_input is Some.
+    if links_changed {
+        if let Some(links_input) = links_input.as_ref() {
+            links::sync_links(&txn, &id, links_input).await?;
+            changed_any = true;
+        }
     }
 
-    if let Some(tags_input) = tags_input {
-        tags::sync_tags(&txn, &id, &tags_input).await?;
-        changed_any = true;
+    if tags_changed {
+        if let Some(tags_input) = tags_input.as_ref() {
+            tags::sync_tags(&txn, &id, tags_input).await?;
+            changed_any = true;
+        }
     }
 
     if !changed_any {
         return Err(AppError::Validation("没有可更新的字段".to_string()));
+    }
+
+    let log_ctx = activity_logs::TaskLogCtx {
+        task_id: &saved_model.id,
+        space_id: &saved_model.space_id,
+        project_id: saved_model.project_id.as_deref(),
+        create_by: &saved_model.create_by,
+        created_at: now,
+    };
+
+    if previous_task.status != TaskStatus::Done && saved_model.status == TaskStatus::Done {
+        activity_logs::append_completed(&txn, log_ctx.clone(), &saved_model.title).await?;
+    }
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "title",
+        "标题",
+        Some(previous_task.title.clone()),
+        Some(saved_model.title.clone()),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "priority",
+        "优先级",
+        Some(priority_to_value(&previous_task.priority)),
+        Some(priority_to_value(&saved_model.priority)),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "note",
+        "备注",
+        previous_task.note.clone(),
+        saved_model.note.clone(),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "spaceId",
+        "所属 Space",
+        Some(previous_task.space_id.clone()),
+        Some(saved_model.space_id.clone()),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "projectId",
+        "所属 Project",
+        previous_task.project_id.clone(),
+        saved_model.project_id.clone(),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "deadlineAt",
+        "截止时间",
+        previous_task.deadline_at.map(|x| x.to_string()),
+        saved_model.deadline_at.map(|x| x.to_string()),
+    )
+    .await?;
+
+    if !rank_changed_by_auto_bucket {
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "rank",
+            "排序权重",
+            Some(previous_task.rank.to_string()),
+            Some(saved_model.rank.to_string()),
+        )
+        .await?;
+    }
+
+    if previous_task.status == TaskStatus::Done && saved_model.status == TaskStatus::Done {
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "doneReason",
+            "完成原因",
+            done_reason_to_value(&previous_task.done_reason),
+            done_reason_to_value(&saved_model.done_reason),
+        )
+        .await?;
+    }
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "archivedAt",
+        "归档时间",
+        previous_task.archived_at.map(|x| x.to_string()),
+        saved_model.archived_at.map(|x| x.to_string()),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "deletedAt",
+        "删除时间",
+        previous_task.deleted_at.map(|x| x.to_string()),
+        saved_model.deleted_at.map(|x| x.to_string()),
+    )
+    .await?;
+
+    activity_logs::append_field_updated(
+        &txn,
+        log_ctx.clone(),
+        "customFields",
+        "自定义字段",
+        previous_task.custom_fields.clone(),
+        saved_model.custom_fields.clone(),
+    )
+    .await?;
+
+    if tags_changed {
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "tags",
+            "标签",
+            previous_tags_for_log.clone(),
+            next_tags_for_log.clone(),
+        )
+        .await?;
+    }
+
+    if links_changed {
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx,
+            "links",
+            "关联链接",
+            previous_links_for_log,
+            next_links_for_log,
+        )
+        .await?;
     }
 
     // 5) 刷新可能受影响的项目统计（旧项目 + 新项目）。

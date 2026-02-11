@@ -107,3 +107,22 @@ pub struct CustomFieldItemDto {
     pub title: String,
     pub value: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityLogDto {
+    pub id: String,
+    pub entity_type: String,
+    pub entity_id: String,
+    pub action: String,
+    pub action_label: String,
+    pub field_key: Option<String>,
+    pub field_label: Option<String>,
+    pub before_value: Option<String>,
+    pub after_value: Option<String>,
+    pub detail: String,
+    pub created_at: i64,
+    pub space_id: String,
+    pub project_id: Option<String>,
+    pub project_name: String,
+}

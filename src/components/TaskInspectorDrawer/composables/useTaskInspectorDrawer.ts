@@ -7,6 +7,7 @@ import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 
 import { useTaskInspectorActions } from './useTaskInspectorActions'
+import { useTaskInspectorActivityLogs } from './useTaskInspectorActivityLogs'
 import { useTaskInspectorDerived } from './useTaskInspectorDerived'
 import { useTaskInspectorOptions } from './useTaskInspectorOptions'
 import { useTaskInspectorState } from './useTaskInspectorState'
@@ -23,6 +24,10 @@ export function useTaskInspectorDrawer() {
 	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, projectsStore })
 	const derived = useTaskInspectorDerived({ currentTask, state, projectsStore })
 	const actions = useTaskInspectorActions({ currentTask, state, store, projectsStore, refreshSignals })
+	const activityLogs = useTaskInspectorActivityLogs({
+		currentTask,
+		taskTick: computed(() => refreshSignals.taskTick),
+	})
 
 	useTaskInspectorSync({ currentTask, projectsStore, state })
 
@@ -37,6 +42,7 @@ export function useTaskInspectorDrawer() {
 
 	async function close() {
 		await actions.flushPendingUpdates()
+		state.timelineCollapsed.value = true
 		store.close()
 	}
 
@@ -57,5 +63,6 @@ export function useTaskInspectorDrawer() {
 		...options,
 		...derived,
 		...actions,
+		...activityLogs,
 	}
 }

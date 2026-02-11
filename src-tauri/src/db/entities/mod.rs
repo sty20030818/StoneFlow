@@ -9,5 +9,6 @@ pub mod projects;
 pub mod spaces;
 pub mod tags;
 pub mod task_links;
+pub mod task_activity_logs;
 pub mod task_tags;
 pub mod tasks;

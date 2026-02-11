@@ -10,6 +10,7 @@
 //! - 不直接操作数据库实体
 
 pub mod hello;
+pub mod logs;
 pub mod projects;
 pub mod spaces;
 pub mod sync;
