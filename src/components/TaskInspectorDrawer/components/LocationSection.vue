@@ -2,6 +2,7 @@
 	<section>
 		<div class="grid grid-cols-2 gap-3">
 			<UPopover
+				v-model:open="spacePopoverOpen"
 				:mode="'click'"
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
 				:ui="drawerPopoverUi">
@@ -49,6 +50,7 @@
 			</UPopover>
 
 			<UPopover
+				v-model:open="projectPopoverOpen"
 				:mode="'click'"
 				:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
 				:ui="drawerPopoverUi">
@@ -92,6 +94,8 @@
 </template>
 
 <script setup lang="ts">
+	import { ref } from 'vue'
+
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 
 	type SpaceOption = {
@@ -123,7 +127,19 @@
 		onProjectChange: (value: string | null) => void
 	}
 
-	defineProps<Props>()
+	const props = defineProps<Props>()
 
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
+	const spacePopoverOpen = ref(false)
+	const projectPopoverOpen = ref(false)
+
+	const onSpaceChange = (value: string) => {
+		props.onSpaceChange(value)
+		spacePopoverOpen.value = false
+	}
+
+	const onProjectChange = (value: string | null) => {
+		props.onProjectChange(value)
+		projectPopoverOpen.value = false
+	}
 </script>

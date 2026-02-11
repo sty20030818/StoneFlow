@@ -10,11 +10,12 @@
 				+
 			</button>
 		</div>
-		<div class="grid grid-cols-2 gap-3">
-			<UPopover
-				:mode="'click'"
-				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="drawerPopoverUi">
+			<div class="grid grid-cols-2 gap-3">
+				<UPopover
+					v-model:open="priorityPopoverOpen"
+					:mode="'click'"
+					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+					:ui="drawerPopoverUi">
 				<button
 					type="button"
 					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -56,10 +57,11 @@
 				</template>
 			</UPopover>
 
-			<UPopover
-				:mode="'click'"
-				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="drawerPopoverUi">
+				<UPopover
+					v-model:open="deadlinePopoverOpen"
+					:mode="'click'"
+					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+					:ui="drawerPopoverUi">
 				<button
 					type="button"
 					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
@@ -84,15 +86,16 @@
 					</div>
 				</button>
 				<template #content>
-					<div class="p-2">
-						<UInput
-							v-model="deadline"
-							type="date"
-							size="sm"
-							:ui="{ rounded: 'rounded-lg' }" />
-						<div class="mt-2 flex gap-2">
-							<UButton
-								color="neutral"
+						<div class="p-2">
+							<UInput
+								v-model="deadline"
+								type="date"
+								size="sm"
+								:ui="{ rounded: 'rounded-lg' }"
+								@change="onDeadlineSelected" />
+							<div class="mt-2 flex gap-2">
+								<UButton
+									color="neutral"
 								variant="ghost"
 								size="xs"
 								@click="onDeadlineClear">
@@ -107,6 +110,8 @@
 </template>
 
 <script setup lang="ts">
+	import { ref } from 'vue'
+
 	import type { PriorityOption, TaskPriorityValue } from '@/config/task'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 
@@ -114,6 +119,8 @@
 	const priority = defineModel<TaskPriorityValue>('priority', { required: true })
 	const deadline = defineModel<string>('deadline', { required: true })
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
+	const priorityPopoverOpen = ref(false)
+	const deadlinePopoverOpen = ref(false)
 
 	type Props = {
 		priorityIcon: string
@@ -131,9 +138,15 @@
 	// 事件处理
 	const onPriorityChange = (value: TaskPriorityValue) => {
 		priority.value = value
+		priorityPopoverOpen.value = false
 	}
 
 	const onDeadlineClear = () => {
 		deadline.value = ''
+		deadlinePopoverOpen.value = false
+	}
+
+	const onDeadlineSelected = () => {
+		deadlinePopoverOpen.value = false
 	}
 </script>
