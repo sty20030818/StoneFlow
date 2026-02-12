@@ -1,8 +1,12 @@
 <template>
-	<header class="z-layer-header shrink-0 px-6 sticky top-0 bg-default/85 backdrop-blur-xl border-b border-default/80">
+	<header
+		v-motion="headerShellMotion"
+		class="z-layer-header shrink-0 px-6 sticky top-0 bg-default/85 backdrop-blur-xl border-b border-default/80">
 		<div class="h-16 flex items-center justify-between">
 			<!-- 左侧：面包屑 -->
-			<div class="flex items-center gap-2 min-w-0 flex-1">
+			<div
+				v-motion="headerBreadcrumbMotion"
+				class="flex items-center gap-2 min-w-0 flex-1">
 				<RouterLink
 					v-if="currentSpaceLabel && currentSpaceIcon && currentSpaceId"
 					:to="`/space/${currentSpaceId}`"
@@ -64,7 +68,9 @@
 			</div>
 
 			<!-- 右侧：搜索框胶囊 + 操作按钮 -->
-			<div class="flex items-center gap-2 shrink-0">
+			<div
+				v-motion="headerActionsMotion"
+				class="flex items-center gap-2 shrink-0">
 				<!-- 页面操作传送门（例如：视图切换器） -->
 				<div
 					id="header-actions-portal"
@@ -103,7 +109,8 @@
 					<template v-if="hasEditBridge">
 						<button
 							type="button"
-							class="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold shadow-sm transition-all"
+							v-motion="editButtonMotion"
+							class="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold shadow-sm"
 							:class="editButtonClass"
 							@click="onToggleEditMode">
 							<UIcon
@@ -119,6 +126,7 @@
 
 		<div
 			v-if="hasEditBridge && isEditMode"
+			v-motion="editStripMotion"
 			class="pointer-events-none absolute inset-x-0 top-full -mt-px z-layer-header-edit-strip">
 			<div class="pointer-events-auto mt-0">
 				<button
@@ -144,6 +152,7 @@
 	import { computed, inject, ref, type ComputedRef } from 'vue'
 	import { useRoute } from 'vue-router'
 
+	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
@@ -158,6 +167,11 @@
 
 	const searchQuery = ref('')
 	const projectIcon = PROJECT_ICON
+	const headerShellMotion = useProjectMotionPreset('drawerSection', 'headerShell')
+	const headerBreadcrumbMotion = useProjectMotionPreset('drawerSection', 'headerBreadcrumb')
+	const headerActionsMotion = useProjectMotionPreset('drawerSection', 'headerActions')
+	const editButtonMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
+	const editStripMotion = useProjectMotionPreset('statusFeedback', 'editStrip')
 
 	const isWorkspacePage = computed(() => {
 		return route.path.startsWith('/space/') || route.path === '/all-tasks'

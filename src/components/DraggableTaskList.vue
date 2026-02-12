@@ -14,27 +14,36 @@
 		filter=".no-drag"
 		:prevent-on-filter="true"
 		@end="onDragEnd">
-		<TaskCard
-			v-for="task in localTasks"
+		<div
+			v-for="(task, index) in localTasks"
 			:key="task.id"
-			:task="task"
-			:is-edit-mode="isEditMode"
-			:selected="isTaskSelected(task.id)"
-			:show-complete-button="showCompleteButton"
-			:show-time="showTime"
-			:show-space-label="showSpaceLabel"
-			@click="$emit('task-click', task)"
-			@complete="$emit('complete', task.id)"
-			@toggle-select="$emit('toggle-task-select', task.id)"
-			@request-delete="$emit('request-task-delete', task.id)" />
+			v-motion="getListItemMotion(task.id, index)">
+			<TaskCard
+				:task="task"
+				:is-edit-mode="isEditMode"
+				:selected="isTaskSelected(task.id)"
+				:show-complete-button="showCompleteButton"
+				:show-time="showTime"
+				:show-space-label="showSpaceLabel"
+				@click="$emit('task-click', task)"
+				@complete="$emit('complete', task.id)"
+				@toggle-select="$emit('toggle-task-select', task.id)"
+				@request-delete="$emit('request-task-delete', task.id)" />
+		</div>
 	</VueDraggable>
 </template>
 
 <script setup lang="ts">
 	import type { SortableEvent } from 'sortablejs'
+	import type { MotionVariants } from '@vueuse/motion'
 	import { computed, ref, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
+	import {
+		getProjectMotionPhaseDelay,
+		useMotionPreset,
+		withMotionDelay,
+	} from '@/composables/base/motion'
 	import TaskCard from '@/components/TaskCard'
 	import { rebalanceRanks, reorderTask, type TaskDto } from '@/services/api/tasks'
 	import { calculateInsertRank } from '@/utils/rank'
@@ -48,6 +57,7 @@
 		showCompleteButton?: boolean
 		showTime?: boolean
 		showSpaceLabel?: boolean
+		motionBaseDelay?: number
 	}>()
 
 	const emit = defineEmits<{
@@ -58,9 +68,43 @@
 		/** 拖拽结束后触发，传递更新后的任务列表用于同步状态 */
 		reorder: [tasks: TaskDto[]]
 	}>()
+	const listItemMotion = useMotionPreset('listItem')
+	const LIST_STAGGER_STEP = getProjectMotionPhaseDelay('listStep')
+	const LIST_STAGGER_MAX_DELAY = getProjectMotionPhaseDelay('listMax')
+	const listStaggerBaseDelay = computed(() => props.motionBaseDelay ?? getProjectMotionPhaseDelay('listTodoBase'))
 
 	// 本地任务列表副本，用于拖拽
 	const localTasks = ref<TaskDto[]>([])
+	const listItemMotionById = ref<Record<string, MotionVariants<string>>>({})
+
+	// 仅在任务 ID 集合变化时生成新的入场 variants，避免回流时重复触发“再次入场”。
+	watch(
+		[() => localTasks.value.map((task) => task.id), listItemMotion, listStaggerBaseDelay],
+		([ids, base, baseDelay]) => {
+			const previous = listItemMotionById.value
+			const next: Record<string, MotionVariants<string>> = {}
+
+			ids.forEach((id, index) => {
+				const cached = previous[id]
+				if (cached) {
+					next[id] = cached
+					return
+				}
+				const delay = Math.min(baseDelay + index * LIST_STAGGER_STEP, LIST_STAGGER_MAX_DELAY)
+				next[id] = withMotionDelay(base, delay)
+			})
+
+			listItemMotionById.value = next
+		},
+		{ immediate: true },
+	)
+
+	function getListItemMotion(taskId: string, index: number) {
+		const cached = listItemMotionById.value[taskId]
+		if (cached) return cached
+		const delay = Math.min(listStaggerBaseDelay.value + index * LIST_STAGGER_STEP, LIST_STAGGER_MAX_DELAY)
+		return withMotionDelay(listItemMotion.value, delay)
+	}
 
 	/**
 	 * 同步 props 到本地

@@ -5,33 +5,37 @@
 		description="快速创建一个新任务"
 		:ui="taskModalUi">
 		<template #body>
-			<TaskModalBody
-				v-model:form="form"
-				v-model:tag-input="tagInput"
-				:space-options="spaceOptions"
-				:project-options="projectOptions"
-				:status-options="statusOptionsArray"
-				:priority-options="priorityOptions"
-				:done-reason-options="doneReasonOptions"
-				:link-kind-options="linkKindOptions"
-				:advanced-open="advancedOpen"
-				:uncategorized-label="uncategorizedLabel"
-				@submit="handleSubmit"
-				@toggle-advanced="toggleAdvanced()"
-				@add-tag="addTag"
-				@remove-tag="removeTag"
-				@add-link="addLink"
-				@remove-link="removeLink"
-				@add-custom-field="addCustomField"
-				@remove-custom-field="removeCustomField" />
+			<div v-motion="modalBodyMotionPreset">
+				<TaskModalBody
+					v-model:form="form"
+					v-model:tag-input="tagInput"
+					:space-options="spaceOptions"
+					:project-options="projectOptions"
+					:status-options="statusOptionsArray"
+					:priority-options="priorityOptions"
+					:done-reason-options="doneReasonOptions"
+					:link-kind-options="linkKindOptions"
+					:advanced-open="advancedOpen"
+					:uncategorized-label="uncategorizedLabel"
+					@submit="handleSubmit"
+					@toggle-advanced="toggleAdvanced()"
+					@add-tag="addTag"
+					@remove-tag="removeTag"
+					@add-link="addLink"
+					@remove-link="removeLink"
+					@add-custom-field="addCustomField"
+					@remove-custom-field="removeCustomField" />
+			</div>
 		</template>
 
 		<template #footer>
-			<TaskModalFooter
-				:loading="loading"
-				:can-submit="canSubmit"
-				@close="close"
-				@submit="handleSubmit" />
+			<div v-motion="modalFooterMotionPreset">
+				<TaskModalFooter
+					:loading="loading"
+					:can-submit="canSubmit"
+					@close="close"
+					@submit="handleSubmit" />
+			</div>
 		</template>
 	</UModal>
 </template>
@@ -39,6 +43,7 @@
 <script setup lang="ts">
 	import TaskModalBody from './components/TaskModalBody.vue'
 	import TaskModalFooter from './components/TaskModalFooter.vue'
+	import { useMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import {
 		useCreateTaskModal,
@@ -48,6 +53,8 @@
 
 	const props = defineProps<CreateTaskModalProps>()
 	const emit = defineEmits<CreateTaskModalEmits>()
+	const modalBodyMotionPreset = useMotionPreset('modalSection')
+	const modalFooterMotionPreset = useMotionPresetWithDelay('statusFeedback', 20)
 	const taskModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
 		rounded: 'rounded-2xl',

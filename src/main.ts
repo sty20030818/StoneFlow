@@ -3,6 +3,7 @@ import App from './App.vue'
 
 import { createPinia } from 'pinia'
 import ui from '@nuxt/ui/vue-plugin'
+import { MotionPlugin } from '@vueuse/motion'
 
 import { router } from './router'
 import './styles/main.css'
@@ -45,7 +46,7 @@ async function bootstrap() {
 	const pinia = createPinia()
 	const launchHashAtBoot = readLaunchHashAtBoot()
 
-	app.use(pinia).use(router).use(ui)
+	app.use(pinia).use(router).use(ui).use(MotionPlugin)
 
 	try {
 		await Promise.allSettled([initializeAppStartup(router, { launchHashAtBoot }), initializeIcons('critical')])

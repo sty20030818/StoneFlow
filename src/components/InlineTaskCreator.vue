@@ -1,6 +1,7 @@
 <template>
 	<div
-		class="group rounded-lg border border-default/50 bg-elevated/40 px-3 py-2.5 transition-all duration-150 ease-out select-none"
+		v-motion="creatorCardMotion"
+		class="group rounded-lg border border-default/50 bg-elevated/40 px-3 py-2.5 select-none"
 		:class="wrapperClass"
 		@click.self="focusInput">
 		<div
@@ -15,14 +16,16 @@
 				:disabled="disabled || submitting" />
 			<span
 				v-if="priority"
-				class="inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold transition-transform duration-150 ease-out"
+				v-motion="priorityBadgeMotion"
+				class="inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold"
 				:class="priorityBadgeClass">
 				{{ priority }}
 			</span>
 		</div>
 		<div
-			class="overflow-hidden transition-all duration-200 ease-out"
-			:class="noteWrapperClass">
+			v-if="expanded || note.length > 0"
+			v-motion="noteSectionMotion"
+			class="mt-2 overflow-hidden">
 			<textarea
 				ref="noteRef"
 				v-model="note"
@@ -38,6 +41,8 @@
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { refDebounced, useEventListener } from '@vueuse/core'
 
+	import { MOTION_TOKENS } from '@/config/motion'
+	import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import type { TaskPriorityValue } from '@/config/task'
 	import { getDefaultProject } from '@/services/api/projects'
 	import { createTask, updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
@@ -50,12 +55,14 @@
 			spaceId?: string
 			projectId?: string | null
 			placeholder?: string
+			enterDelay?: number
 			disabled?: boolean
 		}>(),
 		{
 			spaceId: undefined,
 			projectId: null,
 			placeholder: '输入标题，Cmd/Ctrl+Enter 创建，Shift+Enter 写备注…',
+			enterDelay: 0,
 			disabled: false,
 		},
 	)
@@ -75,16 +82,37 @@
 
 	const inlineFocusStore = useInlineCreateFocusStore()
 	const refreshSignals = useRefreshSignalsStore()
+	const creatorCardMotion = computed(() =>
+		withMotionDelay(
+			{
+				initial: { opacity: 0.92 },
+				enter: {
+					opacity: 1,
+					transition: {
+						type: 'tween',
+						duration: 220,
+						ease: MOTION_TOKENS.ease.decelerate,
+					},
+				},
+				leave: {
+					opacity: 0,
+					transition: {
+						type: 'tween',
+						duration: 150,
+						ease: MOTION_TOKENS.ease.accelerate,
+					},
+				},
+			},
+			props.enterDelay,
+		),
+	)
+	const priorityBadgeMotion = useMotionPreset('statusFeedback')
+	const noteSectionMotion = useMotionPresetWithDelay('listItem', 72)
 
 	const wrapperClass = computed(() => {
 		if (props.disabled) return 'opacity-60 cursor-not-allowed'
 		if (submitting.value) return 'border-primary/60 bg-primary/5'
 		return 'hover:border-primary/40 hover:bg-elevated/70 hover:shadow-sm focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 active:translate-y-[1px]'
-	})
-
-	const noteWrapperClass = computed(() => {
-		if (expanded.value || note.value.length > 0) return 'mt-2 max-h-8 opacity-100'
-		return 'max-h-0 opacity-0 pointer-events-none'
 	})
 
 	const priorityBadgeClass = computed(() => getPriorityClass(priority.value ?? 'P1'))

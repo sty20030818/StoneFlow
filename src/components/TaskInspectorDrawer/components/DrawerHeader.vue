@@ -1,5 +1,7 @@
 <template>
-	<header class="px-5 py-4 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
+	<header
+		v-motion="headerMotion"
+		class="px-5 py-4 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
 		<div class="flex items-center gap-1.5 min-w-0 flex-1 leading-tight">
 			<span
 				class="px-2.5 py-1 rounded-full text-[12px] font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
@@ -32,7 +34,8 @@
 		<div class="flex items-center gap-2 shrink-0">
 			<div
 				v-if="saveStateVisible"
-				class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all"
+				v-motion="saveStateMotion"
+				class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider"
 				:class="saveStateClass">
 				<span
 					class="size-1.5 rounded-full"
@@ -52,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+	import { useMotionPreset } from '@/composables/base/motion'
+
 	type Props = {
 		currentSpaceLabel: string
 		currentSpaceIcon: string
@@ -66,4 +71,6 @@
 	}
 
 	defineProps<Props>()
+	const headerMotion = useMotionPreset('drawerSection')
+	const saveStateMotion = useMotionPreset('statusFeedback')
 </script>

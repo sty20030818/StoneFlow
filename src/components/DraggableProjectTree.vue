@@ -41,6 +41,7 @@
 						type="button"
 						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default opacity-0 group-hover:opacity-100 outline-none focus:outline-none"
 						:class="item.children && item.children.length > 0 ? 'right-7' : 'right-1'"
+						@pointerdown.stop.prevent
 						@click.stop>
 						<UIcon
 							name="i-lucide-more-horizontal"
@@ -62,6 +63,7 @@
 					type="button"
 					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default"
 					:class="isExpanded(item.id) ? 'rotate-90' : ''"
+					@pointerdown.stop.prevent
 					@click.stop="toggleExpand(item.id)">
 					<UIcon
 						name="i-lucide-chevron-right"

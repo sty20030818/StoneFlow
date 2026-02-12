@@ -1,9 +1,10 @@
 <template>
 	<!-- 外层容器:相对定位,用于删除按钮的绝对定位基准 -->
-	<div class="relative group rounded-2xl flex items-center">
+	<div
+		class="relative group rounded-2xl flex items-center">
 		<!-- 主卡片容器 -->
 		<div
-			class="relative w-full rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform,margin] duration-300 ease-out hover:-translate-y-px hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
+			class="relative w-full rounded-2xl border bg-white p-4 hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
 			:class="[
 				cardBorderClass,
 				isEditMode && selected ? 'bg-red-50/50' : 'bg-white',
@@ -113,7 +114,8 @@
 		<button
 			v-if="isEditMode"
 			type="button"
-			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md hover:scale-105 z-0"
+			v-motion="statusFeedbackMotionPreset"
+			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md hover:scale-105 z-0"
 			@click.stop="onRequestDelete">
 			<UIcon
 				name="i-lucide-trash-2"
@@ -123,10 +125,12 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
+
+	import { useMotionPreset } from '@/composables/base/motion'
 	import SpaceLabel from '@/components/SpaceLabel.vue'
 	import { TASK_PRIORITY_STYLES } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
-	import { computed } from 'vue'
 	import TaskCardMetaBadges from './TaskCardMetaBadges.vue'
 
 	const props = defineProps<{
@@ -144,6 +148,7 @@
 		formatRelativeTime: (timestamp: number) => string
 		formatAbsoluteTime: (timestamp: number) => string
 	}>()
+	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
 
 	// 优先级配置
 	const priorityConfig = computed(() => {

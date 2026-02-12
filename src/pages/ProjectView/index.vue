@@ -1,47 +1,51 @@
 <template>
 	<div class="space-y-8">
 		<!-- Project Header Card（仅在 project 模式下显示） -->
-		<ProjectHeaderCard
+		<div
 			v-if="currentProject"
-			:project="currentProject" />
+			v-motion="projectHeaderMotion">
+			<ProjectHeaderCard :project="currentProject" />
+		</div>
 
-		<WorkspaceLayout>
-			<template #todo>
-				<TaskColumn
-					title="Todo"
-					:tasks="todo"
-					:loading="loading"
-					empty-text="暂无待办任务"
-					:show-complete-button="true"
-					:show-space-label="showSpaceLabel"
-					:show-inline-creator="true"
-					:space-id="taskSpaceId"
-					:project-id="projectId"
-					:is-edit-mode="isEditMode"
-					:selected-task-id-set="selectedTaskIds"
-					@complete="onComplete"
-					@task-click="onTaskClick"
-					@toggle-task-select="toggleTaskSelect"
-					@toggle-column-select="() => toggleColumnSelect(todo)"
-					@request-task-delete="requestDeleteTask" />
-			</template>
+		<div v-motion="workspaceColumnsMotion">
+			<WorkspaceLayout>
+				<template #todo>
+					<TaskColumn
+						title="Todo"
+						:tasks="todo"
+						:loading="loading"
+						empty-text="暂无待办任务"
+						:show-complete-button="true"
+						:show-space-label="showSpaceLabel"
+						:show-inline-creator="true"
+						:space-id="taskSpaceId"
+						:project-id="projectId"
+						:is-edit-mode="isEditMode"
+						:selected-task-id-set="selectedTaskIds"
+						@complete="onComplete"
+						@task-click="onTaskClick"
+						@toggle-task-select="toggleTaskSelect"
+						@toggle-column-select="() => toggleColumnSelect(todo)"
+						@request-task-delete="requestDeleteTask" />
+				</template>
 
-			<template #done>
-				<TaskColumn
-					title="Done"
-					:tasks="doneAll"
-					:loading="loading"
-					empty-text="暂无完成记录"
-					:show-time="true"
-					:show-space-label="showSpaceLabel"
-					:is-edit-mode="isEditMode"
-					:selected-task-id-set="selectedTaskIds"
-					@task-click="onTaskClick"
-					@toggle-task-select="toggleTaskSelect"
-					@toggle-column-select="() => toggleColumnSelect(doneAll)"
-					@request-task-delete="requestDeleteTask" />
-			</template>
-		</WorkspaceLayout>
+				<template #done>
+					<TaskColumn
+						title="Done"
+						:tasks="doneAll"
+						:loading="loading"
+						empty-text="暂无完成记录"
+						:show-time="true"
+						:show-space-label="showSpaceLabel"
+						:is-edit-mode="isEditMode"
+						:selected-task-id-set="selectedTaskIds"
+						@task-click="onTaskClick"
+						@toggle-task-select="toggleTaskSelect"
+						@toggle-column-select="() => toggleColumnSelect(doneAll)"
+						@request-task-delete="requestDeleteTask" />
+				</template>
+			</WorkspaceLayout>
+		</div>
 
 		<UModal
 			v-model:open="confirmDeleteOpen"
@@ -78,6 +82,7 @@
 	import { useRoute } from 'vue-router'
 
 	import TaskColumn from '@/components/TaskColumn.vue'
+	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useProjectBreadcrumb } from '@/composables/useProjectBreadcrumb'
@@ -101,6 +106,8 @@
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
 	})
+	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'headerBreadcrumb')
+	const workspaceColumnsMotion = useProjectMotionPreset('drawerSection', 'headerActions')
 
 	// 从路由参数获取 spaceId 和 projectId
 	// All Tasks 模式：spaceId=undefined, projectId=undefined

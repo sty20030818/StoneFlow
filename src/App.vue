@@ -5,7 +5,13 @@
   -->
 	<UApp :toaster="{ position: 'bottom-right', duration: 3000, max: 5 }">
 		<AppShell>
-			<RouterView />
+			<RouterView v-slot="{ Component, route: viewRoute }">
+				<div
+					:key="viewRoute.fullPath"
+					v-motion="pageMotionPreset">
+					<component :is="Component" />
+				</div>
+			</RouterView>
 		</AppShell>
 
 		<!-- 命令面板 -->
@@ -50,6 +56,7 @@
 	import type { CommandPaletteItem } from '@nuxt/ui'
 
 	import { useAppShortcuts } from '@/composables/app/useAppShortcuts'
+	import { useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import CreateProjectModal from '@/components/CreateProjectModal'
 	import CreateTaskModal from '@/components/CreateTaskModal'
@@ -77,6 +84,8 @@
 	const projectTreeStore = useProjectTreeStore()
 	const projectsStore = useProjectsStore()
 	const inlineCreateFocusStore = useInlineCreateFocusStore()
+	const defaultPageMotionPreset = useMotionPreset('page')
+	const projectPageMotionPreset = useProjectMotionPreset('page', 'routePage')
 	const commandPaletteModalUi = createModalLayerUi({
 		content: 'p-0',
 	})
@@ -92,6 +101,15 @@
 
 	const currentRouteProjectId = computed<string | undefined>(() => {
 		return routeProjectId.value ?? undefined
+	})
+
+	const isProjectContextRoute = computed(() => {
+		return route.path.startsWith('/space/') && Boolean(currentRouteProjectId.value)
+	})
+
+	const pageMotionPreset = computed(() => {
+		if (isProjectContextRoute.value) return projectPageMotionPreset.value
+		return defaultPageMotionPreset.value
 	})
 
 	// 定义命令组

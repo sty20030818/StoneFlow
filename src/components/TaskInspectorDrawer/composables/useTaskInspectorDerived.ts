@@ -130,7 +130,7 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const saveStateDotClass = computed(() => {
-		if (state.saveState.value === 'saving') return 'bg-blue-500 animate-pulse'
+		if (state.saveState.value === 'saving') return 'bg-blue-500'
 		if (state.saveState.value === 'saved') return 'bg-emerald-500'
 		if (state.saveState.value === 'error') return 'bg-rose-500'
 		return 'bg-muted'

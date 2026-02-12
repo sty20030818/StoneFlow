@@ -1,7 +1,9 @@
 <template>
 	<section>
 		<!-- 简单的标题（不带 Card 包裹） -->
-		<div class="flex items-center gap-3 mb-4 px-2">
+		<div
+			v-motion="columnHeaderMotion"
+			class="flex items-center gap-3 mb-4 px-2">
 			<button
 				v-if="isEditMode"
 				type="button"
@@ -36,18 +38,22 @@
 					v-if="showInlineCreator && !isDoneColumn"
 					:space-id="spaceId"
 					:project-id="projectId"
+					:enter-delay="todoInlineDelay"
 					:disabled="!spaceId || isEditMode" />
 
-				<EmptyState
+				<div
 					v-if="tasks.length === 0"
-					:text="emptyText" />
+					v-motion="emptyStateMotion">
+					<EmptyState :text="emptyText" />
+				</div>
 
-				<template v-if="!isDoneColumn">
+				<template v-if="!isDoneColumn && tasks.length > 0">
 					<DraggableTaskList
-						v-for="p in priorityList"
+						v-for="(p, priorityIndex) in priorityList"
 						:key="p"
 						:tasks="tasksByPriority[p] || []"
 						:priority="p"
+						:motion-base-delay="todoListBaseDelay + priorityIndex * priorityGroupStep"
 						:disabled="isEditMode"
 						:is-edit-mode="isEditMode"
 						:selected-task-id-set="selectedTaskIdSet"
@@ -64,19 +70,22 @@
 				<div
 					v-else
 					class="flex flex-col gap-3">
-					<TaskCard
-						v-for="task in doneTasks"
+					<div
+						v-for="(task, index) in doneTasks"
 						:key="task.id"
-						:task="task"
-						:is-edit-mode="isEditMode"
-						:selected="isTaskSelected(task.id)"
-						:show-complete-button="showCompleteButton"
-						:show-time="showTime"
-						:show-space-label="showSpaceLabel"
-						@click="$emit('task-click', task)"
-						@complete="$emit('complete', task.id)"
-						@toggle-select="$emit('toggle-task-select', task.id)"
-						@request-delete="$emit('request-task-delete', task.id)" />
+						v-motion="doneTaskMotions[index]">
+						<TaskCard
+							:task="task"
+							:is-edit-mode="isEditMode"
+							:selected="isTaskSelected(task.id)"
+							:show-complete-button="showCompleteButton"
+							:show-time="showTime"
+							:show-space-label="showSpaceLabel"
+							@click="$emit('task-click', task)"
+							@complete="$emit('complete', task.id)"
+							@toggle-select="$emit('toggle-task-select', task.id)"
+							@request-delete="$emit('request-task-delete', task.id)" />
+					</div>
 				</div>
 			</div>
 		</template>
@@ -86,6 +95,11 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
+	import {
+		getProjectMotionPhaseDelay,
+		useMotionPreset,
+		withMotionDelay,
+	} from '@/composables/base/motion'
 	import DraggableTaskList from '@/components/DraggableTaskList.vue'
 	import EmptyState from '@/components/EmptyState.vue'
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
@@ -125,6 +139,18 @@
 		'request-task-delete': [taskId: string]
 		reorder: [tasks: TaskDto[]]
 	}>()
+	const doneTaskItemMotion = useMotionPreset('listItem')
+	const columnSectionMotion = useMotionPreset('listItem')
+	const todoHeaderDelay = getProjectMotionPhaseDelay('columnTodoHeader')
+	const doneHeaderDelay = getProjectMotionPhaseDelay('columnDoneHeader')
+	const todoInlineDelay = getProjectMotionPhaseDelay('columnTodoInline')
+	const todoEmptyDelay = getProjectMotionPhaseDelay('columnTodoEmpty')
+	const doneEmptyDelay = getProjectMotionPhaseDelay('columnDoneEmpty')
+	const todoListBaseDelay = getProjectMotionPhaseDelay('listTodoBase')
+	const doneListBaseDelay = getProjectMotionPhaseDelay('listDoneBase')
+	const doneListStep = getProjectMotionPhaseDelay('listStep')
+	const doneListMax = getProjectMotionPhaseDelay('listMax')
+	const priorityGroupStep = 14
 
 	const selectedCount = computed(() => {
 		if (!props.selectedTaskIdSet) return 0
@@ -134,6 +160,21 @@
 	const allSelected = computed(() => props.tasks.length > 0 && selectedCount.value === props.tasks.length)
 	const indeterminate = computed(() => selectedCount.value > 0 && !allSelected.value)
 	const isDoneColumn = computed(() => getStatusFromTitle(props.title) === 'done')
+	const columnHeaderMotion = computed(() => {
+		const delay = isDoneColumn.value ? doneHeaderDelay : todoHeaderDelay
+		return withMotionDelay(columnSectionMotion.value, delay)
+	})
+	const emptyStateMotion = computed(() => {
+		const delay = isDoneColumn.value ? doneEmptyDelay : todoEmptyDelay
+		return withMotionDelay(
+			{
+				initial: { opacity: 1 },
+				enter: { opacity: 1 },
+				leave: { opacity: 0 },
+			},
+			delay,
+		)
+	})
 
 	const columnSelectClass = computed(() => {
 		if (allSelected.value) return 'border-error/80 bg-error/10'
@@ -169,25 +210,15 @@
 		return [...props.tasks].sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
 	})
 
+	const doneTaskMotions = computed(() => {
+		const base = doneTaskItemMotion.value
+		return doneTasks.value.map((_task, index) => {
+			const delay = Math.min(doneListBaseDelay + index * doneListStep, doneListMax)
+			return withMotionDelay(base, delay)
+		})
+	})
+
 	function isTaskSelected(taskId: string) {
 		return props.selectedTaskIdSet?.has(taskId) ?? false
 	}
 </script>
-
-<style scoped>
-	.task-list-move,
-	.task-list-enter-active,
-	.task-list-leave-active {
-		transition: all 160ms ease;
-	}
-
-	.task-list-enter-from,
-	.task-list-leave-to {
-		opacity: 0;
-		transform: translateY(-4px);
-	}
-
-	.task-list-leave-active {
-		position: relative;
-	}
-</style>

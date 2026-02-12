@@ -1,17 +1,21 @@
 <template>
 	<aside
+		v-motion="sidebarShellMotion"
 		class="w-72 shrink-0 border-r border-default flex flex-col bg-default/80 backdrop-blur-xl relative z-layer-sidebar h-full">
 		<!-- 顶部：Brand + Space Segmented Control -->
 		<div class="px-3 pt-3 shrink-0">
 			<div class="mb-2">
 				<BrandLogo />
 			</div>
-			<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
+			<div
+				v-motion="spaceSegmentMotion"
+				class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
 				<button
 					v-for="s in spaces"
 					:key="s.id"
 					type="button"
-					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
+					v-motion="spaceSwitchButtonMotion"
+					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer hover:shadow-sm active:translate-y-px"
 					:class="
 						spaceValue === s.id
 							? 'bg-default text-default shadow-sm'
@@ -68,7 +72,9 @@
 		</div>
 
 		<!-- 固定区域：Projects Header -->
-		<div class="px-3 pt-4 shrink-0 pb-1.5">
+		<div
+			v-motion="projectHeaderMotion"
+			class="px-3 pt-4 shrink-0 pb-1.5">
 			<div class="flex items-center justify-between px-1.5">
 				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">Projects</div>
 				<UButton
@@ -84,7 +90,9 @@
 		</div>
 
 		<!-- 滚动区域：Project Tree -->
-		<div class="flex-1 overflow-y-auto px-3 pb-3 min-h-0">
+		<div
+			v-motion="projectTreeMotion"
+			class="flex-1 overflow-y-auto px-3 pb-3 min-h-0">
 			<section>
 				<div class="space-y-0.5">
 					<div
@@ -128,7 +136,8 @@
 					</div>
 
 					<nav
-						v-show="!isLibraryCollapsed"
+						v-if="!isLibraryCollapsed"
+						v-motion="libraryNavMotion"
 						class="flex flex-col gap-0.5 mt-1.5">
 						<RouterLink
 							v-for="item in libraryNav"
@@ -149,7 +158,9 @@
 			<div
 				class="p-3"
 				:class="isLibraryCollapsed ? 'pt-0' : 'pt-3'">
-				<div class="pt-1.5">
+				<div
+					v-motion="userCardMotion"
+					class="pt-1.5">
 					<UserCard />
 				</div>
 			</div>
@@ -162,6 +173,7 @@
 	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
+	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { useRuntimeGate } from '@/composables/base/runtime-gate'
 	import BrandLogo from '@/components/BrandLogo.vue'
@@ -184,6 +196,13 @@
 	const route = useRoute()
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const currentPath = computed(() => route.path)
+	const sidebarShellMotion = useProjectMotionPreset('drawerSection', 'sidebarShell')
+	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
+	const spaceSwitchButtonMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
+	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
+	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
+	const libraryNavMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
+	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
 
 	const spaceValue = computed(() => props.space ?? 'work')
 	const projectIcon = PROJECT_ICON
