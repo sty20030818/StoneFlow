@@ -1,7 +1,9 @@
 <template>
 	<section class="h-full flex flex-col">
 		<!-- 顶部：标题 + 搜索 + 新建 -->
-		<header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
+		<header
+			v-motion="headerMotion"
+			class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
@@ -31,9 +33,13 @@
 		</header>
 
 		<!-- 主体：左侧列表 + 右侧编辑 -->
-		<div class="flex-1 min-h-0 flex gap-4 mt-4">
+		<div
+			v-motion="layoutMotion"
+			class="flex-1 min-h-0 flex gap-4 mt-4">
 			<!-- 左侧：笔记列表 -->
-			<aside class="w-64 shrink-0 border-r border-default pr-4 overflow-y-auto">
+			<aside
+				v-motion="listPanelMotion"
+				class="w-64 shrink-0 border-r border-default pr-4 overflow-y-auto">
 				<div
 					v-if="filteredNotes.length === 0 && !loading"
 					class="text-sm text-muted py-8 text-center">
@@ -44,8 +50,9 @@
 					v-else
 					class="space-y-2">
 					<div
-						v-for="n in filteredNotes"
+						v-for="(n, index) in filteredNotes"
 						:key="n.id"
+						v-motion="noteItemMotions[index]"
 						class="p-3 rounded-lg border border-default bg-elevated/80 cursor-pointer hover:bg-default transition"
 						:class="selectedNote?.id === n.id ? 'ring-2 ring-primary' : ''"
 						@click="selectNote(n)">
@@ -86,7 +93,9 @@
 			</aside>
 
 			<!-- 右侧：编辑区 -->
-			<main class="flex-1 min-w-0 overflow-y-auto">
+			<main
+				v-motion="editorPanelMotion"
+				class="flex-1 min-w-0 overflow-y-auto">
 				<div
 					v-if="!selectedNote"
 					class="flex items-center justify-center h-full text-sm text-muted">
@@ -167,12 +176,18 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { noteSubmitSchema } from '@/composables/domain/validation/forms'
 	import type { NoteDto } from '@/services/api/notes'
 	import { createNote, deleteNote, listNotes, updateNote } from '@/services/api/notes'
 
 	const toast = useToast()
+	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
+	const listPanelMotion = useAppMotionPreset('card', 'sectionBase', 30)
+	const editorPanelMotion = useAppMotionPreset('card', 'sectionBase', 44)
+	const noteItemPreset = useMotionPreset('listItem')
 
 	const selectedNote = ref<NoteDto | null>(null)
 	const searchKeyword = ref('')
@@ -214,6 +229,11 @@
 
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
+	const noteItemMotions = computed(() =>
+		filteredNotes.value.map((_item, index) =>
+			withMotionDelay(noteItemPreset.value, getAppStaggerDelay(index)),
+		),
+	)
 
 	function selectNote(n: NoteDto) {
 		selectedNote.value = n

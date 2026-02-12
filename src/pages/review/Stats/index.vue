@@ -1,7 +1,9 @@
 <template>
 	<section class="space-y-4">
 		<!-- 顶部标题 -->
-		<header class="flex flex-col gap-1">
+		<header
+			v-motion="headerMotion"
+			class="flex flex-col gap-1">
 			<div class="flex items-center gap-2 text-sm font-semibold">
 				<UIcon
 					name="i-lucide-bar-chart-3"
@@ -12,10 +14,13 @@
 		</header>
 
 		<!-- 关键指标卡片：每个 Space 的「本周完成数 / 活跃 Project 数」 -->
-		<section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		<section
+			v-motion="cardsSectionMotion"
+			class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<UCard
-				v-for="s in spaceCards"
+				v-for="(s, index) in spaceCards"
 				:key="s.id"
+				v-motion="spaceCardMotions[index]"
 				class="cursor-pointer hover:bg-default transition"
 				@click="goToFinishList(s.id)">
 				<template #header>
@@ -50,9 +55,13 @@
 			</UCard>
 		</section>
 
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+		<div
+			v-motion="dashboardMotion"
+			class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<!-- 最近 7 天完成数折线图（简化为条形趋势） -->
-			<UCard class="lg:col-span-2">
+			<UCard
+				v-motion="trendCardMotion"
+				class="lg:col-span-2">
 				<template #header>
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-2">
@@ -81,7 +90,7 @@
 			</UCard>
 
 			<!-- 状态分布 -->
-			<UCard>
+			<UCard v-motion="statusCardMotion">
 				<template #header>
 					<div class="flex items-center gap-2">
 						<UIcon
@@ -154,6 +163,7 @@
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import { toBoundedPercent } from '@/composables/base/percent'
 	import {
 		TASK_DONE_REASON_COLORS,
@@ -166,6 +176,15 @@
 
 	const toast = useToast()
 	const router = useRouter()
+	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const cardsSectionMotion = useAppMotionPreset('drawerSection', 'sectionBase', 16)
+	const dashboardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 28)
+	const cardMotionPreset = useMotionPreset('card')
+	const trendCardMotion = useAppMotionPreset('card', 'sectionBase', 46)
+	const statusCardMotion = useAppMotionPreset('card', 'sectionBase', 60)
+	const spaceCardMotions = computed(() =>
+		spaceCards.value.map((_s, index) => withMotionDelay(cardMotionPreset.value, getAppStaggerDelay(index))),
+	)
 
 	const { state: tasks, isLoading: loading } = useAsyncState(
 		async () => {

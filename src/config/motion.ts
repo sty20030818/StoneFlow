@@ -19,8 +19,22 @@ type MotionPresetDefinition = {
 
 type MotionEase = [number, number, number, number]
 
-export const PROJECT_MOTION_PHASE = {
+export const APP_MOTION_PHASE = {
 	routePage: 0,
+	layoutShell: 10,
+	sectionBase: 24,
+	sectionStep: 18,
+	sectionMax: 220,
+	listBase: 56,
+	listStep: 20,
+	listMax: 300,
+	modalBody: 24,
+	modalFooter: 44,
+	stateAction: 12,
+} as const
+
+export const PROJECT_MOTION_PHASE = {
+	...APP_MOTION_PHASE,
 	headerShell: 16,
 	headerBreadcrumb: 28,
 	headerActions: 42,
@@ -38,12 +52,11 @@ export const PROJECT_MOTION_PHASE = {
 	columnDoneEmpty: 74,
 	listTodoBase: 58,
 	listDoneBase: 72,
-	listStep: 22,
-	listMax: 286,
+	listStep: APP_MOTION_PHASE.listStep,
+	listMax: APP_MOTION_PHASE.listMax,
 	drawerHeader: 20,
 	drawerSectionStart: 36,
 	drawerSectionStep: 18,
-	stateAction: 12,
 } as const
 
 export const MOTION_TOKENS = {

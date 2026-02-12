@@ -3,7 +3,9 @@
 		<Teleport
 			defer
 			to="#header-actions-portal">
-			<div class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
+			<div
+				v-motion="headerActionMotion"
+				class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
 				<button
 					v-for="opt in viewOptions"
 					:key="opt.value"
@@ -22,11 +24,14 @@
 
 		<div
 			v-if="loading"
+			v-motion="loadingMotion"
 			class="text-sm text-muted">
 			加载中...
 		</div>
 
-		<div v-else>
+		<div
+			v-else
+			v-motion="contentMotion">
 			<div v-if="viewMode === 'projects'">
 				<div
 					v-if="deletedProjects.length === 0"
@@ -39,6 +44,7 @@
 					<div
 						v-for="project in deletedProjects"
 						:key="project.id"
+						v-motion="getProjectItemMotion(project.id)"
 						class="flex items-center justify-between gap-4 rounded-xl border border-default/70 bg-default/70 px-4 py-3">
 						<div class="min-w-0 space-y-0.5">
 							<div class="text-sm font-semibold text-default truncate">{{ project.title }}</div>
@@ -73,6 +79,7 @@
 					<div
 						v-for="task in deletedTasks"
 						:key="task.id"
+						v-motion="getTaskItemMotion(task.id)"
 						class="flex items-center justify-between gap-4 rounded-xl border border-default/70 bg-default/70 px-4 py-3">
 						<div class="min-w-0 space-y-0.5">
 							<div class="text-sm font-semibold text-default truncate">{{ task.title }}</div>
@@ -102,6 +109,7 @@
 	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
 	import { computed, provide, ref, watch } from 'vue'
 
+	import { useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import TimeDisplay from '@/components/TimeDisplay.vue'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { listDeletedProjects, restoreProject } from '@/services/api/projects'
@@ -112,6 +120,10 @@
 	import { useSettingsStore } from '@/stores/settings'
 
 	const toast = useToast()
+	const headerActionMotion = useAppMotionPreset('statusFeedback', 'stateAction')
+	const loadingMotion = useAppMotionPreset('statusFeedback', 'sectionBase', 8)
+	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
+	const listItemMotion = useMotionPreset('listItem')
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
@@ -129,6 +141,8 @@
 	const restoringTaskIds = ref<Set<string>>(new Set())
 	const trashSnapshots = useStorage<Record<string, TrashSnapshot>>('trash_snapshot_v1', {})
 	const loadedTrashScopes = ref(new Set<string>())
+	const projectItemMotionCache = new Map<string, number>()
+	const taskItemMotionCache = new Map<string, number>()
 
 	const viewOptions = [
 		{
@@ -169,6 +183,22 @@
 			description: '被删除的项目与任务会显示在这里，可随时恢复。',
 		},
 	])
+
+	function getProjectItemMotion(projectId: string) {
+		const cached = projectItemMotionCache.get(projectId)
+		if (typeof cached === 'number') return withMotionDelay(listItemMotion.value, cached)
+		const delay = 56 + projectItemMotionCache.size * 18
+		projectItemMotionCache.set(projectId, delay)
+		return withMotionDelay(listItemMotion.value, delay)
+	}
+
+	function getTaskItemMotion(taskId: string) {
+		const cached = taskItemMotionCache.get(taskId)
+		if (typeof cached === 'number') return withMotionDelay(listItemMotion.value, cached)
+		const delay = 56 + taskItemMotionCache.size * 18
+		taskItemMotionCache.set(taskId, delay)
+		return withMotionDelay(listItemMotion.value, delay)
+	}
 	provide('workspaceBreadcrumbItems', breadcrumbItems)
 
 	function getTaskProjectLabel(projectId: string | null) {

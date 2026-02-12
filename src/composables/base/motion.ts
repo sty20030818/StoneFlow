@@ -4,6 +4,7 @@ import { createGlobalState } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import {
+	APP_MOTION_PHASE,
 	getMotionPreset,
 	PROJECT_MOTION_PHASE,
 	type MotionMode,
@@ -17,6 +18,7 @@ type RuntimeTransition = Transition & {
 }
 
 export type ProjectMotionPhaseName = keyof typeof PROJECT_MOTION_PHASE
+export type AppMotionPhaseName = keyof typeof APP_MOTION_PHASE
 
 function applyDelay(variant: Variant | undefined, delay: number): Variant | undefined {
 	if (!variant) return variant
@@ -44,6 +46,10 @@ export function withMotionDelay(variants: MotionPresetVariants, delay: number): 
 
 export function getProjectMotionPhaseDelay(phase: ProjectMotionPhaseName) {
 	return PROJECT_MOTION_PHASE[phase]
+}
+
+export function getAppMotionPhaseDelay(phase: AppMotionPhaseName) {
+	return APP_MOTION_PHASE[phase]
 }
 
 const useMotionRuntime = createGlobalState(() => {
@@ -79,6 +85,14 @@ export function useProjectMotionPreset(name: MotionPresetName, phase: ProjectMot
 	})
 }
 
+export function useAppMotionPreset(name: MotionPresetName, phase: AppMotionPhaseName, offset = 0) {
+	const preset = useMotionPreset(name)
+	return computed(() => {
+		const phaseDelay = getAppMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
 export function getProjectStaggerDelay(
 	index: number,
 	basePhase: ProjectMotionPhaseName,
@@ -88,6 +102,18 @@ export function getProjectStaggerDelay(
 	const base = getProjectMotionPhaseDelay(basePhase)
 	const step = getProjectMotionPhaseDelay(stepPhase)
 	const max = getProjectMotionPhaseDelay(maxPhase)
+	return Math.min(base + Math.max(index, 0) * step, max)
+}
+
+export function getAppStaggerDelay(
+	index: number,
+	basePhase: AppMotionPhaseName = 'listBase',
+	stepPhase: AppMotionPhaseName = 'listStep',
+	maxPhase: AppMotionPhaseName = 'listMax',
+) {
+	const base = getAppMotionPhaseDelay(basePhase)
+	const step = getAppMotionPhaseDelay(stepPhase)
+	const max = getAppMotionPhaseDelay(maxPhase)
 	return Math.min(base + Math.max(index, 0) * step, max)
 }
 

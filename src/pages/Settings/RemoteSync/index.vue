@@ -1,6 +1,8 @@
 <template>
 	<section class="max-w-5xl space-y-6">
-		<div class="space-y-6 lg:sticky lg:top-4 lg:self-start">
+		<div
+			v-motion="actionsCardMotion"
+			class="space-y-6 lg:sticky lg:top-4 lg:self-start">
 			<RemoteSyncActionsCard
 				:is-pushing="isPushing"
 				:is-pulling="isPulling"
@@ -12,7 +14,9 @@
 				:on-pull="handlePull" />
 		</div>
 
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+		<div
+			v-motion="headerMotion"
+			class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
 			<div class="space-y-1">
 				<div class="text-2xl font-semibold text-default">远端同步</div>
 				<div class="text-sm text-muted">
@@ -21,27 +25,33 @@
 			</div>
 		</div>
 
-		<div class="grid gap-6 lg:grid-cols-[1.25fr,0.95fr]">
+		<div
+			v-motion="contentGridMotion"
+			class="grid gap-6 lg:grid-cols-[1.25fr,0.95fr]">
 			<div class="space-y-6">
-				<RemoteSyncStatusCard
-					:testing-current="testingCurrent"
-					:has-active-profile="hasActiveProfile"
-					:status-badge-variant="statusBadgeVariant"
-					:status-badge-class="statusBadgeClass"
-					:status-label="statusLabel"
-					:status-message="statusMessage"
-					:active-profile="activeProfile"
-					:on-test-current="handleTestCurrent" />
+				<div v-motion="statusCardMotion">
+					<RemoteSyncStatusCard
+						:testing-current="testingCurrent"
+						:has-active-profile="hasActiveProfile"
+						:status-badge-variant="statusBadgeVariant"
+						:status-badge-class="statusBadgeClass"
+						:status-label="statusLabel"
+						:status-message="statusMessage"
+						:active-profile="activeProfile"
+						:on-test-current="handleTestCurrent" />
+				</div>
 
-				<RemoteSyncProfilesCard
-					:profiles="profiles"
-					:active-profile-id="activeProfileId"
-					:format-profile-meta="formatProfileMeta"
-					:on-open-create="openCreate"
-					:on-open-import="openImport"
-					:on-set-active="setActive"
-					:on-open-edit="openEdit"
-					:on-open-delete="openDelete" />
+				<div v-motion="profilesCardMotion">
+					<RemoteSyncProfilesCard
+						:profiles="profiles"
+						:active-profile-id="activeProfileId"
+						:format-profile-meta="formatProfileMeta"
+						:on-open-create="openCreate"
+						:on-open-import="openImport"
+						:on-set-active="setActive"
+						:on-open-edit="openEdit"
+						:on-open-delete="openDelete" />
+				</div>
 			</div>
 		</div>
 	</section>
@@ -52,14 +62,18 @@
 		description="创建新的远端同步配置"
 		:ui="remoteSyncModalUi">
 		<template #body>
-			<RemoteSyncCreateForm
-				:name="newName"
-				:url="newUrl"
-				:on-update-name="(value) => (newName = value)"
-				:on-update-url="(value) => (newUrl = value)" />
+			<div v-motion="modalBodyMotion">
+				<RemoteSyncCreateForm
+					:name="newName"
+					:url="newUrl"
+					:on-update-name="(value) => (newName = value)"
+					:on-update-url="(value) => (newUrl = value)" />
+			</div>
 		</template>
 		<template #footer>
-			<div class="flex w-full items-center justify-between gap-2">
+			<div
+				v-motion="modalFooterMotion"
+				class="flex w-full items-center justify-between gap-2">
 				<UButton
 					color="neutral"
 					variant="soft"
@@ -96,14 +110,18 @@
 		description="修改当前远端同步配置"
 		:ui="remoteSyncModalUi">
 		<template #body>
-			<RemoteSyncEditForm
-				:name="editName"
-				:url="editUrl"
-				:on-update-name="(value) => (editName = value)"
-				:on-update-url="(value) => (editUrl = value)" />
+			<div v-motion="modalBodyMotion">
+				<RemoteSyncEditForm
+					:name="editName"
+					:url="editUrl"
+					:on-update-name="(value) => (editName = value)"
+					:on-update-url="(value) => (editUrl = value)" />
+			</div>
 		</template>
 		<template #footer>
-			<div class="flex w-full items-center justify-between gap-2">
+			<div
+				v-motion="modalFooterMotion"
+				class="flex w-full items-center justify-between gap-2">
 				<UButton
 					color="neutral"
 					variant="soft"
@@ -140,27 +158,33 @@
 		description="从文本导入远端同步配置"
 		:ui="remoteSyncModalUi">
 		<template #body>
-			<RemoteSyncImportForm
-				:text="importText"
-				:error="importError"
-				:on-update-text="(value) => (importText = value)" />
+			<div v-motion="modalBodyMotion">
+				<RemoteSyncImportForm
+					:text="importText"
+					:error="importError"
+					:on-update-text="(value) => (importText = value)" />
+			</div>
 		</template>
 		<template #footer>
-			<UButton
-				color="neutral"
-				variant="ghost"
-				@click="importOpen = false">
-				取消
-			</UButton>
-			<UButton
-				color="primary"
-				variant="soft"
-				:loading="importing"
-				:disabled="!canImport"
-				icon="i-lucide-upload"
-				@click="handleImport">
-				导入
-			</UButton>
+			<div
+				v-motion="modalFooterMotion"
+				class="flex items-center gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					@click="importOpen = false">
+					取消
+				</UButton>
+				<UButton
+					color="primary"
+					variant="soft"
+					:loading="importing"
+					:disabled="!canImport"
+					icon="i-lucide-upload"
+					@click="handleImport">
+					导入
+				</UButton>
+			</div>
 		</template>
 	</UModal>
 
@@ -170,27 +194,34 @@
 		description="确认删除当前远端同步配置"
 		:ui="remoteSyncModalUi">
 		<template #body>
-			<RemoteSyncDeleteBody :name="deleteTarget?.name ?? ''" />
+			<div v-motion="modalBodyMotion">
+				<RemoteSyncDeleteBody :name="deleteTarget?.name ?? ''" />
+			</div>
 		</template>
 		<template #footer>
-			<UButton
-				color="neutral"
-				variant="ghost"
-				@click="deleteOpen = false">
-				取消
-			</UButton>
-			<UButton
-				color="error"
-				variant="solid"
-				:loading="deleting"
-				@click="confirmDelete">
-				确认删除
-			</UButton>
+			<div
+				v-motion="modalFooterMotion"
+				class="flex items-center gap-2">
+				<UButton
+					color="neutral"
+					variant="ghost"
+					@click="deleteOpen = false">
+					取消
+				</UButton>
+				<UButton
+					color="error"
+					variant="solid"
+					:loading="deleting"
+					@click="confirmDelete">
+					确认删除
+				</UButton>
+			</div>
 		</template>
 	</UModal>
 </template>
 
 <script setup lang="ts">
+	import { useAppMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import RemoteSyncActionsCard from './components/RemoteSyncActionsCard.vue'
 	import RemoteSyncCreateForm from './components/RemoteSyncCreateForm.vue'
@@ -256,4 +287,11 @@
 	} = useRemoteSyncPage()
 
 	const remoteSyncModalUi = createModalLayerUi()
+	const actionsCardMotion = useAppMotionPreset('card', 'sectionBase')
+	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase', 16)
+	const contentGridMotion = useAppMotionPreset('drawerSection', 'sectionBase', 30)
+	const statusCardMotion = useAppMotionPreset('card', 'sectionBase', 48)
+	const profilesCardMotion = useAppMotionPreset('card', 'sectionBase', 68)
+	const modalBodyMotion = useMotionPresetWithDelay('modalSection', 24)
+	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 </script>

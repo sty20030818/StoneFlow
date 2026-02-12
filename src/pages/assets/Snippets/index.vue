@@ -1,7 +1,9 @@
 <template>
 	<section class="h-full flex flex-col">
 		<!-- 顶部：标题 + 搜索 + 新建 -->
-		<header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
+		<header
+			v-motion="headerMotion"
+			class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
@@ -31,9 +33,13 @@
 		</header>
 
 		<!-- 主体：左侧分组 + 中间列表 + 右侧编辑 -->
-		<div class="flex-1 min-h-0 flex gap-4 mt-4">
+		<div
+			v-motion="layoutMotion"
+			class="flex-1 min-h-0 flex gap-4 mt-4">
 			<!-- 左侧：分组列表 -->
-			<aside class="w-48 shrink-0 border-r border-default pr-4">
+			<aside
+				v-motion="folderMotion"
+				class="w-48 shrink-0 border-r border-default pr-4">
 				<div class="space-y-2">
 					<button
 						type="button"
@@ -69,7 +75,9 @@
 			</aside>
 
 			<!-- 中间：代码片段列表 -->
-			<main class="flex-1 min-w-0 overflow-y-auto">
+			<main
+				v-motion="listMotion"
+				class="flex-1 min-w-0 overflow-y-auto">
 				<div
 					v-if="filteredSnippets.length === 0 && !loading"
 					class="text-sm text-muted py-8 text-center">
@@ -80,8 +88,9 @@
 					v-else
 					class="space-y-2">
 					<div
-						v-for="s in filteredSnippets"
+						v-for="(s, index) in filteredSnippets"
 						:key="s.id"
+						v-motion="snippetItemMotions[index]"
 						class="p-3 rounded-lg border border-default bg-elevated/80 cursor-pointer hover:bg-default transition"
 						:class="selectedSnippet?.id === s.id ? 'ring-2 ring-primary' : ''"
 						@click="selectSnippet(s)">
@@ -138,6 +147,7 @@
 			<!-- 右侧：编辑区 -->
 			<aside
 				v-if="selectedSnippet"
+				v-motion="editorMotion"
 				class="w-96 shrink-0 border-l border-default pl-4 overflow-y-auto">
 				<div class="space-y-3">
 					<div class="flex items-center justify-between">
@@ -221,12 +231,19 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
 	import type { SnippetDto } from '@/services/api/snippets'
 	import { createSnippet, deleteSnippet, listSnippets, updateSnippet } from '@/services/api/snippets'
 
 	const toast = useToast()
+	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
+	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
+	const listMotion = useAppMotionPreset('drawerSection', 'sectionBase', 42)
+	const editorMotion = useAppMotionPreset('card', 'sectionBase', 54)
+	const snippetItemPreset = useMotionPreset('listItem')
 
 	const selectedSnippet = ref<SnippetDto | null>(null)
 	const selectedFolder = ref<string | null>(null)
@@ -285,6 +302,11 @@
 
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
+	const snippetItemMotions = computed(() =>
+		filteredSnippets.value.map((_item, index) =>
+			withMotionDelay(snippetItemPreset.value, getAppStaggerDelay(index)),
+		),
+	)
 
 	function selectSnippet(s: SnippetDto) {
 		selectedSnippet.value = s

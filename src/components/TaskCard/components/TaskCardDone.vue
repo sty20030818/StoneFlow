@@ -4,7 +4,8 @@
 		class="relative group rounded-2xl flex items-center">
 		<!-- 主卡片容器 -->
 		<div
-			class="relative w-full flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 opacity-60 hover:opacity-100 cursor-default items-center select-none"
+			v-motion="cardHoverMotionPreset"
+			class="relative w-full flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 opacity-60 hover:opacity-100 cursor-default items-center select-none"
 			:class="[
 				isEditMode && selected ? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm' : '',
 				isEditMode && !selected ? 'opacity-40' : '',
@@ -77,8 +78,7 @@
 		<button
 			v-if="isEditMode"
 			type="button"
-			v-motion="statusFeedbackMotionPreset"
-			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md hover:scale-105 z-0"
+			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md hover:scale-105 z-0"
 			@click.stop="onRequestDelete">
 			<UIcon
 				name="i-lucide-trash-2"
@@ -88,6 +88,9 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
+	import { computed } from 'vue'
+
 	import { useMotionPreset } from '@/composables/base/motion'
 	import type { TaskDto } from '@/services/api/tasks'
 
@@ -110,5 +113,17 @@
 		onContextMenu: (event: MouseEvent) => void
 		formatAbsoluteTime: (timestamp: number) => string
 	}>()
-	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
+	const cardMotionPreset = useMotionPreset('card')
+	const cardHoverMotionPreset = computed<MotionVariants<string>>(() => ({
+		initial: {
+			y: 0,
+			scale: 1,
+		},
+		enter: {
+			y: 0,
+			scale: 1,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+		hovered: cardMotionPreset.value.hovered,
+	}))
 </script>

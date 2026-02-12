@@ -1,7 +1,9 @@
 <template>
 	<section class="h-full flex flex-col">
 		<!-- 顶部：标题 + 新建 -->
-		<header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
+		<header
+			v-motion="headerMotion"
+			class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
@@ -22,7 +24,9 @@
 		</header>
 
 		<!-- 主体：时间序列列表 -->
-		<main class="flex-1 min-h-0 overflow-y-auto mt-4">
+		<main
+			v-motion="timelineMotion"
+			class="flex-1 min-h-0 overflow-y-auto mt-4">
 			<div
 				v-if="groupedEntries.length === 0 && !loading"
 				class="text-sm text-muted py-8 text-center">
@@ -48,8 +52,9 @@
 
 					<div class="space-y-3">
 						<UCard
-							v-for="e in group.entries"
+							v-for="(e, index) in group.entries"
 							:key="e.id"
+							v-motion="getDiaryItemMotion(index)"
 							class="cursor-pointer hover:bg-default transition"
 							@click="selectEntry(e)">
 							<div class="flex items-start justify-between gap-2">
@@ -113,7 +118,9 @@
 			title="日记编辑"
 			description="创建或编辑日记内容"
 			:ui="diaryModalUi">
-			<div class="p-4 space-y-3">
+			<div
+				v-motion="modalBodyMotion"
+				class="p-4 space-y-3">
 				<header class="space-y-1">
 					<div class="flex items-center gap-2">
 						<UIcon
@@ -157,7 +164,9 @@
 						size="sm" />
 				</div>
 
-				<div class="flex items-center gap-2 pt-2">
+				<div
+					v-motion="modalFooterMotion"
+					class="flex items-center gap-2 pt-2">
 					<UButton
 						color="primary"
 						size="sm"
@@ -183,6 +192,7 @@
 	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 	import { createModalLayerUi } from '@/config/ui-layer'
@@ -192,6 +202,11 @@
 
 	const toast = useToast()
 	const router = useRouter()
+	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const timelineMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
+	const diaryItemPreset = useMotionPreset('card')
+	const modalBodyMotion = useMotionPresetWithDelay('modalSection', 24)
+	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 	const diaryModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
 	})
@@ -279,6 +294,9 @@
 
 		return result.sort((a, b) => b.date.localeCompare(a.date))
 	})
+	function getDiaryItemMotion(index: number) {
+		return withMotionDelay(diaryItemPreset.value, getAppStaggerDelay(index))
+	}
 
 	function selectEntry(e: DiaryEntryDto) {
 		selectedEntry.value = e

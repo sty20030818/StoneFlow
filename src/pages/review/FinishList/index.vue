@@ -1,7 +1,9 @@
 <template>
 	<section class="space-y-4">
 		<!-- 顶部：标题 + 统计 -->
-		<header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+		<header
+			v-motion="headerMotion"
+			class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
@@ -40,7 +42,9 @@
 		</header>
 
 		<!-- 筛选条：时间 / Space / Project / Tag -->
-		<section class="rounded-xl border border-default bg-elevated/60 px-3 py-2.5 flex flex-wrap items-center gap-2">
+		<section
+			v-motion="filtersMotion"
+			class="rounded-xl border border-default bg-elevated/60 px-3 py-2.5 flex flex-wrap items-center gap-2">
 			<div class="flex items-center gap-1.5 text-[11px] text-muted">
 				<UIcon
 					name="i-lucide-filter"
@@ -86,8 +90,9 @@
 			</div>
 
 			<div
-				v-for="group in projectGroups"
+				v-for="(group, index) in projectGroups"
 				:key="group.projectId"
+				v-motion="groupMotions[index]"
 				class="rounded-xl border border-default bg-elevated/70">
 				<header class="px-3 py-2.5 flex items-center justify-between gap-2 border-b border-default/70">
 					<div class="flex items-center gap-2 min-w-0">
@@ -141,7 +146,9 @@
 			title="完成感想"
 			description="记录任务完成后的感想与复盘"
 			:ui="reflectionModalUi">
-			<div class="p-4 space-y-3">
+			<div
+				v-motion="reflectionBodyMotion"
+				class="p-4 space-y-3">
 				<header class="space-y-1">
 					<div class="flex items-center gap-2">
 						<UIcon
@@ -162,7 +169,9 @@
 					placeholder="这次完成有什么收获、疑问或需要改进的地方？（占位，不落库）"
 					:rows="5" />
 
-				<div class="pt-1">
+				<div
+					v-motion="reflectionFooterMotion"
+					class="pt-1">
 					<UButton
 						color="neutral"
 						variant="ghost"
@@ -186,6 +195,7 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
@@ -193,6 +203,16 @@
 
 	const toast = useToast()
 	const projectsStore = useProjectsStore()
+	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
+	const groupItemMotionPreset = useMotionPreset('card')
+	const reflectionBodyMotion = useMotionPresetWithDelay('modalSection', 24)
+	const reflectionFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
+	const groupMotions = computed(() =>
+		projectGroups.value.map((_group, index) =>
+			withMotionDelay(groupItemMotionPreset.value, getAppStaggerDelay(index)),
+		),
+	)
 	const reflectionModalUi = createModalLayerUi({
 		width: 'sm:max-w-md',
 	})

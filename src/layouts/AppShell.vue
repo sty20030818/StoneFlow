@@ -2,11 +2,15 @@
 	<div class="h-full flex bg-default text-default relative overflow-hidden z-layer-base">
 		<Sidebar v-model:space="space" />
 
-		<div class="flex-1 min-w-0 flex flex-col">
+		<div
+			v-motion="layoutMainMotion"
+			class="flex-1 min-w-0 flex flex-col">
 			<Header />
 
 			<main class="flex-1 min-h-0 overflow-auto">
-				<div class="p-4">
+				<div
+					v-motion="layoutContentMotion"
+					class="p-4">
 					<slot />
 				</div>
 			</main>
@@ -21,6 +25,7 @@
 	import { computed, onBeforeUnmount, watch } from 'vue'
 	import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 
+	import { useAppMotionPreset } from '@/composables/base/motion'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'
 	import { useStartupReady } from '@/startup/initialize'
 	import {
@@ -42,6 +47,8 @@
 	const startupReady = useStartupReady()
 	const settingsStore = useSettingsStore()
 	const viewStateStore = useViewStateStore()
+	const layoutMainMotion = useAppMotionPreset('drawerSection', 'layoutShell')
+	const layoutContentMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 
 	function isKnownSpaceId(value: string): value is SpaceId {
 		return (SPACE_IDS as readonly string[]).includes(value)
