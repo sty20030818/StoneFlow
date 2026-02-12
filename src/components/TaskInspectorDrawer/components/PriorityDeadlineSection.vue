@@ -87,12 +87,12 @@
 				</button>
 				<template #content>
 						<div class="p-2">
-							<UInput
+							<DatePickerInput
 								v-model="deadline"
-								type="date"
 								size="sm"
-								:ui="{ rounded: 'rounded-lg' }"
-								@change="onDeadlineSelected" />
+								button-size="xs"
+								:popover-ui="drawerPopoverUi"
+								@selected="onDeadlineSelected" />
 							<div class="mt-2 flex gap-2">
 								<UButton
 									color="neutral"
@@ -112,6 +112,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
+	import DatePickerInput from '@/components/DatePickerInput.vue'
 	import type { PriorityOption, TaskPriorityValue } from '@/config/task'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 

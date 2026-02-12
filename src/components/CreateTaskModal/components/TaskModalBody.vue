@@ -115,15 +115,11 @@
 
 		<div class="grid grid-cols-2 gap-4">
 			<UFormField label="截止时间">
-				<UInput
+				<DatePickerInput
 					v-model="form.deadlineDate"
-					type="date"
 					size="md"
-					class="w-full"
-					:ui="{
-						rounded: 'rounded-xl',
-					}"
-					placeholder="选择截止日期" />
+					class-name="w-full"
+					:popover-ui="{ content: 'z-layer-modal-popover' }" />
 			</UFormField>
 		</div>
 
@@ -312,6 +308,8 @@
 
 <script setup lang="ts">
 	// 复用边界约束：该组件只负责字段渲染与事件分发，业务流程统一留在 composable。
+	import DatePickerInput from '@/components/DatePickerInput.vue'
+
 	import type { DoneReasonOption, PriorityOption, StatusOption } from '@/config/task'
 	import type { SpaceId } from '@/config/space'
 	import type { CreateTaskFormState, LinkKindOption, ProjectOption } from '../composables/useCreateTaskModal'
