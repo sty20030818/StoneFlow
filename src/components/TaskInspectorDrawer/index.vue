@@ -84,10 +84,7 @@
 							:on-confirm-custom-field="confirmCustomField"
 							:on-remove-custom-field="removeCustomField"
 							:on-custom-field-input="clearCustomFieldValidationError"
-							:on-custom-field-edit-start="onCustomFieldsEditStart"
-							:on-custom-field-edit-end="onCustomFieldsEditEnd"
-							:on-custom-field-composition-start="onCustomFieldsCompositionStart"
-							:on-custom-field-composition-end="onCustomFieldsCompositionEnd"
+							:interaction="customFieldsInteraction"
 							:on-flush-custom-field-edits="flushPendingUpdates" />
 					</div>
 
@@ -100,10 +97,7 @@
 
 					<NoteSection
 						v-model:note="noteLocal"
-						:on-note-focus="onNoteFocus"
-						:on-note-composition-start="onNoteCompositionStart"
-						:on-note-composition-end="onNoteCompositionEnd"
-						:on-note-blur="onNoteBlur" />
+						:interaction="noteInteraction" />
 
 					<LinksSection
 						v-model:links="linksLocal"
@@ -117,10 +111,7 @@
 						:on-confirm-link="addLink"
 						:on-remove-link="removeLink"
 						:on-link-input="clearLinkValidationError"
-						:on-link-edit-start="onLinksEditStart"
-						:on-link-edit-end="onLinksEditEnd"
-						:on-link-composition-start="onLinksCompositionStart"
-						:on-link-composition-end="onLinksCompositionEnd"
+						:interaction="linksInteraction"
 						:on-flush-link-edits="flushPendingUpdates" />
 
 					<TimelineSection
@@ -259,6 +250,27 @@
 		flushPendingUpdates,
 		toggleTimeline,
 	} = useTaskInspectorDrawer()
+
+	const noteInteraction = {
+		onFocus: onNoteFocus,
+		onBlur: onNoteBlur,
+		onCompositionStart: onNoteCompositionStart,
+		onCompositionEnd: onNoteCompositionEnd,
+	}
+
+	const linksInteraction = {
+		onEditStart: onLinksEditStart,
+		onEditEnd: onLinksEditEnd,
+		onCompositionStart: onLinksCompositionStart,
+		onCompositionEnd: onLinksCompositionEnd,
+	}
+
+	const customFieldsInteraction = {
+		onEditStart: onCustomFieldsEditStart,
+		onEditEnd: onCustomFieldsEditEnd,
+		onCompositionStart: onCustomFieldsCompositionStart,
+		onCompositionEnd: onCustomFieldsCompositionEnd,
+	}
 
 	const drawerUi = createDrawerLayerUi({
 		content:

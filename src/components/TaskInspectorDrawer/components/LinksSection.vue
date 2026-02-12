@@ -165,6 +165,13 @@
 	const draftUrl = defineModel<string>('draftUrl', { required: true })
 	const draftVisible = defineModel<boolean>('draftVisible', { required: true })
 
+	type TextInteractionHandlers = {
+		onEditStart: () => void
+		onEditEnd: () => void
+		onCompositionStart: () => void
+		onCompositionEnd: () => void
+	}
+
 	type Props = {
 		linkKindOptions: LinkKindOption[]
 		editingErrorIndex: number | null
@@ -173,10 +180,7 @@
 		onRemoveLink: (index: number) => void
 		onLinkInput: (index: number) => void
 		onFlushLinkEdits: () => void
-		onLinkEditStart: () => void
-		onLinkEditEnd: () => void
-		onLinkCompositionStart: () => void
-		onLinkCompositionEnd: () => void
+		interaction: TextInteractionHandlers
 	}
 
 	const props = defineProps<Props>()
@@ -219,14 +223,14 @@
 	function onEditOpenChange(index: number, open: boolean) {
 		if (open) {
 			editingIndex.value = index
-			props.onLinkEditStart()
+			props.interaction.onEditStart()
 			props.onLinkInput(index)
 			return
 		}
 		if (editingIndex.value === index) {
 			editingIndex.value = null
 		}
-		props.onLinkEditEnd()
+		props.interaction.onEditEnd()
 		props.onFlushLinkEdits()
 	}
 
@@ -235,15 +239,15 @@
 	}
 
 	function onLinkEditStart() {
-		props.onLinkEditStart()
+		props.interaction.onEditStart()
 	}
 
 	function onLinkCompositionStart() {
-		props.onLinkCompositionStart()
+		props.interaction.onCompositionStart()
 	}
 
 	function onLinkCompositionEnd() {
-		props.onLinkCompositionEnd()
+		props.interaction.onCompositionEnd()
 	}
 
 	const compactSelectMenuUi = {

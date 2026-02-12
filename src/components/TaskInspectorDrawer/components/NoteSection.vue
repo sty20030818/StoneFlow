@@ -13,10 +13,10 @@
 					root: 'w-full',
 					base: 'p-0 text-sm leading-relaxed bg-transparent border-none rounded-none focus:ring-0 placeholder:text-muted/40',
 				}"
-				@focus="onNoteFocus"
-				@compositionstart="onNoteCompositionStart"
-				@compositionend="onNoteCompositionEnd"
-				@blur="onNoteBlur" />
+				@focus="props.interaction.onFocus"
+				@compositionstart="props.interaction.onCompositionStart"
+				@compositionend="props.interaction.onCompositionEnd"
+				@blur="props.interaction.onBlur" />
 		</div>
 	</section>
 </template>
@@ -24,12 +24,16 @@
 <script setup lang="ts">
 	const noteModel = defineModel<string>('note', { required: true })
 
-	type Props = {
-		onNoteBlur: () => void
-		onNoteFocus: () => void
-		onNoteCompositionStart: () => void
-		onNoteCompositionEnd: () => void
+	type TextInteractionHandlers = {
+		onFocus: () => void
+		onBlur: () => void
+		onCompositionStart: () => void
+		onCompositionEnd: () => void
 	}
 
-	defineProps<Props>()
+	type Props = {
+		interaction: TextInteractionHandlers
+	}
+
+	const props = defineProps<Props>()
 </script>

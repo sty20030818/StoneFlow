@@ -21,62 +21,49 @@ export function useTaskInspectorSync(params: {
 	const { currentTask, projectsStore, state } = params
 	const syncedTaskId = ref<string | null>(null)
 
+	function syncTaskToLocal(task: TaskDto, forceEditable: boolean) {
+		state.withAutosaveSuppressed(() => {
+			if (forceEditable || !state.isTextInteracting('title')) {
+				state.titleLocal.value = task.title
+			}
+			if (forceEditable || !state.isTextInteracting('note')) {
+				state.noteLocal.value = normalizeOptionalText(task.note) ?? ''
+			}
+			if (forceEditable || !state.isTextInteracting('links')) {
+				state.linksLocal.value = toLinksFormItems(task.links)
+			}
+			if (forceEditable || !state.isTextInteracting('customFields')) {
+				state.customFieldsLocal.value = toCustomFieldsFormItems(task.customFields)
+			}
+
+			state.statusLocal.value = getDisplayStatus(task.status)
+			state.doneReasonLocal.value = task.doneReason === 'cancelled' ? 'cancelled' : 'completed'
+			state.priorityLocal.value = task.priority || 'P1'
+			state.tagsLocal.value = [...(task.tags ?? [])]
+			state.deadlineLocal.value = toDeadlineInputValue(task.deadlineAt)
+			state.spaceIdLocal.value = task.spaceId
+			state.projectIdLocal.value = normalizeProjectId(task.projectId)
+			state.retrySaveAvailable.value = false
+
+			if (!forceEditable) return
+
+			state.tagInput.value = ''
+			state.linkValidationErrorIndex.value = null
+			state.linkDraftTitle.value = ''
+			state.linkDraftUrl.value = ''
+			state.linkDraftKind.value = 'web'
+			state.linkDraftVisible.value = false
+			state.customFieldValidationErrorIndex.value = null
+			state.customFieldDraftTitle.value = ''
+			state.customFieldDraftValue.value = ''
+			state.customFieldDraftVisible.value = false
+		})
+	}
+
 	function syncFromTask() {
-		const t = currentTask.value
-		if (!t) return
-		state.titleLocal.value = t.title
-		state.statusLocal.value = getDisplayStatus(t.status)
-		state.doneReasonLocal.value = t.doneReason === 'cancelled' ? 'cancelled' : 'completed'
-		state.priorityLocal.value = t.priority || 'P1'
-		state.noteLocal.value = normalizeOptionalText(t.note) ?? ''
-		state.tagsLocal.value = [...(t.tags ?? [])]
-		state.tagInput.value = ''
-		state.deadlineLocal.value = toDeadlineInputValue(t.deadlineAt)
-		state.retrySaveAvailable.value = false
-
-		state.spaceIdLocal.value = t.spaceId
-		state.projectIdLocal.value = normalizeProjectId(t.projectId)
-		state.linksLocal.value = toLinksFormItems(t.links)
-		state.linkValidationErrorIndex.value = null
-		state.linkDraftTitle.value = ''
-		state.linkDraftUrl.value = ''
-		state.linkDraftKind.value = 'web'
-		state.linkDraftVisible.value = false
-		state.customFieldsLocal.value = toCustomFieldsFormItems(t.customFields)
-		state.customFieldValidationErrorIndex.value = null
-		state.customFieldDraftTitle.value = ''
-		state.customFieldDraftValue.value = ''
-		state.customFieldDraftVisible.value = false
-	}
-
-	function syncEditableFieldsFromSameTask() {
-		const t = currentTask.value
-		if (!t) return
-		if (!state.titleEditing.value && !state.titleComposing.value) {
-			state.titleLocal.value = t.title
-		}
-		if (!state.noteEditing.value && !state.noteComposing.value) {
-			state.noteLocal.value = normalizeOptionalText(t.note) ?? ''
-		}
-		if (!state.linksEditing.value && !state.linksComposing.value) {
-			state.linksLocal.value = toLinksFormItems(t.links)
-		}
-		if (!state.customFieldsEditing.value && !state.customFieldsComposing.value) {
-			state.customFieldsLocal.value = toCustomFieldsFormItems(t.customFields)
-		}
-	}
-
-	function syncStableFieldsFromSameTask() {
-		const t = currentTask.value
-		if (!t) return
-		state.statusLocal.value = getDisplayStatus(t.status)
-		state.doneReasonLocal.value = t.doneReason === 'cancelled' ? 'cancelled' : 'completed'
-		state.priorityLocal.value = t.priority || 'P1'
-		state.tagsLocal.value = [...(t.tags ?? [])]
-		state.deadlineLocal.value = toDeadlineInputValue(t.deadlineAt)
-		state.spaceIdLocal.value = t.spaceId
-		state.projectIdLocal.value = normalizeProjectId(t.projectId)
-		state.retrySaveAvailable.value = false
+		const task = currentTask.value
+		if (!task) return
+		syncTaskToLocal(task, true)
 	}
 
 	watch(
@@ -90,12 +77,7 @@ export function useTaskInspectorSync(params: {
 					syncedTaskId.value = task.id
 				}
 				await projectsStore.load(task.spaceId)
-				if (switchedTask) {
-					syncFromTask()
-					return
-				}
-				syncStableFieldsFromSameTask()
-				syncEditableFieldsFromSameTask()
+				syncTaskToLocal(task, switchedTask)
 			}
 		},
 		{ immediate: true },

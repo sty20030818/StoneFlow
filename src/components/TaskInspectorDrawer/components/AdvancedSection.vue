@@ -134,16 +134,20 @@
 	const customFieldDraftValue = defineModel<string>('draftValue', { required: true })
 	const customFieldDraftVisible = defineModel<boolean>('draftVisible', { required: true })
 
+	type TextInteractionHandlers = {
+		onEditStart: () => void
+		onEditEnd: () => void
+		onCompositionStart: () => void
+		onCompositionEnd: () => void
+	}
+
 	type Props = {
 		editingErrorIndex: number | null
 		onConfirmCustomField: () => boolean
 		onRemoveCustomField: (index: number) => void
 		onCustomFieldInput: (index: number) => void
 		onFlushCustomFieldEdits: () => void
-		onCustomFieldEditStart: () => void
-		onCustomFieldEditEnd: () => void
-		onCustomFieldCompositionStart: () => void
-		onCustomFieldCompositionEnd: () => void
+		interaction: TextInteractionHandlers
 	}
 
 	const props = defineProps<Props>()
@@ -172,14 +176,14 @@
 	function onEditOpenChange(index: number, open: boolean) {
 		if (open) {
 			editingIndex.value = index
-			props.onCustomFieldEditStart()
+			props.interaction.onEditStart()
 			props.onCustomFieldInput(index)
 			return
 		}
 		if (editingIndex.value === index) {
 			editingIndex.value = null
 		}
-		props.onCustomFieldEditEnd()
+		props.interaction.onEditEnd()
 		props.onFlushCustomFieldEdits()
 	}
 
@@ -188,14 +192,14 @@
 	}
 
 	function onCustomFieldEditStart() {
-		props.onCustomFieldEditStart()
+		props.interaction.onEditStart()
 	}
 
 	function onCustomFieldCompositionStart() {
-		props.onCustomFieldCompositionStart()
+		props.interaction.onCompositionStart()
 	}
 
 	function onCustomFieldCompositionEnd() {
-		props.onCustomFieldCompositionEnd()
+		props.interaction.onCompositionEnd()
 	}
 </script>

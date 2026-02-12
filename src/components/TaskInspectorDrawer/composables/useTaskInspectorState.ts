@@ -1,7 +1,9 @@
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
 import type { TaskCustomFieldFormItem, TaskLinkFormItem } from './taskFieldNormalization'
+
+export type TextInteractionField = 'title' | 'note' | 'links' | 'customFields'
 
 export function useTaskInspectorState() {
 	const titleLocal = ref('')
@@ -29,24 +31,50 @@ export function useTaskInspectorState() {
 	const customFieldDraftTitle = ref('')
 	const customFieldDraftValue = ref('')
 	const customFieldDraftVisible = ref(false)
-	const titleEditing = ref(false)
-	const noteEditing = ref(false)
-	const linksEditing = ref(false)
-	const customFieldsEditing = ref(false)
-	const titleComposing = ref(false)
-	const noteComposing = ref(false)
-	const linksComposing = ref(false)
-	const customFieldsComposing = ref(false)
+	const textInteraction = reactive<Record<TextInteractionField, { editing: boolean; composing: boolean }>>({
+		title: { editing: false, composing: false },
+		note: { editing: false, composing: false },
+		links: { editing: false, composing: false },
+		customFields: { editing: false, composing: false },
+	})
+	const suppressAutosave = ref(false)
+
+	function markTextEditing(field: TextInteractionField) {
+		textInteraction[field].editing = true
+	}
+
+	function markTextEditEnd(field: TextInteractionField) {
+		textInteraction[field].editing = false
+		textInteraction[field].composing = false
+	}
+
+	function markTextComposing(field: TextInteractionField) {
+		textInteraction[field].editing = true
+		textInteraction[field].composing = true
+	}
+
+	function markTextCompositionEnd(field: TextInteractionField) {
+		textInteraction[field].composing = false
+	}
+
+	function isTextInteracting(field: TextInteractionField): boolean {
+		return textInteraction[field].editing || textInteraction[field].composing
+	}
+
+	function withAutosaveSuppressed<T>(fn: () => T): T {
+		suppressAutosave.value = true
+		try {
+			return fn()
+		} finally {
+			suppressAutosave.value = false
+		}
+	}
 
 	function resetTextInteractionState() {
-		titleEditing.value = false
-		noteEditing.value = false
-		linksEditing.value = false
-		customFieldsEditing.value = false
-		titleComposing.value = false
-		noteComposing.value = false
-		linksComposing.value = false
-		customFieldsComposing.value = false
+		for (const field of Object.keys(textInteraction) as TextInteractionField[]) {
+			textInteraction[field].editing = false
+			textInteraction[field].composing = false
+		}
 	}
 
 	return {
@@ -75,14 +103,14 @@ export function useTaskInspectorState() {
 		customFieldDraftTitle,
 		customFieldDraftValue,
 		customFieldDraftVisible,
-		titleEditing,
-		noteEditing,
-		linksEditing,
-		customFieldsEditing,
-		titleComposing,
-		noteComposing,
-		linksComposing,
-		customFieldsComposing,
+		textInteraction,
+		suppressAutosave,
+		markTextEditing,
+		markTextEditEnd,
+		markTextComposing,
+		markTextCompositionEnd,
+		isTextInteracting,
+		withAutosaveSuppressed,
 		resetTextInteractionState,
 	}
 }

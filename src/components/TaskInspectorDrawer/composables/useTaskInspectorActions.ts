@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { useDebounceFn, useTimeoutFn, watchDebounced } from '@vueuse/core'
+import { useTimeoutFn, watchDebounced } from '@vueuse/core'
 
 import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/services/api/tasks'
 import { updateTask } from '@/services/api/tasks'
@@ -8,7 +8,7 @@ import type { useProjectsStore } from '@/stores/projects'
 import type { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
 
-import type { TaskInspectorState } from './useTaskInspectorState'
+import type { TaskInspectorState, TextInteractionField } from './useTaskInspectorState'
 import {
 	areCustomFieldsEqual,
 	areLinkPatchesEqual,
@@ -56,14 +56,6 @@ export function useTaskInspectorActions(params: {
 		{ immediate: false },
 	)
 
-	const debouncedProcessQueuedUpdates = useDebounceFn(
-		() => {
-			void processQueuedUpdates()
-		},
-		TEXT_AUTOSAVE_DEBOUNCE,
-		{ maxWait: TEXT_AUTOSAVE_MAX_WAIT },
-	)
-
 	function clearSaveStateTimer() {
 		stopSavedTimer()
 		stopErrorTimer()
@@ -107,7 +99,7 @@ export function useTaskInspectorActions(params: {
 
 	function queueDebouncedUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
 		stageUpdate(patch, storePatch)
-		debouncedProcessQueuedUpdates()
+		void processQueuedUpdates()
 	}
 
 	async function commitUpdateNow(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): Promise<boolean> {
@@ -178,9 +170,13 @@ export function useTaskInspectorActions(params: {
 		return state.customFieldsLocal.value.findIndex((item) => !item.title.trim())
 	}
 
+	function shouldSkipDebouncedStage(field: TextInteractionField): boolean {
+		return state.suppressAutosave.value || state.textInteraction[field].composing
+	}
+
 	function stageTitleUpdate(mode: 'debounced' | 'immediate') {
 		if (!currentTask.value) return
-		if (mode === 'debounced' && state.titleComposing.value) return
+		if (mode === 'debounced' && shouldSkipDebouncedStage('title')) return
 		const nextTitle = state.titleLocal.value.trim()
 		if (!nextTitle || nextTitle === currentTask.value.title) return
 		const patch = { title: nextTitle }
@@ -193,7 +189,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageNoteUpdate(mode: 'debounced' | 'immediate') {
 		if (!currentTask.value) return
-		if (mode === 'debounced' && state.noteComposing.value) return
+		if (mode === 'debounced' && shouldSkipDebouncedStage('note')) return
 		const nextNote = normalizeOptionalText(state.noteLocal.value)
 		if (nextNote === (currentTask.value.note || null)) return
 		const patch = { note: nextNote }
@@ -206,7 +202,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageLinksUpdate(mode: 'debounced' | 'immediate'): boolean {
 		if (!currentTask.value) return false
-		if (mode === 'debounced' && state.linksComposing.value) return false
+		if (mode === 'debounced' && shouldSkipDebouncedStage('links')) return false
 		const invalidIndex = findInvalidLinkIndex()
 		if (invalidIndex >= 0) {
 			state.linkValidationErrorIndex.value = invalidIndex
@@ -228,7 +224,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageCustomFieldsUpdate(mode: 'debounced' | 'immediate'): boolean {
 		if (!currentTask.value) return false
-		if (mode === 'debounced' && state.customFieldsComposing.value) return false
+		if (mode === 'debounced' && shouldSkipDebouncedStage('customFields')) return false
 		const invalidIndex = findInvalidCustomFieldIndex()
 		if (invalidIndex >= 0) {
 			state.customFieldValidationErrorIndex.value = invalidIndex
@@ -246,36 +242,31 @@ export function useTaskInspectorActions(params: {
 		return true
 	}
 
-	watchDebounced(
+	function registerDebouncedAutosave(source: () => unknown, stage: () => void, deep = false) {
+		watchDebounced(source, stage, {
+			debounce: TEXT_AUTOSAVE_DEBOUNCE,
+			maxWait: TEXT_AUTOSAVE_MAX_WAIT,
+			deep,
+		})
+	}
+
+	registerDebouncedAutosave(
 		() => state.titleLocal.value,
-		() => {
-			stageTitleUpdate('debounced')
-		},
-		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT },
+		() => stageTitleUpdate('debounced'),
 	)
-
-	watchDebounced(
+	registerDebouncedAutosave(
 		() => state.noteLocal.value,
-		() => {
-			stageNoteUpdate('debounced')
-		},
-		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT },
+		() => stageNoteUpdate('debounced'),
 	)
-
-	watchDebounced(
+	registerDebouncedAutosave(
 		() => state.linksLocal.value,
-		() => {
-			stageLinksUpdate('debounced')
-		},
-		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT, deep: true },
+		() => stageLinksUpdate('debounced'),
+		true,
 	)
-
-	watchDebounced(
+	registerDebouncedAutosave(
 		() => state.customFieldsLocal.value,
-		() => {
-			stageCustomFieldsUpdate('debounced')
-		},
-		{ debounce: TEXT_AUTOSAVE_DEBOUNCE, maxWait: TEXT_AUTOSAVE_MAX_WAIT, deep: true },
+		() => stageCustomFieldsUpdate('debounced'),
+		true,
 	)
 
 	async function flushPendingUpdates() {
@@ -287,22 +278,20 @@ export function useTaskInspectorActions(params: {
 	}
 
 	async function onTitleBlur() {
-		state.titleEditing.value = false
-		state.titleComposing.value = false
+		state.markTextEditEnd('title')
 		await flushPendingUpdates()
 	}
 
 	function onTitleFocus() {
-		state.titleEditing.value = true
+		state.markTextEditing('title')
 	}
 
 	function onTitleCompositionStart() {
-		state.titleEditing.value = true
-		state.titleComposing.value = true
+		state.markTextComposing('title')
 	}
 
 	function onTitleCompositionEnd() {
-		state.titleComposing.value = false
+		state.markTextCompositionEnd('title')
 	}
 
 	async function onStatusChange(value: unknown) {
@@ -411,22 +400,20 @@ export function useTaskInspectorActions(params: {
 	}
 
 	async function onNoteBlur() {
-		state.noteEditing.value = false
-		state.noteComposing.value = false
+		state.markTextEditEnd('note')
 		await flushPendingUpdates()
 	}
 
 	function onNoteFocus() {
-		state.noteEditing.value = true
+		state.markTextEditing('note')
 	}
 
 	function onNoteCompositionStart() {
-		state.noteEditing.value = true
-		state.noteComposing.value = true
+		state.markTextComposing('note')
 	}
 
 	function onNoteCompositionEnd() {
-		state.noteComposing.value = false
+		state.markTextCompositionEnd('note')
 	}
 
 	function addLink(): boolean {
@@ -465,21 +452,19 @@ export function useTaskInspectorActions(params: {
 	}
 
 	function onLinksEditStart() {
-		state.linksEditing.value = true
+		state.markTextEditing('links')
 	}
 
 	function onLinksEditEnd() {
-		state.linksEditing.value = false
-		state.linksComposing.value = false
+		state.markTextEditEnd('links')
 	}
 
 	function onLinksCompositionStart() {
-		state.linksEditing.value = true
-		state.linksComposing.value = true
+		state.markTextComposing('links')
 	}
 
 	function onLinksCompositionEnd() {
-		state.linksComposing.value = false
+		state.markTextCompositionEnd('links')
 	}
 
 	function addCustomField() {
@@ -522,21 +507,19 @@ export function useTaskInspectorActions(params: {
 	}
 
 	function onCustomFieldsEditStart() {
-		state.customFieldsEditing.value = true
+		state.markTextEditing('customFields')
 	}
 
 	function onCustomFieldsEditEnd() {
-		state.customFieldsEditing.value = false
-		state.customFieldsComposing.value = false
+		state.markTextEditEnd('customFields')
 	}
 
 	function onCustomFieldsCompositionStart() {
-		state.customFieldsEditing.value = true
-		state.customFieldsComposing.value = true
+		state.markTextComposing('customFields')
 	}
 
 	function onCustomFieldsCompositionEnd() {
-		state.customFieldsComposing.value = false
+		state.markTextCompositionEnd('customFields')
 	}
 
 	async function onRetrySave() {
