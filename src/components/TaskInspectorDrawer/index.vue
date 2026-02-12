@@ -41,6 +41,9 @@
 								root: 'w-full',
 								base: 'px-0 py-0 text-2xl font-semibold leading-tight bg-transparent border-none rounded-none focus:ring-0 placeholder:text-muted/40',
 							}"
+							@focus="onTitleFocus"
+							@compositionstart="onTitleCompositionStart"
+							@compositionend="onTitleCompositionEnd"
 							@blur="onTitleBlur" />
 					</section>
 
@@ -81,6 +84,10 @@
 							:on-confirm-custom-field="confirmCustomField"
 							:on-remove-custom-field="removeCustomField"
 							:on-custom-field-input="clearCustomFieldValidationError"
+							:on-custom-field-edit-start="onCustomFieldsEditStart"
+							:on-custom-field-edit-end="onCustomFieldsEditEnd"
+							:on-custom-field-composition-start="onCustomFieldsCompositionStart"
+							:on-custom-field-composition-end="onCustomFieldsCompositionEnd"
 							:on-flush-custom-field-edits="flushPendingUpdates" />
 					</div>
 
@@ -93,6 +100,9 @@
 
 					<NoteSection
 						v-model:note="noteLocal"
+						:on-note-focus="onNoteFocus"
+						:on-note-composition-start="onNoteCompositionStart"
+						:on-note-composition-end="onNoteCompositionEnd"
 						:on-note-blur="onNoteBlur" />
 
 					<LinksSection
@@ -107,6 +117,10 @@
 						:on-confirm-link="addLink"
 						:on-remove-link="removeLink"
 						:on-link-input="clearLinkValidationError"
+						:on-link-edit-start="onLinksEditStart"
+						:on-link-edit-end="onLinksEditEnd"
+						:on-link-composition-start="onLinksCompositionStart"
+						:on-link-composition-end="onLinksCompositionEnd"
 						:on-flush-link-edits="flushPendingUpdates" />
 
 					<TimelineSection
@@ -209,6 +223,9 @@
 		timelineErrorMessage,
 		reloadTimeline,
 		onTitleBlur,
+		onTitleFocus,
+		onTitleCompositionStart,
+		onTitleCompositionEnd,
 		onStatusSegmentClick,
 		onDoneReasonChange,
 		onPriorityChange,
@@ -227,6 +244,17 @@
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,
+		onNoteFocus,
+		onNoteCompositionStart,
+		onNoteCompositionEnd,
+		onLinksEditStart,
+		onLinksEditEnd,
+		onLinksCompositionStart,
+		onLinksCompositionEnd,
+		onCustomFieldsEditStart,
+		onCustomFieldsEditEnd,
+		onCustomFieldsCompositionStart,
+		onCustomFieldsCompositionEnd,
 		onRetrySave,
 		flushPendingUpdates,
 		toggleTimeline,

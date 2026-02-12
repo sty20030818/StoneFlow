@@ -44,6 +44,9 @@
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }"
+							@focus="onCustomFieldEditStart"
+							@compositionstart="onCustomFieldCompositionStart"
+							@compositionend="onCustomFieldCompositionEnd"
 							@input="onCustomFieldInput(index)" />
 						<div class="space-y-1">
 							<UInput
@@ -52,6 +55,9 @@
 								size="sm"
 								class="w-full"
 								:ui="{ rounded: 'rounded-lg' }"
+								@focus="onCustomFieldEditStart"
+								@compositionstart="onCustomFieldCompositionStart"
+								@compositionend="onCustomFieldCompositionEnd"
 								@input="onCustomFieldInput(index)" />
 							<div
 								v-if="editingErrorIndex === index"
@@ -134,6 +140,10 @@
 		onRemoveCustomField: (index: number) => void
 		onCustomFieldInput: (index: number) => void
 		onFlushCustomFieldEdits: () => void
+		onCustomFieldEditStart: () => void
+		onCustomFieldEditEnd: () => void
+		onCustomFieldCompositionStart: () => void
+		onCustomFieldCompositionEnd: () => void
 	}
 
 	const props = defineProps<Props>()
@@ -162,16 +172,30 @@
 	function onEditOpenChange(index: number, open: boolean) {
 		if (open) {
 			editingIndex.value = index
+			props.onCustomFieldEditStart()
 			props.onCustomFieldInput(index)
 			return
 		}
 		if (editingIndex.value === index) {
 			editingIndex.value = null
 		}
+		props.onCustomFieldEditEnd()
 		props.onFlushCustomFieldEdits()
 	}
 
 	function onCustomFieldInput(index: number) {
 		props.onCustomFieldInput(index)
+	}
+
+	function onCustomFieldEditStart() {
+		props.onCustomFieldEditStart()
+	}
+
+	function onCustomFieldCompositionStart() {
+		props.onCustomFieldCompositionStart()
+	}
+
+	function onCustomFieldCompositionEnd() {
+		props.onCustomFieldCompositionEnd()
 	}
 </script>

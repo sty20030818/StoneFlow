@@ -42,6 +42,7 @@ export function useTaskInspectorDrawer() {
 
 	async function close() {
 		await actions.flushPendingUpdates()
+		actions.resetTextInteractionState()
 		state.timelineCollapsed.value = true
 		store.close()
 	}

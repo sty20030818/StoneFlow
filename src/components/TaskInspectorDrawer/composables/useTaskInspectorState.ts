@@ -29,6 +29,25 @@ export function useTaskInspectorState() {
 	const customFieldDraftTitle = ref('')
 	const customFieldDraftValue = ref('')
 	const customFieldDraftVisible = ref(false)
+	const titleEditing = ref(false)
+	const noteEditing = ref(false)
+	const linksEditing = ref(false)
+	const customFieldsEditing = ref(false)
+	const titleComposing = ref(false)
+	const noteComposing = ref(false)
+	const linksComposing = ref(false)
+	const customFieldsComposing = ref(false)
+
+	function resetTextInteractionState() {
+		titleEditing.value = false
+		noteEditing.value = false
+		linksEditing.value = false
+		customFieldsEditing.value = false
+		titleComposing.value = false
+		noteComposing.value = false
+		linksComposing.value = false
+		customFieldsComposing.value = false
+	}
 
 	return {
 		titleLocal,
@@ -56,6 +75,15 @@ export function useTaskInspectorState() {
 		customFieldDraftTitle,
 		customFieldDraftValue,
 		customFieldDraftVisible,
+		titleEditing,
+		noteEditing,
+		linksEditing,
+		customFieldsEditing,
+		titleComposing,
+		noteComposing,
+		linksComposing,
+		customFieldsComposing,
+		resetTextInteractionState,
 	}
 }
 

@@ -13,6 +13,9 @@
 					root: 'w-full',
 					base: 'p-0 text-sm leading-relaxed bg-transparent border-none rounded-none focus:ring-0 placeholder:text-muted/40',
 				}"
+				@focus="onNoteFocus"
+				@compositionstart="onNoteCompositionStart"
+				@compositionend="onNoteCompositionEnd"
 				@blur="onNoteBlur" />
 		</div>
 	</section>
@@ -23,6 +26,9 @@
 
 	type Props = {
 		onNoteBlur: () => void
+		onNoteFocus: () => void
+		onNoteCompositionStart: () => void
+		onNoteCompositionEnd: () => void
 	}
 
 	defineProps<Props>()

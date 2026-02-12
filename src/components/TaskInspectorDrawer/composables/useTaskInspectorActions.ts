@@ -180,6 +180,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageTitleUpdate(mode: 'debounced' | 'immediate') {
 		if (!currentTask.value) return
+		if (mode === 'debounced' && state.titleComposing.value) return
 		const nextTitle = state.titleLocal.value.trim()
 		if (!nextTitle || nextTitle === currentTask.value.title) return
 		const patch = { title: nextTitle }
@@ -192,6 +193,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageNoteUpdate(mode: 'debounced' | 'immediate') {
 		if (!currentTask.value) return
+		if (mode === 'debounced' && state.noteComposing.value) return
 		const nextNote = normalizeOptionalText(state.noteLocal.value)
 		if (nextNote === (currentTask.value.note || null)) return
 		const patch = { note: nextNote }
@@ -204,6 +206,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageLinksUpdate(mode: 'debounced' | 'immediate'): boolean {
 		if (!currentTask.value) return false
+		if (mode === 'debounced' && state.linksComposing.value) return false
 		const invalidIndex = findInvalidLinkIndex()
 		if (invalidIndex >= 0) {
 			state.linkValidationErrorIndex.value = invalidIndex
@@ -225,6 +228,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageCustomFieldsUpdate(mode: 'debounced' | 'immediate'): boolean {
 		if (!currentTask.value) return false
+		if (mode === 'debounced' && state.customFieldsComposing.value) return false
 		const invalidIndex = findInvalidCustomFieldIndex()
 		if (invalidIndex >= 0) {
 			state.customFieldValidationErrorIndex.value = invalidIndex
@@ -283,7 +287,22 @@ export function useTaskInspectorActions(params: {
 	}
 
 	async function onTitleBlur() {
+		state.titleEditing.value = false
+		state.titleComposing.value = false
 		await flushPendingUpdates()
+	}
+
+	function onTitleFocus() {
+		state.titleEditing.value = true
+	}
+
+	function onTitleCompositionStart() {
+		state.titleEditing.value = true
+		state.titleComposing.value = true
+	}
+
+	function onTitleCompositionEnd() {
+		state.titleComposing.value = false
 	}
 
 	async function onStatusChange(value: unknown) {
@@ -392,7 +411,22 @@ export function useTaskInspectorActions(params: {
 	}
 
 	async function onNoteBlur() {
+		state.noteEditing.value = false
+		state.noteComposing.value = false
 		await flushPendingUpdates()
+	}
+
+	function onNoteFocus() {
+		state.noteEditing.value = true
+	}
+
+	function onNoteCompositionStart() {
+		state.noteEditing.value = true
+		state.noteComposing.value = true
+	}
+
+	function onNoteCompositionEnd() {
+		state.noteComposing.value = false
 	}
 
 	function addLink(): boolean {
@@ -428,6 +462,24 @@ export function useTaskInspectorActions(params: {
 		if (index === undefined || state.linkValidationErrorIndex.value === index) {
 			state.linkValidationErrorIndex.value = null
 		}
+	}
+
+	function onLinksEditStart() {
+		state.linksEditing.value = true
+	}
+
+	function onLinksEditEnd() {
+		state.linksEditing.value = false
+		state.linksComposing.value = false
+	}
+
+	function onLinksCompositionStart() {
+		state.linksEditing.value = true
+		state.linksComposing.value = true
+	}
+
+	function onLinksCompositionEnd() {
+		state.linksComposing.value = false
 	}
 
 	function addCustomField() {
@@ -469,6 +521,24 @@ export function useTaskInspectorActions(params: {
 		}
 	}
 
+	function onCustomFieldsEditStart() {
+		state.customFieldsEditing.value = true
+	}
+
+	function onCustomFieldsEditEnd() {
+		state.customFieldsEditing.value = false
+		state.customFieldsComposing.value = false
+	}
+
+	function onCustomFieldsCompositionStart() {
+		state.customFieldsEditing.value = true
+		state.customFieldsComposing.value = true
+	}
+
+	function onCustomFieldsCompositionEnd() {
+		state.customFieldsComposing.value = false
+	}
+
 	async function onRetrySave() {
 		if (!retrySnapshot) return
 		queueImmediateUpdate(retrySnapshot.patch, retrySnapshot.storePatch)
@@ -477,6 +547,10 @@ export function useTaskInspectorActions(params: {
 
 	function toggleTimeline() {
 		state.timelineCollapsed.value = !state.timelineCollapsed.value
+	}
+
+	function resetTextInteractionState() {
+		state.resetTextInteractionState()
 	}
 
 	function buildStoreLinks(currentLinks: LinkDto[], nextLinks: LinkInput[]): LinkDto[] {
@@ -499,6 +573,9 @@ export function useTaskInspectorActions(params: {
 
 	return {
 		onTitleBlur,
+		onTitleFocus,
+		onTitleCompositionStart,
+		onTitleCompositionEnd,
 		onStatusSegmentClick,
 		onDoneReasonChange,
 		onPriorityChange,
@@ -518,8 +595,20 @@ export function useTaskInspectorActions(params: {
 		onSpaceChange,
 		onProjectChange,
 		onNoteBlur,
+		onNoteFocus,
+		onNoteCompositionStart,
+		onNoteCompositionEnd,
+		onLinksEditStart,
+		onLinksEditEnd,
+		onLinksCompositionStart,
+		onLinksCompositionEnd,
+		onCustomFieldsEditStart,
+		onCustomFieldsEditEnd,
+		onCustomFieldsCompositionStart,
+		onCustomFieldsCompositionEnd,
 		onRetrySave,
 		flushPendingUpdates,
+		resetTextInteractionState,
 		toggleTimeline,
 	}
 }

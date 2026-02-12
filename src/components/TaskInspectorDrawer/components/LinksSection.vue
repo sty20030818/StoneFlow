@@ -61,6 +61,9 @@
 								size="sm"
 								class="w-full"
 								:ui="{ rounded: 'rounded-lg' }"
+								@focus="onLinkEditStart"
+								@compositionstart="onLinkCompositionStart"
+								@compositionend="onLinkCompositionEnd"
 								@input="onLinkInput(index)" />
 							<USelectMenu
 								v-model="linksModel[index].kind"
@@ -80,6 +83,9 @@
 								size="sm"
 								class="w-full"
 								:ui="{ rounded: 'rounded-lg' }"
+								@focus="onLinkEditStart"
+								@compositionstart="onLinkCompositionStart"
+								@compositionend="onLinkCompositionEnd"
 								@input="onLinkInput(index)" />
 							<div
 								v-if="editingErrorIndex === index"
@@ -167,6 +173,10 @@
 		onRemoveLink: (index: number) => void
 		onLinkInput: (index: number) => void
 		onFlushLinkEdits: () => void
+		onLinkEditStart: () => void
+		onLinkEditEnd: () => void
+		onLinkCompositionStart: () => void
+		onLinkCompositionEnd: () => void
 	}
 
 	const props = defineProps<Props>()
@@ -209,17 +219,31 @@
 	function onEditOpenChange(index: number, open: boolean) {
 		if (open) {
 			editingIndex.value = index
+			props.onLinkEditStart()
 			props.onLinkInput(index)
 			return
 		}
 		if (editingIndex.value === index) {
 			editingIndex.value = null
 		}
+		props.onLinkEditEnd()
 		props.onFlushLinkEdits()
 	}
 
 	function onLinkInput(index: number) {
 		props.onLinkInput(index)
+	}
+
+	function onLinkEditStart() {
+		props.onLinkEditStart()
+	}
+
+	function onLinkCompositionStart() {
+		props.onLinkCompositionStart()
+	}
+
+	function onLinkCompositionEnd() {
+		props.onLinkCompositionEnd()
 	}
 
 	const compactSelectMenuUi = {
