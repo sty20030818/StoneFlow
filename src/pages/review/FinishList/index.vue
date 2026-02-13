@@ -198,7 +198,14 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref, watch } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useCardHoverMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import {
+		DEFAULT_STAGGER_MOTION_LIMIT,
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useAppMotionPreset,
+		useCardHoverMotionPreset,
+		useMotionPresetWithDelay,
+	} from '@/composables/base/motion'
 	import { DEFAULT_PROJECT_LABEL } from '@/config/project'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
@@ -213,9 +220,9 @@
 	const reflectionBodyMotion = useMotionPresetWithDelay('modalSection', 24)
 	const reflectionFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 	const groupMotions = computed(() =>
-		projectGroups.value.map((_group, index) =>
-			withMotionDelay(groupItemMotionPreset.value, getAppStaggerDelay(index)),
-		),
+		createStaggeredEnterMotions(projectGroups.value.length, groupItemMotionPreset.value, getAppStaggerDelay, {
+			limit: DEFAULT_STAGGER_MOTION_LIMIT,
+		}),
 	)
 	const reflectionModalUi = createModalLayerUi({
 		width: 'sm:max-w-md',

@@ -234,7 +234,14 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import {
+		DEFAULT_STAGGER_MOTION_LIMIT,
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useAppMotionPreset,
+		useMotionPreset,
+		useMotionPresetWithDelay,
+	} from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
@@ -314,9 +321,9 @@
 	})
 
 	const snippetItemMotions = computed(() =>
-		filteredSnippets.value.map((_snippet, index) =>
-			withMotionDelay(snippetItemPreset.value, getAppStaggerDelay(index)),
-		),
+		createStaggeredEnterMotions(filteredSnippets.value.length, snippetItemPreset.value, getAppStaggerDelay, {
+			limit: DEFAULT_STAGGER_MOTION_LIMIT,
+		}),
 	)
 
 	function openEditor(snippet: SnippetDto) {

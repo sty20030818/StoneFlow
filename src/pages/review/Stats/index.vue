@@ -14,9 +14,7 @@
 		</header>
 
 		<!-- 关键指标卡片：每个 Space 的「本周完成数 / 活跃 Project 数」 -->
-		<section
-			v-motion="cardsSectionMotion"
-			class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		<section class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<UCard
 				v-for="(s, index) in spaceCards"
 				:key="s.id"
@@ -55,9 +53,7 @@
 			</UCard>
 		</section>
 
-		<div
-			v-motion="dashboardMotion"
-			class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<!-- 最近 7 天完成数折线图（简化为条形趋势） -->
 			<UCard
 				v-motion="trendCardMotion"
@@ -163,7 +159,12 @@
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
+	import {
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useAppMotionPreset,
+		useMotionPreset,
+	} from '@/composables/base/motion'
 	import { toBoundedPercent } from '@/composables/base/percent'
 	import {
 		TASK_DONE_REASON_COLORS,
@@ -177,13 +178,11 @@
 	const toast = useToast()
 	const router = useRouter()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const cardsSectionMotion = useAppMotionPreset('drawerSection', 'sectionBase', 16)
-	const dashboardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 28)
 	const cardMotionPreset = useMotionPreset('card')
 	const trendCardMotion = useAppMotionPreset('card', 'sectionBase', 46)
 	const statusCardMotion = useAppMotionPreset('card', 'sectionBase', 60)
 	const spaceCardMotions = computed(() =>
-		spaceCards.value.map((_s, index) => withMotionDelay(cardMotionPreset.value, getAppStaggerDelay(index))),
+		createStaggeredEnterMotions(spaceCards.value.length, cardMotionPreset.value, getAppStaggerDelay),
 	)
 
 	const { state: tasks, isLoading: loading } = useAsyncState(

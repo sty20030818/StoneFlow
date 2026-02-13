@@ -10,12 +10,12 @@
 				+
 			</button>
 		</div>
-			<div class="grid grid-cols-2 gap-3">
-				<UPopover
-					v-model:open="priorityPopoverOpen"
-					:mode="'click'"
-					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-					:ui="drawerPopoverUi">
+		<div class="grid grid-cols-2 gap-3">
+			<UPopover
+				v-model:open="priorityPopoverOpen"
+				:mode="'click'"
+				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+				:ui="drawerPopoverUi">
 				<button
 					v-motion="optionCardHoverMotion"
 					type="button"
@@ -58,11 +58,11 @@
 				</template>
 			</UPopover>
 
-				<UPopover
-					v-model:open="deadlinePopoverOpen"
-					:mode="'click'"
-					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-					:ui="drawerPopoverUi">
+			<UPopover
+				v-model:open="deadlinePopoverOpen"
+				:mode="'click'"
+				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+				:ui="drawerPopoverUi">
 				<button
 					v-motion="optionCardHoverMotion"
 					type="button"
@@ -88,16 +88,16 @@
 					</div>
 				</button>
 				<template #content>
-						<div class="p-2">
-							<DatePickerInput
-								v-model="deadline"
-								size="sm"
-								button-size="xs"
-								:popover-ui="drawerPopoverUi"
-								@selected="onDeadlineSelected" />
-							<div class="mt-2 flex gap-2">
-								<UButton
-									color="neutral"
+					<div class="p-2">
+						<DatePickerInput
+							v-model="deadline"
+							size="sm"
+							button-size="xs"
+							:popover-ui="drawerPopoverUi"
+							@selected="onDeadlineSelected" />
+						<div class="mt-2 flex gap-2">
+							<UButton
+								color="neutral"
 								variant="ghost"
 								size="xs"
 								@click="onDeadlineClear">

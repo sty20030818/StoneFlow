@@ -38,40 +38,12 @@
 </template>
 
 <script setup lang="ts">
-	import type { MotionVariants } from '@vueuse/motion'
-	import { computed } from 'vue'
-
-	import { useMotionPreset } from '@/composables/base/motion'
+	import { useActionIconHoverMotion } from '@/composables/base/motion'
 	import avatarUrl from '@/assets/avatar.png'
 
-	const cardMotionPreset = useMotionPreset('card')
-	const userCardHoverMotion = computed<MotionVariants<string>>(() => ({
-		initial: {
-			y: 0,
-			scale: 1,
-		},
-		enter: {
-			y: 0,
-			scale: 1,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-		hovered: {
-			y: -1,
-			scale: 1.01,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-	}))
-	const settingsIconHoverMotion = computed<MotionVariants<string>>(() => ({
-		initial: {
-			rotate: 0,
-		},
-		enter: {
-			rotate: 0,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-		hovered: {
-			rotate: 90,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-	}))
+	const userCardHoverMotion = useActionIconHoverMotion({
+		hoverY: -1,
+		hoverScale: 1.01,
+	})
+	const settingsIconHoverMotion = useActionIconHoverMotion({ hoverRotate: 90, hoverScale: 1 })
 </script>

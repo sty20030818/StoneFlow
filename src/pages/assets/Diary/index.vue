@@ -194,7 +194,15 @@
 	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import {
+		DEFAULT_STAGGER_MOTION_LIMIT,
+		getAppStaggerDelay,
+		resolveStaggeredEnterMotion,
+		toStaticMotionVariants,
+		useAppMotionPreset,
+		useMotionPreset,
+		useMotionPresetWithDelay,
+	} from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 	import { createModalLayerUi } from '@/config/ui-layer'
@@ -208,6 +216,7 @@
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const timelineMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const diaryItemPreset = useMotionPreset('card')
+	const diaryItemStaticMotion = computed(() => toStaticMotionVariants(diaryItemPreset.value))
 	const modalBodyMotion = useMotionPreset('modalSection')
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
 	const diaryModalUi = createModalLayerUi({
@@ -299,7 +308,11 @@
 		return result.sort((a, b) => b.date.localeCompare(a.date))
 	})
 	function getDiaryItemMotion(index: number) {
-		return withMotionDelay(diaryItemPreset.value, getAppStaggerDelay(index))
+		// Diary 可能单日出现较多卡片，超过阈值后改静态，优先保证滚动流畅。
+		return resolveStaggeredEnterMotion(index, diaryItemPreset.value, getAppStaggerDelay, {
+			limit: DEFAULT_STAGGER_MOTION_LIMIT,
+			fallback: diaryItemStaticMotion.value,
+		})
 	}
 
 	function selectEntry(e: DiaryEntryDto) {

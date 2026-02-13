@@ -1,7 +1,6 @@
 <template>
 	<!-- 外层容器 -->
-	<div
-		class="relative group rounded-2xl flex items-center">
+	<div class="relative group rounded-2xl flex items-center">
 		<!-- 主卡片容器 -->
 		<div
 			v-motion="cardHoverMotionPreset"
@@ -89,10 +88,7 @@
 </template>
 
 <script setup lang="ts">
-	import type { MotionVariants } from '@vueuse/motion'
-	import { computed } from 'vue'
-
-	import { useMotionPreset } from '@/composables/base/motion'
+	import { useActionIconHoverMotion, useCardHoverMotionPreset } from '@/composables/base/motion'
 	import type { TaskDto } from '@/services/api/tasks'
 
 	const props = defineProps<{
@@ -114,33 +110,6 @@
 		onContextMenu: (event: MouseEvent) => void
 		formatAbsoluteTime: (timestamp: number) => string
 	}>()
-	const cardMotionPreset = useMotionPreset('card')
-	const cardHoverMotionPreset = computed<MotionVariants<string>>(() => ({
-		initial: {
-			y: 0,
-			scale: 1,
-		},
-		enter: {
-			y: 0,
-			scale: 1,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-		hovered: cardMotionPreset.value.hovered,
-	}))
-	const deleteButtonMotionPreset = computed<MotionVariants<string>>(() => ({
-		initial: {
-			y: 0,
-			scale: 1,
-		},
-		enter: {
-			y: 0,
-			scale: 1,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-		hovered: {
-			y: 0,
-			scale: 1.05,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-	}))
+	const cardHoverMotionPreset = useCardHoverMotionPreset()
+	const deleteButtonMotionPreset = useActionIconHoverMotion({ hoverScale: 1.05 })
 </script>

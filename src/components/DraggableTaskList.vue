@@ -40,9 +40,11 @@
 	import { VueDraggable } from 'vue-draggable-plus'
 
 	import {
+		DEFAULT_STAGGER_MOTION_LIMIT,
 		getProjectMotionPhaseDelay,
+		resolveStaggeredEnterMotion,
+		toStaticMotionVariants,
 		useMotionPreset,
-		withMotionDelay,
 	} from '@/composables/base/motion'
 	import TaskCard from '@/components/TaskCard'
 	import { rebalanceRanks, reorderTask, type TaskDto } from '@/services/api/tasks'
@@ -69,8 +71,11 @@
 		reorder: [tasks: TaskDto[]]
 	}>()
 	const listItemMotion = useMotionPreset('listItem')
+	const listItemStaticMotion = computed(() => toStaticMotionVariants(listItemMotion.value))
 	const LIST_STAGGER_STEP = getProjectMotionPhaseDelay('listStep')
 	const LIST_STAGGER_MAX_DELAY = getProjectMotionPhaseDelay('listMax')
+	// 长列表保护阈值：保留前 N 项入场动画，其余项降级为静态，避免拖拽场景掉帧。
+	const LIST_MOTION_LIMIT = DEFAULT_STAGGER_MOTION_LIMIT
 	const listStaggerBaseDelay = computed(() => props.motionBaseDelay ?? getProjectMotionPhaseDelay('listTodoBase'))
 
 	// 本地任务列表副本，用于拖拽
@@ -90,8 +95,15 @@
 					next[id] = cached
 					return
 				}
-				const delay = Math.min(baseDelay + index * LIST_STAGGER_STEP, LIST_STAGGER_MAX_DELAY)
-				next[id] = withMotionDelay(base, delay)
+				next[id] = resolveStaggeredEnterMotion(
+					index,
+					base,
+					(currentIndex) => Math.min(baseDelay + currentIndex * LIST_STAGGER_STEP, LIST_STAGGER_MAX_DELAY),
+					{
+						limit: LIST_MOTION_LIMIT,
+						fallback: listItemStaticMotion.value,
+					},
+				)
 			})
 
 			listItemMotionById.value = next
@@ -102,8 +114,16 @@
 	function getListItemMotion(taskId: string, index: number) {
 		const cached = listItemMotionById.value[taskId]
 		if (cached) return cached
-		const delay = Math.min(listStaggerBaseDelay.value + index * LIST_STAGGER_STEP, LIST_STAGGER_MAX_DELAY)
-		return withMotionDelay(listItemMotion.value, delay)
+		// 兜底分支（如缓存尚未建立时）同样执行“限流 + 静态降级”策略。
+		return resolveStaggeredEnterMotion(
+			index,
+			listItemMotion.value,
+			(currentIndex) => Math.min(listStaggerBaseDelay.value + currentIndex * LIST_STAGGER_STEP, LIST_STAGGER_MAX_DELAY),
+			{
+				limit: LIST_MOTION_LIMIT,
+				fallback: listItemStaticMotion.value,
+			},
+		)
 	}
 
 	/**

@@ -24,11 +24,11 @@
 
 	const props = withDefaults(
 		defineProps<{
-		title: string
-		description?: string
-		icon?: string
-		iconClass?: string
-		motionDelay?: number
+			title: string
+			description?: string
+			icon?: string
+			iconClass?: string
+			motionDelay?: number
 		}>(),
 		{
 			motionDelay: 0,

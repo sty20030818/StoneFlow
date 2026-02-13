@@ -132,7 +132,6 @@
 					<Transition name="library-nav-shell">
 						<nav
 							v-if="!isLibraryCollapsed"
-							v-motion="libraryNavMotion"
 							class="flex flex-col gap-0.5 mt-1.5">
 							<RouterLink
 								v-for="item in libraryNav"
@@ -165,8 +164,7 @@
 </template>
 
 <script setup lang="ts">
-	import type { MotionVariants } from '@vueuse/motion'
-	import { usePreferredReducedMotion, watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
+	import { watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
 	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
@@ -198,9 +196,7 @@
 	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
 	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
-	const libraryNavBaseMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
 	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
-	const preferredReducedMotion = usePreferredReducedMotion()
 
 	const spaceValue = computed(() => props.space ?? 'work')
 	const projectIcon = PROJECT_ICON
@@ -211,28 +207,6 @@
 	const isLibraryCollapsed = computed({
 		get: () => viewStateStore.libraryCollapsed,
 		set: (val) => viewStateStore.setLibraryCollapsed(val),
-	})
-	const libraryNavMotion = computed<MotionVariants<string>>(() => {
-		const base = libraryNavBaseMotion.value
-		const reduceMotion = preferredReducedMotion.value === 'reduce'
-		return {
-			...base,
-			initial: {
-				...(base.initial ?? {}),
-				opacity: 0,
-				y: reduceMotion ? 0 : -6,
-			},
-			enter: {
-				...(base.enter ?? {}),
-				opacity: 1,
-				y: 0,
-			},
-			leave: {
-				...(base.leave ?? {}),
-				opacity: 0,
-				y: reduceMotion ? 0 : -4,
-			},
-		}
 	})
 
 	const spaces = SPACE_IDS.map((id) => ({

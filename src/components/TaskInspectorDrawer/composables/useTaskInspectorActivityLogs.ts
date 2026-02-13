@@ -4,10 +4,7 @@ import { computed, watch, type Ref } from 'vue'
 import { listActivityLogs, type ActivityLogEntry } from '@/services/api/logs'
 import type { TaskDto } from '@/services/api/tasks'
 
-export function useTaskInspectorActivityLogs(params: {
-	currentTask: Ref<TaskDto | null>
-	taskTick: Ref<number>
-}) {
+export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto | null>; taskTick: Ref<number> }) {
 	const taskId = computed(() => params.currentTask.value?.id ?? null)
 
 	const {

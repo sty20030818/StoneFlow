@@ -13,14 +13,14 @@
 		filter=".expand-toggle, .project-menu"
 		:prevent-on-filter="true"
 		@end="onDragEnd">
+		<div
+			v-for="item in localProjects"
+			:key="item.id"
+			class="rounded-lg">
 			<div
-				v-for="item in localProjects"
-				:key="item.id"
-				class="rounded-lg">
-				<div
-					class="group relative rounded-lg text-[13px] transition-colors duration-150 select-none"
-					:class="
-						isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
+				class="group relative rounded-lg text-[13px] transition-colors duration-150 select-none"
+				:class="
+					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
 				"
 				@contextmenu.prevent="openContextMenu(item)">
 				<RouterLink
@@ -59,17 +59,17 @@
 						</div>
 					</template>
 				</UPopover>
-					<button
-						v-if="item.children && item.children.length > 0"
-						type="button"
-						class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
-						@pointerdown.stop.prevent
-						@click.stop.prevent="toggleExpand(item.id)">
-						<UIcon
-							name="i-lucide-chevron-right"
-							class="size-3.5 transition-transform duration-200 ease-out"
-							:class="isExpanded(item.id) ? 'rotate-90' : 'rotate-0'" />
-					</button>
+				<button
+					v-if="item.children && item.children.length > 0"
+					type="button"
+					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
+					@pointerdown.stop.prevent
+					@click.stop.prevent="toggleExpand(item.id)">
+					<UIcon
+						name="i-lucide-chevron-right"
+						class="size-3.5 transition-transform duration-200 ease-out"
+						:class="isExpanded(item.id) ? 'rotate-90' : 'rotate-0'" />
+				</button>
 			</div>
 			<!-- 递归渲染子节点 -->
 			<Transition name="tree-branch">

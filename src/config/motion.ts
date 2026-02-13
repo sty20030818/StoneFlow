@@ -96,14 +96,8 @@ function withTransition(variant: Variant, transition: Transition): Variant {
 
 const pageDefault: MotionPresetVariants = {
 	initial: { opacity: 0, x: -24 },
-	enter: withTransition(
-		{ opacity: 1, x: 0 },
-		buildTransition(320, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0, x: 18 },
-		buildTransition(220, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1, x: 0 }, buildTransition(320, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0, x: 18 }, buildTransition(220, MOTION_TOKENS.ease.accelerate)),
 }
 
 const pageReduced: MotionPresetVariants = {
@@ -114,14 +108,8 @@ const pageReduced: MotionPresetVariants = {
 
 const cardDefault: MotionPresetVariants = {
 	initial: { opacity: 0, y: 0, scale: 1 },
-	enter: withTransition(
-		{ opacity: 1, y: 0, scale: 1 },
-		buildTransition(260, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0, y: 0, scale: 1 },
-		buildTransition(180, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1, y: 0, scale: 1 }, buildTransition(260, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0, y: 0, scale: 1 }, buildTransition(180, MOTION_TOKENS.ease.accelerate)),
 	hovered: withTransition(
 		{ y: -4, scale: 1.01 },
 		buildTransition(MOTION_TOKENS.duration.fast, MOTION_TOKENS.ease.standard),
@@ -136,14 +124,8 @@ const cardReduced: MotionPresetVariants = {
 
 const listItemDefault: MotionPresetVariants = {
 	initial: { opacity: 0 },
-	enter: withTransition(
-		{ opacity: 1 },
-		buildTransition(220, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0 },
-		buildTransition(170, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1 }, buildTransition(220, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0 }, buildTransition(170, MOTION_TOKENS.ease.accelerate)),
 }
 
 const listItemReduced: MotionPresetVariants = {
@@ -154,14 +136,8 @@ const listItemReduced: MotionPresetVariants = {
 
 const drawerSectionDefault: MotionPresetVariants = {
 	initial: { opacity: 0 },
-	enter: withTransition(
-		{ opacity: 1 },
-		buildTransition(240, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0 },
-		buildTransition(170, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1 }, buildTransition(240, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0 }, buildTransition(170, MOTION_TOKENS.ease.accelerate)),
 }
 
 const drawerSectionReduced: MotionPresetVariants = {
@@ -172,14 +148,8 @@ const drawerSectionReduced: MotionPresetVariants = {
 
 const statusFeedbackDefault: MotionPresetVariants = {
 	initial: { opacity: 0 },
-	enter: withTransition(
-		{ opacity: 1 },
-		buildTransition(180, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0 },
-		buildTransition(120, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1 }, buildTransition(180, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0 }, buildTransition(120, MOTION_TOKENS.ease.accelerate)),
 }
 
 const statusFeedbackReduced: MotionPresetVariants = {
@@ -190,14 +160,8 @@ const statusFeedbackReduced: MotionPresetVariants = {
 
 const modalSectionDefault: MotionPresetVariants = {
 	initial: { opacity: 0 },
-	enter: withTransition(
-		{ opacity: 1 },
-		buildTransition(260, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0 },
-		buildTransition(180, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1 }, buildTransition(260, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0 }, buildTransition(180, MOTION_TOKENS.ease.accelerate)),
 }
 
 const modalSectionReduced: MotionPresetVariants = {
@@ -208,14 +172,8 @@ const modalSectionReduced: MotionPresetVariants = {
 
 const backToTopDefault: MotionPresetVariants = {
 	initial: { opacity: 0, x: 28, scale: 0.96 },
-	enter: withTransition(
-		{ opacity: 1, x: 0, scale: 1 },
-		buildTransition(220, MOTION_TOKENS.ease.decelerate),
-	),
-	leave: withTransition(
-		{ opacity: 0, x: 24, scale: 0.98 },
-		buildTransition(170, MOTION_TOKENS.ease.accelerate),
-	),
+	enter: withTransition({ opacity: 1, x: 0, scale: 1 }, buildTransition(220, MOTION_TOKENS.ease.decelerate)),
+	leave: withTransition({ opacity: 0, x: 24, scale: 0.98 }, buildTransition(170, MOTION_TOKENS.ease.accelerate)),
 }
 
 const backToTopReduced: MotionPresetVariants = {

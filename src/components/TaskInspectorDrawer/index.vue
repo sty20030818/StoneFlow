@@ -166,10 +166,7 @@
 	import { computed } from 'vue'
 
 	import avatarUrl from '@/assets/avatar.png'
-	import {
-		getProjectMotionPhaseDelay,
-		useProjectMotionPreset,
-	} from '@/composables/base/motion'
+	import { getProjectMotionPhaseDelay, useProjectMotionPreset } from '@/composables/base/motion'
 	import DrawerHeader from './components/DrawerHeader.vue'
 	import AdvancedSection from './components/AdvancedSection.vue'
 	import LinksSection from './components/LinksSection.vue'

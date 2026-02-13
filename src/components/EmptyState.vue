@@ -16,9 +16,9 @@
 
 	const props = withDefaults(
 		defineProps<{
-		text: string
-		icon?: string
-		motionDelay?: number
+			text: string
+			icon?: string
+			motionDelay?: number
 		}>(),
 		{
 			icon: 'i-lucide-coffee',

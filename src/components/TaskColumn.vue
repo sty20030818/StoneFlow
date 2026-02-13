@@ -95,11 +95,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	import {
-		getProjectMotionPhaseDelay,
-		useMotionPreset,
-		withMotionDelay,
-	} from '@/composables/base/motion'
+	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import DraggableTaskList from '@/components/DraggableTaskList.vue'
 	import EmptyState from '@/components/EmptyState.vue'
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'

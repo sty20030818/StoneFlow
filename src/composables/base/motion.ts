@@ -24,6 +24,17 @@ type SegmentSwitchMotionOptions = {
 	hoverTransition?: Transition
 	switchTransition?: Transition
 }
+type ActionIconHoverMotionOptions = {
+	hoverY?: number
+	hoverScale?: number
+	hoverRotate?: number
+}
+type StaggeredEnterMotionOptions = {
+	limit?: number
+	fallback?: MotionPresetVariants
+}
+
+export const DEFAULT_STAGGER_MOTION_LIMIT = 24
 
 function applyDelay(variant: Variant | undefined, delay: number): Variant | undefined {
 	if (!variant) return variant
@@ -36,6 +47,12 @@ function applyDelay(variant: Variant | undefined, delay: number): Variant | unde
 			delay: currentDelay + delay,
 		},
 	}
+}
+
+function stripVariantTransition(variant: Variant | undefined): Variant {
+	if (!variant) return {}
+	const { transition: _transition, ...state } = variant as Variant & { transition?: Transition }
+	return state
 }
 
 export function withMotionDelay(variants: MotionPresetVariants, delay: number): MotionPresetVariants {
@@ -96,6 +113,71 @@ export function useCardHoverMotionPreset() {
 		},
 		hovered: cardPreset.value.hovered,
 	}))
+}
+
+export function useActionIconHoverMotion(options: ActionIconHoverMotionOptions = {}) {
+	const cardPreset = useMotionPreset('card')
+	// 统一「小图标/按钮」hover 细节，避免在各组件重复手写 variants。
+	return computed<MotionPresetVariants>(() => ({
+		initial: {
+			y: 0,
+			scale: 1,
+			rotate: 0,
+		},
+		enter: {
+			y: 0,
+			scale: 1,
+			rotate: 0,
+			transition: cardPreset.value.hovered?.transition,
+		},
+		hovered: {
+			y: options.hoverY ?? 0,
+			scale: options.hoverScale ?? 1.05,
+			rotate: options.hoverRotate ?? 0,
+			transition: cardPreset.value.hovered?.transition,
+		},
+	}))
+}
+
+export function toStaticMotionVariants(variants: MotionPresetVariants): MotionPresetVariants {
+	// 生成“静态变体”：保持最终样式，但不再执行可感知入场动画。
+	const staticState = stripVariantTransition(variants.enter)
+	return {
+		...variants,
+		initial: staticState,
+		enter: {
+			...staticState,
+			transition: {
+				type: 'tween',
+				duration: 0,
+				delay: 0,
+			},
+		},
+	}
+}
+
+export function resolveStaggeredEnterMotion(
+	index: number,
+	base: MotionPresetVariants,
+	getDelay: (index: number) => number,
+	options: StaggeredEnterMotionOptions = {},
+): MotionPresetVariants {
+	// 长列表只给前 limit 项保留 stagger 入场，后续项回落为静态，降低抖动与重排成本。
+	const limit = options.limit ?? Number.POSITIVE_INFINITY
+	const fallback = options.fallback ?? toStaticMotionVariants(base)
+	if (index >= limit) return fallback
+	return withMotionDelay(base, getDelay(index))
+}
+
+export function createStaggeredEnterMotions(
+	count: number,
+	base: MotionPresetVariants,
+	getDelay: (index: number) => number,
+	options: StaggeredEnterMotionOptions = {},
+): MotionPresetVariants[] {
+	return Array.from({ length: count }).map((_item, index) =>
+		resolveStaggeredEnterMotion(index, base, getDelay, options),
+	)
 }
 
 export function createSegmentSwitchMotionVariants(

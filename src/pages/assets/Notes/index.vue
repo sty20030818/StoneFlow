@@ -168,7 +168,14 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import {
+		DEFAULT_STAGGER_MOTION_LIMIT,
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useAppMotionPreset,
+		useMotionPreset,
+		useMotionPresetWithDelay,
+	} from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { noteSubmitSchema } from '@/composables/domain/validation/forms'
@@ -230,9 +237,9 @@
 	})
 
 	const noteItemMotions = computed(() =>
-		filteredNotes.value.map((_note, index) =>
-			withMotionDelay(noteItemPreset.value, getAppStaggerDelay(index)),
-		),
+		createStaggeredEnterMotions(filteredNotes.value.length, noteItemPreset.value, getAppStaggerDelay, {
+			limit: DEFAULT_STAGGER_MOTION_LIMIT,
+		}),
 	)
 
 	function openEditor(note: NoteDto) {

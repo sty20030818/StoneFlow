@@ -246,7 +246,14 @@
 	import { refDebounced, useAsyncState, useClipboard, useTimeoutFn } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import {
+		DEFAULT_STAGGER_MOTION_LIMIT,
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useAppMotionPreset,
+		useMotionPreset,
+		useMotionPresetWithDelay,
+	} from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
@@ -346,9 +353,9 @@
 	})
 
 	const entryItemMotions = computed(() =>
-		filteredEntries.value.map((_entry, index) =>
-			withMotionDelay(entryItemPreset.value, getAppStaggerDelay(index)),
-		),
+		createStaggeredEnterMotions(filteredEntries.value.length, entryItemPreset.value, getAppStaggerDelay, {
+			limit: DEFAULT_STAGGER_MOTION_LIMIT,
+		}),
 	)
 
 	function openEditor(entry: VaultEntryDto) {

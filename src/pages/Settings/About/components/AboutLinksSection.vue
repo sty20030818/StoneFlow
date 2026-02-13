@@ -42,7 +42,6 @@
 		label: string
 		value: string
 	}
-
 	const linkItemHoverMotion = useCardHoverMotionPreset()
 
 	defineProps<{
