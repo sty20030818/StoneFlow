@@ -112,13 +112,13 @@ const pageReduced: MotionPresetVariants = {
 }
 
 const cardDefault: MotionPresetVariants = {
-	initial: { opacity: 0 },
+	initial: { opacity: 0, y: 0, scale: 1 },
 	enter: withTransition(
-		{ opacity: 1 },
+		{ opacity: 1, y: 0, scale: 1 },
 		buildTransition(260, MOTION_TOKENS.ease.decelerate),
 	),
 	leave: withTransition(
-		{ opacity: 0 },
+		{ opacity: 0, y: 0, scale: 1 },
 		buildTransition(180, MOTION_TOKENS.ease.accelerate),
 	),
 	hovered: withTransition(
@@ -128,9 +128,9 @@ const cardDefault: MotionPresetVariants = {
 }
 
 const cardReduced: MotionPresetVariants = {
-	initial: { opacity: 0 },
-	enter: withTransition({ opacity: 1 }, buildTransition(MOTION_TOKENS.duration.fast)),
-	leave: withTransition({ opacity: 0 }, buildTransition(MOTION_TOKENS.duration.fast)),
+	initial: { opacity: 0, y: 0, scale: 1 },
+	enter: withTransition({ opacity: 1, y: 0, scale: 1 }, buildTransition(MOTION_TOKENS.duration.fast)),
+	leave: withTransition({ opacity: 0, y: 0, scale: 1 }, buildTransition(MOTION_TOKENS.duration.fast)),
 }
 
 const listItemDefault: MotionPresetVariants = {

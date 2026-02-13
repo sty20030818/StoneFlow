@@ -17,7 +17,6 @@
 			:key="item.id"
 			class="rounded-lg">
 			<div
-				v-motion="itemRowMotion"
 				class="group relative rounded-lg text-[13px] transition-all duration-150 select-none"
 				:class="
 					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
@@ -65,7 +64,7 @@
 					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default"
 					:class="isExpanded(item.id) ? 'rotate-90' : ''"
 					@pointerdown.stop.prevent
-					@click.stop="toggleExpand(item.id)">
+					@click.stop.prevent="toggleExpand(item.id)">
 					<UIcon
 						name="i-lucide-chevron-right"
 						class="size-3.5" />
@@ -74,7 +73,6 @@
 			<!-- 递归渲染子节点 -->
 			<div
 				v-if="item.children && item.children.length > 0 && isExpanded(item.id)"
-				v-motion="childTreeMotion"
 				class="ml-3">
 				<DraggableProjectTree
 					:projects="item.children"
@@ -122,7 +120,6 @@
 	import { computed, ref, toRefs, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
-	import { useMotionPresetWithDelay } from '@/composables/base/motion'
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
@@ -162,10 +159,6 @@
 
 	// 基于 parentId 生成唯一 group 名称，限制只能同级拖拽
 	const groupName = computed(() => `projects-${props.parentId ?? 'root'}`)
-	const rowMotionDelay = computed(() => Math.min(10 + props.level * 8, 60))
-	const childMotionDelay = computed(() => Math.min(22 + props.level * 10, 96))
-	const itemRowMotion = useMotionPresetWithDelay('listItem', rowMotionDelay.value)
-	const childTreeMotion = useMotionPresetWithDelay('drawerSection', childMotionDelay.value)
 
 	const emit = defineEmits<{
 		'update:expandedKeys': [keys: string[]]
@@ -210,7 +203,7 @@
 			// ID 集合变化，完全重新同步
 			localProjects.value = [...newProjects]
 		},
-		{ immediate: true, deep: true },
+		{ immediate: true },
 	)
 
 	function isActiveProject(projectId: string) {

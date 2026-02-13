@@ -1,5 +1,7 @@
 <template>
-	<UCard :class="mergedClass">
+	<UCard
+		:class="mergedClass"
+		:ui="cardUi">
 		<template
 			v-if="hasHeader"
 			#header>
@@ -38,6 +40,11 @@
 	const slots = useSlots()
 
 	const hasHeader = computed(() => Boolean(props.title || slots.header))
+
+	const cardUi = {
+		header: 'px-4 py-3 sm:px-5 sm:py-4',
+		body: 'px-4 py-4 sm:px-5 sm:py-5',
+	}
 
 	const mergedClass = computed(() => ['rounded-3xl border border-default/70 bg-default', props.cardClass])
 </script>

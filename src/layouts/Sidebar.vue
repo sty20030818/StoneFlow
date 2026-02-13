@@ -91,7 +91,6 @@
 
 		<!-- 滚动区域：Project Tree -->
 		<div
-			v-motion="projectTreeMotion"
 			class="flex-1 overflow-y-auto px-3 pb-3 min-h-0">
 			<section>
 				<div class="space-y-0.5">
@@ -102,7 +101,7 @@
 							:projects="displayProjectsTree"
 							:space-id="spaceValue"
 							:active-project-id="activeProjectId"
-							:expanded-keys="effectiveExpandedKeys"
+							:expanded-keys="expandedKeys"
 							@update:expanded-keys="expandedKeys = $event" />
 					</div>
 					<div
@@ -200,7 +199,6 @@
 	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
 	const spaceSwitchButtonMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
-	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
 	const libraryNavMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
 	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
 
@@ -355,12 +353,6 @@
 			spaceId: spaceValue.value,
 			projectId: activeProjectId.value,
 		}
-	})
-
-	const effectiveExpandedKeys = computed(() => {
-		const target = routeProjectTarget.value
-		if (!target) return expandedKeys.value
-		return projectTreeStore.resolveExpandedWithAncestors(target.spaceId, target.projectId, currentProjects.value)
 	})
 
 	async function loadProjects(force = false) {
