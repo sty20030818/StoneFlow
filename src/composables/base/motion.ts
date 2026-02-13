@@ -19,6 +19,11 @@ type RuntimeTransition = Transition & {
 
 export type ProjectMotionPhaseName = keyof typeof PROJECT_MOTION_PHASE
 export type AppMotionPhaseName = keyof typeof APP_MOTION_PHASE
+type SegmentSwitchMotionOptions = {
+	base?: MotionPresetVariants
+	hoverTransition?: Transition
+	switchTransition?: Transition
+}
 
 function applyDelay(variant: Variant | undefined, delay: number): Variant | undefined {
 	if (!variant) return variant
@@ -91,6 +96,39 @@ export function useCardHoverMotionPreset() {
 		},
 		hovered: cardPreset.value.hovered,
 	}))
+}
+
+export function createSegmentSwitchMotionVariants(
+	isActive: boolean,
+	options: SegmentSwitchMotionOptions = {},
+): MotionPresetVariants {
+	const base = options.base
+	const switchTransition = options.switchTransition ?? options.hoverTransition ?? base?.enter?.transition
+	const hoverTransition = options.hoverTransition ?? switchTransition
+	return {
+		...(base ?? {}),
+		initial: {
+			...(base?.initial ?? {}),
+			y: 0,
+			scale: 1,
+		},
+		enter: {
+			...(base?.enter ?? {}),
+			y: isActive ? -1 : 0,
+			scale: isActive ? 1.01 : 1,
+			transition: base?.enter?.transition ?? switchTransition,
+		},
+		hovered: {
+			y: isActive ? -1.5 : -1,
+			scale: isActive ? 1.015 : 1.01,
+			transition: hoverTransition,
+		},
+		tapped: {
+			y: 0,
+			scale: isActive ? 0.995 : 0.99,
+			transition: switchTransition,
+		},
+	}
 }
 
 export function useProjectMotionPreset(name: MotionPresetName, phase: ProjectMotionPhaseName, offset = 0) {

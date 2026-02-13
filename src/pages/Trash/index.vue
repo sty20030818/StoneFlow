@@ -3,24 +3,23 @@
 		<Teleport
 			defer
 			to="#header-actions-portal">
-			<div
+			<UTabs
 				v-motion="headerActionMotion"
-				class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
-				<button
-					v-for="opt in viewOptions"
-					:key="opt.value"
-					type="button"
-					v-motion="viewOptionHoverMotion"
-					class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold cursor-pointer transition-[box-shadow,background-color,color] duration-150 hover:shadow-sm"
-					:class="viewMode === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'"
-					@click="viewMode = opt.value">
+				:items="viewTabItems"
+				:model-value="viewMode"
+				:content="false"
+				color="neutral"
+				variant="pill"
+				size="sm"
+				:ui="viewTabsUi"
+				@update:model-value="onViewModeChange">
+				<template #leading="{ item }">
 					<UIcon
-						:name="opt.icon"
+						:name="item.icon"
 						class="size-3.5"
-						:class="viewMode === opt.value ? opt.iconClass : 'text-muted'" />
-					<span>{{ opt.label }}</span>
-				</button>
-			</div>
+						:class="viewMode === item.value ? item.iconClass : 'text-muted'" />
+				</template>
+			</UTabs>
 		</Teleport>
 
 		<div
@@ -107,7 +106,6 @@
 </template>
 
 <script setup lang="ts">
-	import type { MotionVariants } from '@vueuse/motion'
 	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
 	import { computed, provide, ref, watch } from 'vue'
 
@@ -126,7 +124,6 @@
 	const loadingMotion = useAppMotionPreset('statusFeedback', 'sectionBase', 8)
 	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const listItemMotion = useMotionPreset('listItem')
-	const cardMotionPreset = useMotionPreset('card')
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
@@ -146,22 +143,6 @@
 	const loadedTrashScopes = ref(new Set<string>())
 	const projectItemMotionCache = new Map<string, number>()
 	const taskItemMotionCache = new Map<string, number>()
-	const viewOptionHoverMotion = computed<MotionVariants<string>>(() => ({
-		initial: {
-			y: 0,
-			scale: 1,
-		},
-		enter: {
-			y: 0,
-			scale: 1,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-		hovered: {
-			y: -1,
-			scale: 1.01,
-			transition: cardMotionPreset.value.hovered?.transition,
-		},
-	}))
 
 	const viewOptions = [
 		{
@@ -169,16 +150,28 @@
 			label: 'Projects',
 			icon: 'i-lucide-folder',
 			iconClass: 'text-emerald-600',
-			activeClass: 'bg-default text-default shadow-sm',
 		},
 		{
 			value: 'tasks' as const,
 			label: 'Tasks',
 			icon: 'i-lucide-list-checks',
 			iconClass: 'text-pink-500',
-			activeClass: 'bg-default text-default shadow-sm',
 		},
 	]
+	const viewTabsUi = {
+		root: 'w-full',
+		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
+		trigger:
+			'rounded-full px-3.5 py-1.5 text-[11px] font-semibold hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm data-[state=active]:text-default',
+		leadingIcon: 'size-3.5',
+		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
+	}
+	const viewTabItems = viewOptions.map((opt) => ({
+		label: opt.label,
+		value: opt.value,
+		icon: opt.icon,
+		iconClass: opt.iconClass,
+	}))
 
 	const activeSpaceId = computed(() => settingsStore.settings.activeSpaceId ?? 'work')
 	const scopeKey = computed(() => activeSpaceId.value)
@@ -217,6 +210,10 @@
 		const delay = 56 + taskItemMotionCache.size * 18
 		taskItemMotionCache.set(taskId, delay)
 		return withMotionDelay(listItemMotion.value, delay)
+	}
+
+	function onViewModeChange(value: string | number) {
+		if (value === 'projects' || value === 'tasks') viewMode.value = value
 	}
 	provide('workspaceBreadcrumbItems', breadcrumbItems)
 

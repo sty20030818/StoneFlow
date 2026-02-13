@@ -7,28 +7,23 @@
 			<div class="mb-2">
 				<BrandLogo />
 			</div>
-			<div
+			<UTabs
 				v-motion="spaceSegmentMotion"
-				class="rounded-full bg-elevated/70 border border-default/80 p-1 flex gap-1">
-				<button
-					v-for="s in spaces"
-					:key="s.id"
-					type="button"
-					v-motion="spaceSwitchButtonMotion"
-					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer hover:shadow-sm transition-[box-shadow,background-color,color] duration-150"
-					:class="
-						spaceValue === s.id
-							? 'bg-default text-default shadow-sm'
-							: 'text-muted hover:text-default hover:bg-default/40'
-					"
-					@click="onSpaceClick(s.id)">
+				:items="spaceTabItems"
+				:model-value="spaceValue"
+				:content="false"
+				color="neutral"
+				variant="pill"
+				size="sm"
+				:ui="spaceTabsUi"
+				@update:model-value="onSpaceTabChange">
+				<template #leading="{ item }">
 					<UIcon
-						:name="s.icon"
+						:name="item.icon"
 						class="size-3.5"
-						:class="spaceValue === s.id ? s.activeIconClass : s.iconClass" />
-					<span>{{ s.label }}</span>
-				</button>
-			</div>
+						:class="spaceValue === item.value ? item.activeIconClass : item.iconClass" />
+				</template>
+			</UTabs>
 		</div>
 
 		<!-- 固定区域：Execution Zone -->
@@ -90,8 +85,7 @@
 		</div>
 
 		<!-- 滚动区域：Project Tree -->
-		<div
-			class="flex-1 overflow-y-auto px-3 pb-3 min-h-0">
+		<div class="flex-1 overflow-y-auto px-3 pb-3 min-h-0">
 			<section>
 				<div class="space-y-0.5">
 					<div
@@ -174,7 +168,7 @@
 	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
-	import { useCardHoverMotionPreset, useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
+	import { useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { useRuntimeGate } from '@/composables/base/runtime-gate'
 	import BrandLogo from '@/components/BrandLogo.vue'
@@ -199,17 +193,6 @@
 	const currentPath = computed(() => route.path)
 	const sidebarShellMotion = useProjectMotionPreset('drawerSection', 'sidebarShell')
 	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
-	const spaceSwitchButtonBaseMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
-	const spaceSwitchButtonHoverMotion = useCardHoverMotionPreset()
-	const spaceSwitchButtonMotion = computed(() => ({
-		...spaceSwitchButtonBaseMotion.value,
-		hovered: {
-			y: -1,
-			scale: 1.01,
-			transition:
-				spaceSwitchButtonHoverMotion.value.hovered?.transition ?? spaceSwitchButtonBaseMotion.value.enter?.transition,
-		},
-	}))
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
 	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
 	const libraryNavMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
@@ -243,10 +226,30 @@
 		iconClass: SPACE_DISPLAY[id].iconMutedClass,
 		activeIconClass: SPACE_DISPLAY[id].iconClass,
 	}))
+	const spaceTabsUi = {
+		root: 'w-full',
+		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
+		trigger:
+			'flex-1 rounded-full px-3 py-2 text-[11px] font-medium hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm data-[state=active]:text-default',
+		leadingIcon: 'size-3.5',
+		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
+	}
+	const spaceTabItems = spaces.map((space) => ({
+		label: space.label,
+		value: space.id,
+		icon: space.icon,
+		iconClass: space.iconClass,
+		activeIconClass: space.activeIconClass,
+	}))
 
 	function onSpaceClick(id: string) {
 		if (id === spaceValue.value) return
 		emit('update:space', id)
+	}
+
+	function onSpaceTabChange(value: string | number) {
+		if (typeof value !== 'string') return
+		onSpaceClick(value)
 	}
 
 	const allTasksPath = computed(() => `/space/${spaceValue.value}`)

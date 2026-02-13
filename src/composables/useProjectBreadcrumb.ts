@@ -32,7 +32,7 @@ export function useProjectBreadcrumb(
 
 		// All Tasks 模式
 		if (!projectId.value) {
-			base.push({ label: 'All Tasks' })
+			base.push({ label: '所有任务' })
 			return base
 		}
 
