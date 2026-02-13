@@ -36,9 +36,9 @@
 						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
 						:class="isAllTasksActive ? 'bg-elevated text-default' : ''">
 						<UIcon
-							name="i-lucide-list-checks"
-							class="text-pink-500" />
-						<span>所有任务</span>
+							:name="allTasksNav.icon"
+							:class="allTasksNav.iconClass" />
+						<span>{{ allTasksNav.title }}</span>
 					</RouterLink>
 					<!-- 默认 Project 入口 -->
 					<RouterLink
@@ -54,13 +54,13 @@
 					</RouterLink>
 					<!-- Trash 入口 -->
 					<RouterLink
-						to="/trash"
+						:to="trashNav.path"
 						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
-						:class="currentPath === '/trash' ? 'bg-elevated text-default' : ''">
+						:class="currentPath === trashNav.path ? 'bg-elevated text-default' : ''">
 						<UIcon
-							name="i-lucide-trash-2"
-							class="text-red-500" />
-						<span>回收站</span>
+							:name="trashNav.icon"
+							:class="trashNav.iconClass" />
+						<span>{{ trashNav.title }}</span>
 					</RouterLink>
 				</nav>
 			</section>
@@ -176,6 +176,7 @@
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
 	import UserCard from '@/components/UserCard.vue'
+	import { LIBRARY_NAV_ITEMS, PAGE_NAV_CONFIG } from '@/config/page-nav'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectTreeStore } from '@/stores/project-tree'
@@ -277,15 +278,9 @@
 		return currentPath.value === `/space/${spaceValue.value}` && !route.query.project
 	})
 
-	const libraryNav = [
-		{ to: '/finish-list', label: '完成列表', icon: 'i-lucide-check-circle', iconColor: 'text-green-500' },
-		{ to: '/stats', label: '统计', icon: 'i-lucide-bar-chart-3', iconColor: 'text-blue-500' },
-		{ to: '/logs', label: '日志', icon: 'i-lucide-scroll-text', iconColor: 'text-orange-500' },
-		{ to: '/snippets', label: '代码片段', icon: 'i-lucide-code', iconColor: 'text-cyan-500' },
-		{ to: '/vault', label: '密钥库', icon: 'i-lucide-lock', iconColor: 'text-yellow-500' },
-		{ to: '/notes', label: '笔记', icon: 'i-lucide-notebook', iconColor: 'text-pink-500' },
-		{ to: '/diary', label: '日记', icon: 'i-lucide-book-open-text', iconColor: 'text-indigo-500' },
-	]
+	const libraryNav = LIBRARY_NAV_ITEMS
+	const allTasksNav = PAGE_NAV_CONFIG.allTasks
+	const trashNav = PAGE_NAV_CONFIG.trash
 
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()

@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { PAGE_NAV_CONFIG, toRouteMeta } from '@/config/page-nav'
 
 const ProjectView = () => import('@/pages/ProjectView/index.vue')
 
@@ -26,70 +27,77 @@ export const routes = [
 
 	// ProjectView (统一的项目视图)
 	{
-		path: '/all-tasks',
+		path: PAGE_NAV_CONFIG.allTasks.path,
 		component: ProjectView,
-		meta: { title: '所有任务', icon: 'i-lucide-list-checks', iconClass: 'text-pink-500', description: '所有任务列表' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.allTasks),
 	},
 	{
 		path: '/space/:spaceId',
 		component: ProjectView,
-		meta: { title: '空间', icon: 'i-lucide-folder', iconClass: 'text-gray-500', description: '任务空间' },
+		meta: {
+			title: '空间',
+			icon: 'i-lucide-folder',
+			iconClass: 'text-gray-500',
+			pillClass: 'bg-gray-500',
+			description: '任务空间',
+		},
 	},
 
 	// Review
 	{
-		path: '/finish-list',
+		path: PAGE_NAV_CONFIG.finishList.path,
 		component: FinishList,
-		meta: {
-			title: '完成列表',
-			icon: 'i-lucide-check-circle',
-			iconClass: 'text-green-500',
-			description: '已完成任务',
-		},
+		meta: toRouteMeta(PAGE_NAV_CONFIG.finishList),
 	},
 	{
-		path: '/stats',
+		path: PAGE_NAV_CONFIG.stats.path,
 		component: Stats,
-		meta: { title: '统计', icon: 'i-lucide-bar-chart-3', iconClass: 'text-blue-500', description: '统计数据' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.stats),
 	},
 	{
-		path: '/logs',
+		path: PAGE_NAV_CONFIG.logs.path,
 		component: Logs,
-		meta: { title: '日志', icon: 'i-lucide-scroll-text', iconClass: 'text-orange-500', description: '操作日志' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.logs),
 	},
 
 	// Assets Library
 	{
-		path: '/snippets',
+		path: PAGE_NAV_CONFIG.snippets.path,
 		component: Snippets,
-		meta: { title: '代码片段', icon: 'i-lucide-code', iconClass: 'text-cyan-500', description: '代码片段' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.snippets),
 	},
 	{
-		path: '/vault',
+		path: PAGE_NAV_CONFIG.vault.path,
 		component: Vault,
-		meta: { title: '密钥库', icon: 'i-lucide-lock', iconClass: 'text-yellow-500', description: '安全存储' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.vault),
 	},
 	{
-		path: '/notes',
+		path: PAGE_NAV_CONFIG.notes.path,
 		component: Notes,
-		meta: { title: '笔记', icon: 'i-lucide-notebook', iconClass: 'text-pink-500', description: '笔记本' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.notes),
 	},
 	{
-		path: '/diary',
+		path: PAGE_NAV_CONFIG.diary.path,
 		component: Diary,
-		meta: { title: '日记', icon: 'i-lucide-book-open-text', iconClass: 'text-indigo-500', description: '工作日志' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.diary),
 	},
 	{
-		path: '/trash',
+		path: PAGE_NAV_CONFIG.trash.path,
 		component: Trash,
-		meta: { title: '回收站', icon: 'i-lucide-trash-2', iconClass: 'text-red-500', description: '回收站' },
+		meta: toRouteMeta(PAGE_NAV_CONFIG.trash),
 	},
 
 	// Settings
 	{
 		path: '/settings',
 		component: Settings,
-		meta: { title: '设置', icon: 'i-lucide-settings', iconClass: 'text-gray-500', description: '应用偏好设置' },
+		meta: {
+			title: '设置',
+			icon: 'i-lucide-settings',
+			iconClass: 'text-gray-500',
+			pillClass: 'bg-gray-500',
+			description: '应用偏好设置',
+		},
 		children: [
 			{
 				path: '',
@@ -102,6 +110,7 @@ export const routes = [
 					title: '关于',
 					icon: 'i-lucide-info',
 					iconClass: 'text-blue-500',
+					pillClass: 'bg-blue-500',
 					description: '版本、更新与应用信息',
 				},
 			},
@@ -112,6 +121,7 @@ export const routes = [
 					title: '远端同步',
 					icon: 'i-lucide-cloud',
 					iconClass: 'text-cyan-500',
+					pillClass: 'bg-cyan-500',
 					description: '同步配置与上传下载',
 				},
 			},

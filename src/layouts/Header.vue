@@ -8,15 +8,24 @@
 				v-motion="headerBreadcrumbMotion"
 				class="flex items-center gap-2 min-w-0 flex-1">
 				<RouterLink
-					v-if="currentSpaceLabel && currentSpaceIcon && currentSpaceId"
-					:to="`/space/${currentSpaceId}`"
+					v-if="leadingPill?.to"
+					:to="leadingPill.to"
 					class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-					:class="spacePillClass">
+					:class="leadingPill.pillClass">
 					<UIcon
-						:name="currentSpaceIcon"
+						:name="leadingPill.icon"
 						class="size-3.5 shrink-0 text-white" />
-					<span>{{ currentSpaceLabel }}</span>
+					<span>{{ leadingPill.label }}</span>
 				</RouterLink>
+				<span
+					v-else-if="leadingPill"
+					class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
+					:class="leadingPill.pillClass">
+					<UIcon
+						:name="leadingPill.icon"
+						class="size-3.5 shrink-0 text-white" />
+					<span>{{ leadingPill.label }}</span>
+				</span>
 
 				<template v-if="projectTrail.length">
 					<template
@@ -153,6 +162,7 @@
 	import { useRoute } from 'vue-router'
 
 	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import { getPageNavByPath } from '@/config/page-nav'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
@@ -232,6 +242,44 @@
 	const spacePillClass = computed(() => {
 		const spaceId = currentSpaceId.value
 		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.pillClass ?? DEFAULT_SPACE_DISPLAY.pillClass
+	})
+	const showSpaceAsLeadingPill = computed(() => {
+		return route.path.startsWith('/space/') || route.path === '/all-tasks' || route.path === '/trash'
+	})
+
+	const routeMetaPill = computed(() => {
+		if (showSpaceAsLeadingPill.value) return null
+		const routeConfig = getPageNavByPath(route.path)
+		if (routeConfig) {
+			return {
+				label: routeConfig.title,
+				icon: routeConfig.icon,
+				pillClass: routeConfig.pillClass,
+				to: undefined as string | undefined,
+			}
+		}
+		const record = [...route.matched].reverse().find((item) => item.meta && typeof item.meta.title === 'string')
+		const title = record?.meta?.title
+		const icon = record?.meta?.icon
+		if (typeof title !== 'string' || typeof icon !== 'string') return null
+		return {
+			label: title,
+			icon,
+			pillClass: typeof record?.meta?.pillClass === 'string' ? record.meta.pillClass : 'bg-slate-500',
+			to: undefined as string | undefined,
+		}
+	})
+
+	const leadingPill = computed(() => {
+		if (showSpaceAsLeadingPill.value && currentSpaceLabel.value && currentSpaceIcon.value && currentSpaceId.value) {
+			return {
+				label: currentSpaceLabel.value,
+				icon: currentSpaceIcon.value,
+				pillClass: spacePillClass.value,
+				to: `/space/${currentSpaceId.value}`,
+			}
+		}
+		return routeMetaPill.value
 	})
 
 	// 从 inject 获取 workspace 页面的 breadcrumbItems
