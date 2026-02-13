@@ -9,6 +9,7 @@ export type MotionPresetName =
 	| 'drawerSection'
 	| 'statusFeedback'
 	| 'modalSection'
+	| 'backToTop'
 
 type MotionPresetVariants = MotionVariants<string>
 
@@ -205,6 +206,24 @@ const modalSectionReduced: MotionPresetVariants = {
 	leave: withTransition({ opacity: 0 }, buildTransition(MOTION_TOKENS.duration.fast)),
 }
 
+const backToTopDefault: MotionPresetVariants = {
+	initial: { opacity: 0, x: 28, scale: 0.96 },
+	enter: withTransition(
+		{ opacity: 1, x: 0, scale: 1 },
+		buildTransition(220, MOTION_TOKENS.ease.decelerate),
+	),
+	leave: withTransition(
+		{ opacity: 0, x: 24, scale: 0.98 },
+		buildTransition(170, MOTION_TOKENS.ease.accelerate),
+	),
+}
+
+const backToTopReduced: MotionPresetVariants = {
+	initial: { opacity: 0 },
+	enter: withTransition({ opacity: 1 }, buildTransition(160)),
+	leave: withTransition({ opacity: 0 }, buildTransition(140)),
+}
+
 export const MOTION_PRESETS: Record<MotionPresetName, MotionPresetDefinition> = {
 	page: {
 		default: pageDefault,
@@ -229,6 +248,10 @@ export const MOTION_PRESETS: Record<MotionPresetName, MotionPresetDefinition> = 
 	modalSection: {
 		default: modalSectionDefault,
 		reduced: modalSectionReduced,
+	},
+	backToTop: {
+		default: backToTopDefault,
+		reduced: backToTopReduced,
 	},
 }
 

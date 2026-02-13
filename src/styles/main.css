@@ -21,6 +21,7 @@
 	--z-header: 20;
 	--z-header-edit-strip: 30;
 	--z-popover: 40;
+	--z-fab: 60;
 	--z-drawer-overlay: 70;
 	--z-drawer: 80;
 	--z-drawer-popover: 90;
@@ -47,6 +48,10 @@
 
 .z-layer-popover {
 	z-index: var(--z-popover);
+}
+
+.z-layer-fab {
+	z-index: var(--z-fab);
 }
 
 .z-layer-drawer-overlay {

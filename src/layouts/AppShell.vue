@@ -4,16 +4,20 @@
 
 		<div
 			v-motion="layoutMainMotion"
-			class="flex-1 min-w-0 flex flex-col">
+			class="relative flex-1 min-w-0 flex flex-col">
 			<Header />
 
-			<main class="flex-1 min-h-0 overflow-auto">
+			<main
+				ref="mainScrollContainerRef"
+				class="flex-1 min-h-0 overflow-auto">
 				<div
 					v-motion="layoutContentMotion"
 					class="p-4">
 					<slot />
 				</div>
 			</main>
+
+			<GlobalBackToTopButton :scroll-container="mainScrollContainerRef" />
 		</div>
 
 		<!-- 右侧 Task Inspector Drawer，全局挂载在 Workspace Shell 上 -->
@@ -22,10 +26,11 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onBeforeUnmount, watch } from 'vue'
+	import { computed, onBeforeUnmount, ref, watch } from 'vue'
 	import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 
 	import { useAppMotionPreset } from '@/composables/base/motion'
+	import GlobalBackToTopButton from '@/components/GlobalBackToTopButton.vue'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'
 	import { useStartupReady } from '@/startup/initialize'
 	import {
@@ -49,6 +54,7 @@
 	const viewStateStore = useViewStateStore()
 	const layoutMainMotion = useAppMotionPreset('drawerSection', 'layoutShell')
 	const layoutContentMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const mainScrollContainerRef = ref<HTMLElement | null>(null)
 
 	function isKnownSpaceId(value: string): value is SpaceId {
 		return (SPACE_IDS as readonly string[]).includes(value)
