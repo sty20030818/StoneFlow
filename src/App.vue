@@ -142,7 +142,6 @@
 				{ label: 'Snippets', icon: 'i-lucide-code', to: '/snippets' },
 				{ label: 'Vault', icon: 'i-lucide-lock', to: '/vault' },
 				{ label: 'Notes', icon: 'i-lucide-notebook', to: '/notes' },
-				{ label: 'Toolbox', icon: 'i-lucide-wrench', to: '/toolbox' },
 			],
 		},
 		{

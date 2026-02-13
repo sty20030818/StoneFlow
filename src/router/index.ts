@@ -10,7 +10,6 @@ const Snippets = () => import('@/pages/assets/Snippets/index.vue')
 const Vault = () => import('@/pages/assets/Vault/index.vue')
 const Notes = () => import('@/pages/assets/Notes/index.vue')
 const Diary = () => import('@/pages/assets/Diary/index.vue')
-const Toolbox = () => import('@/pages/assets/Toolbox/index.vue')
 const Trash = () => import('@/pages/Trash/index.vue')
 
 const Settings = () => import('@/pages/Settings/index.vue')
@@ -79,11 +78,6 @@ export const routes = [
 		path: '/diary',
 		component: Diary,
 		meta: { title: '日记', icon: 'i-lucide-book-open-text', iconClass: 'text-indigo-500', description: '工作日志' },
-	},
-	{
-		path: '/toolbox',
-		component: Toolbox,
-		meta: { title: '工具箱', icon: 'i-lucide-wrench', iconClass: 'text-gray-500', description: '实用工具' },
 	},
 	{
 		path: '/trash',

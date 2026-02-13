@@ -12,10 +12,12 @@ const joinClass = (...parts: Array<string | undefined>) => parts.filter(Boolean)
  * 全局统一 Modal 层级配置，避免每个页面散落定义 overlay/content 层级。
  */
 export function createModalLayerUi(config: LayerUiConfig = {}) {
+	const { overlay, content, width, rounded, ...rest } = config
 	return {
-		...config,
-		overlay: joinClass('z-layer-modal-overlay', config.overlay),
-		content: joinClass('z-layer-modal-content', config.content),
+		...rest,
+		overlay: joinClass('z-layer-modal-overlay', overlay),
+		// Nuxt UI v4 通过 content slot 控制容器样式，宽度与圆角统一并入 content。
+		content: joinClass('z-layer-modal-content', width, rounded, content),
 	}
 }
 
@@ -23,11 +25,13 @@ export function createModalLayerUi(config: LayerUiConfig = {}) {
  * 全局统一 Drawer(Slideover) 层级配置。
  */
 export function createDrawerLayerUi(config: LayerUiConfig = {}) {
+	const { overlay, wrapper, content, width, rounded, ...rest } = config
 	return {
-		...config,
-		overlay: joinClass('z-layer-drawer-overlay', config.overlay),
-		wrapper: joinClass('z-layer-drawer', config.wrapper),
-		content: joinClass('z-layer-drawer', config.content),
+		...rest,
+		overlay: joinClass('z-layer-drawer-overlay', overlay),
+		wrapper,
+		// Nuxt UI v4 通过 content slot 控制抽屉面板样式。
+		content: joinClass('z-layer-drawer', width, rounded, content),
 	}
 }
 

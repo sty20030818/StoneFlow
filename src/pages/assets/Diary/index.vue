@@ -114,66 +114,62 @@
 
 		<!-- 编辑模态框 -->
 		<UModal
-			v-model="editOpen"
-			title="日记编辑"
-			description="创建或编辑日记内容"
+			v-model:open="editOpen"
+			:title="selectedEntry ? '编辑日记' : '新建日记'"
+			description="统一在弹窗中维护日记内容，减少上下文切换。"
 			:ui="diaryModalUi">
-			<div
-				v-motion="modalBodyMotion"
-				class="p-4 space-y-3">
-				<header class="space-y-1">
-					<div class="flex items-center gap-2">
-						<UIcon
-							name="i-lucide-book-open-text"
-							class="size-4 text-indigo-500" />
-						<h2 class="text-sm font-semibold">{{ selectedEntry ? '编辑日记' : '新建日记' }}</h2>
+			<template #body>
+				<div
+					v-motion="modalBodyMotion"
+					class="space-y-4">
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<UFormField label="日期">
+							<UInput
+								v-model="editForm.date"
+								type="date"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
+						<UFormField
+							label="标题"
+							required>
+							<UInput
+								v-model="editForm.title"
+								placeholder="日记标题"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
 					</div>
-				</header>
 
-				<div class="grid grid-cols-2 gap-2">
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">日期</label>
+					<UFormField
+						label="内容（Markdown）"
+						required>
+						<UTextarea
+							v-model="editForm.content"
+							placeholder="记录感想、灵感、总结…"
+							:rows="14"
+							size="md"
+							class="w-full"
+							autoresize
+							:ui="assetModalTextareaUi" />
+					</UFormField>
+
+					<UFormField label="关联 Project ID（可选）">
 						<UInput
-							v-model="editForm.date"
-							type="date"
-							size="sm" />
-					</div>
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标题</label>
-						<UInput
-							v-model="editForm.title"
-							placeholder="日记标题"
-							size="sm" />
-					</div>
+							v-model="editForm.linkedProjectId"
+							placeholder="project:xxx"
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi" />
+					</UFormField>
 				</div>
-
-				<div class="space-y-2">
-					<label class="text-[11px] font-medium text-muted uppercase tracking-wide">内容（Markdown）</label>
-					<UTextarea
-						v-model="editForm.content"
-						placeholder="记录感想、灵感、总结…"
-						:rows="10"
-						autoresize />
-				</div>
-
-				<div class="space-y-2">
-					<label class="text-[11px] font-medium text-muted uppercase tracking-wide">关联 Project ID（可选）</label>
-					<UInput
-						v-model="editForm.linkedProjectId"
-						placeholder="project:xxx"
-						size="sm" />
-				</div>
-
+			</template>
+			<template #footer>
 				<div
 					v-motion="modalFooterMotion"
-					class="flex items-center gap-2 pt-2">
-					<UButton
-						color="primary"
-						size="sm"
-						class="flex-1"
-						@click="onSave">
-						保存
-					</UButton>
+					class="flex items-center justify-end gap-2">
 					<UButton
 						color="neutral"
 						variant="ghost"
@@ -181,8 +177,14 @@
 						@click="editOpen = false">
 						取消
 					</UButton>
+					<UButton
+						color="primary"
+						size="sm"
+						@click="onSave">
+						保存
+					</UButton>
 				</div>
-			</div>
+			</template>
 		</UModal>
 	</section>
 </template>
@@ -196,6 +198,7 @@
 	import { validateWithZod } from '@/composables/base/zod'
 	import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 	import { createModalLayerUi } from '@/config/ui-layer'
+	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import type { DiaryEntryDto } from '@/services/api/diary'
 	import { createDiaryEntry, deleteDiaryEntry, listDiaryEntries, updateDiaryEntry } from '@/services/api/diary'
@@ -205,10 +208,11 @@
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const timelineMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const diaryItemPreset = useMotionPreset('card')
-	const modalBodyMotion = useMotionPresetWithDelay('modalSection', 24)
-	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
+	const modalBodyMotion = useMotionPreset('modalSection')
+	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
 	const diaryModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
+		rounded: 'rounded-2xl',
 	})
 
 	const entries = ref<DiaryEntryDto[]>([])

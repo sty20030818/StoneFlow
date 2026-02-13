@@ -3,7 +3,7 @@
 		<!-- 顶部：标题 + 搜索 + 新建 -->
 		<header
 			v-motion="headerMotion"
-			class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
+			class="flex flex-col gap-3 border-b border-default pb-3 lg:flex-row lg:items-center lg:justify-between">
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
@@ -32,18 +32,17 @@
 			</div>
 		</header>
 
-		<!-- 主体：左侧分组 + 中间列表 + 右侧编辑 -->
+		<!-- 主体：左侧分组 + 列表 -->
 		<div
 			v-motion="layoutMotion"
-			class="flex-1 min-h-0 flex gap-4 mt-4">
-			<!-- 左侧：分组列表 -->
+			class="mt-4 flex flex-1 min-h-0 gap-4">
 			<aside
 				v-motion="folderMotion"
 				class="w-48 shrink-0 border-r border-default pr-4">
 				<div class="space-y-2">
 					<button
 						type="button"
-						class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition"
+						class="w-full rounded-lg px-2 py-1.5 text-left text-sm transition"
 						:class="selectedFolder === null ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60'"
 						@click="selectedFolder = null">
 						<div class="flex items-center gap-2">
@@ -60,7 +59,7 @@
 						class="space-y-0.5">
 						<button
 							type="button"
-							class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition"
+							class="w-full rounded-lg px-2 py-1.5 text-left text-sm transition"
 							:class="selectedFolder === folder ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60'"
 							@click="selectedFolder = folder">
 							<div class="flex items-center gap-2">
@@ -74,13 +73,12 @@
 				</div>
 			</aside>
 
-			<!-- 中间：代码片段列表 -->
 			<main
 				v-motion="listMotion"
 				class="flex-1 min-w-0 overflow-y-auto">
 				<div
 					v-if="filteredSnippets.length === 0 && !loading"
-					class="text-sm text-muted py-8 text-center">
+					class="py-8 text-center text-sm text-muted">
 					暂无代码片段。点击「新建」创建第一个片段。
 				</div>
 
@@ -88,36 +86,36 @@
 					v-else
 					class="space-y-2">
 					<div
-						v-for="(s, index) in filteredSnippets"
-						:key="s.id"
+						v-for="(snippet, index) in filteredSnippets"
+						:key="snippet.id"
 						v-motion="snippetItemMotions[index]"
-						class="p-3 rounded-lg border border-default bg-elevated/80 cursor-pointer hover:bg-default transition"
-						:class="selectedSnippet?.id === s.id ? 'ring-2 ring-primary' : ''"
-						@click="selectSnippet(s)">
+						class="cursor-pointer rounded-lg border border-default bg-elevated/80 p-3 transition hover:bg-default"
+						:class="selectedSnippet?.id === snippet.id && editOpen ? 'ring-2 ring-primary' : ''"
+						@click="openEditor(snippet)">
 						<div class="flex items-start justify-between gap-2">
 							<div class="min-w-0 flex-1">
-								<div class="flex items-center gap-2 mb-1">
-									<span class="text-sm font-medium truncate">{{ s.title }}</span>
+								<div class="mb-1 flex items-center gap-2">
+									<span class="truncate text-sm font-medium">{{ snippet.title }}</span>
 									<UBadge
 										color="neutral"
 										variant="soft"
 										size="2xs">
-										{{ s.language }}
+										{{ snippet.language }}
 									</UBadge>
 									<UBadge
-										v-if="s.folder"
+										v-if="snippet.folder"
 										color="primary"
 										variant="soft"
 										size="2xs">
-										{{ s.folder }}
+										{{ snippet.folder }}
 									</UBadge>
 								</div>
-								<div class="text-xs text-muted line-clamp-2 mb-1.5">
-									{{ s.content.substring(0, 100) }}{{ s.content.length > 100 ? '...' : '' }}
+								<div class="mb-1.5 line-clamp-2 text-xs text-muted">
+									{{ snippet.content.substring(0, 100) }}{{ snippet.content.length > 100 ? '...' : '' }}
 								</div>
-								<div class="flex items-center gap-2 flex-wrap">
+								<div class="flex flex-wrap items-center gap-2">
 									<UBadge
-										v-for="tag in s.tags.slice(0, 3)"
+										v-for="tag in snippet.tags.slice(0, 3)"
 										:key="tag"
 										color="neutral"
 										variant="subtle"
@@ -125,9 +123,9 @@
 										{{ tag }}
 									</UBadge>
 									<span
-										v-if="s.tags.length > 3"
+										v-if="snippet.tags.length > 3"
 										class="text-[10px] text-muted">
-										+{{ s.tags.length - 3 }}
+										+{{ snippet.tags.length - 3 }}
 									</span>
 								</div>
 							</div>
@@ -136,94 +134,99 @@
 								variant="ghost"
 								size="2xs"
 								icon="i-lucide-trash-2"
-								@click.stop="onDelete(s.id)">
+								@click.stop="onDelete(snippet.id)">
 								<span class="sr-only">删除</span>
 							</UButton>
 						</div>
 					</div>
 				</div>
 			</main>
+		</div>
 
-			<!-- 右侧：编辑区 -->
-			<aside
-				v-if="selectedSnippet"
-				v-motion="editorMotion"
-				class="w-96 shrink-0 border-l border-default pl-4 overflow-y-auto">
-				<div class="space-y-3">
-					<div class="flex items-center justify-between">
-						<span class="text-sm font-semibold">编辑片段</span>
-						<UButton
-							color="neutral"
-							variant="ghost"
-							size="2xs"
-							icon="i-lucide-x"
-							@click="selectedSnippet = null">
-							<span class="sr-only">关闭</span>
-						</UButton>
-					</div>
-
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标题</label>
-						<UInput
-							v-model="editForm.title"
-							placeholder="代码片段标题"
-							size="sm" />
-					</div>
-
-					<div class="grid grid-cols-2 gap-2">
-						<div class="space-y-2">
-							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">语言</label>
+		<UModal
+			v-model:open="editOpen"
+			:title="selectedSnippet?.id ? '编辑代码片段' : '新建代码片段'"
+			description="统一在弹窗中完成字段编辑，避免页面左右来回切换。"
+			:ui="snippetModalUi">
+			<template #body>
+				<div
+					v-motion="modalBodyMotion"
+					class="space-y-4">
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<UFormField
+							label="标题"
+							required>
+							<UInput
+								v-model="editForm.title"
+								placeholder="代码片段标题"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
+						<UFormField label="语言">
 							<UInput
 								v-model="editForm.language"
-								placeholder="如: javascript"
-								size="sm" />
-						</div>
-						<div class="space-y-2">
-							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">分组</label>
-							<UInput
-								v-model="editForm.folder"
-								placeholder="Folder 名称"
-								size="sm" />
-						</div>
+								placeholder="如 javascript / sql / bash"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
 					</div>
 
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">内容</label>
+					<UFormField label="分组（可选）">
+						<UInput
+							v-model="editForm.folder"
+							placeholder="可选：按业务或技术栈分组"
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi" />
+					</UFormField>
+
+					<UFormField
+						label="内容"
+						required>
 						<UTextarea
 							v-model="editForm.content"
 							placeholder="输入代码或 Markdown 内容…"
 							:rows="12"
-							autoresize />
-					</div>
+							size="md"
+							class="w-full"
+							autoresize
+							:ui="assetModalTextareaUi" />
+					</UFormField>
 
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标签（逗号分隔）</label>
+					<UFormField label="标签（逗号分隔，可选）">
 						<UInput
 							v-model="tagsInput"
 							placeholder="tag1, tag2, tag3"
-							size="sm"
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi"
 							@blur="onTagsBlur" />
-					</div>
-
-					<div class="flex items-center gap-2 pt-2">
-						<UButton
-							color="primary"
-							size="sm"
-							class="flex-1"
-							@click="onSave">
-							保存
-						</UButton>
-						<UButton
-							color="neutral"
-							variant="ghost"
-							size="sm"
-							@click="selectedSnippet = null">
-							取消
-						</UButton>
-					</div>
+					</UFormField>
 				</div>
-			</aside>
-		</div>
+			</template>
+
+			<template #footer>
+				<div
+					v-motion="modalFooterMotion"
+					class="flex items-center justify-end gap-2">
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="sm"
+						@click="closeEditor">
+						取消
+					</UButton>
+					<UButton
+						color="primary"
+						size="sm"
+						@click="onSave">
+						保存
+					</UButton>
+				</div>
+			</template>
+		</UModal>
 	</section>
 </template>
 
@@ -231,9 +234,11 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
+	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
 	import type { SnippetDto } from '@/services/api/snippets'
 	import { createSnippet, deleteSnippet, listSnippets, updateSnippet } from '@/services/api/snippets'
 
@@ -242,10 +247,16 @@
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
 	const listMotion = useAppMotionPreset('drawerSection', 'sectionBase', 42)
-	const editorMotion = useAppMotionPreset('card', 'sectionBase', 54)
 	const snippetItemPreset = useMotionPreset('listItem')
+	const modalBodyMotion = useMotionPreset('modalSection')
+	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const snippetModalUi = createModalLayerUi({
+		width: 'sm:max-w-3xl',
+		rounded: 'rounded-2xl',
+	})
 
 	const selectedSnippet = ref<SnippetDto | null>(null)
+	const editOpen = ref(false)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
@@ -272,13 +283,12 @@
 		folder: null as string | null,
 		tags: [] as string[],
 	})
-
 	const tagsInput = ref('')
 
 	const folders = computed(() => {
 		const set = new Set<string>()
-		for (const s of snippets.value) {
-			if (s.folder) set.add(s.folder)
+		for (const snippet of snippets.value) {
+			if (snippet.folder) set.add(snippet.folder)
 		}
 		return Array.from(set).sort()
 	})
@@ -287,41 +297,43 @@
 		let result = snippets.value
 
 		if (selectedFolder.value !== null) {
-			result = result.filter((s) => s.folder === selectedFolder.value)
+			result = result.filter((snippet) => snippet.folder === selectedFolder.value)
 		}
 
 		if (debouncedSearchKeyword.value.trim()) {
-			const kw = debouncedSearchKeyword.value.trim().toLowerCase()
-			result = result.filter((s) => {
-				if (s.title.toLowerCase().includes(kw)) return true
-				if (s.content.toLowerCase().includes(kw)) return true
-				if (s.tags.some((t) => t.toLowerCase().includes(kw))) return true
+			const keyword = debouncedSearchKeyword.value.trim().toLowerCase()
+			result = result.filter((snippet) => {
+				if (snippet.title.toLowerCase().includes(keyword)) return true
+				if (snippet.content.toLowerCase().includes(keyword)) return true
+				if (snippet.tags.some((tag) => tag.toLowerCase().includes(keyword))) return true
 				return false
 			})
 		}
 
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
+
 	const snippetItemMotions = computed(() =>
-		filteredSnippets.value.map((_item, index) =>
+		filteredSnippets.value.map((_snippet, index) =>
 			withMotionDelay(snippetItemPreset.value, getAppStaggerDelay(index)),
 		),
 	)
 
-	function selectSnippet(s: SnippetDto) {
-		selectedSnippet.value = s
+	function openEditor(snippet: SnippetDto) {
+		selectedSnippet.value = snippet
 		editForm.value = {
-			title: s.title,
-			language: s.language,
-			content: s.content,
-			folder: s.folder,
-			tags: [...s.tags],
+			title: snippet.title,
+			language: snippet.language,
+			content: snippet.content,
+			folder: snippet.folder,
+			tags: [...snippet.tags],
 		}
-		tagsInput.value = s.tags.join(', ')
+		tagsInput.value = snippet.tags.join(', ')
+		editOpen.value = true
 	}
 
 	function onCreateNew() {
-		const newSnippet: SnippetDto = {
+		openEditor({
 			id: '',
 			title: '',
 			language: 'plaintext',
@@ -332,14 +344,18 @@
 			linkedProjectId: null,
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
-		}
-		selectSnippet(newSnippet)
+		})
+	}
+
+	function closeEditor() {
+		editOpen.value = false
+		selectedSnippet.value = null
 	}
 
 	function onTagsBlur() {
 		editForm.value.tags = tagsInput.value
 			.split(',')
-			.map((t) => t.trim())
+			.map((tag) => tag.trim())
 			.filter(Boolean)
 	}
 
@@ -361,7 +377,7 @@
 				toast.add({ title: '已创建', color: 'success' })
 			}
 			await refresh()
-			selectedSnippet.value = null
+			closeEditor()
 		} catch (e) {
 			toast.add({
 				title: '保存失败',
@@ -376,7 +392,7 @@
 			await deleteSnippet(id)
 			toast.add({ title: '已删除', color: 'success' })
 			if (selectedSnippet.value?.id === id) {
-				selectedSnippet.value = null
+				closeEditor()
 			}
 			await refresh()
 		} catch (e) {

@@ -142,36 +142,39 @@
 
 		<!-- 完成感想记录入口（占位） -->
 		<UModal
-			v-model="reflectionOpen"
+			v-model:open="reflectionOpen"
 			title="完成感想"
 			description="记录任务完成后的感想与复盘"
 			:ui="reflectionModalUi">
-			<div
-				v-motion="reflectionBodyMotion"
-				class="p-4 space-y-3">
-				<header class="space-y-1">
-					<div class="flex items-center gap-2">
-						<UIcon
-							name="i-lucide-sparkles"
-							class="size-4 text-pink-500" />
-						<h2 class="text-sm font-semibold">记录完成感想</h2>
+			<template #body>
+				<div
+					v-motion="reflectionBodyMotion"
+					class="space-y-3">
+					<header class="space-y-1">
+						<div class="flex items-center gap-2">
+							<UIcon
+								name="i-lucide-sparkles"
+								class="size-4 text-pink-500" />
+							<h2 class="text-sm font-semibold">记录完成感想</h2>
+						</div>
+						<p class="text-xs text-muted">与 Diary / Notes 的弱关联将在后续 v3 步骤中接入，这里先提供占位入口。</p>
+					</header>
+
+					<div class="space-y-1.5">
+						<div class="text-xs text-muted">当前任务</div>
+						<div class="text-xs font-medium truncate">{{ reflectionTask?.title ?? '未选择任务' }}</div>
 					</div>
-					<p class="text-xs text-muted">与 Diary / Notes 的弱关联将在后续 v3 步骤中接入，这里先提供占位入口。</p>
-				</header>
 
-				<div class="space-y-1.5">
-					<div class="text-xs text-muted">当前任务</div>
-					<div class="text-xs font-medium truncate">{{ reflectionTask?.title ?? '未选择任务' }}</div>
+					<UTextarea
+						v-model="reflectionText"
+						placeholder="这次完成有什么收获、疑问或需要改进的地方？（占位，不落库）"
+						:rows="5" />
 				</div>
-
-				<UTextarea
-					v-model="reflectionText"
-					placeholder="这次完成有什么收获、疑问或需要改进的地方？（占位，不落库）"
-					:rows="5" />
-
+			</template>
+			<template #footer>
 				<div
 					v-motion="reflectionFooterMotion"
-					class="pt-1">
+					class="flex items-center gap-2">
 					<UButton
 						color="neutral"
 						variant="ghost"
@@ -186,7 +189,7 @@
 						保存（占位）
 					</UButton>
 				</div>
-			</div>
+			</template>
 		</UModal>
 	</section>
 </template>

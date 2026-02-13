@@ -3,7 +3,7 @@
 		<!-- 顶部：标题 + 搜索 + 新建 -->
 		<header
 			v-motion="headerMotion"
-			class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-default">
+			class="flex flex-col gap-3 border-b border-default pb-3 lg:flex-row lg:items-center lg:justify-between">
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
@@ -32,143 +32,135 @@
 			</div>
 		</header>
 
-		<!-- 主体：左侧列表 + 右侧编辑 -->
 		<div
 			v-motion="layoutMotion"
-			class="flex-1 min-h-0 flex gap-4 mt-4">
-			<!-- 左侧：笔记列表 -->
-			<aside
-				v-motion="listPanelMotion"
-				class="w-64 shrink-0 border-r border-default pr-4 overflow-y-auto">
-				<div
-					v-if="filteredNotes.length === 0 && !loading"
-					class="text-sm text-muted py-8 text-center">
-					暂无笔记。点击「新建」创建第一篇笔记。
-				</div>
+			class="mt-4 flex-1 min-h-0 overflow-y-auto">
+			<div
+				v-if="filteredNotes.length === 0 && !loading"
+				class="py-8 text-center text-sm text-muted">
+				暂无笔记。点击「新建」创建第一篇笔记。
+			</div>
 
+			<div
+				v-else
+				class="space-y-2">
 				<div
-					v-else
-					class="space-y-2">
-					<div
-						v-for="(n, index) in filteredNotes"
-						:key="n.id"
-						v-motion="noteItemMotions[index]"
-						class="p-3 rounded-lg border border-default bg-elevated/80 cursor-pointer hover:bg-default transition"
-						:class="selectedNote?.id === n.id ? 'ring-2 ring-primary' : ''"
-						@click="selectNote(n)">
-						<div class="flex items-start justify-between gap-2">
-							<div class="min-w-0 flex-1">
-								<div class="text-sm font-medium truncate mb-1">{{ n.title || '无标题' }}</div>
-								<div class="text-xs text-muted line-clamp-2">
-									{{ n.content.substring(0, 80) }}{{ n.content.length > 80 ? '...' : '' }}
-								</div>
-								<div class="flex items-center gap-1.5 mt-1.5">
-									<UBadge
-										v-if="n.linkedProjectId"
-										color="primary"
-										variant="soft"
-										size="2xs">
-										Project
-									</UBadge>
-									<UBadge
-										v-if="n.linkedTaskId"
-										color="success"
-										variant="soft"
-										size="2xs">
-										Task
-									</UBadge>
-								</div>
+					v-for="(note, index) in filteredNotes"
+					:key="note.id"
+					v-motion="noteItemMotions[index]"
+					class="cursor-pointer rounded-lg border border-default bg-elevated/80 p-3 transition hover:bg-default"
+					:class="selectedNote?.id === note.id && editOpen ? 'ring-2 ring-primary' : ''"
+					@click="openEditor(note)">
+					<div class="flex items-start justify-between gap-2">
+						<div class="min-w-0 flex-1">
+							<div class="mb-1 truncate text-sm font-medium">{{ note.title || '无标题' }}</div>
+							<div class="line-clamp-2 text-xs text-muted">
+								{{ note.content.substring(0, 80) }}{{ note.content.length > 80 ? '...' : '' }}
 							</div>
-							<UButton
-								color="neutral"
-								variant="ghost"
-								size="2xs"
-								icon="i-lucide-trash-2"
-								@click.stop="onDelete(n.id)">
-								<span class="sr-only">删除</span>
-							</UButton>
+							<div class="mt-1.5 flex items-center gap-1.5">
+								<UBadge
+									v-if="note.linkedProjectId"
+									color="primary"
+									variant="soft"
+									size="2xs">
+									Project
+								</UBadge>
+								<UBadge
+									v-if="note.linkedTaskId"
+									color="success"
+									variant="soft"
+									size="2xs">
+									Task
+								</UBadge>
+							</div>
 						</div>
-					</div>
-				</div>
-			</aside>
-
-			<!-- 右侧：编辑区 -->
-			<main
-				v-motion="editorPanelMotion"
-				class="flex-1 min-w-0 overflow-y-auto">
-				<div
-					v-if="!selectedNote"
-					class="flex items-center justify-center h-full text-sm text-muted">
-					选择左侧笔记或点击「新建」开始编辑
-				</div>
-
-				<div
-					v-else
-					class="space-y-3">
-					<div class="flex items-center justify-between">
-						<span class="text-sm font-semibold">编辑笔记</span>
 						<UButton
 							color="neutral"
 							variant="ghost"
-							size="sm"
-							@click="selectedNote = null">
-							关闭
+							size="2xs"
+							icon="i-lucide-trash-2"
+							@click.stop="onDelete(note.id)">
+							<span class="sr-only">删除</span>
 						</UButton>
 					</div>
+				</div>
+			</div>
+		</div>
 
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">标题</label>
+		<UModal
+			v-model:open="editOpen"
+			:title="selectedNote?.id ? '编辑笔记' : '新建笔记'"
+			description="统一在弹窗中完成编辑，专注当前笔记内容。"
+			:ui="noteModalUi">
+			<template #body>
+				<div
+					v-motion="modalBodyMotion"
+					class="space-y-4">
+					<UFormField
+						label="标题"
+						required>
 						<UInput
 							v-model="editForm.title"
 							placeholder="笔记标题"
-							size="sm" />
-					</div>
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi" />
+					</UFormField>
 
-					<div class="space-y-2">
-						<label class="text-[11px] font-medium text-muted uppercase tracking-wide">内容（Markdown）</label>
+					<UFormField
+						label="内容（Markdown）"
+						required>
 						<UTextarea
 							v-model="editForm.content"
-							placeholder="输入 Markdown 内容…&#10;&#10;引用 Task: task:xxx&#10;引用 Project: project:xxx"
-							:rows="20"
-							autoresize />
-					</div>
+							placeholder="输入 Markdown 内容…"
+							:rows="14"
+							size="md"
+							class="w-full"
+							autoresize
+							:ui="assetModalTextareaUi" />
+					</UFormField>
 
-					<div class="grid grid-cols-2 gap-2">
-						<div class="space-y-2">
-							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">关联 Project ID</label>
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<UFormField label="关联 Project ID（可选）">
 							<UInput
 								v-model="editForm.linkedProjectId"
 								placeholder="project:xxx（可选）"
-								size="sm" />
-						</div>
-						<div class="space-y-2">
-							<label class="text-[11px] font-medium text-muted uppercase tracking-wide">关联 Task ID</label>
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
+						<UFormField label="关联 Task ID（可选）">
 							<UInput
 								v-model="editForm.linkedTaskId"
 								placeholder="task:xxx（可选）"
-								size="sm" />
-						</div>
-					</div>
-
-					<div class="flex items-center gap-2 pt-2">
-						<UButton
-							color="primary"
-							size="sm"
-							class="flex-1"
-							@click="onSave">
-							保存
-						</UButton>
-						<UButton
-							color="neutral"
-							variant="ghost"
-							size="sm"
-							@click="selectedNote = null">
-							取消
-						</UButton>
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
 					</div>
 				</div>
-			</main>
-		</div>
+			</template>
+
+			<template #footer>
+				<div
+					v-motion="modalFooterMotion"
+					class="flex items-center justify-end gap-2">
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="sm"
+						@click="closeEditor">
+						取消
+					</UButton>
+					<UButton
+						color="primary"
+						size="sm"
+						@click="onSave">
+						保存
+					</UButton>
+				</div>
+			</template>
+		</UModal>
 	</section>
 </template>
 
@@ -176,20 +168,27 @@
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
+	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import { validateWithZod } from '@/composables/base/zod'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import { noteSubmitSchema } from '@/composables/domain/validation/forms'
+	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
 	import type { NoteDto } from '@/services/api/notes'
 	import { createNote, deleteNote, listNotes, updateNote } from '@/services/api/notes'
 
 	const toast = useToast()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
-	const listPanelMotion = useAppMotionPreset('card', 'sectionBase', 30)
-	const editorPanelMotion = useAppMotionPreset('card', 'sectionBase', 44)
 	const noteItemPreset = useMotionPreset('listItem')
+	const modalBodyMotion = useMotionPreset('modalSection')
+	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const noteModalUi = createModalLayerUi({
+		width: 'sm:max-w-3xl',
+		rounded: 'rounded-2xl',
+	})
 
 	const selectedNote = ref<NoteDto | null>(null)
+	const editOpen = ref(false)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
 	const {
@@ -219,34 +218,36 @@
 		let result = notes.value
 
 		if (debouncedSearchKeyword.value.trim()) {
-			const kw = debouncedSearchKeyword.value.trim().toLowerCase()
-			result = result.filter((n) => {
-				if (n.title.toLowerCase().includes(kw)) return true
-				if (n.content.toLowerCase().includes(kw)) return true
+			const keyword = debouncedSearchKeyword.value.trim().toLowerCase()
+			result = result.filter((note) => {
+				if (note.title.toLowerCase().includes(keyword)) return true
+				if (note.content.toLowerCase().includes(keyword)) return true
 				return false
 			})
 		}
 
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
+
 	const noteItemMotions = computed(() =>
-		filteredNotes.value.map((_item, index) =>
+		filteredNotes.value.map((_note, index) =>
 			withMotionDelay(noteItemPreset.value, getAppStaggerDelay(index)),
 		),
 	)
 
-	function selectNote(n: NoteDto) {
-		selectedNote.value = n
+	function openEditor(note: NoteDto) {
+		selectedNote.value = note
 		editForm.value = {
-			title: n.title,
-			content: n.content,
-			linkedProjectId: n.linkedProjectId,
-			linkedTaskId: n.linkedTaskId,
+			title: note.title,
+			content: note.content,
+			linkedProjectId: note.linkedProjectId,
+			linkedTaskId: note.linkedTaskId,
 		}
+		editOpen.value = true
 	}
 
 	function onCreateNew() {
-		const newNote: NoteDto = {
+		openEditor({
 			id: '',
 			title: '',
 			content: '',
@@ -254,8 +255,12 @@
 			linkedTaskId: null,
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
-		}
-		selectNote(newNote)
+		})
+	}
+
+	function closeEditor() {
+		editOpen.value = false
+		selectedNote.value = null
 	}
 
 	async function onSave() {
@@ -275,7 +280,7 @@
 				toast.add({ title: '已创建', color: 'success' })
 			}
 			await refresh()
-			selectedNote.value = null
+			closeEditor()
 		} catch (e) {
 			toast.add({
 				title: '保存失败',
@@ -290,7 +295,7 @@
 			await deleteNote(id)
 			toast.add({ title: '已删除', color: 'success' })
 			if (selectedNote.value?.id === id) {
-				selectedNote.value = null
+				closeEditor()
 			}
 			await refresh()
 		} catch (e) {

@@ -16,7 +16,6 @@ const LIBRARY_ROUTES = new Set([
 	'/vault',
 	'/notes',
 	'/diary',
-	'/toolbox',
 ])
 
 function isKnownSpaceId(value: string): value is SpaceId {
