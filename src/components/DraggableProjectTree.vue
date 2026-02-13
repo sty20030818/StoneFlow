@@ -1,7 +1,7 @@
 <template>
 	<VueDraggable
 		v-model="localProjects"
-		:animation="0"
+		:animation="150"
 		:disabled="disabled"
 		:force-fallback="true"
 		:fallback-tolerance="5"
@@ -13,15 +13,14 @@
 		filter=".expand-toggle, .project-menu"
 		:prevent-on-filter="true"
 		@end="onDragEnd">
-		<div
-			v-for="(item, index) in localProjects"
-			:key="item.id"
-			class="rounded-lg">
 			<div
-				v-motion="getTreeItemMotion(index)"
-				class="group relative rounded-lg text-[13px] transition-colors duration-150 select-none"
-				:class="
-					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
+				v-for="item in localProjects"
+				:key="item.id"
+				class="rounded-lg">
+				<div
+					class="group relative rounded-lg text-[13px] transition-colors duration-150 select-none"
+					:class="
+						isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
 				"
 				@contextmenu.prevent="openContextMenu(item)">
 				<RouterLink
@@ -60,17 +59,17 @@
 						</div>
 					</template>
 				</UPopover>
-				<button
-					v-if="item.children && item.children.length > 0"
-					type="button"
-					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
-					@pointerdown.stop.prevent
-					@click.stop.prevent="toggleExpand(item.id)">
-					<UIcon
-						name="i-lucide-chevron-right"
-						class="size-3.5"
-						v-motion="getExpandChevronMotion(isExpanded(item.id))" />
-				</button>
+					<button
+						v-if="item.children && item.children.length > 0"
+						type="button"
+						class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
+						@pointerdown.stop.prevent
+						@click.stop.prevent="toggleExpand(item.id)">
+						<UIcon
+							name="i-lucide-chevron-right"
+							class="size-3.5 transition-transform duration-200 ease-out"
+							:class="isExpanded(item.id) ? 'rotate-90' : 'rotate-0'" />
+					</button>
 			</div>
 			<!-- 递归渲染子节点 -->
 			<Transition name="tree-branch">
@@ -120,12 +119,10 @@
 </template>
 
 <script setup lang="ts">
-	import type { MotionVariants } from '@vueuse/motion'
 	import type { SortableEvent } from 'sortablejs'
 	import { computed, ref, toRefs, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
-	import { useCardHoverMotionPreset, useMotionPreset, useProjectMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
@@ -177,46 +174,12 @@
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
 	})
-	const treeRowMotionPreset = useProjectMotionPreset('listItem', 'drawerSectionStart', Math.min(props.level * 10, 60))
-	const treeRowHoverPreset = useCardHoverMotionPreset()
-	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
 
 	// 本地项目列表副本，用于拖拽
 	const localProjects = ref<ProjectTreeItem[]>([])
 	const confirmDeleteOpen = ref(false)
 	const deleting = ref(false)
 	const deleteTarget = ref<ProjectTreeItem | null>(null)
-	const enableHoverMotion = computed(() => localProjects.value.length <= 60)
-
-	function getTreeItemMotion(index: number) {
-		const staggeredDelay = Math.min(index * 12, 96)
-		const baseMotion = withMotionDelay(treeRowMotionPreset.value, staggeredDelay)
-		if (!enableHoverMotion.value) return baseMotion
-		return {
-			...baseMotion,
-			hovered: {
-				y: -1,
-				scale: 1.004,
-				transition: treeRowHoverPreset.value.hovered?.transition ?? treeRowHoverPreset.value.enter?.transition,
-			},
-		}
-	}
-
-	function getExpandChevronMotion(expanded: boolean): MotionVariants<string> {
-		return {
-			initial: {
-				rotate: 0,
-			},
-			enter: {
-				rotate: expanded ? 90 : 0,
-				transition: statusFeedbackMotionPreset.value.enter?.transition,
-			},
-			hovered: {
-				rotate: expanded ? 90 : 0,
-				transition: statusFeedbackMotionPreset.value.enter?.transition,
-			},
-		}
-	}
 
 	/**
 	 * 同步 props 到本地

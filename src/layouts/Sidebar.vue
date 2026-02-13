@@ -27,7 +27,7 @@
 		</div>
 
 		<!-- 固定区域：Execution Zone -->
-		<div class="px-3 pt-4 shrink-0">
+		<div class="px-3 pt-2 shrink-0">
 			<section>
 				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">系统分组</div>
 				<nav class="flex flex-col gap-0.5">
@@ -69,7 +69,7 @@
 		<!-- 固定区域：Projects Header -->
 		<div
 			v-motion="projectHeaderMotion"
-			class="px-3 pt-4 shrink-0 pb-1.5">
+			class="px-3 py-1 shrink-0">
 			<div class="flex items-center justify-between px-1.5">
 				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">项目树</div>
 				<UButton
@@ -116,8 +116,8 @@
 					class="transition-[padding] duration-200 ease-in-out"
 					:class="isLibraryCollapsed ? 'py-2' : 'pt-3'">
 					<div
-						class="flex items-center justify-between px-1.5 cursor-pointer group select-none"
-						@click="isLibraryCollapsed = !isLibraryCollapsed">
+						class="flex items-center justify-between px-1.5 cursor-pointer select-none"
+						@click="toggleLibraryCollapsed">
 						<div
 							class="text-[11px] font-medium text-muted uppercase tracking-wide"
 							:class="{ 'opacity-70': isLibraryCollapsed }">
@@ -125,26 +125,28 @@
 						</div>
 						<UIcon
 							name="i-lucide-chevron-down"
-							v-motion="libraryChevronMotion"
-							class="size-3.5 text-muted opacity-0 group-hover:opacity-100" />
+							class="size-3.5 text-muted transition-transform duration-200 ease-out"
+							:class="isLibraryCollapsed ? 'rotate-180' : 'rotate-0'" />
 					</div>
 
-					<nav
-						v-if="!isLibraryCollapsed"
-						v-motion="libraryNavMotion"
-						class="flex flex-col gap-0.5 mt-1.5">
-						<RouterLink
-							v-for="item in libraryNav"
-							:key="item.to"
-							:to="item.to"
-							class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
-							:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
-							<UIcon
-								:name="item.icon"
-								:class="item.iconColor" />
-							<span>{{ item.label }}</span>
-						</RouterLink>
-					</nav>
+					<Transition name="library-nav-shell">
+						<nav
+							v-if="!isLibraryCollapsed"
+							v-motion="libraryNavMotion"
+							class="flex flex-col gap-0.5 mt-1.5">
+							<RouterLink
+								v-for="item in libraryNav"
+								:key="item.to"
+								:to="item.to"
+								class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
+								:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
+								<UIcon
+									:name="item.icon"
+									:class="item.iconColor" />
+								<span>{{ item.label }}</span>
+							</RouterLink>
+						</nav>
+					</Transition>
 				</section>
 			</div>
 
@@ -164,11 +166,11 @@
 
 <script setup lang="ts">
 	import type { MotionVariants } from '@vueuse/motion'
-	import { watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
+	import { usePreferredReducedMotion, watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
 	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
-	import { useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
+	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { useRuntimeGate } from '@/composables/base/runtime-gate'
 	import BrandLogo from '@/components/BrandLogo.vue'
@@ -195,9 +197,9 @@
 	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
 	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
-	const libraryNavMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
+	const libraryNavBaseMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
 	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
-	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
+	const preferredReducedMotion = usePreferredReducedMotion()
 
 	const spaceValue = computed(() => props.space ?? 'work')
 	const projectIcon = PROJECT_ICON
@@ -209,15 +211,28 @@
 		get: () => viewStateStore.libraryCollapsed,
 		set: (val) => viewStateStore.setLibraryCollapsed(val),
 	})
-	const libraryChevronMotion = computed<MotionVariants<string>>(() => ({
-		initial: {
-			rotate: isLibraryCollapsed.value ? -90 : 0,
-		},
-		enter: {
-			rotate: isLibraryCollapsed.value ? -90 : 0,
-			transition: statusFeedbackMotionPreset.value.enter?.transition,
-		},
-	}))
+	const libraryNavMotion = computed<MotionVariants<string>>(() => {
+		const base = libraryNavBaseMotion.value
+		const reduceMotion = preferredReducedMotion.value === 'reduce'
+		return {
+			...base,
+			initial: {
+				...(base.initial ?? {}),
+				opacity: 0,
+				y: reduceMotion ? 0 : -6,
+			},
+			enter: {
+				...(base.enter ?? {}),
+				opacity: 1,
+				y: 0,
+			},
+			leave: {
+				...(base.leave ?? {}),
+				opacity: 0,
+				y: reduceMotion ? 0 : -4,
+			},
+		}
+	})
 
 	const spaces = SPACE_IDS.map((id) => ({
 		id,
@@ -250,6 +265,10 @@
 	function onSpaceTabChange(value: string | number) {
 		if (typeof value !== 'string') return
 		onSpaceClick(value)
+	}
+
+	function toggleLibraryCollapsed() {
+		isLibraryCollapsed.value = !isLibraryCollapsed.value
 	}
 
 	const allTasksPath = computed(() => `/space/${spaceValue.value}`)
@@ -448,3 +467,28 @@
 		void loadProjects()
 	})
 </script>
+
+<style scoped>
+	.library-nav-shell-enter-active,
+	.library-nav-shell-leave-active {
+		overflow: hidden;
+		transition:
+			max-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+			transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.library-nav-shell-enter-from,
+	.library-nav-shell-leave-to {
+		max-height: 0;
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+
+	.library-nav-shell-enter-to,
+	.library-nav-shell-leave-from {
+		max-height: 320px;
+		opacity: 1;
+		transform: translateY(0);
+	}
+</style>
