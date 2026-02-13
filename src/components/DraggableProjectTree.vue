@@ -6,18 +6,20 @@
 		:force-fallback="true"
 		:fallback-tolerance="5"
 		class="space-y-0.5"
-		ghost-class="opacity-50"
-		drag-class="shadow-lg"
+		ghost-class="project-tree-ghost"
+		drag-class="project-tree-drag"
+		chosen-class="project-tree-chosen"
 		:group="groupName"
 		filter=".expand-toggle, .project-menu"
 		:prevent-on-filter="true"
 		@end="onDragEnd">
 		<div
-			v-for="item in localProjects"
+			v-for="(item, index) in localProjects"
 			:key="item.id"
 			class="rounded-lg">
 			<div
-				class="group relative rounded-lg text-[13px] transition-all duration-150 select-none"
+				v-motion="getTreeItemMotion(index)"
+				class="group relative rounded-lg text-[13px] transition-colors duration-150 transform-gpu will-change-transform select-none"
 				:class="
 					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
 				"
@@ -39,7 +41,7 @@
 					:ui="popoverUi">
 					<button
 						type="button"
-						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default opacity-0 group-hover:opacity-100 outline-none focus:outline-none"
+						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default opacity-0 group-hover:opacity-100 outline-none focus:outline-none"
 						:class="item.children && item.children.length > 0 ? 'right-7' : 'right-1'"
 						@pointerdown.stop.prevent
 						@click.stop>
@@ -61,7 +63,7 @@
 				<button
 					v-if="item.children && item.children.length > 0"
 					type="button"
-					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-all duration-150 hover:bg-neutral-300/60 hover:text-default"
+					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
 					:class="isExpanded(item.id) ? 'rotate-90' : ''"
 					@pointerdown.stop.prevent
 					@click.stop.prevent="toggleExpand(item.id)">
@@ -71,19 +73,21 @@
 				</button>
 			</div>
 			<!-- 递归渲染子节点 -->
-			<div
-				v-if="item.children && item.children.length > 0 && isExpanded(item.id)"
-				class="ml-3">
-				<DraggableProjectTree
-					:projects="item.children"
-					:space-id="spaceId"
-					:active-project-id="activeProjectId"
-					:expanded-keys="expandedKeys"
-					:level="level + 1"
-					:parent-id="item.id"
-					@update:expanded-keys="$emit('update:expandedKeys', $event)"
-					@reorder="$emit('reorder', $event)" />
-			</div>
+			<Transition name="tree-branch">
+				<div
+					v-if="item.children && item.children.length > 0 && isExpanded(item.id)"
+					class="ml-3 overflow-hidden">
+					<DraggableProjectTree
+						:projects="item.children"
+						:space-id="spaceId"
+						:active-project-id="activeProjectId"
+						:expanded-keys="expandedKeys"
+						:level="level + 1"
+						:parent-id="item.id"
+						@update:expanded-keys="$emit('update:expandedKeys', $event)"
+						@reorder="$emit('reorder', $event)" />
+				</div>
+			</Transition>
 		</div>
 	</VueDraggable>
 
@@ -120,6 +124,7 @@
 	import { computed, ref, toRefs, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
+	import { useCardHoverMotionPreset, useProjectMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
@@ -171,12 +176,29 @@
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
 	})
+	const treeRowMotionPreset = useProjectMotionPreset('listItem', 'drawerSectionStart', Math.min(props.level * 10, 60))
+	const treeRowHoverPreset = useCardHoverMotionPreset()
 
 	// 本地项目列表副本，用于拖拽
 	const localProjects = ref<ProjectTreeItem[]>([])
 	const confirmDeleteOpen = ref(false)
 	const deleting = ref(false)
 	const deleteTarget = ref<ProjectTreeItem | null>(null)
+	const enableHoverMotion = computed(() => localProjects.value.length <= 60)
+
+	function getTreeItemMotion(index: number) {
+		const staggeredDelay = Math.min(index * 12, 96)
+		const baseMotion = withMotionDelay(treeRowMotionPreset.value, staggeredDelay)
+		if (!enableHoverMotion.value) return baseMotion
+		return {
+			...baseMotion,
+			hovered: {
+				y: -1,
+				scale: 1.004,
+				transition: treeRowHoverPreset.value.hovered?.transition ?? treeRowHoverPreset.value.enter?.transition,
+			},
+		}
+	}
 
 	/**
 	 * 同步 props 到本地
@@ -312,3 +334,41 @@
 		}
 	}
 </script>
+
+<style scoped>
+	.tree-branch-enter-active,
+	.tree-branch-leave-active {
+		transition:
+			max-height 180ms cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 150ms cubic-bezier(0.22, 1, 0.36, 1),
+			transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.tree-branch-enter-from,
+	.tree-branch-leave-to {
+		max-height: 0;
+		opacity: 0;
+		transform: translateY(-2px);
+	}
+
+	.tree-branch-enter-to,
+	.tree-branch-leave-from {
+		max-height: 2400px;
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	:deep(.project-tree-ghost) {
+		opacity: 0.45 !important;
+		transform: scale(0.995);
+	}
+
+	:deep(.project-tree-drag) {
+		box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+		transform: scale(0.998);
+	}
+
+	:deep(.project-tree-chosen) {
+		transition: none !important;
+	}
+</style>

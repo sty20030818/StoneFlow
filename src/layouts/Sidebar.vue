@@ -96,6 +96,7 @@
 				<div class="space-y-0.5">
 					<div
 						v-if="displayProjectsTree.length > 0"
+						v-motion="projectTreeMotion"
 						class="space-y-0.5">
 						<DraggableProjectTree
 							:projects="displayProjectsTree"
@@ -199,6 +200,7 @@
 	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
 	const spaceSwitchButtonMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
+	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
 	const libraryNavMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
 	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
 
