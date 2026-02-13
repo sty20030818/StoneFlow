@@ -10,7 +10,8 @@
 					v-for="opt in viewOptions"
 					:key="opt.value"
 					type="button"
-					class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
+					v-motion="viewOptionHoverMotion"
+					class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold cursor-pointer transition-[box-shadow,background-color,color] duration-150 hover:shadow-sm"
 					:class="viewMode === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'"
 					@click="viewMode = opt.value">
 					<UIcon
@@ -106,6 +107,7 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
 	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
 	import { computed, provide, ref, watch } from 'vue'
 
@@ -124,6 +126,7 @@
 	const loadingMotion = useAppMotionPreset('statusFeedback', 'sectionBase', 8)
 	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const listItemMotion = useMotionPreset('listItem')
+	const cardMotionPreset = useMotionPreset('card')
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
@@ -143,6 +146,22 @@
 	const loadedTrashScopes = ref(new Set<string>())
 	const projectItemMotionCache = new Map<string, number>()
 	const taskItemMotionCache = new Map<string, number>()
+	const viewOptionHoverMotion = computed<MotionVariants<string>>(() => ({
+		initial: {
+			y: 0,
+			scale: 1,
+		},
+		enter: {
+			y: 0,
+			scale: 1,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+		hovered: {
+			y: -1,
+			scale: 1.01,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+	}))
 
 	const viewOptions = [
 		{

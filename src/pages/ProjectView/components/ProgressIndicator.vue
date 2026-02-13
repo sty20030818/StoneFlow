@@ -39,7 +39,7 @@
 		</div>
 		<div class="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
 			<div
-				class="h-full bg-slate-900 rounded-full relative transition-all duration-300"
+				class="h-full bg-slate-900 rounded-full relative transition-[width] duration-300"
 				:style="{ width: `${percent}%` }">
 				<div class="absolute inset-0 bg-white/20"></div>
 			</div>

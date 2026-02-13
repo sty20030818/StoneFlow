@@ -14,7 +14,8 @@
 				:ui="drawerPopoverUi"
 				@update:open="(open) => onEditOpenChange(index, open)">
 				<div
-					class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60 cursor-pointer hover:bg-elevated/80">
+					v-motion="optionCardHoverMotion"
+					class="p-4 rounded-2xl border transition-colors text-left w-full bg-elevated/50 border-default/60 cursor-pointer hover:bg-elevated/80">
 					<div class="flex items-center justify-between gap-2">
 						<div class="min-w-0 flex flex-1 items-center gap-2.5">
 							<UIcon
@@ -72,7 +73,7 @@
 
 		<div
 			v-if="customFieldDraftVisible"
-			class="p-4 rounded-2xl border transition-all text-left w-full bg-elevated/50 border-default/60 space-y-2">
+			class="p-4 rounded-2xl border transition-colors text-left w-full bg-elevated/50 border-default/60 space-y-2">
 			<div class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
 				<UIcon
 					name="i-lucide-list-plus"
@@ -126,6 +127,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import type { TaskCustomFieldFormItem } from '../composables/taskFieldNormalization'
 
@@ -154,6 +156,7 @@
 	const showTitleError = ref(false)
 	const editingIndex = ref<number | null>(null)
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
+	const optionCardHoverMotion = useCardHoverMotionPreset()
 
 	function onDraftTitleInput() {
 		if (showTitleError.value && customFieldDraftTitle.value.trim()) {

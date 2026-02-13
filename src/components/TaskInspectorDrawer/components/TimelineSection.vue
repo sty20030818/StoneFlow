@@ -15,8 +15,8 @@
 			</div>
 			<UIcon
 				name="i-lucide-chevron-down"
-				class="size-4 text-muted transition-transform duration-200"
-				:class="props.timelineCollapsed ? '' : 'rotate-180'" />
+				v-motion="timelineChevronMotion"
+				class="size-4 text-muted" />
 		</button>
 		<div
 			v-show="!props.timelineCollapsed"
@@ -56,8 +56,10 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
 	import { computed } from 'vue'
 
+	import { useMotionPreset } from '@/composables/base/motion'
 	import type { ActivityLogEntry } from '@/services/api/logs'
 
 	type TimelineItem = {
@@ -87,6 +89,16 @@
 	}
 
 	const props = defineProps<Props>()
+	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
+	const timelineChevronMotion = computed<MotionVariants<string>>(() => ({
+		initial: {
+			rotate: props.timelineCollapsed ? 0 : 180,
+		},
+		enter: {
+			rotate: props.timelineCollapsed ? 0 : 180,
+			transition: statusFeedbackMotionPreset.value.enter?.transition,
+		},
+	}))
 
 	function formatDateTime(ts: number): string {
 		const d = new Date(ts)

@@ -12,7 +12,7 @@
 				:key="item.id"
 				v-motion="navItemHoverMotion"
 				:to="item.to"
-				class="block rounded-2xl border px-3 py-2 transition-colors duration-150 transform-gpu will-change-transform"
+				class="block rounded-2xl border px-3 py-2 transition-colors duration-150"
 				:class="
 					isActive(item.to) ? 'border-primary/40 bg-primary/8' : 'border-default/70 bg-elevated/20 hover:bg-elevated/40'
 				">

@@ -5,6 +5,7 @@
 			<div
 				v-for="tag in tags"
 				:key="tag"
+				v-motion="tagHoverMotion"
 				class="group relative px-3 py-1.5 bg-white rounded-lg text-xs font-bold shadow-sm border border-default/40 text-default flex items-center justify-center cursor-default hover:border-primary/50 transition-colors overflow-hidden">
 				<span>#{{ tag }}</span>
 				<div
@@ -30,7 +31,10 @@
 </template>
 
 <script setup lang="ts">
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+
 	const tagInputModel = defineModel<string>('tagInput', { required: true })
+	const tagHoverMotion = useCardHoverMotionPreset()
 
 	type Props = {
 		tags: string[]

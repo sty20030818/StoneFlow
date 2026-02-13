@@ -25,7 +25,7 @@
 				<button
 					v-if="isEditMode"
 					type="button"
-					class="no-drag size-6 rounded-full border-2 hover:border-red-500 hover:bg-red-50 transition-all flex items-center justify-center cursor-pointer"
+					class="no-drag size-6 rounded-full border-2 hover:border-red-500 hover:bg-red-50 transition-colors flex items-center justify-center cursor-pointer"
 					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50' : 'border-slate-300']"
 					@click.stop="onToggleSelect">
 					<UIcon
@@ -38,7 +38,7 @@
 				<button
 					v-else
 					@click.stop="onComplete"
-					class="no-drag size-6 rounded-full border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"></button>
+					class="no-drag size-6 rounded-full border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-center cursor-pointer"></button>
 			</div>
 
 			<!-- 内容区域 -->
@@ -115,7 +115,8 @@
 		<button
 			v-if="isEditMode"
 			type="button"
-			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md hover:scale-105 z-0"
+			v-motion="deleteButtonMotionPreset"
+			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-[opacity,background-color,color,box-shadow] duration-300 ease-out opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md z-0"
 			@click.stop="onRequestDelete">
 			<UIcon
 				name="i-lucide-trash-2"
@@ -161,6 +162,22 @@
 			transition: cardMotionPreset.value.hovered?.transition,
 		},
 		hovered: cardMotionPreset.value.hovered,
+	}))
+	const deleteButtonMotionPreset = computed<MotionVariants<string>>(() => ({
+		initial: {
+			y: 0,
+			scale: 1,
+		},
+		enter: {
+			y: 0,
+			scale: 1,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+		hovered: {
+			y: 0,
+			scale: 1.05,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
 	}))
 
 	// 优先级配置

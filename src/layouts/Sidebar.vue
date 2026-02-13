@@ -15,7 +15,7 @@
 					:key="s.id"
 					type="button"
 					v-motion="spaceSwitchButtonMotion"
-					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer hover:shadow-sm active:translate-y-px"
+					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium cursor-pointer hover:shadow-sm transition-[box-shadow,background-color,color] duration-150"
 					:class="
 						spaceValue === s.id
 							? 'bg-default text-default shadow-sm'
@@ -38,7 +38,7 @@
 				<nav class="flex flex-col gap-0.5">
 					<RouterLink
 						:to="allTasksPath"
-						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
 						:class="isAllTasksActive ? 'bg-elevated text-default' : ''">
 						<UIcon
 							name="i-lucide-list-checks"
@@ -49,7 +49,7 @@
 					<RouterLink
 						v-if="defaultProject"
 						:to="`/space/${spaceValue}?project=${defaultProject.id}`"
-						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
 						:class="isActiveProject(defaultProject.id) ? 'bg-elevated text-default' : ''">
 						<UIcon
 							:name="projectIcon"
@@ -60,7 +60,7 @@
 					<!-- Trash 入口 -->
 					<RouterLink
 						to="/trash"
-						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+						class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
 						:class="currentPath === '/trash' ? 'bg-elevated text-default' : ''">
 						<UIcon
 							name="i-lucide-trash-2"
@@ -119,7 +119,7 @@
 			<!-- Library：Collapsible -->
 			<div class="px-3">
 				<section
-					class="transition-all duration-200 ease-in-out"
+					class="transition-[padding] duration-200 ease-in-out"
 					:class="isLibraryCollapsed ? 'py-2' : 'pt-3'">
 					<div
 						class="flex items-center justify-between px-1.5 cursor-pointer group select-none"
@@ -131,8 +131,8 @@
 						</div>
 						<UIcon
 							name="i-lucide-chevron-down"
-							class="size-3.5 text-muted transition-transform duration-200 opacity-0 group-hover:opacity-100"
-							:class="isLibraryCollapsed ? '-rotate-90' : ''" />
+							v-motion="libraryChevronMotion"
+							class="size-3.5 text-muted opacity-0 group-hover:opacity-100" />
 					</div>
 
 					<nav
@@ -143,7 +143,7 @@
 							v-for="item in libraryNav"
 							:key="item.to"
 							:to="item.to"
-							class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-all duration-150"
+							class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-muted hover:bg-elevated hover:text-default transition-colors duration-150"
 							:class="currentPath === item.to ? 'bg-elevated text-default' : ''">
 							<UIcon
 								:name="item.icon"
@@ -169,11 +169,12 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
 	import { watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
 	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
-	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset, useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { useRuntimeGate } from '@/composables/base/runtime-gate'
 	import BrandLogo from '@/components/BrandLogo.vue'
@@ -198,11 +199,22 @@
 	const currentPath = computed(() => route.path)
 	const sidebarShellMotion = useProjectMotionPreset('drawerSection', 'sidebarShell')
 	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
-	const spaceSwitchButtonMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
+	const spaceSwitchButtonBaseMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
+	const spaceSwitchButtonHoverMotion = useCardHoverMotionPreset()
+	const spaceSwitchButtonMotion = computed(() => ({
+		...spaceSwitchButtonBaseMotion.value,
+		hovered: {
+			y: -1,
+			scale: 1.01,
+			transition:
+				spaceSwitchButtonHoverMotion.value.hovered?.transition ?? spaceSwitchButtonBaseMotion.value.enter?.transition,
+		},
+	}))
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
 	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
 	const libraryNavMotion = useProjectMotionPreset('drawerSection', 'sidebarLibrary')
 	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
+	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
 
 	const spaceValue = computed(() => props.space ?? 'work')
 	const projectIcon = PROJECT_ICON
@@ -214,6 +226,15 @@
 		get: () => viewStateStore.libraryCollapsed,
 		set: (val) => viewStateStore.setLibraryCollapsed(val),
 	})
+	const libraryChevronMotion = computed<MotionVariants<string>>(() => ({
+		initial: {
+			rotate: isLibraryCollapsed.value ? -90 : 0,
+		},
+		enter: {
+			rotate: isLibraryCollapsed.value ? -90 : 0,
+			transition: statusFeedbackMotionPreset.value.enter?.transition,
+		},
+	}))
 
 	const spaces = SPACE_IDS.map((id) => ({
 		id,

@@ -101,11 +101,11 @@
 							<span class="text-sm font-medium text-default">更新偏好</span>
 							<UIcon
 								name="i-lucide-chevron-down"
-								class="size-4 text-muted transition-transform"
-								:class="advancedOpen ? 'rotate-180' : ''" />
+								v-motion="advancedChevronMotion"
+								class="size-4 text-muted" />
 						</button>
 						<div
-							v-if="advancedOpen"
+							v-if="props.advancedOpen"
 							class="mt-3 space-y-3 text-sm">
 							<label class="flex items-center justify-between gap-3">
 								<span class="text-muted">自动检查更新</span>
@@ -176,11 +176,15 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
+	import { computed } from 'vue'
+
+	import { useMotionPreset } from '@/composables/base/motion'
 	import avatarUrl from '@/assets/avatar.png'
 	import type { UpdateState } from '@/composables/useUpdater'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 
-	defineProps<{
+	const props = defineProps<{
 		appName: string
 		currentVersion: string
 		buildNumber: string
@@ -202,4 +206,14 @@
 		onAutoCheckChange: (event: Event) => void
 		onPromptInstallChange: (event: Event) => void
 	}>()
+	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
+	const advancedChevronMotion = computed<MotionVariants<string>>(() => ({
+		initial: {
+			rotate: props.advancedOpen ? 180 : 0,
+		},
+		enter: {
+			rotate: props.advancedOpen ? 180 : 0,
+			transition: statusFeedbackMotionPreset.value.enter?.transition,
+		},
+	}))
 </script>

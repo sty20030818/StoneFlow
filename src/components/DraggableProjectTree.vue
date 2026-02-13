@@ -19,7 +19,7 @@
 			class="rounded-lg">
 			<div
 				v-motion="getTreeItemMotion(index)"
-				class="group relative rounded-lg text-[13px] transition-colors duration-150 transform-gpu will-change-transform select-none"
+				class="group relative rounded-lg text-[13px] transition-colors duration-150 select-none"
 				:class="
 					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
 				"
@@ -64,12 +64,12 @@
 					v-if="item.children && item.children.length > 0"
 					type="button"
 					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
-					:class="isExpanded(item.id) ? 'rotate-90' : ''"
 					@pointerdown.stop.prevent
 					@click.stop.prevent="toggleExpand(item.id)">
 					<UIcon
 						name="i-lucide-chevron-right"
-						class="size-3.5" />
+						class="size-3.5"
+						v-motion="getExpandChevronMotion(isExpanded(item.id))" />
 				</button>
 			</div>
 			<!-- 递归渲染子节点 -->
@@ -120,11 +120,12 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
 	import type { SortableEvent } from 'sortablejs'
 	import { computed, ref, toRefs, watch } from 'vue'
 	import { VueDraggable } from 'vue-draggable-plus'
 
-	import { useCardHoverMotionPreset, useProjectMotionPreset, withMotionDelay } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset, useMotionPreset, useProjectMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
@@ -178,6 +179,7 @@
 	})
 	const treeRowMotionPreset = useProjectMotionPreset('listItem', 'drawerSectionStart', Math.min(props.level * 10, 60))
 	const treeRowHoverPreset = useCardHoverMotionPreset()
+	const statusFeedbackMotionPreset = useMotionPreset('statusFeedback')
 
 	// 本地项目列表副本，用于拖拽
 	const localProjects = ref<ProjectTreeItem[]>([])
@@ -196,6 +198,22 @@
 				y: -1,
 				scale: 1.004,
 				transition: treeRowHoverPreset.value.hovered?.transition ?? treeRowHoverPreset.value.enter?.transition,
+			},
+		}
+	}
+
+	function getExpandChevronMotion(expanded: boolean): MotionVariants<string> {
+		return {
+			initial: {
+				rotate: 0,
+			},
+			enter: {
+				rotate: expanded ? 90 : 0,
+				transition: statusFeedbackMotionPreset.value.enter?.transition,
+			},
+			hovered: {
+				rotate: expanded ? 90 : 0,
+				transition: statusFeedbackMotionPreset.value.enter?.transition,
 			},
 		}
 	}

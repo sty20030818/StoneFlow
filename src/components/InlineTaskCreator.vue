@@ -1,6 +1,6 @@
 <template>
 	<div
-		v-motion="creatorCardMotion"
+		v-motion="creatorInteractionMotion"
 		class="group rounded-lg border border-default/50 bg-elevated/40 px-3 py-2.5 select-none"
 		:class="wrapperClass"
 		@click.self="focusInput">
@@ -38,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { refDebounced, useEventListener } from '@vueuse/core'
 
@@ -108,11 +109,25 @@
 	)
 	const priorityBadgeMotion = useMotionPreset('statusFeedback')
 	const noteSectionMotion = useMotionPresetWithDelay('listItem', 72)
+	const cardMotionPreset = useMotionPreset('card')
+	const creatorInteractionMotion = computed<MotionVariants<string>>(() => ({
+		...creatorCardMotion.value,
+		hovered: {
+			y: -1,
+			scale: 1.003,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+		tapped: {
+			y: 1,
+			scale: 0.998,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+	}))
 
 	const wrapperClass = computed(() => {
 		if (props.disabled) return 'opacity-60 cursor-not-allowed'
 		if (submitting.value) return 'border-primary/60 bg-primary/5'
-		return 'hover:border-primary/40 hover:bg-elevated/70 hover:shadow-sm focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 active:translate-y-[1px]'
+		return 'hover:border-primary/40 hover:bg-elevated/70 hover:shadow-sm focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20'
 	})
 
 	const priorityBadgeClass = computed(() => getPriorityClass(priority.value ?? 'P1'))

@@ -7,8 +7,9 @@
 				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
 				:ui="drawerPopoverUi">
 				<button
+					v-motion="optionCardHoverMotion"
 					type="button"
-					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
+					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer"
 					:class="spaceCardClass">
 					<div class="flex items-center gap-2.5">
 						<UIcon
@@ -55,8 +56,9 @@
 				:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
 				:ui="drawerPopoverUi">
 				<button
+					v-motion="optionCardHoverMotion"
 					type="button"
-					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80">
+					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80">
 					<div class="flex items-center gap-2.5">
 						<UIcon
 							name="i-lucide-folder-tree"
@@ -96,6 +98,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 
 	type SpaceOption = {
@@ -132,6 +135,7 @@
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
 	const spacePopoverOpen = ref(false)
 	const projectPopoverOpen = ref(false)
+	const optionCardHoverMotion = useCardHoverMotionPreset()
 
 	const onSpaceChange = (value: string) => {
 		props.onSpaceChange(value)

@@ -131,7 +131,7 @@
 			<div class="pointer-events-auto mt-0">
 				<button
 					type="button"
-					class="inline-flex h-12 w-full items-center justify-center gap-2 bg-linear-to-b from-error/95 to-error/10 px-5 text-sm font-semibold text-white transition-all hover:from-error/95 hover:to-error/55 disabled:cursor-not-allowed disabled:opacity-60"
+					class="inline-flex h-12 w-full items-center justify-center gap-2 bg-linear-to-b from-error/95 to-error/10 px-5 text-sm font-semibold text-white transition-[background,opacity] hover:from-error/95 hover:to-error/55 disabled:cursor-not-allowed disabled:opacity-60"
 					:class="deleteGlowClass"
 					:disabled="editSelectedCount === 0"
 					@click="onOpenDeleteConfirm">

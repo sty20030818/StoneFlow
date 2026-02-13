@@ -27,6 +27,7 @@
 				:ui="drawerPopoverUi"
 				@update:open="(open) => onEditOpenChange(index, open)">
 				<div
+					v-motion="linkCardHoverMotion"
 					class="rounded-xl border border-default p-3 space-y-2 bg-elevated/30 cursor-pointer transition-colors hover:bg-elevated/50">
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0 flex items-center gap-2">
@@ -155,6 +156,7 @@
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
 
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import type { LinkKindOption } from '../composables/useTaskInspectorOptions'
 	import type { TaskLinkFormItem } from '../composables/taskFieldNormalization'
@@ -187,6 +189,7 @@
 	const showDraftUrlError = ref(false)
 	const editingIndex = ref<number | null>(null)
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
+	const linkCardHoverMotion = useCardHoverMotionPreset()
 
 	const kindLabelMap = computed(() => {
 		return new Map(props.linkKindOptions.map((item) => [item.value, item.label]))

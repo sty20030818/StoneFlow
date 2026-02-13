@@ -17,8 +17,9 @@
 					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
 					:ui="drawerPopoverUi">
 				<button
+					v-motion="optionCardHoverMotion"
 					type="button"
-					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
+					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer"
 					:class="priorityCardClass">
 					<div class="flex items-center gap-2.5">
 						<UIcon
@@ -63,8 +64,9 @@
 					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
 					:ui="drawerPopoverUi">
 				<button
+					v-motion="optionCardHoverMotion"
 					type="button"
-					class="p-4 rounded-2xl border transition-all text-left w-full cursor-pointer"
+					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer"
 					:class="
 						deadline
 							? 'bg-indigo-50/40 border-indigo-200 hover:bg-indigo-50/60'
@@ -112,6 +114,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import DatePickerInput from '@/components/DatePickerInput.vue'
 	import type { PriorityOption, TaskPriorityValue } from '@/config/task'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
@@ -122,6 +125,7 @@
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
 	const priorityPopoverOpen = ref(false)
 	const deadlinePopoverOpen = ref(false)
+	const optionCardHoverMotion = useCardHoverMotionPreset()
 
 	type Props = {
 		priorityIcon: string

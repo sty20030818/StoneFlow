@@ -7,7 +7,8 @@
 					v-for="opt in statusOptions"
 					:key="opt.value"
 					type="button"
-					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
+					v-motion="statusOptionHoverMotion"
+					class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-[box-shadow,background-color,color,border-color] duration-150 hover:shadow-sm"
 					:class="statusLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'"
 					@click="onStatusSegmentClick(opt.value)">
 					<UIcon
@@ -29,7 +30,8 @@
 				v-for="opt in doneReasonOptions"
 				:key="opt.value"
 				type="button"
-				class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-all duration-150 hover:shadow-sm active:translate-y-px"
+				v-motion="statusOptionHoverMotion"
+				class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold cursor-pointer transition-[box-shadow,background-color,color,border-color] duration-150 hover:shadow-sm"
 				:class="doneReasonLocal === opt.value ? opt.activeClass : 'text-muted hover:text-default hover:bg-default/40'"
 				@click="onDoneReasonChange(opt.value)">
 				<UIcon
@@ -43,6 +45,10 @@
 </template>
 
 <script setup lang="ts">
+	import type { MotionVariants } from '@vueuse/motion'
+	import { computed } from 'vue'
+
+	import { useMotionPreset } from '@/composables/base/motion'
 	import type { DoneReasonOption, StatusSegmentOption, TaskDoneReasonValue, TaskStatusValue } from '@/config/task'
 
 	type Props = {
@@ -55,4 +61,22 @@
 	}
 
 	defineProps<Props>()
+
+	const cardMotionPreset = useMotionPreset('card')
+	const statusOptionHoverMotion = computed<MotionVariants<string>>(() => ({
+		initial: {
+			y: 0,
+			scale: 1,
+		},
+		enter: {
+			y: 0,
+			scale: 1,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+		hovered: {
+			y: -1,
+			scale: 1.01,
+			transition: cardMotionPreset.value.hovered?.transition,
+		},
+	}))
 </script>
