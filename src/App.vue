@@ -116,7 +116,7 @@
 	const commandGroups = computed(() => [
 		{
 			id: 'workspace',
-			label: 'Workspace',
+			label: '工作空间',
 			items: [
 				{ label: 'All Tasks', icon: 'i-lucide-list-checks', to: `/space/${currentSpaceId.value}` },
 				...SPACE_IDS.map((id) => ({
@@ -128,7 +128,7 @@
 		},
 		{
 			id: 'review',
-			label: 'Review',
+			label: '回顾',
 			items: [
 				{ label: 'Finish List', icon: 'i-lucide-check-circle', to: '/finish-list' },
 				{ label: 'Stats', icon: 'i-lucide-bar-chart-3', to: '/stats' },
@@ -137,7 +137,7 @@
 		},
 		{
 			id: 'assets',
-			label: 'Assets Library',
+			label: '资产库',
 			items: [
 				{ label: 'Snippets', icon: 'i-lucide-code', to: '/snippets' },
 				{ label: 'Vault', icon: 'i-lucide-lock', to: '/vault' },
@@ -147,7 +147,7 @@
 		},
 		{
 			id: 'settings',
-			label: 'Settings',
+			label: '设置',
 			items: [
 				{ label: 'About', icon: 'i-lucide-info', to: '/settings/about' },
 				{ label: '远端同步', icon: 'i-lucide-cloud', to: '/settings/remote-sync' },

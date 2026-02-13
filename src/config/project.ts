@@ -25,6 +25,12 @@ export const PROJECT_LEVEL_PILL_CLASSES = [
 
 export const UNCATEGORIZED_LABEL = '未分类'
 export const UNKNOWN_PROJECT_LABEL = '未知项目'
+export const DEFAULT_PROJECT_ID_SUFFIX = '_default'
+export const DEFAULT_PROJECT_LABEL = '未归类'
+
+export function isDefaultProjectId(projectId: string): boolean {
+	return projectId.endsWith(DEFAULT_PROJECT_ID_SUFFIX)
+}
 
 export const PROJECT_PRIORITY_OPTIONS = PRIORITY_OPTIONS
 

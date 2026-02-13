@@ -29,7 +29,7 @@
 		<!-- 固定区域：Execution Zone -->
 		<div class="px-3 pt-4 shrink-0">
 			<section>
-				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">Execution</div>
+				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">系统分组</div>
 				<nav class="flex flex-col gap-0.5">
 					<RouterLink
 						:to="allTasksPath"
@@ -38,7 +38,7 @@
 						<UIcon
 							name="i-lucide-list-checks"
 							class="text-pink-500" />
-						<span>All Tasks</span>
+						<span>所有任务</span>
 					</RouterLink>
 					<!-- 默认 Project 入口 -->
 					<RouterLink
@@ -60,7 +60,7 @@
 						<UIcon
 							name="i-lucide-trash-2"
 							class="text-red-500" />
-						<span>Trash</span>
+						<span>回收站</span>
 					</RouterLink>
 				</nav>
 			</section>
@@ -71,7 +71,7 @@
 			v-motion="projectHeaderMotion"
 			class="px-3 pt-4 shrink-0 pb-1.5">
 			<div class="flex items-center justify-between px-1.5">
-				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">Projects</div>
+				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">项目树</div>
 				<UButton
 					color="neutral"
 					variant="ghost"
@@ -121,7 +121,7 @@
 						<div
 							class="text-[11px] font-medium text-muted uppercase tracking-wide"
 							:class="{ 'opacity-70': isLibraryCollapsed }">
-							Library
+							资产库
 						</div>
 						<UIcon
 							name="i-lucide-chevron-down"
@@ -174,7 +174,7 @@
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
 	import UserCard from '@/components/UserCard.vue'
-	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
+	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
@@ -259,13 +259,13 @@
 	})
 
 	const libraryNav = [
-		{ to: '/finish-list', label: 'Finish List', icon: 'i-lucide-check-circle', iconColor: 'text-green-500' },
-		{ to: '/stats', label: 'Stats', icon: 'i-lucide-bar-chart-3', iconColor: 'text-blue-500' },
-		{ to: '/logs', label: 'Logs', icon: 'i-lucide-scroll-text', iconColor: 'text-orange-500' },
-		{ to: '/snippets', label: 'Snippets', icon: 'i-lucide-code', iconColor: 'text-cyan-500' },
-		{ to: '/vault', label: 'Vault', icon: 'i-lucide-lock', iconColor: 'text-yellow-500' },
-		{ to: '/notes', label: 'Notes', icon: 'i-lucide-notebook', iconColor: 'text-pink-500' },
-		{ to: '/diary', label: 'Diary', icon: 'i-lucide-book-open-text', iconColor: 'text-indigo-500' },
+		{ to: '/finish-list', label: '完成列表', icon: 'i-lucide-check-circle', iconColor: 'text-green-500' },
+		{ to: '/stats', label: '统计', icon: 'i-lucide-bar-chart-3', iconColor: 'text-blue-500' },
+		{ to: '/logs', label: '日志', icon: 'i-lucide-scroll-text', iconColor: 'text-orange-500' },
+		{ to: '/snippets', label: '代码片段', icon: 'i-lucide-code', iconColor: 'text-cyan-500' },
+		{ to: '/vault', label: '密钥库', icon: 'i-lucide-lock', iconColor: 'text-yellow-500' },
+		{ to: '/notes', label: '笔记', icon: 'i-lucide-notebook', iconColor: 'text-pink-500' },
+		{ to: '/diary', label: '日记', icon: 'i-lucide-book-open-text', iconColor: 'text-indigo-500' },
 	]
 
 	const projectsStore = useProjectsStore()
@@ -276,7 +276,7 @@
 	const openCreateProjectModal = inject<(spaceId?: string) => void>('openCreateProjectModal')
 
 	const currentProjects = computed(() => projectsStore.getProjectsOfSpace(spaceValue.value))
-	const defaultProject = computed(() => currentProjects.value.find((p) => p.id.endsWith('_default')) ?? null)
+	const defaultProject = computed(() => currentProjects.value.find((p) => isDefaultProjectId(p.id)) ?? null)
 	const isProjectsLoaded = computed(() => projectsStore.isSpaceLoaded(spaceValue.value))
 	const isProjectsLoading = computed(() => projectsStore.isSpaceLoading(spaceValue.value))
 
@@ -290,7 +290,7 @@
 		const levelColors = projectLevelColors
 
 		// 过滤掉默认项目（ID 以 _default 结尾）
-		const filtered = list.filter((p) => !p.id.endsWith('_default'))
+		const filtered = list.filter((p) => !isDefaultProjectId(p.id))
 
 		// 按 parentId 分组
 		const byParent = new Map<string | null, typeof filtered>()

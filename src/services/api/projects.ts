@@ -1,5 +1,6 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
+import { DEFAULT_PROJECT_LABEL, isDefaultProjectId } from '@/config/project'
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 
 export type ProjectDto = {
@@ -39,32 +40,47 @@ export type CreateProjectArgs = {
 	links?: LinkInput[] | null
 }
 
+function normalizeProjectDto(project: ProjectDto): ProjectDto {
+	if (!isDefaultProjectId(project.id)) return project
+	return {
+		...project,
+		title: DEFAULT_PROJECT_LABEL,
+		path: `/${DEFAULT_PROJECT_LABEL}`,
+	}
+}
+
+function normalizeProjectDtos(projects: ProjectDto[]): ProjectDto[] {
+	return projects.map(normalizeProjectDto)
+}
+
 /**
  * Project API（封装 Tauri command 名，页面不直接写字符串）。
  */
 export async function listProjects(args: ListProjectsArgs): Promise<ProjectDto[]> {
 	// Rust: commands/projects.rs -> list_projects
 	// Rust 侧已使用 camelCase 解析请求字段
-	return await tauriInvoke<ProjectDto[]>('list_projects', {
+	const projects = await tauriInvoke<ProjectDto[]>('list_projects', {
 		args: {
 			spaceId: args.spaceId,
 		},
 	})
+	return normalizeProjectDtos(projects)
 }
 
 export async function listDeletedProjects(args: ListProjectsArgs): Promise<ProjectDto[]> {
 	// Rust: commands/projects.rs -> list_deleted_projects
-	return await tauriInvoke<ProjectDto[]>('list_deleted_projects', {
+	const projects = await tauriInvoke<ProjectDto[]>('list_deleted_projects', {
 		args: {
 			spaceId: args.spaceId,
 		},
 	})
+	return normalizeProjectDtos(projects)
 }
 
 export async function createProject(args: CreateProjectArgs): Promise<ProjectDto> {
 	// Rust: commands/projects.rs -> create_project
 	// Rust 侧已使用 camelCase 解析请求字段
-	return await tauriInvoke<ProjectDto>('create_project', {
+	const project = await tauriInvoke<ProjectDto>('create_project', {
 		args: {
 			spaceId: args.spaceId,
 			title: args.title,
@@ -76,15 +92,17 @@ export async function createProject(args: CreateProjectArgs): Promise<ProjectDto
 			links: args.links ?? null,
 		},
 	})
+	return normalizeProjectDto(project)
 }
 
 export async function getDefaultProject(spaceId: string): Promise<ProjectDto> {
 	// Rust: commands/projects.rs -> get_default_project
 	// Tauri 会自动将 camelCase 转换为 snake_case
 	// 注意：Default Project 应该在数据库初始化时创建，如果不存在则返回错误
-	return await tauriInvoke<ProjectDto>('get_default_project', {
+	const project = await tauriInvoke<ProjectDto>('get_default_project', {
 		spaceId,
 	})
+	return normalizeProjectDto(project)
 }
 
 export async function deleteProject(projectId: string): Promise<void> {

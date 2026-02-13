@@ -2,12 +2,27 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
+import { DEFAULT_PROJECT_LABEL, isDefaultProjectId } from '@/config/project'
 import type { ProjectDto } from '@/services/api/projects'
 import { listProjects } from '@/services/api/projects'
 
 export const useProjectsStore = defineStore('projects', () => {
 	const snapshotBySpace = useStorage<Record<string, ProjectDto[]>>('projects_snapshot_v1', {})
-	const initialProjects = Object.values(snapshotBySpace.value).flat()
+
+	function normalizeProject(project: ProjectDto): ProjectDto {
+		if (!isDefaultProjectId(project.id)) return project
+		return {
+			...project,
+			title: DEFAULT_PROJECT_LABEL,
+			path: `/${DEFAULT_PROJECT_LABEL}`,
+		}
+	}
+
+	const normalizedSnapshotBySpace = Object.fromEntries(
+		Object.entries(snapshotBySpace.value).map(([spaceId, list]) => [spaceId, list.map(normalizeProject)]),
+	)
+	snapshotBySpace.value = normalizedSnapshotBySpace
+	const initialProjects = Object.values(normalizedSnapshotBySpace).flat()
 	const loadedSpaceIds = ref<Set<string>>(new Set())
 	const loadingSpaceIds = ref<Set<string>>(new Set())
 	const projects = ref<ProjectDto[]>(initialProjects)
@@ -38,8 +53,9 @@ export const useProjectsStore = defineStore('projects', () => {
 
 	async function loadForSpaceInternal(spaceId: string) {
 		const data = await listProjects({ spaceId })
-		projects.value = projects.value.filter((p) => p.spaceId !== spaceId).concat(data)
-		snapshotBySpace.value = { ...snapshotBySpace.value, [spaceId]: data }
+		const normalizedData = data.map(normalizeProject)
+		projects.value = projects.value.filter((p) => p.spaceId !== spaceId).concat(normalizedData)
+		snapshotBySpace.value = { ...snapshotBySpace.value, [spaceId]: normalizedData }
 		loadedSpaceIds.value.add(spaceId)
 	}
 

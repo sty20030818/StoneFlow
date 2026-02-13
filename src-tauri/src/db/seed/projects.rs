@@ -36,8 +36,8 @@ pub async fn seed_default_projects_and_backfill_tasks(
             > 0;
 
         if !exists {
-            let project_title = "Default Project".to_string();
-            let path = "/Default Project".to_string();
+            let project_title = "未归类".to_string();
+            let path = "/未归类".to_string();
 
             let active = projects::ActiveModel {
                 id: Set(project_id.clone()),

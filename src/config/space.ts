@@ -18,7 +18,7 @@ export type SpaceDisplay = {
 export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 	work: {
 		id: 'work',
-		label: 'Work',
+		label: '工作',
 		description: '工作相关任务',
 		icon: 'i-lucide-briefcase',
 		iconClass: 'text-blue-500',
@@ -30,7 +30,7 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 	},
 	personal: {
 		id: 'personal',
-		label: 'Personal',
+		label: '个人',
 		description: '个人事务',
 		icon: 'i-lucide-user',
 		iconClass: 'text-purple-500',
@@ -42,7 +42,7 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 	},
 	study: {
 		id: 'study',
-		label: 'Study',
+		label: '学习',
 		description: '学习相关任务',
 		icon: 'i-lucide-book-open',
 		iconClass: 'text-emerald-500',
@@ -56,7 +56,7 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 
 export const DEFAULT_SPACE_DISPLAY: SpaceDisplay = {
 	id: 'unknown',
-	label: 'Unknown Space',
+	label: '未知空间',
 	description: '任务列表',
 	icon: 'i-lucide-folder',
 	iconClass: 'text-gray-500',

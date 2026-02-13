@@ -147,13 +147,13 @@
 	const viewOptions = [
 		{
 			value: 'projects' as const,
-			label: 'Projects',
+			label: '项目',
 			icon: 'i-lucide-folder',
 			iconClass: 'text-emerald-600',
 		},
 		{
 			value: 'tasks' as const,
-			label: 'Tasks',
+			label: '任务',
 			icon: 'i-lucide-list-checks',
 			iconClass: 'text-pink-500',
 		},

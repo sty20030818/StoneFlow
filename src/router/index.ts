@@ -29,12 +29,12 @@ export const routes = [
 	{
 		path: '/all-tasks',
 		component: ProjectView,
-		meta: { title: 'All Tasks', icon: 'i-lucide-list-checks', iconClass: 'text-pink-500', description: '所有任务列表' },
+		meta: { title: '所有任务', icon: 'i-lucide-list-checks', iconClass: 'text-pink-500', description: '所有任务列表' },
 	},
 	{
 		path: '/space/:spaceId',
 		component: ProjectView,
-		meta: { title: 'Space', icon: 'i-lucide-folder', iconClass: 'text-gray-500', description: '任务空间' },
+		meta: { title: '空间', icon: 'i-lucide-folder', iconClass: 'text-gray-500', description: '任务空间' },
 	},
 
 	// Review
@@ -42,7 +42,7 @@ export const routes = [
 		path: '/finish-list',
 		component: FinishList,
 		meta: {
-			title: 'Finish List',
+			title: '完成列表',
 			icon: 'i-lucide-check-circle',
 			iconClass: 'text-green-500',
 			description: '已完成任务',
@@ -51,39 +51,39 @@ export const routes = [
 	{
 		path: '/stats',
 		component: Stats,
-		meta: { title: 'Stats', icon: 'i-lucide-bar-chart-3', iconClass: 'text-blue-500', description: '统计数据' },
+		meta: { title: '统计', icon: 'i-lucide-bar-chart-3', iconClass: 'text-blue-500', description: '统计数据' },
 	},
 	{
 		path: '/logs',
 		component: Logs,
-		meta: { title: 'Logs', icon: 'i-lucide-scroll-text', iconClass: 'text-orange-500', description: '操作日志' },
+		meta: { title: '日志', icon: 'i-lucide-scroll-text', iconClass: 'text-orange-500', description: '操作日志' },
 	},
 
 	// Assets Library
 	{
 		path: '/snippets',
 		component: Snippets,
-		meta: { title: 'Snippets', icon: 'i-lucide-code', iconClass: 'text-cyan-500', description: '代码片段' },
+		meta: { title: '代码片段', icon: 'i-lucide-code', iconClass: 'text-cyan-500', description: '代码片段' },
 	},
 	{
 		path: '/vault',
 		component: Vault,
-		meta: { title: 'Vault', icon: 'i-lucide-lock', iconClass: 'text-yellow-500', description: '安全存储' },
+		meta: { title: '密钥库', icon: 'i-lucide-lock', iconClass: 'text-yellow-500', description: '安全存储' },
 	},
 	{
 		path: '/notes',
 		component: Notes,
-		meta: { title: 'Notes', icon: 'i-lucide-notebook', iconClass: 'text-pink-500', description: '笔记本' },
+		meta: { title: '笔记', icon: 'i-lucide-notebook', iconClass: 'text-pink-500', description: '笔记本' },
 	},
 	{
 		path: '/diary',
 		component: Diary,
-		meta: { title: 'Diary', icon: 'i-lucide-book-open-text', iconClass: 'text-indigo-500', description: '工作日志' },
+		meta: { title: '日记', icon: 'i-lucide-book-open-text', iconClass: 'text-indigo-500', description: '工作日志' },
 	},
 	{
 		path: '/toolbox',
 		component: Toolbox,
-		meta: { title: 'Toolbox', icon: 'i-lucide-wrench', iconClass: 'text-gray-500', description: '实用工具' },
+		meta: { title: '工具箱', icon: 'i-lucide-wrench', iconClass: 'text-gray-500', description: '实用工具' },
 	},
 	{
 		path: '/trash',
@@ -105,7 +105,7 @@ export const routes = [
 				path: 'about',
 				component: SettingsAbout,
 				meta: {
-					title: 'About',
+					title: '关于',
 					icon: 'i-lucide-info',
 					iconClass: 'text-blue-500',
 					description: '版本、更新与应用信息',
