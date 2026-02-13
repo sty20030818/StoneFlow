@@ -247,10 +247,15 @@
 		if (workspaceBreadcrumbItems.value.length > 0) {
 			const spaceLabelSet = new Set(Object.values(SPACE_DISPLAY).map((item) => item.label.toLowerCase()))
 			// 过滤掉 'Space' 和 space label（如 'Work'），只保留 project 路径
-			return workspaceBreadcrumbItems.value.filter((item) => {
-				const label = item.label.toLowerCase()
-				return label !== 'space' && !spaceLabelSet.has(label)
-			})
+				return workspaceBreadcrumbItems.value.filter((item) => {
+					const label = item.label.toLowerCase()
+					return label !== 'space' && !spaceLabelSet.has(label)
+				})
+		}
+		if (route.path === '/trash') {
+			return [
+				{ label: '回收站' },
+			]
 		}
 		// 如果没有传入，根据路由自动生成（只包含 project，不包含 space）
 		if (route.path.startsWith('/space/') || route.path === '/all-tasks') {

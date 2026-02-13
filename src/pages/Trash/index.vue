@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
-	import { computed, provide, ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
 
 	import { useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import TimeDisplay from '@/components/TimeDisplay.vue'
@@ -188,14 +188,6 @@
 		return map
 	})
 
-	const breadcrumbItems = computed(() => [
-		{
-			label: '回收站',
-			icon: 'i-lucide-trash-2',
-			description: '被删除的项目与任务会显示在这里，可随时恢复。',
-		},
-	])
-
 	function getProjectItemMotion(projectId: string) {
 		const cached = projectItemMotionCache.get(projectId)
 		if (typeof cached === 'number') return withMotionDelay(listItemMotion.value, cached)
@@ -215,8 +207,6 @@
 	function onViewModeChange(value: string | number) {
 		if (value === 'projects' || value === 'tasks') viewMode.value = value
 	}
-	provide('workspaceBreadcrumbItems', breadcrumbItems)
-
 	function getTaskProjectLabel(projectId: string | null) {
 		if (!projectId) return '未分类'
 		return projectNameMap.value.get(projectId) ?? '已删除项目'
