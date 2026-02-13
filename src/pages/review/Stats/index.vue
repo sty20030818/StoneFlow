@@ -21,7 +21,7 @@
 				v-for="(s, index) in spaceCards"
 				:key="s.id"
 				v-motion="spaceCardMotions[index]"
-				class="cursor-pointer hover:bg-default transition"
+				class="cursor-pointer hover:bg-default transition-colors duration-150"
 				@click="goToFinishList(s.id)">
 				<template #header>
 					<div class="flex items-center justify-between gap-2">

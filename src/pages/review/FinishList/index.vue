@@ -91,7 +91,7 @@
 
 			<div
 				v-for="(group, index) in projectGroups"
-				:key="group.projectId"
+				:key="group.groupKey"
 				v-motion="groupMotions[index]"
 				class="rounded-xl border border-default bg-elevated/70">
 				<header class="px-3 py-2.5 flex items-center justify-between gap-2 border-b border-default/70">
@@ -196,9 +196,10 @@
 
 <script setup lang="ts">
 	import { refDebounced, useAsyncState } from '@vueuse/core'
-	import { computed, ref } from 'vue'
+	import { computed, ref, watch } from 'vue'
 
-	import { getAppStaggerDelay, useAppMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import { getAppStaggerDelay, useAppMotionPreset, useCardHoverMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import { DEFAULT_PROJECT_LABEL } from '@/config/project'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
@@ -208,7 +209,7 @@
 	const projectsStore = useProjectsStore()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
-	const groupItemMotionPreset = useMotionPreset('card')
+	const groupItemMotionPreset = useCardHoverMotionPreset()
 	const reflectionBodyMotion = useMotionPresetWithDelay('modalSection', 24)
 	const reflectionFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 	const groupMotions = computed(() =>
@@ -339,11 +340,7 @@
 			if (!t.completedAt || t.doneReason === 'cancelled') return false
 			if (!isInDateRange(t.completedAt)) return false
 			if (spaceFilter.value !== 'all' && t.spaceId !== spaceFilter.value) return false
-			if (projectFilter.value !== 'all') {
-				const projects = projectsStore.getProjectsOfSpace(t.spaceId)
-				const hasProject = projects.some((p) => p.id === projectFilter.value)
-				if (!hasProject) return false
-			}
+			if (projectFilter.value !== 'all' && t.projectId !== projectFilter.value) return false
 			if (debouncedTagKeyword.value.trim()) {
 				const kw = debouncedTagKeyword.value.trim().toLowerCase()
 				if (!t.title.toLowerCase().includes(kw)) return false
@@ -353,6 +350,7 @@
 	})
 
 	type ProjectGroup = {
+		groupKey: string
 		projectId: string
 		projectName: string
 		spaceId: string
@@ -365,7 +363,7 @@
 		const byProject = new Map<string, TaskDto[]>()
 
 		for (const t of filteredTasks.value) {
-			const key = t.id
+			const key = `${t.spaceId}::${t.projectId ?? 'default'}`
 			const arr = byProject.get(key) ?? []
 			arr.push(t)
 			byProject.set(key, arr)
@@ -373,12 +371,12 @@
 
 		const result: ProjectGroup[] = []
 
-		for (const [, list] of byProject.entries()) {
+		for (const [groupKey, list] of byProject.entries()) {
 			const sample = list[0]
 			const spaceId = sample.spaceId
 			const spaceLabelText = spaceLabel(spaceId)
 			const projects = projectsStore.getProjectsOfSpace(spaceId)
-			const project = projects[0]
+			const project = sample.projectId ? projects.find((p) => p.id === sample.projectId) : null
 
 			const leads: number[] = []
 			for (const t of list) {
@@ -390,8 +388,9 @@
 			const medianMs = leads.length ? leads[Math.floor(leads.length / 2)] : 0
 
 			result.push({
-				projectId: project?.id ?? 'default',
-				projectName: project?.title ?? '当前 Space 默认 Project',
+				groupKey,
+				projectId: sample.projectId ?? 'default',
+				projectName: project?.title ?? DEFAULT_PROJECT_LABEL,
 				spaceId,
 				spaceLabel: spaceLabelText,
 				tasks: list,
@@ -401,6 +400,17 @@
 
 		return result
 	})
+
+	watch(
+		tasks,
+		(rows) => {
+			const spaceIds = Array.from(new Set(rows.map((t) => t.spaceId)))
+			for (const sid of spaceIds) {
+				void projectsStore.load(sid)
+			}
+		},
+		{ immediate: true },
+	)
 
 	const stats = computed(() => {
 		const thisWeekTasks = tasks.value.filter(
