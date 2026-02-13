@@ -4,6 +4,7 @@
 			<div
 				v-for="link in links"
 				:key="link.id"
+				v-motion="linkItemHoverMotion"
 				class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-default/70 bg-elevated/20 px-4 py-3">
 				<div class="min-w-0">
 					<div class="text-sm font-medium text-default">{{ link.label }}</div>
@@ -33,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 
 	type AboutLink = {
@@ -40,6 +42,8 @@
 		label: string
 		value: string
 	}
+
+	const linkItemHoverMotion = useCardHoverMotionPreset()
 
 	defineProps<{
 		links: AboutLink[]

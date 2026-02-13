@@ -10,8 +10,9 @@
 			<RouterLink
 				v-for="item in navItems"
 				:key="item.id"
+				v-motion="navItemHoverMotion"
 				:to="item.to"
-				class="block rounded-2xl border px-3 py-2 transition-all duration-150"
+				class="block rounded-2xl border px-3 py-2 transition-colors duration-150 transform-gpu will-change-transform"
 				:class="
 					isActive(item.to) ? 'border-primary/40 bg-primary/8' : 'border-default/70 bg-elevated/20 hover:bg-elevated/40'
 				">
@@ -29,8 +30,11 @@
 </template>
 
 <script setup lang="ts">
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from './SettingsSectionCard.vue'
 	import type { SettingsNavItem } from '../config'
+
+	const navItemHoverMotion = useCardHoverMotionPreset()
 
 	defineProps<{
 		navItems: ReadonlyArray<SettingsNavItem>

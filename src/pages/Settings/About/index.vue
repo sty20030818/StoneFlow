@@ -99,7 +99,7 @@
 		openUrl,
 		copy,
 	} = useAboutPage()
-	const aboutCardPreset = useMotionPreset('card')
+	const aboutCardPreset = useMotionPreset('drawerSection')
 	const aboutCardMotions = computed(() =>
 		Array.from({ length: 4 }).map((_item, index) => withMotionDelay(aboutCardPreset.value, getAppStaggerDelay(index))),
 	)

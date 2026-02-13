@@ -32,6 +32,7 @@
 			<div
 				v-for="profile in profiles"
 				:key="profile.id"
+				v-motion="profileItemHoverMotion"
 				class="flex items-center justify-between gap-3 rounded-2xl border border-default/70 bg-elevated/40 px-4 py-3">
 				<div class="min-w-0">
 					<div class="flex items-center gap-2">
@@ -79,8 +80,11 @@
 </template>
 
 <script setup lang="ts">
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 	import type { RemoteDbProfile } from '@/types/shared/remote-sync'
+
+	const profileItemHoverMotion = useCardHoverMotionPreset()
 
 	defineProps<{
 		profiles: RemoteDbProfile[]

@@ -77,6 +77,22 @@ export function useMotionPreset(name: MotionPresetName) {
 	return computed(() => getMotionPreset(name, runtime.mode.value))
 }
 
+export function useCardHoverMotionPreset() {
+	const cardPreset = useMotionPreset('card')
+	return computed<MotionPresetVariants>(() => ({
+		initial: {
+			y: 0,
+			scale: 1,
+		},
+		enter: {
+			y: 0,
+			scale: 1,
+			transition: cardPreset.value.hovered?.transition,
+		},
+		hovered: cardPreset.value.hovered,
+	}))
+}
+
 export function useProjectMotionPreset(name: MotionPresetName, phase: ProjectMotionPhaseName, offset = 0) {
 	const preset = useMotionPreset(name)
 	return computed(() => {

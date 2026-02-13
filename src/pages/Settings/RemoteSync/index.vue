@@ -287,11 +287,11 @@
 	} = useRemoteSyncPage()
 
 	const remoteSyncModalUi = createModalLayerUi()
-	const actionsCardMotion = useAppMotionPreset('card', 'sectionBase')
+	const actionsCardMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase', 16)
 	const contentGridMotion = useAppMotionPreset('drawerSection', 'sectionBase', 30)
-	const statusCardMotion = useAppMotionPreset('card', 'sectionBase', 48)
-	const profilesCardMotion = useAppMotionPreset('card', 'sectionBase', 68)
+	const statusCardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 48)
+	const profilesCardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 68)
 	const modalBodyMotion = useMotionPresetWithDelay('modalSection', 24)
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 </script>

@@ -29,6 +29,7 @@
 			</div>
 			<div
 				v-if="activeProfile"
+				v-motion="currentProfileHoverMotion"
 				class="rounded-2xl border border-default/70 bg-default/70 px-4 py-3">
 				<div class="text-xs text-muted">当前配置</div>
 				<div class="text-sm font-semibold truncate">{{ activeProfile.name }}</div>
@@ -43,8 +44,11 @@
 </template>
 
 <script setup lang="ts">
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 	import type { RemoteDbProfile } from '@/types/shared/remote-sync'
+
+	const currentProfileHoverMotion = useCardHoverMotionPreset()
 
 	defineProps<{
 		testingCurrent: boolean
