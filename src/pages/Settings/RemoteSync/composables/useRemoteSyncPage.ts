@@ -12,16 +12,25 @@ import { useRemoteSyncStore } from '@/stores/remote-sync'
 import type {
 	RemoteDbProfile,
 	RemoteDbProfileInput,
-	RemoteSyncCommandReport,
+	RemoteSyncDirection,
 	RemoteSyncHistoryItem,
 } from '@/types/shared/remote-sync'
+import {
+	type RemoteSyncTableViewItem,
+	summarizeRemoteSyncReport,
+	toRemoteSyncTableViewItems,
+} from '@/utils/remote-sync-report'
+
+type RemoteSyncHistoryFilter = 'all' | RemoteSyncDirection
 
 type RemoteSyncHistoryViewItem = {
 	id: string
+	direction: RemoteSyncDirection
 	directionText: string
 	profileName: string
 	syncedAtText: string
 	summary: string
+	tables: RemoteSyncTableViewItem[]
 }
 
 export function useRemoteSyncPage() {
@@ -79,6 +88,13 @@ export function useRemoteSyncPage() {
 	const savingNew = ref(false)
 	const savingEdit = ref(false)
 	const importing = ref(false)
+	const isClearingHistory = ref(false)
+	const historyFilter = ref<RemoteSyncHistoryFilter>('all')
+	const historyFilterOptions = [
+		{ label: '全部', value: 'all' as const },
+		{ label: '仅上传', value: 'push' as const },
+		{ label: '仅下载', value: 'pull' as const },
+	]
 
 	const deleting = ref(false)
 	const deleteTarget = ref<RemoteDbProfile | null>(null)
@@ -151,20 +167,14 @@ export function useRemoteSyncPage() {
 		return formatRelativeTime(lastPulledAt.value, '未下载')
 	})
 
-	function formatSyncSummary(report: RemoteSyncCommandReport | null, fallback: string) {
-		if (!report) return fallback
-		const tableValues = Object.values(report.tables)
-		const totalSynced = tableValues.reduce((acc, item) => acc + item.synced, 0)
-		const totalDeduped = tableValues.reduce((acc, item) => acc + item.deduped, 0)
-		const tasksSynced = report.tables.tasks.synced
-		const logsSynced = report.tables.taskActivityLogs.synced
-		return `任务 ${tasksSynced} 条，日志 ${logsSynced} 条，总写入 ${totalSynced} 条，去重 ${totalDeduped} 条`
-	}
-
-	const lastPushSummaryText = computed(() => formatSyncSummary(lastPushReport.value, '暂无上传统计'))
-	const lastPullSummaryText = computed(() => formatSyncSummary(lastPullReport.value, '暂无下载统计'))
+	const lastPushSummaryText = computed(() => summarizeRemoteSyncReport(lastPushReport.value, '暂无上传统计'))
+	const lastPullSummaryText = computed(() => summarizeRemoteSyncReport(lastPullReport.value, '暂无下载统计'))
+	const filteredSyncHistory = computed(() => {
+		if (historyFilter.value === 'all') return syncHistory.value
+		return syncHistory.value.filter((item) => item.direction === historyFilter.value)
+	})
 	const recentSyncHistory = computed<RemoteSyncHistoryViewItem[]>(() =>
-		syncHistory.value.slice(0, 6).map((item) => toHistoryViewItem(item)),
+		filteredSyncHistory.value.slice(0, 6).map((item) => toHistoryViewItem(item)),
 	)
 
 	function formatRelativeTime(timestamp: number, fallback: string) {
@@ -187,10 +197,39 @@ export function useRemoteSyncPage() {
 	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
 		return {
 			id: item.id,
+			direction: item.direction,
 			directionText: item.direction === 'push' ? '上传' : '下载',
 			profileName: item.profileName || '未命名配置',
 			syncedAtText: new Date(item.syncedAt).toLocaleString(),
-			summary: formatSyncSummary(item.report, '无统计数据'),
+			summary: summarizeRemoteSyncReport(item.report, '无统计数据'),
+			tables: toRemoteSyncTableViewItems(item.report),
+		}
+	}
+
+	function setHistoryFilter(filter: RemoteSyncHistoryFilter) {
+		historyFilter.value = filter
+	}
+
+	async function handleClearSyncHistory() {
+		if (syncHistory.value.length === 0 || isClearingHistory.value) return
+		try {
+			isClearingHistory.value = true
+			const direction = historyFilter.value === 'all' ? undefined : historyFilter.value
+			await remoteSyncStore.clearSyncHistory(direction)
+			toast.add({
+				title: '已清空同步记录',
+				description: direction ? `已清空${direction === 'push' ? '上传' : '下载'}记录` : '已清空全部记录',
+				color: 'success',
+			})
+		} catch (error) {
+			toast.add({
+				title: '清空失败',
+				description: error instanceof Error ? error.message : '未知错误',
+				color: 'error',
+			})
+			logError('sync:history:clear:error', error)
+		} finally {
+			isClearingHistory.value = false
 		}
 	}
 
@@ -266,7 +305,7 @@ export function useRemoteSyncPage() {
 			status.value = 'ok'
 			toast.add({
 				title: '上传成功',
-				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${formatSyncSummary(report, '')}`,
+				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${summarizeRemoteSyncReport(report, '')}`,
 				color: 'success',
 			})
 			log('sync:push:done', { syncedAt: report.syncedAt })
@@ -300,7 +339,7 @@ export function useRemoteSyncPage() {
 			status.value = 'ok'
 			toast.add({
 				title: '下载成功',
-				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${formatSyncSummary(report, '')}`,
+				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${summarizeRemoteSyncReport(report, '')}`,
 				color: 'success',
 			})
 			log('sync:pull:done', { syncedAt: report.syncedAt })
@@ -503,7 +542,12 @@ export function useRemoteSyncPage() {
 		lastPulledText,
 		lastPushSummaryText,
 		lastPullSummaryText,
+		historyFilter,
+		historyFilterOptions,
+		isClearingHistory,
 		recentSyncHistory,
+		setHistoryFilter,
+		handleClearSyncHistory,
 		handlePush,
 		handlePull,
 		profiles,

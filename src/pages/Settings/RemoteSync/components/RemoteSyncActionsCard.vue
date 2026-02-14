@@ -36,7 +36,28 @@
 		</div>
 
 		<div class="mt-4 space-y-2">
-			<div class="text-[11px] text-muted">最近同步记录</div>
+			<div class="flex items-center justify-between gap-2">
+				<div class="text-[11px] text-muted">最近同步记录</div>
+				<div class="flex items-center gap-2">
+					<USelectMenu
+						:model-value="historyFilter"
+						:options="historyFilterOptions"
+						value-attribute="value"
+						option-attribute="label"
+						size="xs"
+						@update:model-value="(value) => onUpdateHistoryFilter(value as 'all' | 'push' | 'pull')" />
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="2xs"
+						icon="i-lucide-trash-2"
+						:loading="isClearingHistory"
+						:disabled="recentSyncHistory.length === 0"
+						@click="onClearHistory">
+						清空
+					</UButton>
+				</div>
+			</div>
 			<div
 				v-if="recentSyncHistory.length === 0"
 				class="rounded-xl border border-default/70 bg-elevated/40 px-3 py-2 text-[11px] text-muted/80">
@@ -49,9 +70,31 @@
 					class="rounded-xl border border-default/70 bg-elevated/40 px-3 py-2">
 					<div class="flex items-center justify-between gap-2 text-[11px] text-muted">
 						<div class="truncate">{{ item.directionText }} · {{ item.profileName }}</div>
-						<div class="shrink-0 text-[10px] text-muted/80">{{ item.syncedAtText }}</div>
+						<div class="shrink-0 flex items-center gap-1.5">
+							<div class="text-[10px] text-muted/80">{{ item.syncedAtText }}</div>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="2xs"
+								@click="toggleExpand(item.id)">
+								{{ expandedHistoryId === item.id ? '收起' : '明细' }}
+							</UButton>
+						</div>
 					</div>
 					<div class="mt-1 text-[10px] leading-5 text-muted/80">{{ item.summary }}</div>
+					<div
+						v-if="expandedHistoryId === item.id"
+						class="mt-2 rounded-lg border border-default/70 bg-default px-2 py-2 space-y-1">
+						<div
+							v-for="table in item.tables"
+							:key="table.key"
+							class="flex items-center justify-between gap-2 text-[10px] text-muted">
+							<div>{{ table.label }}</div>
+							<div class="shrink-0">
+								总 {{ table.total }} / 写入 {{ table.synced }} / 去重 {{ table.deduped }}
+							</div>
+						</div>
+					</div>
 				</div>
 			</template>
 		</div>
@@ -65,6 +108,8 @@
 </template>
 
 <script setup lang="ts">
+	import { ref } from 'vue'
+
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 
 	defineProps<{
@@ -76,14 +121,33 @@
 		lastPulledText: string
 		lastPushSummaryText: string
 		lastPullSummaryText: string
+		historyFilter: 'all' | 'push' | 'pull'
+		historyFilterOptions: Array<{ label: string; value: 'all' | 'push' | 'pull' }>
+		isClearingHistory: boolean
 		recentSyncHistory: Array<{
 			id: string
+			direction: 'push' | 'pull'
 			directionText: string
 			profileName: string
 			syncedAtText: string
 			summary: string
+			tables: Array<{
+				key: string
+				label: string
+				total: number
+				synced: number
+				deduped: number
+			}>
 		}>
+		onUpdateHistoryFilter: (value: 'all' | 'push' | 'pull') => void
+		onClearHistory: () => void
 		onPush: () => void
 		onPull: () => void
 	}>()
+
+	const expandedHistoryId = ref<string | null>(null)
+
+	function toggleExpand(id: string) {
+		expandedHistoryId.value = expandedHistoryId.value === id ? null : id
+	}
 </script>

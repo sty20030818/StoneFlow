@@ -12,7 +12,12 @@
 				:last-pulled-text="lastPulledText"
 				:last-push-summary-text="lastPushSummaryText"
 				:last-pull-summary-text="lastPullSummaryText"
+				:history-filter="historyFilter"
+				:history-filter-options="historyFilterOptions"
+				:is-clearing-history="isClearingHistory"
 				:recent-sync-history="recentSyncHistory"
+				:on-update-history-filter="setHistoryFilter"
+				:on-clear-history="handleClearSyncHistory"
 				:on-push="handlePush"
 				:on-pull="handlePull" />
 		</div>
@@ -244,7 +249,12 @@
 		lastPulledText,
 		lastPushSummaryText,
 		lastPullSummaryText,
+		historyFilter,
+		historyFilterOptions,
+		isClearingHistory,
 		recentSyncHistory,
+		setHistoryFilter,
+		handleClearSyncHistory,
 		handlePush,
 		handlePull,
 		profiles,

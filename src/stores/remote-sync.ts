@@ -230,6 +230,17 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		log('appendSyncHistory:done', { total: state.syncHistory.length })
 	}
 
+	async function clearSyncHistory(direction?: RemoteSyncDirection) {
+		log('clearSyncHistory:start', { direction: direction ?? 'all' })
+		if (!direction) {
+			state.syncHistory = []
+		} else {
+			state.syncHistory = state.syncHistory.filter((item) => item.direction !== direction)
+		}
+		await save()
+		log('clearSyncHistory:done', { total: state.syncHistory.length })
+	}
+
 	return {
 		loaded,
 		profiles,
@@ -248,5 +259,6 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		getProfileUrl,
 		getActiveProfileUrl,
 		appendSyncHistory,
+		clearSyncHistory,
 	}
 })
