@@ -9,7 +9,20 @@ import { postgresUrlSchema, remoteImportListSchema, remoteProfileSchema } from '
 import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
-import type { RemoteDbProfile, RemoteDbProfileInput } from '@/types/shared/remote-sync'
+import type {
+	RemoteDbProfile,
+	RemoteDbProfileInput,
+	RemoteSyncCommandReport,
+	RemoteSyncHistoryItem,
+} from '@/types/shared/remote-sync'
+
+type RemoteSyncHistoryViewItem = {
+	id: string
+	directionText: string
+	profileName: string
+	syncedAtText: string
+	summary: string
+}
 
 export function useRemoteSyncPage() {
 	const remoteSyncStore = useRemoteSyncStore()
@@ -24,6 +37,9 @@ export function useRemoteSyncPage() {
 		syncError,
 		lastPushedAt,
 		lastPulledAt,
+		syncHistory,
+		lastPushReport,
+		lastPullReport,
 		hasActiveProfile,
 		pushToRemote,
 		pullFromRemote,
@@ -135,6 +151,22 @@ export function useRemoteSyncPage() {
 		return formatRelativeTime(lastPulledAt.value, '未下载')
 	})
 
+	function formatSyncSummary(report: RemoteSyncCommandReport | null, fallback: string) {
+		if (!report) return fallback
+		const tableValues = Object.values(report.tables)
+		const totalSynced = tableValues.reduce((acc, item) => acc + item.synced, 0)
+		const totalDeduped = tableValues.reduce((acc, item) => acc + item.deduped, 0)
+		const tasksSynced = report.tables.tasks.synced
+		const logsSynced = report.tables.taskActivityLogs.synced
+		return `任务 ${tasksSynced} 条，日志 ${logsSynced} 条，总写入 ${totalSynced} 条，去重 ${totalDeduped} 条`
+	}
+
+	const lastPushSummaryText = computed(() => formatSyncSummary(lastPushReport.value, '暂无上传统计'))
+	const lastPullSummaryText = computed(() => formatSyncSummary(lastPullReport.value, '暂无下载统计'))
+	const recentSyncHistory = computed<RemoteSyncHistoryViewItem[]>(() =>
+		syncHistory.value.slice(0, 6).map((item) => toHistoryViewItem(item)),
+	)
+
 	function formatRelativeTime(timestamp: number, fallback: string) {
 		if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback
 		const date = new Date(timestamp)
@@ -150,6 +182,16 @@ export function useRemoteSyncPage() {
 	function formatProfileMeta(profile: RemoteDbProfile) {
 		const source = profile.source === 'import' ? '导入' : '手动'
 		return `${source} · ${new Date(profile.updatedAt).toLocaleString()}`
+	}
+
+	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
+		return {
+			id: item.id,
+			directionText: item.direction === 'push' ? '上传' : '下载',
+			profileName: item.profileName || '未命名配置',
+			syncedAtText: new Date(item.syncedAt).toLocaleString(),
+			summary: formatSyncSummary(item.report, '无统计数据'),
+		}
 	}
 
 	function openCreate() {
@@ -216,14 +258,18 @@ export function useRemoteSyncPage() {
 		}
 		try {
 			log('sync:push:start', { profileId: activeProfileId.value })
-			const ts = await pushToRemote()
-			if (!ts) {
+			const report = await pushToRemote()
+			if (!report) {
 				toast.add({ title: '同步进行中，请稍候', color: 'neutral' })
 				return
 			}
 			status.value = 'ok'
-			toast.add({ title: '上传成功', description: `同步时间：${new Date(ts).toLocaleString()}`, color: 'success' })
-			log('sync:push:done', { ts })
+			toast.add({
+				title: '上传成功',
+				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${formatSyncSummary(report, '')}`,
+				color: 'success',
+			})
+			log('sync:push:done', { syncedAt: report.syncedAt })
 		} catch (error) {
 			toast.add({ title: '上传失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
 			logError('sync:push:error', error)
@@ -245,15 +291,19 @@ export function useRemoteSyncPage() {
 		}
 		try {
 			log('sync:pull:start', { profileId: activeProfileId.value })
-			const ts = await pullFromRemote()
-			if (!ts) {
+			const report = await pullFromRemote()
+			if (!report) {
 				toast.add({ title: '同步进行中，请稍候', color: 'neutral' })
 				return
 			}
 			refreshSignals.bumpProject()
 			status.value = 'ok'
-			toast.add({ title: '下载成功', description: `同步时间：${new Date(ts).toLocaleString()}`, color: 'success' })
-			log('sync:pull:done', { ts })
+			toast.add({
+				title: '下载成功',
+				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${formatSyncSummary(report, '')}`,
+				color: 'success',
+			})
+			log('sync:pull:done', { syncedAt: report.syncedAt })
 		} catch (error) {
 			toast.add({ title: '下载失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
 			logError('sync:pull:error', error)
@@ -451,6 +501,9 @@ export function useRemoteSyncPage() {
 		hasActiveProfile,
 		lastPushedText,
 		lastPulledText,
+		lastPushSummaryText,
+		lastPullSummaryText,
+		recentSyncHistory,
 		handlePush,
 		handlePull,
 		profiles,

@@ -1,9 +1,18 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 
-import type { RemoteDbProfile, RemoteDbProfileInput, RemoteSyncSettings } from '@/types/shared/remote-sync'
+import type {
+	RemoteDbProfile,
+	RemoteDbProfileInput,
+	RemoteSyncCommandReport,
+	RemoteSyncDirection,
+	RemoteSyncHistoryItem,
+	RemoteSyncSettings,
+} from '@/types/shared/remote-sync'
 import { DEFAULT_REMOTE_SYNC_SETTINGS, remoteSyncStore } from '@/services/tauri/remote-sync-store'
 import { getRemoteSyncSecret, removeRemoteSyncSecret, setRemoteSyncSecret } from '@/services/tauri/stronghold'
+
+const SYNC_HISTORY_LIMIT = 12
 
 function nowIso() {
 	return new Date().toISOString()
@@ -33,6 +42,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	const activeProfileId = computed(() => state.activeProfileId)
 	const activeProfile = computed(() => state.profiles.find((p) => p.id === state.activeProfileId) ?? null)
 	const hasProfiles = computed(() => state.profiles.length > 0)
+	const syncHistory = computed(() => state.syncHistory)
 
 	async function load() {
 		log('load:start')
@@ -43,6 +53,9 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 			}
 			if (state.activeProfileId && !state.profiles.some((p) => p.id === state.activeProfileId)) {
 				state.activeProfileId = state.profiles[0]?.id ?? null
+			}
+			if (!Array.isArray(state.syncHistory)) {
+				state.syncHistory = []
 			}
 			loaded.value = true
 			log('load:done', {
@@ -196,12 +209,34 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		}
 	}
 
+	async function appendSyncHistory(input: {
+		direction: RemoteSyncDirection
+		profileId: string | null
+		profileName: string
+		report: RemoteSyncCommandReport
+	}) {
+		log('appendSyncHistory:start', { direction: input.direction, profileId: input.profileId })
+		const item: RemoteSyncHistoryItem = {
+			id: crypto.randomUUID(),
+			profileId: input.profileId,
+			profileName: normalizeName(input.profileName),
+			direction: input.direction,
+			syncedAt: input.report.syncedAt,
+			report: input.report,
+			createdAt: nowIso(),
+		}
+		state.syncHistory = [item, ...state.syncHistory].slice(0, SYNC_HISTORY_LIMIT)
+		await save()
+		log('appendSyncHistory:done', { total: state.syncHistory.length })
+	}
+
 	return {
 		loaded,
 		profiles,
 		activeProfileId,
 		activeProfile,
 		hasProfiles,
+		syncHistory,
 		load,
 		save,
 		addProfile,
@@ -212,5 +247,6 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		importProfiles,
 		getProfileUrl,
 		getActiveProfileUrl,
+		appendSyncHistory,
 	}
 })

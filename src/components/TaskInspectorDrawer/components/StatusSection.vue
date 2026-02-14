@@ -8,7 +8,7 @@
 			color="neutral"
 			variant="pill"
 			size="sm"
-			:ui="segmentTabsUi"
+			:ui="statusTabsUi"
 			@update:model-value="onStatusTabChange">
 			<template #leading="{ item }">
 				<UIcon
@@ -30,7 +30,7 @@
 			color="neutral"
 			variant="pill"
 			size="sm"
-			:ui="segmentTabsUi"
+			:ui="doneReasonTabsUi"
 			@update:model-value="onDoneReasonTabChange">
 			<template #leading="{ item }">
 				<UIcon
@@ -58,13 +58,33 @@
 
 	const props = defineProps<Props>()
 
-	const segmentTabsUi = {
+	const segmentTabsBaseUi = {
 		root: 'w-full',
 		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
 		trigger:
-			'flex-1 rounded-full px-3.5 py-2 text-[11px] font-semibold data-[state=active]:text-default data-[state=inactive]:text-muted hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm',
+			'flex-1 rounded-full px-3.5 py-2 text-[11px] font-semibold data-[state=inactive]:text-muted hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm',
 		leadingIcon: 'size-3.5',
 		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
+	}
+
+	const STATUS_INDICATOR_CLASS: Record<TaskStatusValue, string> = {
+		todo: 'bg-blue-50 border border-blue-300',
+		done: 'bg-emerald-50 border border-emerald-300',
+	}
+
+	const DONE_REASON_INDICATOR_CLASS: Record<TaskDoneReasonValue, string> = {
+		completed: 'bg-emerald-50 border border-emerald-300',
+		cancelled: 'bg-red-50 border border-red-300',
+	}
+
+	const STATUS_TRIGGER_ACTIVE_TEXT_CLASS: Record<TaskStatusValue, string> = {
+		todo: 'data-[state=active]:text-blue-700',
+		done: 'data-[state=active]:text-emerald-700',
+	}
+
+	const DONE_REASON_TRIGGER_ACTIVE_TEXT_CLASS: Record<TaskDoneReasonValue, string> = {
+		completed: 'data-[state=active]:text-emerald-700',
+		cancelled: 'data-[state=active]:text-red-700',
 	}
 
 	const statusTabItems = computed(() =>
@@ -84,6 +104,18 @@
 			iconClass: opt.iconClass,
 		})),
 	)
+
+	const statusTabsUi = computed(() => ({
+		...segmentTabsBaseUi,
+		trigger: `${segmentTabsBaseUi.trigger} ${STATUS_TRIGGER_ACTIVE_TEXT_CLASS[props.statusLocal]}`,
+		indicator: `rounded-full shadow-sm inset-y-1 ${STATUS_INDICATOR_CLASS[props.statusLocal]}`,
+	}))
+
+	const doneReasonTabsUi = computed(() => ({
+		...segmentTabsBaseUi,
+		trigger: `${segmentTabsBaseUi.trigger} ${DONE_REASON_TRIGGER_ACTIVE_TEXT_CLASS[props.doneReasonLocal]}`,
+		indicator: `rounded-full shadow-sm inset-y-1 ${DONE_REASON_INDICATOR_CLASS[props.doneReasonLocal]}`,
+	}))
 
 	function onStatusTabChange(value: string | number) {
 		if (typeof value !== 'string') return

@@ -5,6 +5,7 @@ import type { RemoteSyncSettings } from '@/types/shared/remote-sync'
 export const DEFAULT_REMOTE_SYNC_SETTINGS: RemoteSyncSettings = {
 	profiles: [],
 	activeProfileId: null,
+	syncHistory: [],
 }
 
 export const remoteSyncStore = new LazyStore('remote-sync.json', {

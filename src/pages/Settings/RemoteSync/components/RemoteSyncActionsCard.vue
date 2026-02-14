@@ -16,6 +16,7 @@
 					上传
 				</UButton>
 				<div class="text-center text-[11px] text-muted">最近上传：{{ lastPushedText }}</div>
+				<div class="text-center text-[10px] text-muted/80 leading-5">{{ lastPushSummaryText }}</div>
 			</div>
 			<div class="space-y-2">
 				<UButton
@@ -30,7 +31,29 @@
 					下载
 				</UButton>
 				<div class="text-center text-[11px] text-muted">最近下载：{{ lastPulledText }}</div>
+				<div class="text-center text-[10px] text-muted/80 leading-5">{{ lastPullSummaryText }}</div>
 			</div>
+		</div>
+
+		<div class="mt-4 space-y-2">
+			<div class="text-[11px] text-muted">最近同步记录</div>
+			<div
+				v-if="recentSyncHistory.length === 0"
+				class="rounded-xl border border-default/70 bg-elevated/40 px-3 py-2 text-[11px] text-muted/80">
+				暂无同步记录
+			</div>
+			<template v-else>
+				<div
+					v-for="item in recentSyncHistory"
+					:key="item.id"
+					class="rounded-xl border border-default/70 bg-elevated/40 px-3 py-2">
+					<div class="flex items-center justify-between gap-2 text-[11px] text-muted">
+						<div class="truncate">{{ item.directionText }} · {{ item.profileName }}</div>
+						<div class="shrink-0 text-[10px] text-muted/80">{{ item.syncedAtText }}</div>
+					</div>
+					<div class="mt-1 text-[10px] leading-5 text-muted/80">{{ item.summary }}</div>
+				</div>
+			</template>
 		</div>
 
 		<div
@@ -51,6 +74,15 @@
 		syncError: string | null
 		lastPushedText: string
 		lastPulledText: string
+		lastPushSummaryText: string
+		lastPullSummaryText: string
+		recentSyncHistory: Array<{
+			id: string
+			directionText: string
+			profileName: string
+			syncedAtText: string
+			summary: string
+		}>
 		onPush: () => void
 		onPull: () => void
 	}>()

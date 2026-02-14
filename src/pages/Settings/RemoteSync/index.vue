@@ -10,6 +10,9 @@
 				:sync-error="syncError"
 				:last-pushed-text="lastPushedText"
 				:last-pulled-text="lastPulledText"
+				:last-push-summary-text="lastPushSummaryText"
+				:last-pull-summary-text="lastPullSummaryText"
+				:recent-sync-history="recentSyncHistory"
 				:on-push="handlePush"
 				:on-pull="handlePull" />
 		</div>
@@ -239,6 +242,9 @@
 		hasActiveProfile,
 		lastPushedText,
 		lastPulledText,
+		lastPushSummaryText,
+		lastPullSummaryText,
+		recentSyncHistory,
 		handlePush,
 		handlePull,
 		profiles,
