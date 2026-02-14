@@ -8,9 +8,11 @@
 use crate::db::entities::{prelude::*, *};
 use crate::db::{migrator::Migrator, DbState};
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectOptions, Database, EntityTrait, QueryFilter, Set,
+    sea_query::OnConflict, ColumnTrait, ConnectOptions, Database, EntityTrait, QueryFilter,
+    QuerySelect, Set,
 };
 use sea_orm_migration::MigratorTrait;
+use std::collections::HashSet;
 // 定义常量 Key
 const KEY_LAST_PUSHED_AT: &str = "last_pushed_at";
 const KEY_LAST_PULLED_AT: &str = "last_pulled_at";
@@ -25,24 +27,27 @@ pub struct DatabaseUrlArgs {
 #[serde(rename_all = "camelCase")]
 pub struct SyncTableReport {
     pub total: usize,
-    pub synced: usize,
-    pub deduped: usize,
+    pub inserted: usize,
+    pub updated: usize,
+    pub skipped: usize,
 }
 
 impl SyncTableReport {
-    fn upsert(total: usize, synced: usize) -> Self {
+    fn upsert(total: usize, inserted: usize, updated: usize) -> Self {
         Self {
             total,
-            synced,
-            deduped: 0,
+            inserted,
+            updated,
+            skipped: total.saturating_sub(inserted.saturating_add(updated)),
         }
     }
 
-    fn dedup(total: usize, synced: usize) -> Self {
+    fn dedup(total: usize, inserted: usize) -> Self {
         Self {
             total,
-            synced,
-            deduped: total.saturating_sub(synced),
+            inserted,
+            updated: 0,
+            skipped: total.saturating_sub(inserted),
         }
     }
 }
@@ -161,8 +166,32 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Spaces 失败: {}", e))?;
     let spaces_total = remote_spaces.len();
+    let existing_space_ids: HashSet<String> = if remote_spaces.is_empty() {
+        HashSet::new()
+    } else {
+        Spaces::find()
+            .select_only()
+            .column(spaces::Column::Id)
+            .filter(
+                spaces::Column::Id
+                    .is_in(remote_spaces.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+            )
+            .into_tuple::<String>()
+            .all(local_db)
+            .await
+            .map_err(|e| format!("读取本地 Spaces 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut spaces_inserted = 0usize;
+    let mut spaces_updated = 0usize;
 
     for m in remote_spaces {
+        if existing_space_ids.contains(&m.id) {
+            spaces_updated += 1;
+        } else {
+            spaces_inserted += 1;
+        }
         let am: spaces::ActiveModel = m.into();
         spaces::Entity::insert(am)
             .on_conflict(
@@ -187,8 +216,36 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Projects 失败: {}", e))?;
     let projects_total = remote_projects.len();
+    let existing_project_ids: HashSet<String> = if remote_projects.is_empty() {
+        HashSet::new()
+    } else {
+        Projects::find()
+            .select_only()
+            .column(projects::Column::Id)
+            .filter(
+                projects::Column::Id.is_in(
+                    remote_projects
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
+            )
+            .into_tuple::<String>()
+            .all(local_db)
+            .await
+            .map_err(|e| format!("读取本地 Projects 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut projects_inserted = 0usize;
+    let mut projects_updated = 0usize;
 
     for m in remote_projects {
+        if existing_project_ids.contains(&m.id) {
+            projects_updated += 1;
+        } else {
+            projects_inserted += 1;
+        }
         let am: projects::ActiveModel = m.into();
         projects::Entity::insert(am)
             .on_conflict(
@@ -222,7 +279,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Tags 失败: {}", e))?;
     let tags_total = remote_tags.len();
-    let mut tags_synced = 0usize;
+    let mut tags_inserted = 0usize;
 
     for m in remote_tags {
         let am: tags::ActiveModel = m.into();
@@ -231,7 +288,7 @@ pub async fn pull_from_neon(
             .exec_without_returning(local_db)
             .await
             .map_err(|e| format!("同步 Tag 到本地失败: {}", e))?;
-        tags_synced += exec as usize;
+        tags_inserted += exec as usize;
     }
 
     // 4. 同步 Links
@@ -241,8 +298,32 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Links 失败: {}", e))?;
     let links_total = remote_links.len();
+    let existing_link_ids: HashSet<String> = if remote_links.is_empty() {
+        HashSet::new()
+    } else {
+        Links::find()
+            .select_only()
+            .column(links::Column::Id)
+            .filter(
+                links::Column::Id
+                    .is_in(remote_links.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+            )
+            .into_tuple::<String>()
+            .all(local_db)
+            .await
+            .map_err(|e| format!("读取本地 Links 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut links_inserted = 0usize;
+    let mut links_updated = 0usize;
 
     for m in remote_links {
+        if existing_link_ids.contains(&m.id) {
+            links_updated += 1;
+        } else {
+            links_inserted += 1;
+        }
         let am: links::ActiveModel = m.into();
         links::Entity::insert(am)
             .on_conflict(
@@ -268,8 +349,32 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Tasks 失败: {}", e))?;
     let tasks_total = remote_tasks.len();
+    let existing_task_ids: HashSet<String> = if remote_tasks.is_empty() {
+        HashSet::new()
+    } else {
+        Tasks::find()
+            .select_only()
+            .column(tasks::Column::Id)
+            .filter(
+                tasks::Column::Id
+                    .is_in(remote_tasks.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+            )
+            .into_tuple::<String>()
+            .all(local_db)
+            .await
+            .map_err(|e| format!("读取本地 Tasks 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut tasks_inserted = 0usize;
+    let mut tasks_updated = 0usize;
 
     for m in remote_tasks {
+        if existing_task_ids.contains(&m.id) {
+            tasks_updated += 1;
+        } else {
+            tasks_inserted += 1;
+        }
         let am: tasks::ActiveModel = m.into();
         tasks::Entity::insert(am)
             .on_conflict(
@@ -304,7 +409,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 TaskActivityLogs 失败: {}", e))?;
     let task_activity_logs_total = remote_activity_logs.len();
-    let mut task_activity_logs_synced = 0usize;
+    let mut task_activity_logs_inserted = 0usize;
 
     for m in remote_activity_logs {
         let am: task_activity_logs::ActiveModel = m.into();
@@ -317,7 +422,7 @@ pub async fn pull_from_neon(
             .exec_without_returning(local_db)
             .await
             .map_err(|e| format!("同步 TaskActivityLog 到本地失败: {}", e))?;
-        task_activity_logs_synced += exec as usize;
+        task_activity_logs_inserted += exec as usize;
     }
 
     // 7. 同步关联表（关联表没有更新时间字段，采用全量拉取 + 主键去重写入）
@@ -326,7 +431,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 TaskTags 失败: {}", e))?;
     let task_tags_total = remote_task_tags.len();
-    let mut task_tags_synced = 0usize;
+    let mut task_tags_inserted = 0usize;
     for m in remote_task_tags {
         let am: task_tags::ActiveModel = m.into();
         let exec = task_tags::Entity::insert(am)
@@ -338,7 +443,7 @@ pub async fn pull_from_neon(
             .exec_without_returning(local_db)
             .await
             .map_err(|e| format!("同步 TaskTag 到本地失败: {}", e))?;
-        task_tags_synced += exec as usize;
+        task_tags_inserted += exec as usize;
     }
 
     let remote_task_links = TaskLinks::find()
@@ -346,7 +451,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 TaskLinks 失败: {}", e))?;
     let task_links_total = remote_task_links.len();
-    let mut task_links_synced = 0usize;
+    let mut task_links_inserted = 0usize;
     for m in remote_task_links {
         let am: task_links::ActiveModel = m.into();
         let exec = task_links::Entity::insert(am)
@@ -358,7 +463,7 @@ pub async fn pull_from_neon(
             .exec_without_returning(local_db)
             .await
             .map_err(|e| format!("同步 TaskLink 到本地失败: {}", e))?;
-        task_links_synced += exec as usize;
+        task_links_inserted += exec as usize;
     }
 
     let remote_project_tags = ProjectTags::find()
@@ -366,7 +471,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 ProjectTags 失败: {}", e))?;
     let project_tags_total = remote_project_tags.len();
-    let mut project_tags_synced = 0usize;
+    let mut project_tags_inserted = 0usize;
     for m in remote_project_tags {
         let am: project_tags::ActiveModel = m.into();
         let exec = project_tags::Entity::insert(am)
@@ -378,7 +483,7 @@ pub async fn pull_from_neon(
             .exec_without_returning(local_db)
             .await
             .map_err(|e| format!("同步 ProjectTag 到本地失败: {}", e))?;
-        project_tags_synced += exec as usize;
+        project_tags_inserted += exec as usize;
     }
 
     let remote_project_links = ProjectLinks::find()
@@ -386,7 +491,7 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 ProjectLinks 失败: {}", e))?;
     let project_links_total = remote_project_links.len();
-    let mut project_links_synced = 0usize;
+    let mut project_links_inserted = 0usize;
     for m in remote_project_links {
         let am: project_links::ActiveModel = m.into();
         let exec = project_links::Entity::insert(am)
@@ -401,7 +506,7 @@ pub async fn pull_from_neon(
             .exec_without_returning(local_db)
             .await
             .map_err(|e| format!("同步 ProjectLink 到本地失败: {}", e))?;
-        project_links_synced += exec as usize;
+        project_links_inserted += exec as usize;
     }
 
     // 重点：只有本轮主要流程成功后才推进同步水位。
@@ -413,19 +518,19 @@ pub async fn pull_from_neon(
     Ok(SyncCommandReport {
         synced_at: current_sync_start,
         tables: SyncTablesReport {
-            spaces: SyncTableReport::upsert(spaces_total, spaces_total),
-            projects: SyncTableReport::upsert(projects_total, projects_total),
-            tags: SyncTableReport::dedup(tags_total, tags_synced),
-            links: SyncTableReport::upsert(links_total, links_total),
-            tasks: SyncTableReport::upsert(tasks_total, tasks_total),
+            spaces: SyncTableReport::upsert(spaces_total, spaces_inserted, spaces_updated),
+            projects: SyncTableReport::upsert(projects_total, projects_inserted, projects_updated),
+            tags: SyncTableReport::dedup(tags_total, tags_inserted),
+            links: SyncTableReport::upsert(links_total, links_inserted, links_updated),
+            tasks: SyncTableReport::upsert(tasks_total, tasks_inserted, tasks_updated),
             task_activity_logs: SyncTableReport::dedup(
                 task_activity_logs_total,
-                task_activity_logs_synced,
+                task_activity_logs_inserted,
             ),
-            task_tags: SyncTableReport::dedup(task_tags_total, task_tags_synced),
-            task_links: SyncTableReport::dedup(task_links_total, task_links_synced),
-            project_tags: SyncTableReport::dedup(project_tags_total, project_tags_synced),
-            project_links: SyncTableReport::dedup(project_links_total, project_links_synced),
+            task_tags: SyncTableReport::dedup(task_tags_total, task_tags_inserted),
+            task_links: SyncTableReport::dedup(task_links_total, task_links_inserted),
+            project_tags: SyncTableReport::dedup(project_tags_total, project_tags_inserted),
+            project_links: SyncTableReport::dedup(project_links_total, project_links_inserted),
         },
     })
 }
@@ -454,8 +559,32 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Spaces 失败: {}", e))?;
     let spaces_total = local_spaces.len();
+    let existing_space_ids: HashSet<String> = if local_spaces.is_empty() {
+        HashSet::new()
+    } else {
+        Spaces::find()
+            .select_only()
+            .column(spaces::Column::Id)
+            .filter(
+                spaces::Column::Id
+                    .is_in(local_spaces.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+            )
+            .into_tuple::<String>()
+            .all(&remote_db)
+            .await
+            .map_err(|e| format!("读取远程 Spaces 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut spaces_inserted = 0usize;
+    let mut spaces_updated = 0usize;
 
     for m in local_spaces {
+        if existing_space_ids.contains(&m.id) {
+            spaces_updated += 1;
+        } else {
+            spaces_inserted += 1;
+        }
         let am: spaces::ActiveModel = m.into();
         spaces::Entity::insert(am)
             .on_conflict(
@@ -479,8 +608,36 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Projects 失败: {}", e))?;
     let projects_total = local_projects.len();
+    let existing_project_ids: HashSet<String> = if local_projects.is_empty() {
+        HashSet::new()
+    } else {
+        Projects::find()
+            .select_only()
+            .column(projects::Column::Id)
+            .filter(
+                projects::Column::Id.is_in(
+                    local_projects
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
+            )
+            .into_tuple::<String>()
+            .all(&remote_db)
+            .await
+            .map_err(|e| format!("读取远程 Projects 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut projects_inserted = 0usize;
+    let mut projects_updated = 0usize;
 
     for m in local_projects {
+        if existing_project_ids.contains(&m.id) {
+            projects_updated += 1;
+        } else {
+            projects_inserted += 1;
+        }
         let am: projects::ActiveModel = m.into();
         projects::Entity::insert(am)
             .on_conflict(
@@ -514,7 +671,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Tags 失败: {}", e))?;
     let tags_total = local_tags.len();
-    let mut tags_synced = 0usize;
+    let mut tags_inserted = 0usize;
 
     for m in local_tags {
         let am: tags::ActiveModel = m.into();
@@ -523,7 +680,7 @@ pub async fn push_to_neon(
             .exec_without_returning(&remote_db)
             .await
             .map_err(|e| format!("推送 Tag 到远程失败: {}", e))?;
-        tags_synced += exec as usize;
+        tags_inserted += exec as usize;
     }
 
     // 4. 推送 Links
@@ -533,8 +690,32 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Links 失败: {}", e))?;
     let links_total = local_links.len();
+    let existing_link_ids: HashSet<String> = if local_links.is_empty() {
+        HashSet::new()
+    } else {
+        Links::find()
+            .select_only()
+            .column(links::Column::Id)
+            .filter(
+                links::Column::Id
+                    .is_in(local_links.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+            )
+            .into_tuple::<String>()
+            .all(&remote_db)
+            .await
+            .map_err(|e| format!("读取远程 Links 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut links_inserted = 0usize;
+    let mut links_updated = 0usize;
 
     for m in local_links {
+        if existing_link_ids.contains(&m.id) {
+            links_updated += 1;
+        } else {
+            links_inserted += 1;
+        }
         let am: links::ActiveModel = m.into();
         links::Entity::insert(am)
             .on_conflict(
@@ -560,8 +741,32 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Tasks 失败: {}", e))?;
     let tasks_total = local_tasks.len();
+    let existing_task_ids: HashSet<String> = if local_tasks.is_empty() {
+        HashSet::new()
+    } else {
+        Tasks::find()
+            .select_only()
+            .column(tasks::Column::Id)
+            .filter(
+                tasks::Column::Id
+                    .is_in(local_tasks.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+            )
+            .into_tuple::<String>()
+            .all(&remote_db)
+            .await
+            .map_err(|e| format!("读取远程 Tasks 既有数据失败: {}", e))?
+            .into_iter()
+            .collect()
+    };
+    let mut tasks_inserted = 0usize;
+    let mut tasks_updated = 0usize;
 
     for m in local_tasks {
+        if existing_task_ids.contains(&m.id) {
+            tasks_updated += 1;
+        } else {
+            tasks_inserted += 1;
+        }
         let am: tasks::ActiveModel = m.into();
         tasks::Entity::insert(am)
             .on_conflict(
@@ -596,7 +801,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 TaskActivityLogs 失败: {}", e))?;
     let task_activity_logs_total = local_activity_logs.len();
-    let mut task_activity_logs_synced = 0usize;
+    let mut task_activity_logs_inserted = 0usize;
 
     for m in local_activity_logs {
         let am: task_activity_logs::ActiveModel = m.into();
@@ -609,7 +814,7 @@ pub async fn push_to_neon(
             .exec_without_returning(&remote_db)
             .await
             .map_err(|e| format!("推送 TaskActivityLog 到远程失败: {}", e))?;
-        task_activity_logs_synced += exec as usize;
+        task_activity_logs_inserted += exec as usize;
     }
 
     // 7. 推送关联表（关联表没有更新时间字段，采用全量推送 + 主键去重写入）
@@ -618,7 +823,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 TaskTags 失败: {}", e))?;
     let task_tags_total = local_task_tags.len();
-    let mut task_tags_synced = 0usize;
+    let mut task_tags_inserted = 0usize;
     for m in local_task_tags {
         let am: task_tags::ActiveModel = m.into();
         let exec = task_tags::Entity::insert(am)
@@ -630,7 +835,7 @@ pub async fn push_to_neon(
             .exec_without_returning(&remote_db)
             .await
             .map_err(|e| format!("推送 TaskTag 到远程失败: {}", e))?;
-        task_tags_synced += exec as usize;
+        task_tags_inserted += exec as usize;
     }
 
     let local_task_links = TaskLinks::find()
@@ -638,7 +843,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 TaskLinks 失败: {}", e))?;
     let task_links_total = local_task_links.len();
-    let mut task_links_synced = 0usize;
+    let mut task_links_inserted = 0usize;
     for m in local_task_links {
         let am: task_links::ActiveModel = m.into();
         let exec = task_links::Entity::insert(am)
@@ -650,7 +855,7 @@ pub async fn push_to_neon(
             .exec_without_returning(&remote_db)
             .await
             .map_err(|e| format!("推送 TaskLink 到远程失败: {}", e))?;
-        task_links_synced += exec as usize;
+        task_links_inserted += exec as usize;
     }
 
     let local_project_tags = ProjectTags::find()
@@ -658,7 +863,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 ProjectTags 失败: {}", e))?;
     let project_tags_total = local_project_tags.len();
-    let mut project_tags_synced = 0usize;
+    let mut project_tags_inserted = 0usize;
     for m in local_project_tags {
         let am: project_tags::ActiveModel = m.into();
         let exec = project_tags::Entity::insert(am)
@@ -670,7 +875,7 @@ pub async fn push_to_neon(
             .exec_without_returning(&remote_db)
             .await
             .map_err(|e| format!("推送 ProjectTag 到远程失败: {}", e))?;
-        project_tags_synced += exec as usize;
+        project_tags_inserted += exec as usize;
     }
 
     let local_project_links = ProjectLinks::find()
@@ -678,7 +883,7 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 ProjectLinks 失败: {}", e))?;
     let project_links_total = local_project_links.len();
-    let mut project_links_synced = 0usize;
+    let mut project_links_inserted = 0usize;
     for m in local_project_links {
         let am: project_links::ActiveModel = m.into();
         let exec = project_links::Entity::insert(am)
@@ -693,7 +898,7 @@ pub async fn push_to_neon(
             .exec_without_returning(&remote_db)
             .await
             .map_err(|e| format!("推送 ProjectLink 到远程失败: {}", e))?;
-        project_links_synced += exec as usize;
+        project_links_inserted += exec as usize;
     }
 
     // 重点：最后更新本地 last_pushed_at，避免“部分成功导致水位错位”。
@@ -705,19 +910,19 @@ pub async fn push_to_neon(
     Ok(SyncCommandReport {
         synced_at: current_sync_start,
         tables: SyncTablesReport {
-            spaces: SyncTableReport::upsert(spaces_total, spaces_total),
-            projects: SyncTableReport::upsert(projects_total, projects_total),
-            tags: SyncTableReport::dedup(tags_total, tags_synced),
-            links: SyncTableReport::upsert(links_total, links_total),
-            tasks: SyncTableReport::upsert(tasks_total, tasks_total),
+            spaces: SyncTableReport::upsert(spaces_total, spaces_inserted, spaces_updated),
+            projects: SyncTableReport::upsert(projects_total, projects_inserted, projects_updated),
+            tags: SyncTableReport::dedup(tags_total, tags_inserted),
+            links: SyncTableReport::upsert(links_total, links_inserted, links_updated),
+            tasks: SyncTableReport::upsert(tasks_total, tasks_inserted, tasks_updated),
             task_activity_logs: SyncTableReport::dedup(
                 task_activity_logs_total,
-                task_activity_logs_synced,
+                task_activity_logs_inserted,
             ),
-            task_tags: SyncTableReport::dedup(task_tags_total, task_tags_synced),
-            task_links: SyncTableReport::dedup(task_links_total, task_links_synced),
-            project_tags: SyncTableReport::dedup(project_tags_total, project_tags_synced),
-            project_links: SyncTableReport::dedup(project_links_total, project_links_synced),
+            task_tags: SyncTableReport::dedup(task_tags_total, task_tags_inserted),
+            task_links: SyncTableReport::dedup(task_links_total, task_links_inserted),
+            project_tags: SyncTableReport::dedup(project_tags_total, project_tags_inserted),
+            project_links: SyncTableReport::dedup(project_links_total, project_links_inserted),
         },
     })
 }

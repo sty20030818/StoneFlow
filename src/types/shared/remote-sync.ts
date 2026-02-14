@@ -15,8 +15,9 @@ export type RemoteDbProfileInput = {
 
 export type RemoteSyncTableReport = {
 	total: number
-	synced: number
-	deduped: number
+	inserted: number
+	updated: number
+	skipped: number
 }
 
 export type RemoteSyncTablesReport = {

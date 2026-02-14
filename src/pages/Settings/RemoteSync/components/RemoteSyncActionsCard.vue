@@ -91,7 +91,7 @@
 							class="flex items-center justify-between gap-2 text-[10px] text-muted">
 							<div>{{ table.label }}</div>
 							<div class="shrink-0">
-								总 {{ table.total }} / 写入 {{ table.synced }} / 去重 {{ table.deduped }}
+								总 {{ table.total }} / 新增 {{ table.inserted }} / 更新 {{ table.updated }} / 跳过 {{ table.skipped }}
 							</div>
 						</div>
 					</div>
@@ -135,8 +135,9 @@
 				key: string
 				label: string
 				total: number
-				synced: number
-				deduped: number
+				inserted: number
+				updated: number
+				skipped: number
 			}>
 		}>
 		onUpdateHistoryFilter: (value: 'all' | 'push' | 'pull') => void

@@ -6,8 +6,9 @@ export type RemoteSyncTableViewItem = {
 	key: RemoteSyncTableKey
 	label: string
 	total: number
-	synced: number
-	deduped: number
+	inserted: number
+	updated: number
+	skipped: number
 }
 
 const REMOTE_SYNC_TABLE_LABELS: Record<RemoteSyncTableKey, string> = {
@@ -38,20 +39,54 @@ const REMOTE_SYNC_TABLE_ORDER: RemoteSyncTableKey[] = [
 
 export function summarizeRemoteSyncReport(report: RemoteSyncCommandReport | null, fallback: string) {
 	if (!report) return fallback
-	const tableValues = Object.values(report.tables)
-	const totalSynced = tableValues.reduce((acc, item) => acc + item.synced, 0)
-	const totalDeduped = tableValues.reduce((acc, item) => acc + item.deduped, 0)
-	const tasksSynced = report.tables.tasks.synced
-	const logsSynced = report.tables.taskActivityLogs.synced
-	return `任务 ${tasksSynced} 条，日志 ${logsSynced} 条，总写入 ${totalSynced} 条，去重 ${totalDeduped} 条`
+	const tableValues = Object.values(report.tables).map((item) => normalizeTableReportMetrics(item))
+	const totalInserted = tableValues.reduce((acc, item) => acc + item.inserted, 0)
+	const totalUpdated = tableValues.reduce((acc, item) => acc + item.updated, 0)
+	const totalSkipped = tableValues.reduce((acc, item) => acc + item.skipped, 0)
+	const tasksMetrics = normalizeTableReportMetrics(report.tables.tasks)
+	const logsMetrics = normalizeTableReportMetrics(report.tables.taskActivityLogs)
+	const tasksWrites = tasksMetrics.inserted + tasksMetrics.updated
+	const logsWrites = logsMetrics.inserted + logsMetrics.updated
+	return `任务 ${tasksWrites} 条，日志 ${logsWrites} 条，总写入 ${totalInserted + totalUpdated} 条，跳过 ${totalSkipped} 条`
 }
 
 export function toRemoteSyncTableViewItems(report: RemoteSyncCommandReport): RemoteSyncTableViewItem[] {
 	return REMOTE_SYNC_TABLE_ORDER.map((key) => ({
 		key,
 		label: REMOTE_SYNC_TABLE_LABELS[key],
-		total: report.tables[key].total,
-		synced: report.tables[key].synced,
-		deduped: report.tables[key].deduped,
+		...normalizeTableReportMetrics(report.tables[key]),
 	}))
+}
+
+function normalizeTableReportMetrics(input: unknown) {
+	const source = (input ?? {}) as Partial<{
+		total: unknown
+		inserted: unknown
+		updated: unknown
+		skipped: unknown
+		synced: unknown
+		deduped: unknown
+	}>
+	const total = toSafeNumber(source.total)
+	const inserted = toSafeNumber(source.inserted ?? source.synced)
+	const updated = toSafeNumber(source.updated)
+	const skippedCandidate = source.skipped ?? source.deduped
+	const skipped = skippedCandidate === undefined ? Math.max(total - inserted - updated, 0) : toSafeNumber(skippedCandidate)
+	return {
+		total,
+		inserted,
+		updated,
+		skipped,
+	}
+}
+
+function toSafeNumber(value: unknown) {
+	if (typeof value === 'number' && Number.isFinite(value)) {
+		return value
+	}
+	if (typeof value === 'string') {
+		const parsed = Number(value)
+		if (Number.isFinite(parsed)) return parsed
+	}
+	return 0
 }
