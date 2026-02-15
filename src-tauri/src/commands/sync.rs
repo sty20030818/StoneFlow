@@ -107,7 +107,9 @@ async fn get_remote_db(database_url: &str) -> Result<sea_orm::DatabaseConnection
 async fn get_sync_time(db: &sea_orm::DatabaseConnection, key: &str) -> Result<i64, sea_orm::DbErr> {
     let setting = AppSettings::find_by_id(key).one(db).await?;
     if let Some(s) = setting {
-        Ok(s.value.parse::<i64>().unwrap_or(0))
+        s.value.parse::<i64>().map_err(|error| {
+            sea_orm::DbErr::Custom(format!("解析同步时间失败 key={} value={} error={}", key, s.value, error))
+        })
     } else {
         Ok(0)
     }

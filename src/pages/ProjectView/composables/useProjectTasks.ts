@@ -27,7 +27,8 @@ export function useProjectTasks(
 	const loading = ref(true)
 	const todo = ref<TaskDto[]>([])
 	const doneAll = ref<TaskDto[]>([])
-	const { loadedProjectScopes, projectSnapshots: snapshotByScope } = useTaskSnapshotState()
+	const { loadedProjectScopes, projectSnapshots: snapshotByScope, setProjectSnapshot } = useTaskSnapshotState()
+	let latestRequestId = 0
 
 	const scopeKey = computed(() => {
 		const sid = toValue(spaceId) ?? '_all_spaces'
@@ -42,6 +43,7 @@ export function useProjectTasks(
 	 */
 	async function refresh(silent = false) {
 		const nextScopeKey = scopeKey.value
+		const requestId = ++latestRequestId
 		const useSilent = silent && loadedProjectScopes.value.has(nextScopeKey)
 		if (!useSilent) loading.value = true
 		try {
@@ -55,20 +57,21 @@ export function useProjectTasks(
 				listTasks({ ...params, status: 'todo' }),
 				listTasks({ ...params, status: 'done' }),
 			])
+			// 只接受当前作用域的最新请求结果，避免旧请求覆盖新视图。
+			if (requestId !== latestRequestId || nextScopeKey !== scopeKey.value) return
 
 			todo.value = todoRows
 			doneAll.value = doneRows
-			snapshotByScope.value = {
-				...snapshotByScope.value,
-				[nextScopeKey]: { todo: todoRows, doneAll: doneRows },
-			}
+			setProjectSnapshot(nextScopeKey, { todo: todoRows, doneAll: doneRows })
 		} catch (e) {
+			if (requestId !== latestRequestId || nextScopeKey !== scopeKey.value) return
 			toast.add({
 				title: '加载失败',
 				description: e instanceof Error ? e.message : '未知错误',
 				color: 'error',
 			})
 		} finally {
+			if (requestId !== latestRequestId || nextScopeKey !== scopeKey.value) return
 			loadedProjectScopes.value = new Set(loadedProjectScopes.value).add(nextScopeKey)
 			if (!useSilent) loading.value = false
 		}

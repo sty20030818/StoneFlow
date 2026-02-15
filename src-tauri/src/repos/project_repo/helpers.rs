@@ -1,7 +1,7 @@
 //! Project 仓储辅助函数。
 //! 重点：将“可复用但不对外暴露”的逻辑集中在 helper，保持主 repo 可读。
 
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::db::entities::projects;
 use crate::repos::{
@@ -67,12 +67,15 @@ pub async fn attach_tags(
     Ok(())
 }
 
-pub async fn build_project_path(
-    conn: &DatabaseConnection,
+pub async fn build_project_path<C>(
+    conn: &C,
     space_id: &str,
     parent_id: Option<&str>,
     title: &str,
-) -> Result<String, AppError> {
+) -> Result<String, AppError>
+where
+    C: ConnectionTrait,
+{
     // 重点：path 基于父路径拼接，属于“冗余但高读性能”字段。
     if let Some(parent_id) = parent_id {
         let parent = projects::Entity::find_by_id(parent_id)

@@ -9,7 +9,9 @@ use serde::Deserialize;
 use tauri::State;
 
 use crate::db::DbState;
-use crate::repos::task_repo::{TaskRepo, TaskUpdateInput, TaskUpdatePatch as RepoTaskUpdatePatch};
+use crate::repos::task_repo::{
+    TaskCreatePatchInput, TaskRepo, TaskUpdateInput, TaskUpdatePatch as RepoTaskUpdatePatch,
+};
 use crate::types::{
     dto::{CustomFieldsDto, LinkInputDto, TaskDto},
     error::ApiError,
@@ -84,6 +86,51 @@ pub async fn create_task(
         &args.title,
         auto_start,
         args.project_id.as_deref(),
+    )
+    .await
+    .map_err(ApiError::from)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateTaskWithPatchArgs {
+    pub space_id: String,
+    pub title: String,
+    pub auto_start: Option<bool>,
+    pub project_id: Option<String>,
+    pub status: Option<String>,
+    pub done_reason: Option<String>,
+    pub priority: Option<String>,
+    pub note: Option<String>,
+    pub deadline_at: Option<i64>,
+    pub tags: Option<Vec<String>>,
+    pub links: Option<Vec<LinkInputDto>>,
+    pub custom_fields: Option<CustomFieldsDto>,
+}
+
+#[tauri::command]
+pub async fn create_task_with_patch(
+    state: State<'_, DbState>,
+    args: CreateTaskWithPatchArgs,
+) -> Result<TaskDto, ApiError> {
+    let auto_start = args.auto_start.unwrap_or(true);
+    let patch = TaskCreatePatchInput {
+        status: args.status,
+        done_reason: args.done_reason,
+        priority: args.priority,
+        note: args.note,
+        deadline_at: args.deadline_at,
+        tags: args.tags,
+        links: args.links,
+        custom_fields: args.custom_fields,
+    };
+    TaskRepo::create_with_patch(
+        &state.conn,
+        &args.space_id,
+        &args.title,
+        auto_start,
+        args.project_id.as_deref(),
+        patch,
     )
     .await
     .map_err(ApiError::from)

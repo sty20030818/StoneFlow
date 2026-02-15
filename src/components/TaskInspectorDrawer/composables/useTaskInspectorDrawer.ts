@@ -29,7 +29,12 @@ export function useTaskInspectorDrawer() {
 		taskTick: computed(() => refreshSignals.taskTick),
 	})
 
-	useTaskInspectorSync({ currentTask, projectsStore, state })
+	useTaskInspectorSync({
+		currentTask,
+		projectsStore,
+		state,
+		onTaskContextChange: actions.onTaskContextChange,
+	})
 
 	const isOpen = computed({
 		get: () => store.isOpen as boolean,

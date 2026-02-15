@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
-    QueryOrder, Set,
+    QueryOrder, QuerySelect, Set,
 };
 use uuid::Uuid;
 
@@ -41,7 +41,12 @@ pub struct ListActivityLogsInput {
     pub project_id: Option<String>,
     pub from: Option<i64>,
     pub to: Option<i64>,
+    pub limit: Option<u64>,
+    pub offset: Option<u64>,
 }
+
+const DEFAULT_LIST_LIMIT: u64 = 100;
+const MAX_LIST_LIMIT: u64 = 500;
 
 impl ActivityLogRepo {
     pub async fn append<C>(conn: &C, input: NewTaskActivityLogInput) -> Result<(), AppError>
@@ -100,8 +105,13 @@ impl ActivityLogRepo {
             query = query.filter(task_activity_logs::Column::CreatedAt.lte(to));
         }
 
+        let limit = input.limit.unwrap_or(DEFAULT_LIST_LIMIT).min(MAX_LIST_LIMIT);
+        let offset = input.offset.unwrap_or(0);
+
         let logs = query
             .order_by_desc(task_activity_logs::Column::CreatedAt)
+            .limit(limit)
+            .offset(offset)
             .all(conn)
             .await
             .map_err(AppError::from)?;

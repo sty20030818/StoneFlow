@@ -16,6 +16,8 @@ pub struct ListActivityLogsArgs {
     pub project_id: Option<String>,
     pub from: Option<i64>,
     pub to: Option<i64>,
+    pub limit: Option<u64>,
+    pub offset: Option<u64>,
 }
 
 #[tauri::command]
@@ -32,6 +34,8 @@ pub async fn list_activity_logs(
             project_id: args.project_id,
             from: args.from,
             to: args.to,
+            limit: args.limit,
+            offset: args.offset,
         },
     )
     .await

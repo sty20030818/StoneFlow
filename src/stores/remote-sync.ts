@@ -32,6 +32,14 @@ function logError(...args: unknown[]) {
 	void args
 }
 
+function cloneSettings(input: RemoteSyncSettings): RemoteSyncSettings {
+	return structuredClone({
+		profiles: input.profiles,
+		activeProfileId: input.activeProfileId,
+		syncHistory: input.syncHistory,
+	})
+}
+
 export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	const loaded = ref(false)
 	const state = reactive<RemoteSyncSettings>({
@@ -44,19 +52,37 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	const hasProfiles = computed(() => state.profiles.length > 0)
 	const syncHistory = computed(() => state.syncHistory)
 
+	function applySettings(next: RemoteSyncSettings) {
+		state.profiles = next.profiles
+		state.activeProfileId = next.activeProfileId
+		state.syncHistory = next.syncHistory
+	}
+
+	async function persistSettings(next: RemoteSyncSettings) {
+		await remoteSyncStore.set('remoteSync', next)
+		await remoteSyncStore.save()
+	}
+
+	async function commitSettings(next: RemoteSyncSettings) {
+		await persistSettings(next)
+		applySettings(next)
+	}
+
 	async function load() {
 		log('load:start')
 		try {
-			const val = await remoteSyncStore.get<RemoteSyncSettings>('remoteSync')
-			if (val) {
-				Object.assign(state, val)
+			const stored = await remoteSyncStore.get<RemoteSyncSettings>('remoteSync')
+			const storedProfiles = stored?.profiles
+			const storedSyncHistory = stored?.syncHistory
+			const next: RemoteSyncSettings = {
+				profiles: Array.isArray(storedProfiles) ? storedProfiles : [],
+				activeProfileId: stored?.activeProfileId ?? null,
+				syncHistory: Array.isArray(storedSyncHistory) ? storedSyncHistory : [],
 			}
-			if (state.activeProfileId && !state.profiles.some((p) => p.id === state.activeProfileId)) {
-				state.activeProfileId = state.profiles[0]?.id ?? null
+			if (next.activeProfileId && !next.profiles.some((p) => p.id === next.activeProfileId)) {
+				next.activeProfileId = next.profiles[0]?.id ?? null
 			}
-			if (!Array.isArray(state.syncHistory)) {
-				state.syncHistory = []
-			}
+			applySettings(next)
 			loaded.value = true
 			log('load:done', {
 				count: state.profiles.length,
@@ -71,8 +97,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	async function save() {
 		log('save:start')
 		try {
-			await remoteSyncStore.set('remoteSync', { ...state })
-			await remoteSyncStore.save()
+			await commitSettings(cloneSettings(state))
 			log('save:done')
 		} catch (error) {
 			logError('save:error', error)
@@ -95,15 +120,19 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 			createdAt: now,
 			updatedAt: now,
 		}
-		state.profiles.push(profile)
+		const next = cloneSettings(state)
+		next.profiles.push(profile)
 		if (options?.activate ?? true) {
-			state.activeProfileId = id
+			next.activeProfileId = id
 		}
 		try {
 			await setRemoteSyncSecret(id, input.url.trim())
-			await save()
+			await commitSettings(next)
 			log('addProfile:done', { id })
 		} catch (error) {
+			await removeRemoteSyncSecret(id).catch((rollbackError) => {
+				logError('addProfile:rollback-secret:error', rollbackError)
+			})
 			logError('addProfile:error', error)
 			throw error
 		}
@@ -112,11 +141,12 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 
 	async function updateProfileName(profileId: string, name: string) {
 		log('updateProfileName:start', { profileId })
-		const profile = state.profiles.find((p) => p.id === profileId)
+		const next = cloneSettings(state)
+		const profile = next.profiles.find((p) => p.id === profileId)
 		if (!profile) return
 		profile.name = normalizeName(name)
 		profile.updatedAt = nowIso()
-		await save()
+		await commitSettings(next)
 		log('updateProfileName:done', { profileId })
 	}
 
@@ -124,12 +154,32 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		log('updateProfileUrl:start', { profileId })
 		const profile = state.profiles.find((p) => p.id === profileId)
 		if (!profile) return
+
+		let previousSecretLoaded = false
+		let previousSecret: string | null = null
+		try {
+			previousSecret = await getRemoteSyncSecret(profileId)
+			previousSecretLoaded = true
+		} catch (error) {
+			logError('updateProfileUrl:load-previous-secret:error', error)
+		}
+
+		const next = cloneSettings(state)
+		const target = next.profiles.find((p) => p.id === profileId)
+		if (!target) return
+		target.updatedAt = nowIso()
+
 		try {
 			await setRemoteSyncSecret(profileId, url.trim())
-			profile.updatedAt = nowIso()
-			await save()
+			await commitSettings(next)
 			log('updateProfileUrl:done', { profileId })
 		} catch (error) {
+			if (previousSecretLoaded) {
+				const rollback = previousSecret ? setRemoteSyncSecret(profileId, previousSecret) : removeRemoteSyncSecret(profileId)
+				await rollback.catch((rollbackError) => {
+					logError('updateProfileUrl:rollback-secret:error', rollbackError)
+				})
+			}
 			logError('updateProfileUrl:error', error)
 			throw error
 		}
@@ -137,29 +187,49 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 
 	async function setActiveProfile(profileId: string | null) {
 		log('setActiveProfile:start', { profileId })
+		const next = cloneSettings(state)
 		if (!profileId) {
-			state.activeProfileId = null
-			await save()
+			next.activeProfileId = null
+			await commitSettings(next)
 			log('setActiveProfile:cleared')
 			return
 		}
-		if (!state.profiles.some((p) => p.id === profileId)) return
-		state.activeProfileId = profileId
-		await save()
+		if (!next.profiles.some((p) => p.id === profileId)) return
+		next.activeProfileId = profileId
+		await commitSettings(next)
 		log('setActiveProfile:done', { profileId })
 	}
 
 	async function removeProfile(profileId: string) {
 		log('removeProfile:start', { profileId })
-		state.profiles = state.profiles.filter((p) => p.id !== profileId)
-		if (state.activeProfileId === profileId) {
-			state.activeProfileId = state.profiles[0]?.id ?? null
+		const exists = state.profiles.some((p) => p.id === profileId)
+		if (!exists) return
+
+		let previousSecretLoaded = false
+		let previousSecret: string | null = null
+		try {
+			previousSecret = await getRemoteSyncSecret(profileId)
+			previousSecretLoaded = true
+		} catch (error) {
+			logError('removeProfile:load-previous-secret:error', error)
 		}
+
+		const next = cloneSettings(state)
+		next.profiles = next.profiles.filter((p) => p.id !== profileId)
+		if (next.activeProfileId === profileId) {
+			next.activeProfileId = next.profiles[0]?.id ?? null
+		}
+
 		try {
 			await removeRemoteSyncSecret(profileId)
-			await save()
+			await commitSettings(next)
 			log('removeProfile:done', { profileId })
 		} catch (error) {
+			if (previousSecretLoaded && previousSecret) {
+				await setRemoteSyncSecret(profileId, previousSecret).catch((rollbackError) => {
+					logError('removeProfile:rollback-secret:error', rollbackError)
+				})
+			}
 			logError('removeProfile:error', error)
 			throw error
 		}
@@ -177,8 +247,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		}
 		if (created.length === 0) return created
 		if (!state.activeProfileId) {
-			state.activeProfileId = created[0].id
-			await save()
+			await setActiveProfile(created[0].id)
 		}
 		log('importProfiles:done', { created: created.length })
 		return created
@@ -225,19 +294,21 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 			report: input.report,
 			createdAt: nowIso(),
 		}
-		state.syncHistory = [item, ...state.syncHistory].slice(0, SYNC_HISTORY_LIMIT)
-		await save()
+		const next = cloneSettings(state)
+		next.syncHistory = [item, ...next.syncHistory].slice(0, SYNC_HISTORY_LIMIT)
+		await commitSettings(next)
 		log('appendSyncHistory:done', { total: state.syncHistory.length })
 	}
 
 	async function clearSyncHistory(direction?: RemoteSyncDirection) {
 		log('clearSyncHistory:start', { direction: direction ?? 'all' })
+		const next = cloneSettings(state)
 		if (!direction) {
-			state.syncHistory = []
+			next.syncHistory = []
 		} else {
-			state.syncHistory = state.syncHistory.filter((item) => item.direction !== direction)
+			next.syncHistory = next.syncHistory.filter((item) => item.direction !== direction)
 		}
-		await save()
+		await commitSettings(next)
 		log('clearSyncHistory:done', { total: state.syncHistory.length })
 	}
 

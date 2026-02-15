@@ -86,6 +86,36 @@ export async function createTask(args: CreateTaskArgs): Promise<TaskDto> {
 	})
 }
 
+export type CreateTaskWithPatchArgs = CreateTaskArgs & {
+	status?: TaskStatus
+	doneReason?: TaskDoneReason | null
+	priority?: TaskPriorityValue
+	note?: string | null
+	deadlineAt?: number | null
+	tags?: string[]
+	links?: LinkInput[]
+	customFields?: CustomFields | null
+}
+
+export async function createTaskWithPatch(args: CreateTaskWithPatchArgs): Promise<TaskDto> {
+	return await tauriInvoke<TaskDto>('create_task_with_patch', {
+		args: {
+			spaceId: args.spaceId,
+			title: args.title,
+			autoStart: args.autoStart,
+			projectId: args.projectId ?? null,
+			status: args.status,
+			doneReason: args.doneReason ?? undefined,
+			priority: args.priority,
+			note: args.note ?? undefined,
+			deadlineAt: args.deadlineAt ?? undefined,
+			tags: args.tags,
+			links: args.links,
+			customFields: args.customFields ?? undefined,
+		},
+	})
+}
+
 export type UpdateTaskPatch = {
 	title?: string
 	status?: TaskStatus

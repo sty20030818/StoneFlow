@@ -23,8 +23,8 @@ use commands::projects::{
 use commands::spaces::list_spaces;
 use commands::sync::{pull_from_neon, push_to_neon, test_neon_connection};
 use commands::tasks::{
-    complete_task, create_task, delete_tasks, list_deleted_tasks, list_tasks, rebalance_ranks,
-    reorder_task, restore_tasks, update_task,
+    complete_task, create_task, create_task_with_patch, delete_tasks, list_deleted_tasks,
+    list_tasks, rebalance_ranks, reorder_task, restore_tasks, update_task,
 };
 use tauri::Manager;
 
@@ -68,6 +68,7 @@ pub fn run() {
             list_tasks,
             list_deleted_tasks,
             create_task,
+            create_task_with_patch,
             update_task,
             complete_task,
             delete_tasks,

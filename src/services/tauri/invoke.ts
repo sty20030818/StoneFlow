@@ -52,13 +52,34 @@ function normalizeInvokeError(err: unknown): ApiError {
 	return new ApiError('未知错误')
 }
 
+const SENSITIVE_KEYS = ['databaseurl', 'token', 'password']
+
+function shouldRedactKey(key: string): boolean {
+	const lower = key.toLowerCase()
+	return SENSITIVE_KEYS.some((sensitive) => lower.includes(sensitive))
+}
+
+function redactSensitiveArgs(input: unknown): unknown {
+	if (Array.isArray(input)) {
+		return input.map((item) => redactSensitiveArgs(item))
+	}
+	if (input && typeof input === 'object') {
+		const result: Record<string, unknown> = {}
+		for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+			result[key] = shouldRedactKey(key) ? '[REDACTED]' : redactSensitiveArgs(value)
+		}
+		return result
+	}
+	return input
+}
+
 export async function tauriInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
 	try {
 		return await invoke<T>(command, args)
 	} catch (err) {
 		const apiErr = normalizeInvokeError(err)
 		// 统一留痕：避免 silent fail
-		console.error('[tauriInvoke]', command, args, apiErr)
+		console.error('[tauriInvoke]', command, redactSensitiveArgs(args), apiErr)
 		throw apiErr
 	}
 }

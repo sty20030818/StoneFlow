@@ -17,8 +17,9 @@ export function useTaskInspectorSync(params: {
 	currentTask: Ref<TaskDto | null>
 	projectsStore: ReturnType<typeof useProjectsStore>
 	state: TaskInspectorState
+	onTaskContextChange?: (previousTaskId: string | null, nextTaskId: string | null) => void
 }) {
-	const { currentTask, projectsStore, state } = params
+	const { currentTask, projectsStore, state, onTaskContextChange } = params
 	const syncedTaskId = ref<string | null>(null)
 
 	function syncTaskToLocal(task: TaskDto, forceEditable: boolean) {
@@ -72,6 +73,7 @@ export function useTaskInspectorSync(params: {
 			if (task) {
 				const switchedTask = syncedTaskId.value !== task.id
 				if (switchedTask) {
+					onTaskContextChange?.(syncedTaskId.value, task.id)
 					state.timelineCollapsed.value = true
 					state.resetTextInteractionState()
 					syncedTaskId.value = task.id

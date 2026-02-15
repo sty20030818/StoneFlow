@@ -314,25 +314,83 @@ impl ProjectRepo {
         new_rank: i64,
         new_parent_id: Option<Option<&str>>,
     ) -> Result<(), AppError> {
+        let txn = conn.begin().await.map_err(AppError::from)?;
         let model = projects::Entity::find_by_id(project_id)
-            .one(conn)
+            .one(&txn)
             .await
             .map_err(AppError::from)?
             .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
 
         let now = now_ms();
+        let old_path = model.path.clone();
+        let old_parent_id = model.parent_id.clone();
+        let target_parent_id = new_parent_id.map(|value| value.map(|s| s.to_string()));
+        let mut path_changed = false;
+        let mut next_path = old_path.clone();
 
-        let mut active_model: projects::ActiveModel = model.into();
+        let mut active_model: projects::ActiveModel = model.clone().into();
         active_model.rank = Set(new_rank);
         active_model.updated_at = Set(now);
 
-        // 如果需要更新 parentId
-        if let Some(parent_opt) = new_parent_id {
-            active_model.parent_id = Set(parent_opt.map(|s| s.to_string()));
-            // TODO: 更新 path（需要重新计算）
+        if let Some(parent_id) = target_parent_id {
+            active_model.parent_id = Set(parent_id.clone());
+            if old_parent_id != parent_id {
+                next_path = helpers::build_project_path(
+                    &txn,
+                    &model.space_id,
+                    parent_id.as_deref(),
+                    &model.title,
+                )
+                .await?;
+                active_model.path = Set(next_path.clone());
+                path_changed = true;
+            }
         }
 
-        active_model.update(conn).await.map_err(AppError::from)?;
+        active_model.update(&txn).await.map_err(AppError::from)?;
+
+        if path_changed {
+            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now).await?;
+        }
+
+        txn.commit().await.map_err(AppError::from)?;
+        Ok(())
+    }
+
+    async fn rebase_descendant_paths<C>(
+        conn: &C,
+        space_id: &str,
+        old_root_path: &str,
+        new_root_path: &str,
+        now: i64,
+    ) -> Result<(), AppError>
+    where
+        C: ConnectionTrait,
+    {
+        if old_root_path == new_root_path {
+            return Ok(());
+        }
+
+        let old_prefix = format!("{old_root_path}/");
+        let descendants = projects::Entity::find()
+            .filter(projects::Column::SpaceId.eq(space_id))
+            .filter(projects::Column::Path.starts_with(old_prefix))
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        for model in descendants {
+            let suffix = model
+                .path
+                .strip_prefix(old_root_path)
+                .unwrap_or("")
+                .to_string();
+            let mut active_model: projects::ActiveModel = model.into();
+            active_model.path = Set(format!("{new_root_path}{suffix}"));
+            active_model.updated_at = Set(now);
+            active_model.update(conn).await.map_err(AppError::from)?;
+        }
+
         Ok(())
     }
 

@@ -33,7 +33,7 @@ pub mod tags;
 pub mod update;
 pub mod validations;
 
-pub use create::create;
+pub use create::{create, create_with_patch, TaskCreatePatchInput};
 pub use delete::{delete_many, restore_many};
 pub use list::list;
 pub use update::update;
@@ -102,6 +102,17 @@ impl TaskRepo {
         project_id: Option<&str>,
     ) -> Result<TaskDto, AppError> {
         create(conn, space_id, title, auto_start, project_id).await
+    }
+
+    pub async fn create_with_patch(
+        conn: &DatabaseConnection,
+        space_id: &str,
+        title: &str,
+        auto_start: bool,
+        project_id: Option<&str>,
+        patch: TaskCreatePatchInput,
+    ) -> Result<TaskDto, AppError> {
+        create_with_patch(conn, space_id, title, auto_start, project_id, patch).await
     }
 
     pub async fn complete(conn: &DatabaseConnection, id: &str) -> Result<(), AppError> {

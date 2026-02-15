@@ -36,10 +36,9 @@ export function useTaskInspectorActions(params: {
 }) {
 	const { currentTask, state, store, projectsStore, refreshSignals } = params
 
-	let stagedPatch: UpdateTaskPatch = {}
-	let stagedStorePatch: Partial<TaskDto> = {}
+	let stagedByTask = new Map<string, { patch: UpdateTaskPatch; storePatch: Partial<TaskDto> }>()
 	let queueRunning = false
-	let retrySnapshot: { patch: UpdateTaskPatch; storePatch: Partial<TaskDto> } | null = null
+	let retrySnapshot: { taskId: string; patch: UpdateTaskPatch; storePatch: Partial<TaskDto> } | null = null
 
 	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
 		() => {
@@ -80,37 +79,54 @@ export function useTaskInspectorActions(params: {
 		startErrorTimer()
 	}
 
-	function stageUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
-		if (!hasPatchValue(patch)) return
-		stagedPatch = {
-			...stagedPatch,
-			...patch,
+	function getCurrentTaskId(): string | null {
+		return currentTask.value?.id ?? null
+	}
+
+	function logDiscardedPatch(taskId: string, activeTaskId: string | null) {
+		console.warn('[TaskInspector] 丢弃过期补丁', { patchTaskId: taskId, activeTaskId })
+	}
+
+	function stageUpdate(taskId: string | null, patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): boolean {
+		if (!taskId || !hasPatchValue(patch)) return false
+		const current = stagedByTask.get(taskId)
+		stagedByTask.set(taskId, {
+			patch: {
+				...(current?.patch ?? {}),
+				...patch,
+			},
+			storePatch: {
+				...(current?.storePatch ?? {}),
+				...storePatch,
+			},
+		})
+		return true
+	}
+
+	function queueImmediateUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}, taskId = getCurrentTaskId()) {
+		if (!stageUpdate(taskId, patch, storePatch)) return
+		void processQueuedUpdates(taskId)
+	}
+
+	function queueDebouncedUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}, taskId = getCurrentTaskId()) {
+		if (!stageUpdate(taskId, patch, storePatch)) return
+		void processQueuedUpdates(taskId)
+	}
+
+	async function commitUpdateNow(taskId: string, patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): Promise<boolean> {
+		if (!hasPatchValue(patch)) return true
+		const activeTaskId = getCurrentTaskId()
+		if (activeTaskId && activeTaskId !== taskId) {
+			logDiscardedPatch(taskId, activeTaskId)
+			return true
 		}
-		stagedStorePatch = {
-			...stagedStorePatch,
-			...storePatch,
-		}
-	}
-
-	function queueImmediateUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
-		stageUpdate(patch, storePatch)
-		void processQueuedUpdates()
-	}
-
-	function queueDebouncedUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}) {
-		stageUpdate(patch, storePatch)
-		void processQueuedUpdates()
-	}
-
-	async function commitUpdateNow(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): Promise<boolean> {
-		if (!currentTask.value || !hasPatchValue(patch)) return true
 		beginSave()
 
 		let ok = false
 		let lastError: unknown = null
 		for (let attempt = 0; attempt < 2; attempt += 1) {
 			try {
-				await updateTask(currentTask.value.id, patch)
+				await updateTask(taskId, patch)
 				ok = true
 				break
 			} catch (error) {
@@ -119,7 +135,7 @@ export function useTaskInspectorActions(params: {
 		}
 
 		if (ok) {
-			if (Object.keys(storePatch).length > 0) {
+			if (Object.keys(storePatch).length > 0 && getCurrentTaskId() === taskId) {
 				store.patchTask(storePatch)
 			}
 			refreshSignals.bumpTask()
@@ -132,25 +148,41 @@ export function useTaskInspectorActions(params: {
 		return false
 	}
 
-	async function processQueuedUpdates() {
+	function clearQueuedUpdates(exceptTaskId: string | null = null) {
+		if (!exceptTaskId) {
+			stagedByTask.clear()
+			return
+		}
+		stagedByTask = new Map([...stagedByTask.entries()].filter(([taskId]) => taskId === exceptTaskId))
+	}
+
+	function hasQueuedPatch(taskId: string | null): boolean {
+		if (!taskId) return false
+		const staged = stagedByTask.get(taskId)
+		return Boolean(staged && hasPatchValue(staged.patch))
+	}
+
+	async function processQueuedUpdates(targetTaskId = getCurrentTaskId()) {
 		if (queueRunning) return
 		queueRunning = true
 
 		try {
-			while (hasPatchValue(stagedPatch)) {
-				const nextPatch = stagedPatch
-				const nextStorePatch = stagedStorePatch
-				stagedPatch = {}
-				stagedStorePatch = {}
+			while (targetTaskId && hasQueuedPatch(targetTaskId)) {
+				const staged = stagedByTask.get(targetTaskId)
+				if (!staged) break
+				const nextPatch = staged.patch
+				const nextStorePatch = staged.storePatch
+				stagedByTask.delete(targetTaskId)
 
-				const ok = await commitUpdateNow(nextPatch, nextStorePatch)
+				const ok = await commitUpdateNow(targetTaskId, nextPatch, nextStorePatch)
 				if (!ok) {
-					stageUpdate(nextPatch, nextStorePatch)
+					stageUpdate(targetTaskId, nextPatch, nextStorePatch)
 					retrySnapshot = {
-						patch: { ...stagedPatch },
-						storePatch: { ...stagedStorePatch },
+						taskId: targetTaskId,
+						patch: { ...nextPatch },
+						storePatch: { ...nextStorePatch },
 					}
-					state.retrySaveAvailable.value = true
+					state.retrySaveAvailable.value = getCurrentTaskId() === targetTaskId
 					break
 				}
 
@@ -159,6 +191,18 @@ export function useTaskInspectorActions(params: {
 			}
 		} finally {
 			queueRunning = false
+			const activeTaskId = getCurrentTaskId()
+			if (activeTaskId && hasQueuedPatch(activeTaskId))
+				void processQueuedUpdates(activeTaskId)
+		}
+	}
+
+	function onTaskContextChange(previousTaskId: string | null, nextTaskId: string | null) {
+		if (!previousTaskId || previousTaskId === nextTaskId) return
+		clearQueuedUpdates(nextTaskId)
+		if (retrySnapshot && retrySnapshot.taskId !== nextTaskId) {
+			retrySnapshot = null
+			state.retrySaveAvailable.value = false
 		}
 	}
 
@@ -270,11 +314,12 @@ export function useTaskInspectorActions(params: {
 	)
 
 	async function flushPendingUpdates() {
+		const taskId = getCurrentTaskId()
 		stageTitleUpdate('immediate')
 		stageNoteUpdate('immediate')
 		stageLinksUpdate('immediate')
 		stageCustomFieldsUpdate('immediate')
-		await processQueuedUpdates()
+		await processQueuedUpdates(taskId)
 	}
 
 	async function onTitleBlur() {
@@ -292,6 +337,7 @@ export function useTaskInspectorActions(params: {
 
 	function onTitleCompositionEnd() {
 		state.markTextCompositionEnd('title')
+		void flushPendingUpdates()
 	}
 
 	async function onStatusChange(value: unknown) {
@@ -414,6 +460,7 @@ export function useTaskInspectorActions(params: {
 
 	function onNoteCompositionEnd() {
 		state.markTextCompositionEnd('note')
+		void flushPendingUpdates()
 	}
 
 	function addLink(): boolean {
@@ -465,6 +512,7 @@ export function useTaskInspectorActions(params: {
 
 	function onLinksCompositionEnd() {
 		state.markTextCompositionEnd('links')
+		void flushPendingUpdates()
 	}
 
 	function addCustomField() {
@@ -520,12 +568,13 @@ export function useTaskInspectorActions(params: {
 
 	function onCustomFieldsCompositionEnd() {
 		state.markTextCompositionEnd('customFields')
+		void flushPendingUpdates()
 	}
 
 	async function onRetrySave() {
 		if (!retrySnapshot) return
-		queueImmediateUpdate(retrySnapshot.patch, retrySnapshot.storePatch)
-		await processQueuedUpdates()
+		queueImmediateUpdate(retrySnapshot.patch, retrySnapshot.storePatch, retrySnapshot.taskId)
+		await processQueuedUpdates(retrySnapshot.taskId)
 	}
 
 	function toggleTimeline() {
@@ -593,5 +642,6 @@ export function useTaskInspectorActions(params: {
 		flushPendingUpdates,
 		resetTextInteractionState,
 		toggleTimeline,
+		onTaskContextChange,
 	}
 }

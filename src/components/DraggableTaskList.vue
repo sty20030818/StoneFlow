@@ -81,6 +81,7 @@
 	// 本地任务列表副本，用于拖拽
 	const localTasks = ref<TaskDto[]>([])
 	const listItemMotionById = ref<Record<string, MotionVariants<string>>>({})
+	const taskSyncKey = computed(() => props.tasks.map((task) => `${task.id}:${task.updatedAt}:${task.rank}`).join('|'))
 
 	// 仅在任务 ID 集合变化时生成新的入场 variants，避免回流时重复触发“再次入场”。
 	watch(
@@ -131,8 +132,8 @@
 	 * 只在任务 ID 集合变化时同步（新增/删除），避免拖拽后的顺序被覆盖
 	 */
 	watch(
-		() => props.tasks,
-		(newTasks) => {
+		[taskSyncKey, () => props.tasks] as const,
+		([, newTasks]) => {
 			const oldIds = new Set(localTasks.value.map((t) => t.id))
 			const newIds = new Set(newTasks.map((t) => t.id))
 
@@ -155,7 +156,7 @@
 			// ID 集合变化，完全重新同步（按 rank 排序）
 			localTasks.value = [...newTasks].sort((a, b) => a.rank - b.rank)
 		},
-		{ immediate: true, deep: true },
+		{ immediate: true },
 	)
 
 	// sortablejs group 配置：同一优先级内可自由拖拽排序

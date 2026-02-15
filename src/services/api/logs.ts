@@ -26,6 +26,8 @@ export type ListActivityLogsArgs = {
 	projectId?: string
 	from?: number
 	to?: number
+	limit?: number
+	offset?: number
 }
 
 type ActivityLogDto = {
@@ -58,6 +60,8 @@ export async function listActivityLogs(args: ListActivityLogsArgs = {}): Promise
 			projectId: args.projectId,
 			from: args.from,
 			to: args.to,
+			limit: args.limit,
+			offset: args.offset,
 		},
 	})
 

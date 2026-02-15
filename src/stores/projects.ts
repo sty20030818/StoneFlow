@@ -56,7 +56,9 @@ export const useProjectsStore = defineStore('projects', () => {
 		const normalizedData = data.map(normalizeProject)
 		projects.value = projects.value.filter((p) => p.spaceId !== spaceId).concat(normalizedData)
 		snapshotBySpace.value = { ...snapshotBySpace.value, [spaceId]: normalizedData }
-		loadedSpaceIds.value.add(spaceId)
+		const nextLoaded = new Set(loadedSpaceIds.value)
+		nextLoaded.add(spaceId)
+		loadedSpaceIds.value = nextLoaded
 	}
 
 	async function load(spaceId: string, options: { force?: boolean } = {}) {

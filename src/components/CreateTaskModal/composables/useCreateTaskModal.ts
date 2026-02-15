@@ -10,9 +10,8 @@ import type {
 	TaskDoneReason,
 	TaskDto,
 	TaskStatus,
-	UpdateTaskPatch,
 } from '@/services/api/tasks'
-import { createTask, updateTask } from '@/services/api/tasks'
+import { createTaskWithPatch } from '@/services/api/tasks'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
@@ -325,60 +324,31 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		loading.value = true
 		try {
 			const projectId = form.value.projectId ?? defaultProjectId.value
+			const tags = normalizeTags(form.value.tags)
+			const links = normalizeLinks(form.value.links)
+			const customFields = normalizeCustomFields(form.value.customFields)
+			const deadlineAt = form.value.deadlineDate
+				? (() => {
+						const date = new Date(form.value.deadlineDate)
+						date.setHours(0, 0, 0, 0)
+						return date.getTime()
+					})()
+				: null
 
-			const task = await createTask({
+			const task = await createTaskWithPatch({
 				spaceId: form.value.spaceId,
 				title: form.value.title.trim(),
 				autoStart: false,
 				projectId,
+				status: form.value.status,
+				doneReason: form.value.status === 'done' ? form.value.doneReason : null,
+				priority: form.value.priority,
+				note: form.value.note?.trim() ? form.value.note.trim() : null,
+				deadlineAt,
+				tags: tags.length > 0 ? tags : undefined,
+				links: links.length > 0 ? links : undefined,
+				customFields: customFields.length > 0 ? { fields: customFields } : null,
 			})
-
-			const updatePatch: UpdateTaskPatch = {}
-
-			if (form.value.status === 'done') {
-				updatePatch.status = 'done'
-				updatePatch.doneReason = form.value.doneReason ?? 'completed'
-			}
-
-			if (form.value.priority && form.value.priority !== 'P1') {
-				updatePatch.priority = form.value.priority
-			}
-
-			if (form.value.note?.trim()) {
-				updatePatch.note = form.value.note.trim()
-			}
-
-			if (form.value.deadlineDate) {
-				const date = new Date(form.value.deadlineDate)
-				date.setHours(0, 0, 0, 0)
-				updatePatch.deadlineAt = date.getTime()
-			}
-
-			const tags = normalizeTags(form.value.tags)
-			if (tags.length > 0) {
-				updatePatch.tags = tags
-			}
-
-			const links = normalizeLinks(form.value.links)
-			if (links.length > 0) {
-				updatePatch.links = links
-			}
-
-			const customFields = normalizeCustomFields(form.value.customFields)
-			if (customFields.length > 0) {
-				updatePatch.customFields = { fields: customFields }
-			}
-
-			if (Object.keys(updatePatch).length > 0) {
-				await updateTask(task.id, updatePatch)
-				if (updatePatch.status) task.status = updatePatch.status as TaskDto['status']
-				if (updatePatch.doneReason !== undefined) task.doneReason = updatePatch.doneReason
-				if (updatePatch.deadlineAt !== undefined) task.deadlineAt = updatePatch.deadlineAt
-				if (updatePatch.priority) task.priority = updatePatch.priority
-				if (updatePatch.note !== undefined) task.note = updatePatch.note
-				if (updatePatch.tags) task.tags = updatePatch.tags
-				if (updatePatch.customFields !== undefined) task.customFields = updatePatch.customFields
-			}
 
 			refreshSignals.bumpTask()
 			emit('created', task)
