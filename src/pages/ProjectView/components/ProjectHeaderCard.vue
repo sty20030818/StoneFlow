@@ -16,18 +16,33 @@
 					</h1>
 				</div>
 
-				<UBadge
-					size="sm"
-					variant="soft"
-					class="rounded-full px-[14px] py-[7px] text-[11px] font-semibold uppercase tracking-widest"
-					:color="statusColor">
-					<span class="inline-flex items-center gap-2">
-						<span
-							class="size-1.5 rounded-full"
-							:class="statusDotClass"></span>
-						{{ statusLabel }}
-					</span>
-				</UBadge>
+				<div class="flex items-center gap-2">
+					<UBadge
+						size="sm"
+						variant="soft"
+						class="rounded-full px-[14px] py-[7px] text-[11px] font-semibold uppercase tracking-widest"
+						:color="statusColor">
+						<span class="inline-flex items-center gap-2">
+							<span
+								class="size-1.5 rounded-full"
+								:class="statusDotClass"></span>
+							{{ statusLabel }}
+						</span>
+					</UBadge>
+					<UButton
+						color="neutral"
+						variant="soft"
+						size="xs"
+						square
+						icon="i-lucide-settings-2"
+						class="bg-white/72 text-slate-700 ring-1 ring-white/45 transition-transform duration-200 ease-out hover:scale-105 hover:bg-white active:scale-100"
+						:ui="{
+							base: 'size-8 rounded-full p-0 inline-flex items-center justify-center',
+							leadingIcon: 'size-3.5',
+						}"
+						aria-label="编辑项目设置"
+						@click="emit('open-settings')" />
+				</div>
 			</div>
 
 			<div class="pl-5 pr-12 text-base text-slate-500 font-medium leading-relaxed line-clamp-2 max-w-[78%]">
@@ -95,6 +110,9 @@
 
 	const props = defineProps<{
 		project: ProjectDto | null
+	}>()
+	const emit = defineEmits<{
+		'open-settings': []
 	}>()
 
 	function formatTime(value: number | null) {

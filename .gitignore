@@ -16,6 +16,8 @@ node_modules
 dist
 dist-ssr
 *.local
+docs/.vitepress/cache
+docs/.vitepress/dist
 
 # Nuxt UI (Vue + Vite) auto-generated type declarations
 auto-imports.d.ts

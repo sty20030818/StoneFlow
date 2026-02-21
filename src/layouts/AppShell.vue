@@ -22,6 +22,7 @@
 
 		<!-- 右侧 Task Inspector Drawer，全局挂载在 Workspace Shell 上 -->
 		<TaskInspectorDrawer />
+		<ProjectInspectorDrawer />
 	</div>
 </template>
 
@@ -43,14 +44,19 @@
 	import Header from './Header.vue'
 
 	import TaskInspectorDrawer from '@/components/TaskInspectorDrawer'
+	import ProjectInspectorDrawer from '@/components/ProjectInspectorDrawer'
 
+	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useSettingsStore } from '@/stores/settings'
+	import { useTaskInspectorStore } from '@/stores/taskInspector'
 	import { useViewStateStore } from '@/stores/view-state'
 
 	const route = useRoute()
 	const router = useRouter()
 	const startupReady = useStartupReady()
 	const settingsStore = useSettingsStore()
+	const taskInspectorStore = useTaskInspectorStore()
+	const projectInspectorStore = useProjectInspectorStore()
 	const viewStateStore = useViewStateStore()
 	const layoutMainMotion = useAppMotionPreset('drawerSection', 'layoutShell')
 	const layoutContentMotion = useAppMotionPreset('drawerSection', 'sectionBase')
@@ -153,6 +159,22 @@
 			void settingsStore.update({ activeSpaceId: spaceIdFromRoute })
 		},
 		{ immediate: true },
+	)
+
+	watch(
+		() => taskInspectorStore.isOpen,
+		(open) => {
+			if (!open || !projectInspectorStore.isOpen) return
+			projectInspectorStore.close()
+		},
+	)
+
+	watch(
+		() => projectInspectorStore.isOpen,
+		(open) => {
+			if (!open || !taskInspectorStore.isOpen) return
+			taskInspectorStore.close()
+		},
 	)
 
 	const stopAfterEach = router.afterEach((to, from) => {

@@ -42,6 +42,28 @@ pub struct ProjectCreateInput {
     pub links: Option<Vec<LinkInputDto>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProjectUpdateInput {
+    pub project_id: String,
+    pub patch: ProjectUpdatePatch,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ProjectUpdatePatch {
+    pub title: Option<String>,
+    pub note: Option<Option<String>>,
+    pub priority: Option<String>,
+    pub parent_id: Option<Option<String>>,
+    pub tags: Option<Vec<String>>,
+    pub links: Option<Vec<LinkInputDto>>,
+}
+
+const DEFAULT_PROJECT_ID_SUFFIX: &str = "_default";
+
+fn is_default_project_id(project_id: &str) -> bool {
+    project_id.ends_with(DEFAULT_PROJECT_ID_SUFFIX)
+}
+
 impl ProjectRepo {
     /// 收集目标项目与其全部后代项目 ID（仅在同一 Space 内递归）。
     ///
@@ -305,6 +327,149 @@ impl ProjectRepo {
         helpers::attach_links(conn, std::slice::from_mut(&mut dto)).await?;
         helpers::attach_tags(conn, std::slice::from_mut(&mut dto)).await?;
         Ok(dto)
+    }
+
+    /// 更新项目元数据（标题、备注、优先级、父级、标签、链接）。
+    pub async fn update(
+        conn: &DatabaseConnection,
+        input: ProjectUpdateInput,
+    ) -> Result<(), AppError> {
+        let ProjectUpdateInput { project_id, patch } = input;
+        let ProjectUpdatePatch {
+            title,
+            note,
+            priority,
+            parent_id,
+            tags,
+            links,
+        } = patch;
+
+        let txn = conn.begin().await.map_err(AppError::from)?;
+        let model = projects::Entity::find_by_id(project_id.as_str())
+            .one(&txn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        if is_default_project_id(project_id.as_str()) && (title.is_some() || parent_id.is_some()) {
+            return Err(AppError::Validation(
+                "默认项目不允许修改标题或父级".to_string(),
+            ));
+        }
+
+        let now = now_ms();
+        let old_path = model.path.clone();
+        let old_title = model.title.clone();
+        let old_parent_id = model.parent_id.clone();
+
+        let mut next_title = old_title.clone();
+        let mut next_parent_id = old_parent_id.clone();
+        let mut changed_any = false;
+        let mut path_changed = false;
+        let mut next_path = old_path.clone();
+
+        let mut active_model: projects::ActiveModel = model.clone().into();
+
+        if tags.is_some() || links.is_some() {
+            changed_any = true;
+        }
+
+        if let Some(next_title_input) = title.as_deref() {
+            let normalized_title = next_title_input.trim();
+            if normalized_title.is_empty() {
+                return Err(AppError::Validation("项目名称不能为空".to_string()));
+            }
+            if normalized_title != old_title {
+                next_title = normalized_title.to_string();
+                active_model.title = Set(next_title.clone());
+                changed_any = true;
+            }
+        }
+
+        if let Some(note_opt) = note {
+            let normalized_note = note_opt.and_then(|value| {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                }
+            });
+            if normalized_note != model.note {
+                active_model.note = Set(normalized_note);
+                changed_any = true;
+            }
+        }
+
+        if let Some(priority_value) = priority.as_deref() {
+            let parsed_priority = common_task_utils::parse_priority(Some(priority_value))?;
+            if parsed_priority != model.priority {
+                active_model.priority = Set(parsed_priority);
+                changed_any = true;
+            }
+        }
+
+        if let Some(next_parent_input) = parent_id {
+            if let Some(parent_candidate_id) = next_parent_input.as_deref() {
+                if parent_candidate_id == project_id {
+                    return Err(AppError::Validation(
+                        "项目不能挂载到自身".to_string(),
+                    ));
+                }
+
+                let subtree_ids = Self::collect_subtree_ids(&txn, project_id.as_str()).await?;
+                if subtree_ids.iter().any(|id| id == parent_candidate_id) {
+                    return Err(AppError::Validation(
+                        "项目不能挂载到自身后代".to_string(),
+                    ));
+                }
+            }
+
+            if next_parent_input != old_parent_id {
+                next_parent_id = next_parent_input;
+                active_model.parent_id = Set(next_parent_id.clone());
+                changed_any = true;
+            }
+        }
+
+        if next_title != old_title || next_parent_id != old_parent_id {
+            let rebuilt_path = helpers::build_project_path(
+                &txn,
+                &model.space_id,
+                next_parent_id.as_deref(),
+                next_title.as_str(),
+            )
+            .await?;
+            if rebuilt_path != old_path {
+                next_path = rebuilt_path;
+                active_model.path = Set(next_path.clone());
+                path_changed = true;
+                changed_any = true;
+            }
+        }
+
+        if !changed_any {
+            return Err(AppError::Validation("没有可更新的字段".to_string()));
+        }
+
+        active_model.updated_at = Set(now);
+        active_model.update(&txn).await.map_err(AppError::from)?;
+
+        if let Some(tags_input) = tags.as_ref() {
+            tag_repo::sync_tags(&txn, TagEntity::Project, project_id.as_str(), tags_input, now)
+                .await?;
+        }
+        if let Some(links_input) = links.as_ref() {
+            link_repo::sync_links(&txn, LinkEntity::Project, project_id.as_str(), links_input)
+                .await?;
+        }
+
+        if path_changed {
+            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now).await?;
+        }
+
+        txn.commit().await.map_err(AppError::from)?;
+        Ok(())
     }
 
     /// 更新项目的 rank 和可选的 parentId（用于拖拽排序）。

@@ -18,7 +18,7 @@ use commands::hello::hello;
 use commands::logs::list_activity_logs;
 use commands::projects::{
     create_project, delete_project, get_default_project, list_deleted_projects, list_projects,
-    rebalance_project_ranks, reorder_project, restore_project,
+    rebalance_project_ranks, reorder_project, restore_project, update_project,
 };
 use commands::spaces::list_spaces;
 use commands::sync::{pull_from_neon, push_to_neon, test_neon_connection};
@@ -60,6 +60,7 @@ pub fn run() {
             list_projects,
             list_deleted_projects,
             create_project,
+            update_project,
             get_default_project,
             delete_project,
             restore_project,

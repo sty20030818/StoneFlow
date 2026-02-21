@@ -40,6 +40,15 @@ export type CreateProjectArgs = {
 	links?: LinkInput[] | null
 }
 
+export type UpdateProjectPatch = {
+	title?: string
+	note?: string | null
+	priority?: ProjectPriorityValue
+	parentId?: string | null
+	tags?: string[]
+	links?: LinkInput[]
+}
+
 function normalizeProjectDto(project: ProjectDto): ProjectDto {
 	if (!isDefaultProjectId(project.id)) return project
 	return {
@@ -93,6 +102,22 @@ export async function createProject(args: CreateProjectArgs): Promise<ProjectDto
 		},
 	})
 	return normalizeProjectDto(project)
+}
+
+export async function updateProject(projectId: string, patch: UpdateProjectPatch): Promise<void> {
+	await tauriInvoke<void>('update_project', {
+		args: {
+			projectId,
+			patch: {
+				title: patch.title,
+				note: patch.note === undefined ? undefined : patch.note,
+				priority: patch.priority,
+				parentId: patch.parentId === undefined ? undefined : patch.parentId,
+				tags: patch.tags,
+				links: patch.links,
+			},
+		},
+	})
 }
 
 export async function getDefaultProject(spaceId: string): Promise<ProjectDto> {

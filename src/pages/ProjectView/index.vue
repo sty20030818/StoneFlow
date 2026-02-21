@@ -4,7 +4,9 @@
 		<div
 			v-if="currentProject"
 			v-motion="projectHeaderMotion">
-			<ProjectHeaderCard :project="currentProject" />
+			<ProjectHeaderCard
+				:project="currentProject"
+				@open-settings="openProjectSettings" />
 		</div>
 
 		<div v-motion="workspaceColumnsMotion">
@@ -91,6 +93,7 @@
 	import { useProjectTasks } from './composables/useProjectTasks'
 	import { deleteTasks, type TaskDto } from '@/services/api/tasks'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
+	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useSettingsStore } from '@/stores/settings'
@@ -102,6 +105,7 @@
 	const settingsStore = useSettingsStore()
 	const refreshSignals = useRefreshSignalsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
+	const projectInspectorStore = useProjectInspectorStore()
 	const toast = useToast()
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
@@ -321,5 +325,10 @@
 	function onTaskClick(task: TaskDto) {
 		if (isEditMode.value) return
 		inspectorStore.open(task)
+	}
+
+	function openProjectSettings() {
+		if (!currentProject.value) return
+		projectInspectorStore.open(currentProject.value)
 	}
 </script>

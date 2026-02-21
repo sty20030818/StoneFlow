@@ -80,6 +80,7 @@ where
     if let Some(parent_id) = parent_id {
         let parent = projects::Entity::find_by_id(parent_id)
             .filter(projects::Column::SpaceId.eq(space_id))
+            .filter(projects::Column::DeletedAt.is_null())
             .one(conn)
             .await
             .map_err(AppError::from)?;

@@ -125,6 +125,8 @@
 
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
+	import { useProjectInspectorStore } from '@/stores/projectInspector'
+	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { calculateInsertRank } from '@/utils/rank'
 	import { Menu } from '@tauri-apps/api/menu'
@@ -169,6 +171,8 @@
 	}>()
 
 	const toast = useToast()
+	const projectInspectorStore = useProjectInspectorStore()
+	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 	const popoverUi = createPopoverLayerUi()
 	const deleteModalUi = createModalLayerUi({
@@ -231,7 +235,9 @@
 					{
 						id: 'edit',
 						text: '编辑',
-						action: () => {},
+						action: () => {
+							openProjectInspector(item)
+						},
 					},
 					{
 						id: 'delete',
@@ -246,6 +252,19 @@
 		} catch (error) {
 			console.error('打开项目右键菜单失败:', error)
 		}
+	}
+
+	function openProjectInspector(item: ProjectTreeItem) {
+		const project = projectsStore.getProjectsOfSpace(spaceId.value).find((candidate) => candidate.id === item.id)
+		if (!project) {
+			toast.add({
+				title: '无法编辑项目',
+				description: '未找到项目详情，请稍后重试',
+				color: 'error',
+			})
+			return
+		}
+		projectInspectorStore.open(project)
 	}
 
 	function openDeleteConfirm(item: ProjectTreeItem) {

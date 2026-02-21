@@ -11,7 +11,9 @@ use tauri::State;
 
 use crate::db::{now_ms, DbState};
 use crate::repos::{
-    project_repo::{ProjectCreateInput, ProjectRepo},
+    project_repo::{
+        ProjectCreateInput, ProjectRepo, ProjectUpdateInput, ProjectUpdatePatch as RepoProjectUpdatePatch,
+    },
     task_repo::TaskRepo,
 };
 use crate::types::{
@@ -60,6 +62,43 @@ pub struct CreateProjectArgs {
     pub links: Option<Vec<LinkInputDto>>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProjectArgs {
+    pub project_id: String,
+    pub patch: UpdateProjectPatch,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProjectPatch {
+    pub title: Option<String>,
+    /// Some(None) 表示清空 note。
+    #[serde(default, with = "::serde_with::rust::double_option")]
+    pub note: Option<Option<String>>,
+    pub priority: Option<String>,
+    /// Some(None) 表示移动到顶层。
+    #[serde(default, with = "::serde_with::rust::double_option")]
+    pub parent_id: Option<Option<String>>,
+    /// 传空数组表示清空标签。
+    pub tags: Option<Vec<String>>,
+    /// 传空数组表示清空链接。
+    pub links: Option<Vec<LinkInputDto>>,
+}
+
+impl From<UpdateProjectPatch> for RepoProjectUpdatePatch {
+    fn from(value: UpdateProjectPatch) -> Self {
+        Self {
+            title: value.title,
+            note: value.note,
+            priority: value.priority,
+            parent_id: value.parent_id,
+            tags: value.tags,
+            links: value.links,
+        }
+    }
+}
+
 /// 创建新项目。
 /// 重点：这里先构造 `ProjectCreateInput`，减少长参数列表带来的可读性问题。
 #[tauri::command]
@@ -79,6 +118,20 @@ pub async fn create_project(
     };
 
     ProjectRepo::create(&state.conn, input)
+        .await
+        .map_err(ApiError::from)
+}
+
+#[tauri::command]
+pub async fn update_project(
+    state: State<'_, DbState>,
+    args: UpdateProjectArgs,
+) -> Result<(), ApiError> {
+    let input = ProjectUpdateInput {
+        project_id: args.project_id,
+        patch: args.patch.into(),
+    };
+    ProjectRepo::update(&state.conn, input)
         .await
         .map_err(ApiError::from)
 }
