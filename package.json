@@ -62,7 +62,7 @@
 		"vitepress": "1.6.4",
 		"vitepress-plugin-llms": "^1.11.0",
 		"vue-eslint-parser": "^10.4.0",
-		"vue-tsc": "^3.2.4"
+		"vue-tsc": "^3.2.5"
 	},
 	"packageManager": "bun@1.3.9"
 }

@@ -2,8 +2,7 @@
 	<section class="space-y-2">
 		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Note</label>
 		<div
-			v-motion="noteCardHoverMotion"
-			class="p-4 rounded-2xl border bg-elevated/50 border-default/60 hover:bg-elevated/80 transition-colors">
+			class="rounded-2xl border-2 border-default/70 bg-elevated/50 p-4 transition-[border-color] duration-150 hover:border-emerald-200 focus-within:border-emerald-300 hover:focus-within:border-emerald-300">
 			<UTextarea
 				v-model="noteModel"
 				placeholder="记录一些背景信息、想法或链接…"
@@ -24,10 +23,7 @@
 </template>
 
 <script setup lang="ts">
-	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-
 	const noteModel = defineModel<string>('note', { required: true })
-	const noteCardHoverMotion = useCardHoverMotionPreset()
 
 	type TextInteractionHandlers = {
 		onFocus: () => void
