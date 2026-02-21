@@ -12,7 +12,8 @@ use tauri::State;
 use crate::db::{now_ms, DbState};
 use crate::repos::{
     project_repo::{
-        ProjectCreateInput, ProjectRepo, ProjectUpdateInput, ProjectUpdatePatch as RepoProjectUpdatePatch,
+        ProjectCreateInput, ProjectRepo, ProjectUpdateInput,
+        ProjectUpdatePatch as RepoProjectUpdatePatch,
     },
     task_repo::TaskRepo,
 };

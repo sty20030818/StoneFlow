@@ -150,7 +150,10 @@ where
             field_label: Some(field_label.to_string()),
             before_value,
             after_value,
-            detail: format!("{} 从「{}」更新为「{}」", field_label, before_text, after_text),
+            detail: format!(
+                "{} 从「{}」更新为「{}」",
+                field_label, before_text, after_text
+            ),
             create_by: ctx.create_by.to_string(),
             created_at: ctx.created_at,
         },

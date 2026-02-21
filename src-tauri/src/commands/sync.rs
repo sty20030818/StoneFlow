@@ -108,7 +108,10 @@ async fn get_sync_time(db: &sea_orm::DatabaseConnection, key: &str) -> Result<i6
     let setting = AppSettings::find_by_id(key).one(db).await?;
     if let Some(s) = setting {
         s.value.parse::<i64>().map_err(|error| {
-            sea_orm::DbErr::Custom(format!("解析同步时间失败 key={} value={} error={}", key, s.value, error))
+            sea_orm::DbErr::Custom(format!(
+                "解析同步时间失败 key={} value={} error={}",
+                key, s.value, error
+            ))
         })
     } else {
         Ok(0)
@@ -175,8 +178,12 @@ pub async fn pull_from_neon(
             .select_only()
             .column(spaces::Column::Id)
             .filter(
-                spaces::Column::Id
-                    .is_in(remote_spaces.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+                spaces::Column::Id.is_in(
+                    remote_spaces
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
             )
             .into_tuple::<String>()
             .all(local_db)
@@ -307,8 +314,12 @@ pub async fn pull_from_neon(
             .select_only()
             .column(links::Column::Id)
             .filter(
-                links::Column::Id
-                    .is_in(remote_links.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+                links::Column::Id.is_in(
+                    remote_links
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
             )
             .into_tuple::<String>()
             .all(local_db)
@@ -358,8 +369,12 @@ pub async fn pull_from_neon(
             .select_only()
             .column(tasks::Column::Id)
             .filter(
-                tasks::Column::Id
-                    .is_in(remote_tasks.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+                tasks::Column::Id.is_in(
+                    remote_tasks
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
             )
             .into_tuple::<String>()
             .all(local_db)
@@ -568,8 +583,12 @@ pub async fn push_to_neon(
             .select_only()
             .column(spaces::Column::Id)
             .filter(
-                spaces::Column::Id
-                    .is_in(local_spaces.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+                spaces::Column::Id.is_in(
+                    local_spaces
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
             )
             .into_tuple::<String>()
             .all(&remote_db)
@@ -699,8 +718,12 @@ pub async fn push_to_neon(
             .select_only()
             .column(links::Column::Id)
             .filter(
-                links::Column::Id
-                    .is_in(local_links.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+                links::Column::Id.is_in(
+                    local_links
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
             )
             .into_tuple::<String>()
             .all(&remote_db)
@@ -750,8 +773,12 @@ pub async fn push_to_neon(
             .select_only()
             .column(tasks::Column::Id)
             .filter(
-                tasks::Column::Id
-                    .is_in(local_tasks.iter().map(|item| item.id.clone()).collect::<Vec<_>>()),
+                tasks::Column::Id.is_in(
+                    local_tasks
+                        .iter()
+                        .map(|item| item.id.clone())
+                        .collect::<Vec<_>>(),
+                ),
             )
             .into_tuple::<String>()
             .all(&remote_db)

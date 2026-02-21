@@ -32,7 +32,7 @@ async function setupCloseFlushHook() {
 			try {
 				await Promise.allSettled([settingsStore.flush(), viewStateStore.flush()])
 			} finally {
-				await appWindow.close()
+				await appWindow.hide()
 				closingWithFlush = false
 			}
 		})

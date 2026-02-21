@@ -20,7 +20,7 @@ tauri-build = { version = "2", features = [] }
 opt-level = 3
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-opener = "2"
 tauri-plugin-store = "2"
 tauri-plugin-stronghold = "2"

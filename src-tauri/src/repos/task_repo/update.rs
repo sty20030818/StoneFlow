@@ -178,7 +178,8 @@ pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result
         .map(|items| to_optional_join(normalize_links_for_log(items), ", "))
         .unwrap_or(None);
     let tags_changed = tags_input_for_log.is_some() && previous_tags_for_log != next_tags_for_log;
-    let links_changed = links_input_for_log.is_some() && previous_links_for_log != next_links_for_log;
+    let links_changed =
+        links_input_for_log.is_some() && previous_links_for_log != next_links_for_log;
 
     let previous_project_id = task_model.project_id.clone();
     let current_status_is_done = task_model.status == TaskStatus::Done;

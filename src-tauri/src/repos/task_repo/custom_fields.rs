@@ -40,7 +40,10 @@ pub fn normalize_custom_fields(input: CustomFieldsDto) -> Result<CustomFieldsDto
             ));
         }
 
-        let value = item.value.map(|text| text.trim().to_string()).filter(|text| !text.is_empty());
+        let value = item
+            .value
+            .map(|text| text.trim().to_string())
+            .filter(|text| !text.is_empty());
 
         normalized.push(CustomFieldItemDto {
             rank: item.rank,

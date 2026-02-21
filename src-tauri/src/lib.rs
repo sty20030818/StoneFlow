@@ -26,7 +26,36 @@ use commands::tasks::{
     complete_task, create_task, create_task_with_patch, delete_tasks, list_deleted_tasks,
     list_tasks, rebalance_ranks, reorder_task, restore_tasks, update_task,
 };
-use tauri::Manager;
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
+};
+
+const TRAY_MENU_SHOW_MAIN: &str = "show_main_window";
+const TRAY_MENU_QUIT_APP: &str = "quit_app";
+
+fn restore_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+fn resolve_tray_icon<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<tauri::image::Image<'static>> {
+    if let Some(icon) = app.default_window_icon() {
+        return Some(icon.clone().to_owned());
+    }
+
+    match tauri::image::Image::from_bytes(include_bytes!("../icons/32x32.png")) {
+        Ok(icon) => Some(icon),
+        Err(error) => {
+            eprintln!("failed to load fallback tray icon: {error}");
+            None
+        }
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -37,6 +66,35 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
+            let show_main_item =
+                MenuItemBuilder::with_id(TRAY_MENU_SHOW_MAIN, "显示主窗口").build(app)?;
+            let quit_item = MenuItemBuilder::with_id(TRAY_MENU_QUIT_APP, "退出应用").build(app)?;
+            let tray_menu = MenuBuilder::new(app)
+                .items(&[&show_main_item, &quit_item])
+                .build()?;
+            let mut tray_builder = TrayIconBuilder::new()
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    TRAY_MENU_SHOW_MAIN => restore_main_window(app),
+                    TRAY_MENU_QUIT_APP => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        restore_main_window(tray.app_handle());
+                    }
+                });
+            if let Some(icon) = resolve_tray_icon(app.handle()) {
+                tray_builder = tray_builder.icon(icon);
+            }
+            let _tray = tray_builder.build(app)?;
+
             // setup 阶段执行一次：适合做目录初始化、密钥插件注册、数据库初始化。
             let data_dir = app
                 .path()

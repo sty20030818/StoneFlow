@@ -412,16 +412,12 @@ impl ProjectRepo {
         if let Some(next_parent_input) = parent_id {
             if let Some(parent_candidate_id) = next_parent_input.as_deref() {
                 if parent_candidate_id == project_id {
-                    return Err(AppError::Validation(
-                        "项目不能挂载到自身".to_string(),
-                    ));
+                    return Err(AppError::Validation("项目不能挂载到自身".to_string()));
                 }
 
                 let subtree_ids = Self::collect_subtree_ids(&txn, project_id.as_str()).await?;
                 if subtree_ids.iter().any(|id| id == parent_candidate_id) {
-                    return Err(AppError::Validation(
-                        "项目不能挂载到自身后代".to_string(),
-                    ));
+                    return Err(AppError::Validation("项目不能挂载到自身后代".to_string()));
                 }
             }
 
@@ -456,8 +452,14 @@ impl ProjectRepo {
         active_model.update(&txn).await.map_err(AppError::from)?;
 
         if let Some(tags_input) = tags.as_ref() {
-            tag_repo::sync_tags(&txn, TagEntity::Project, project_id.as_str(), tags_input, now)
-                .await?;
+            tag_repo::sync_tags(
+                &txn,
+                TagEntity::Project,
+                project_id.as_str(),
+                tags_input,
+                now,
+            )
+            .await?;
         }
         if let Some(links_input) = links.as_ref() {
             link_repo::sync_links(&txn, LinkEntity::Project, project_id.as_str(), links_input)
@@ -465,7 +467,8 @@ impl ProjectRepo {
         }
 
         if path_changed {
-            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now).await?;
+            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now)
+                .await?;
         }
 
         txn.commit().await.map_err(AppError::from)?;
@@ -515,7 +518,8 @@ impl ProjectRepo {
         active_model.update(&txn).await.map_err(AppError::from)?;
 
         if path_changed {
-            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now).await?;
+            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now)
+                .await?;
         }
 
         txn.commit().await.map_err(AppError::from)?;

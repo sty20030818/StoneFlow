@@ -105,7 +105,10 @@ impl ActivityLogRepo {
             query = query.filter(task_activity_logs::Column::CreatedAt.lte(to));
         }
 
-        let limit = input.limit.unwrap_or(DEFAULT_LIST_LIMIT).min(MAX_LIST_LIMIT);
+        let limit = input
+            .limit
+            .unwrap_or(DEFAULT_LIST_LIMIT)
+            .min(MAX_LIST_LIMIT);
         let offset = input.offset.unwrap_or(0);
 
         let logs = query
@@ -116,7 +119,8 @@ impl ActivityLogRepo {
             .await
             .map_err(AppError::from)?;
 
-        let project_ids: HashSet<String> = logs.iter().filter_map(|x| x.project_id.clone()).collect();
+        let project_ids: HashSet<String> =
+            logs.iter().filter_map(|x| x.project_id.clone()).collect();
         let mut project_name_map: HashMap<String, String> = HashMap::new();
 
         if !project_ids.is_empty() {
