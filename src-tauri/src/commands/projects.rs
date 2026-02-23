@@ -78,6 +78,7 @@ pub struct UpdateProjectPatch {
     #[serde(default, with = "::serde_with::rust::double_option")]
     pub note: Option<Option<String>>,
     pub priority: Option<String>,
+    pub space_id: Option<String>,
     /// Some(None) 表示移动到顶层。
     #[serde(default, with = "::serde_with::rust::double_option")]
     pub parent_id: Option<Option<String>>,
@@ -93,6 +94,7 @@ impl From<UpdateProjectPatch> for RepoProjectUpdatePatch {
             title: value.title,
             note: value.note,
             priority: value.priority,
+            space_id: value.space_id,
             parent_id: value.parent_id,
             tags: value.tags,
             links: value.links,

@@ -12,7 +12,7 @@ use sea_orm::{
 use std::collections::{HashMap, HashSet, VecDeque};
 use uuid::Uuid;
 
-use crate::db::entities::{projects, sea_orm_active_enums::Priority};
+use crate::db::entities::{projects, sea_orm_active_enums::Priority, tasks};
 use crate::db::now_ms;
 use crate::repos::{
     common_task_utils,
@@ -54,6 +54,7 @@ pub struct ProjectUpdatePatch {
     pub title: Option<String>,
     pub note: Option<Option<String>>,
     pub priority: Option<String>,
+    pub space_id: Option<String>,
     pub parent_id: Option<Option<String>>,
     pub tags: Option<Vec<String>>,
     pub links: Option<Vec<LinkInputDto>>,
@@ -377,6 +378,7 @@ impl ProjectRepo {
             title,
             note,
             priority,
+            space_id,
             parent_id,
             tags,
             links,
@@ -389,25 +391,30 @@ impl ProjectRepo {
             .map_err(AppError::from)?
             .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
 
-        if is_default_project_id(project_id.as_str()) && (title.is_some() || parent_id.is_some()) {
+        if is_default_project_id(project_id.as_str())
+            && (title.is_some() || space_id.is_some() || parent_id.is_some())
+        {
             return Err(AppError::Validation(
-                "默认项目不允许修改标题或父级".to_string(),
+                "默认项目不允许修改标题、Space 或父级".to_string(),
             ));
         }
 
         let now = now_ms();
+        let old_space_id = model.space_id.clone();
         let old_path = model.path.clone();
         let old_title = model.title.clone();
         let old_note = model.note.clone();
         let old_priority = model.priority.clone();
         let old_parent_id = model.parent_id.clone();
 
+        let mut next_space_id = old_space_id.clone();
         let mut next_title = old_title.clone();
         let mut next_note = old_note.clone();
         let mut next_priority = old_priority.clone();
         let mut next_parent_id = old_parent_id.clone();
         let mut changed_any = false;
         let mut path_changed = false;
+        let mut space_changed = false;
         let mut next_path = old_path.clone();
 
         let mut active_model: projects::ActiveModel = model.clone().into();
@@ -453,6 +460,33 @@ impl ProjectRepo {
             }
         }
 
+        if let Some(next_space_input) = space_id.as_deref() {
+            let normalized_space = next_space_input.trim();
+            if normalized_space.is_empty() {
+                return Err(AppError::Validation("所属 Space 不能为空".to_string()));
+            }
+
+            if normalized_space != old_space_id {
+                let subtree_ids = Self::collect_subtree_ids(&txn, project_id.as_str()).await?;
+                if subtree_ids.len() > 1 {
+                    return Err(AppError::Validation(
+                        "当前项目存在子项目，暂不支持跨 Space 迁移".to_string(),
+                    ));
+                }
+
+                next_space_id = normalized_space.to_string();
+                active_model.space_id = Set(next_space_id.clone());
+                space_changed = true;
+                changed_any = true;
+
+                if parent_id.is_none() && old_parent_id.is_some() {
+                    next_parent_id = None;
+                    active_model.parent_id = Set(None);
+                    changed_any = true;
+                }
+            }
+        }
+
         if let Some(next_parent_input) = parent_id {
             if let Some(parent_candidate_id) = next_parent_input.as_deref() {
                 if parent_candidate_id == project_id {
@@ -472,10 +506,10 @@ impl ProjectRepo {
             }
         }
 
-        if next_title != old_title || next_parent_id != old_parent_id {
+        if next_title != old_title || next_parent_id != old_parent_id || space_changed {
             let rebuilt_path = helpers::build_project_path(
                 &txn,
-                &model.space_id,
+                &next_space_id,
                 next_parent_id.as_deref(),
                 next_title.as_str(),
             )
@@ -493,7 +527,17 @@ impl ProjectRepo {
         }
 
         active_model.updated_at = Set(now);
-        active_model.update(&txn).await.map_err(AppError::from)?;
+        let saved_model = active_model.update(&txn).await.map_err(AppError::from)?;
+
+        if space_changed {
+            tasks::Entity::update_many()
+                .col_expr(tasks::Column::SpaceId, Expr::value(next_space_id.clone()))
+                .col_expr(tasks::Column::UpdatedAt, Expr::value(now))
+                .filter(tasks::Column::ProjectId.eq(project_id.as_str()))
+                .exec(&txn)
+                .await
+                .map_err(AppError::from)?;
+        }
 
         if let Some(tags_input) = tags.as_ref() {
             tag_repo::sync_tags(
@@ -511,16 +555,24 @@ impl ProjectRepo {
         }
 
         if path_changed {
-            Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now)
-                .await?;
+            Self::rebase_descendant_paths(&txn, &old_space_id, &old_path, &next_path, now).await?;
         }
 
         let log_ctx = activity_logs::ProjectLogCtx {
             project_id: project_id.as_str(),
-            space_id: model.space_id.as_str(),
-            create_by: model.create_by.as_str(),
+            space_id: saved_model.space_id.as_str(),
+            create_by: saved_model.create_by.as_str(),
             created_at: now,
         };
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "spaceId",
+            "所属 Space",
+            Some(old_space_id),
+            Some(next_space_id),
+        )
+        .await?;
         activity_logs::append_field_updated(
             &txn,
             log_ctx.clone(),

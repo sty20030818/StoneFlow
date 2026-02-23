@@ -44,6 +44,7 @@ export type UpdateProjectPatch = {
 	title?: string
 	note?: string | null
 	priority?: ProjectPriorityValue
+	spaceId?: string
 	parentId?: string | null
 	tags?: string[]
 	links?: LinkInput[]
@@ -112,6 +113,7 @@ export async function updateProject(projectId: string, patch: UpdateProjectPatch
 				title: patch.title,
 				note: patch.note === undefined ? undefined : patch.note,
 				priority: patch.priority,
+				spaceId: patch.spaceId,
 				parentId: patch.parentId === undefined ? undefined : patch.parentId,
 				tags: patch.tags,
 				links: patch.links,

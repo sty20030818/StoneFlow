@@ -7,6 +7,7 @@ import {
 	type ProjectPriorityValue,
 	isDefaultProjectId,
 } from '@/config/project'
+import { SPACE_OPTIONS } from '@/config/space'
 import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
 import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
@@ -64,6 +65,7 @@ export function useProjectInspectorDrawer() {
 	const titleLocal = ref('')
 	const noteLocal = ref('')
 	const priorityLocal = ref<ProjectPriorityValue>('P1')
+	const spaceIdLocal = ref('')
 	const parentIdLocal = ref<string | null>(null)
 	const tagsLocal = ref<string[]>([])
 	const tagInput = ref('')
@@ -97,6 +99,7 @@ export function useProjectInspectorDrawer() {
 	let syncTicket = 0
 
 	const priorityOptions = PROJECT_PRIORITY_OPTIONS
+	const spaceOptions = SPACE_OPTIONS
 	const linkKindOptions = PROJECT_LINK_KIND_OPTIONS
 	const rootLabel = PROJECT_ROOT_LABEL
 
@@ -131,6 +134,11 @@ export function useProjectInspectorDrawer() {
 		const project = currentProject.value
 		if (!project || project.deletedAt !== null) return false
 		return project.archivedAt !== null
+	})
+	const hasChildProjects = computed(() => {
+		const project = currentProject.value
+		if (!project) return false
+		return projectsStore.getProjectsOfSpace(project.spaceId).some((item) => item.parentId === project.id)
 	})
 	const isLifecycleBusy = computed(() => {
 		return (
@@ -240,7 +248,7 @@ export function useProjectInspectorDrawer() {
 	}
 
 	function shouldForceRefreshAfterCommit(patch: UpdateProjectPatch): boolean {
-		return patch.title !== undefined || patch.parentId !== undefined
+		return patch.title !== undefined || patch.parentId !== undefined || patch.spaceId !== undefined
 	}
 
 	function getOrCreateSaveBucket(projectId: string, spaceId: string): SaveBucket {
@@ -313,6 +321,7 @@ export function useProjectInspectorDrawer() {
 		if (patch.title !== undefined) draftPatch.title = patch.title
 		if (patch.note !== undefined) draftPatch.note = patch.note
 		if (patch.priority !== undefined) draftPatch.priority = patch.priority
+		if (patch.spaceId !== undefined) draftPatch.spaceId = patch.spaceId
 		if (patch.parentId !== undefined) draftPatch.parentId = patch.parentId
 		if (patch.tags !== undefined) draftPatch.tags = patch.tags
 		if (!hasPatchValue(draftPatch)) return
@@ -327,6 +336,16 @@ export function useProjectInspectorDrawer() {
 		await projectsStore.load(spaceId, { force: options.force ?? false })
 		const latest = projectsStore.getProjectById(spaceId, projectId)
 		if (currentProject.value?.id !== projectId) return
+		store.setProject(latest)
+	}
+
+	async function refreshStoreProjectAfterSpaceChange(oldSpaceId: string, newSpaceId: string, projectId: string) {
+		await Promise.all([
+			projectsStore.load(oldSpaceId, { force: true }),
+			projectsStore.load(newSpaceId, { force: true }),
+		])
+		if (currentProject.value?.id !== projectId) return
+		const latest = projectsStore.getProjectById(newSpaceId, projectId)
 		store.setProject(latest)
 	}
 
@@ -346,8 +365,14 @@ export function useProjectInspectorDrawer() {
 		try {
 			await updateProject(projectId, patch)
 			patchStoreProject(projectId, spaceId, patch)
-			if (shouldForceRefreshAfterCommit(patch)) {
+			const targetSpaceId = patch.spaceId ?? spaceId
+			if (patch.spaceId && patch.spaceId !== spaceId) {
+				void refreshStoreProjectAfterSpaceChange(spaceId, targetSpaceId, projectId)
+			} else if (shouldForceRefreshAfterCommit(patch)) {
 				void refreshStoreProject(spaceId, projectId, { force: true })
+			}
+			if (patch.spaceId !== undefined) {
+				refreshSignals.bumpTask()
 			}
 			refreshSignals.bumpProject()
 			retryPatchByProjectId.delete(projectId)
@@ -411,9 +436,10 @@ export function useProjectInspectorDrawer() {
 		return descendants
 	}
 
-	function buildParentOptions(project: ProjectDto): ParentProjectOption[] {
-		const projects = projectsStore.getProjectsOfSpace(project.spaceId).filter((item) => !isDefaultProjectId(item.id))
-		const descendants = collectDescendantIds(projects, project.id)
+	function buildParentOptions(project: ProjectDto, targetSpaceId: string): ParentProjectOption[] {
+		const projects = projectsStore.getProjectsOfSpace(targetSpaceId).filter((item) => !isDefaultProjectId(item.id))
+		const descendants =
+			targetSpaceId === project.spaceId ? collectDescendantIds(projects, project.id) : new Set<string>()
 		const disallowedIds = new Set<string>([project.id, ...descendants])
 
 		const grouped = new Map<string | null, ProjectDto[]>()
@@ -469,6 +495,7 @@ export function useProjectInspectorDrawer() {
 			}
 
 			priorityLocal.value = project.priority
+			spaceIdLocal.value = project.spaceId
 			parentIdLocal.value = project.parentId ?? null
 			tagsLocal.value = [...project.tags]
 
@@ -476,7 +503,7 @@ export function useProjectInspectorDrawer() {
 				resetLocalDraftState()
 			}
 		})
-		parentOptions.value = buildParentOptions(project)
+		parentOptions.value = buildParentOptions(project, spaceIdLocal.value)
 	}
 
 	async function syncFromProject(project: ProjectDto, mode: 'reset' | 'incremental') {
@@ -667,6 +694,39 @@ export function useProjectInspectorDrawer() {
 		if (!project || suppressAutosave.value || isStructureLocked.value) return
 		if ((project.parentId ?? null) === value) return
 		queueImmediateUpdate({ parentId: value })
+	}
+
+	async function onSpaceChange(value: string) {
+		const project = currentProject.value
+		if (!project || suppressAutosave.value || isStructureLocked.value) return
+		if (hasChildProjects.value) {
+			toast.add({
+				title: '暂不支持切换 Space',
+				description: '当前项目存在子项目，请先调整层级后再迁移。',
+				color: 'warning',
+			})
+			return
+		}
+
+		const currentParentId = project.parentId ?? null
+		const sameSpace = project.spaceId === value
+		if (sameSpace && currentParentId === parentIdLocal.value) return
+
+		spaceIdLocal.value = value
+		if (!sameSpace) {
+			parentIdLocal.value = null
+		}
+
+		await projectsStore.load(value)
+		parentOptions.value = buildParentOptions(project, value)
+
+		if (sameSpace) {
+			if (currentParentId !== parentIdLocal.value) {
+				queueImmediateUpdate({ parentId: parentIdLocal.value })
+			}
+			return
+		}
+		queueImmediateUpdate({ spaceId: value, parentId: parentIdLocal.value ?? null })
 	}
 
 	async function flushPendingUpdates() {
@@ -891,6 +951,7 @@ export function useProjectInspectorDrawer() {
 		titleLocal,
 		noteLocal,
 		priorityLocal,
+		spaceIdLocal,
 		parentIdLocal,
 		tagsLocal,
 		tagInput,
@@ -901,6 +962,7 @@ export function useProjectInspectorDrawer() {
 		linkDraftVisible,
 		linkValidationErrorIndex,
 		priorityOptions,
+		spaceOptions,
 		parentOptions,
 		linkKindOptions,
 		rootLabel,
@@ -911,6 +973,7 @@ export function useProjectInspectorDrawer() {
 		canRestoreProject,
 		canArchiveProject,
 		canUnarchiveProject,
+		hasChildProjects,
 		isLifecycleBusy,
 		isDeletingProject: computed(() => lifecycleState.deleting),
 		isRestoringProject: computed(() => lifecycleState.restoring),
@@ -936,6 +999,7 @@ export function useProjectInspectorDrawer() {
 		onLinkFieldBlur,
 		onLinkCompositionStart,
 		onLinkCompositionEnd,
+		onSpaceChange,
 		onRetrySave,
 		deleteCurrentProject,
 		restoreCurrentProject,

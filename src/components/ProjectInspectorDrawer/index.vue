@@ -85,41 +85,223 @@
 						</p>
 					</section>
 
-					<section class="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<UFormField label="优先级">
-							<USelectMenu
-								v-model="priorityLocal"
-								:items="priorityOptions"
-								value-key="value"
-								label-key="label"
-								size="md"
-								class="w-full"
-								:search-input="false"
-								:ui="{ rounded: 'rounded-xl' }" />
-						</UFormField>
-
-						<UFormField label="父项目">
-							<USelectMenu
-								v-model="parentIdLocal"
-								:items="parentOptions"
-								value-key="value"
-								label-key="label"
-								size="md"
-								class="w-full"
-								:disabled="isStructureLocked"
-								:search-input="false"
-								:placeholder="rootLabel"
-								:ui="{ rounded: 'rounded-xl' }">
-								<template #item="{ item }">
-									<div
-										v-if="isParentOption(item)"
-										class="py-0.5"
-										:style="{ paddingLeft: `${item.depth * 14}px` }">
-										<span class="truncate">{{ item.label }}</span>
+					<section class="space-y-2">
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">属性</label>
+						<div class="grid grid-cols-2 gap-3">
+							<UPopover
+								v-model:open="priorityPopoverOpen"
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+								:ui="drawerPopoverUi">
+								<button
+									v-motion="optionCardHoverMotion"
+									type="button"
+									class="w-full cursor-pointer rounded-2xl border p-4 text-left transition-colors"
+									:class="priorityCardClass">
+									<div class="flex items-center gap-2.5">
+										<UIcon
+											:name="priorityIcon"
+											class="size-4 shrink-0"
+											:class="priorityIconClass" />
+										<div class="min-w-0 flex-1">
+											<div class="mb-1 text-[11px] text-muted">Priority</div>
+											<div
+												class="text-xs font-semibold"
+												:class="priorityTextClass">
+												{{ priorityLabel }}
+											</div>
+										</div>
+									</div>
+								</button>
+								<template #content>
+									<div class="min-w-[200px] p-2">
+										<div
+											v-for="opt in priorityOptions"
+											:key="opt.value"
+											class="cursor-pointer rounded-lg px-3 py-2 transition-colors hover:bg-elevated"
+											:class="{ 'bg-elevated': priorityLocal === opt.value }"
+											@click="onPrioritySelect(opt.value)">
+											<div class="flex items-center gap-2">
+												<UIcon
+													:name="opt.icon"
+													class="size-4 shrink-0"
+													:class="opt.iconClass" />
+												<span class="text-sm">{{ opt.label }}</span>
+											</div>
+										</div>
 									</div>
 								</template>
-							</USelectMenu>
-						</UFormField>
+							</UPopover>
+
+							<UPopover
+								v-model:open="statusPopoverOpen"
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+								:ui="drawerPopoverUi">
+								<button
+									v-motion="optionCardHoverMotion"
+									type="button"
+									class="w-full rounded-2xl border p-4 text-left transition-colors"
+									:class="[statusCardClass, statusActionAvailable ? 'cursor-pointer' : 'cursor-default']">
+									<div class="flex items-center gap-2.5">
+										<UIcon
+											:name="statusIconName"
+											class="size-4 shrink-0"
+											:class="statusIconClass" />
+										<div class="min-w-0 flex-1">
+											<div class="mb-1 text-[11px] text-muted">Status</div>
+											<div
+												class="text-xs font-semibold"
+												:class="statusTextClass">
+												{{ statusLabel }}
+											</div>
+										</div>
+									</div>
+								</button>
+								<template #content>
+									<div class="min-w-[180px] space-y-1 p-2">
+										<UButton
+											v-if="canArchiveProject"
+											color="warning"
+											variant="ghost"
+											size="xs"
+											icon="i-lucide-archive"
+											block
+											:loading="isArchivingProject"
+											:disabled="isLifecycleBusy"
+											@click="onStatusActionArchive">
+											归档项目
+										</UButton>
+										<UButton
+											v-if="canDeleteProject"
+											color="error"
+											variant="ghost"
+											size="xs"
+											icon="i-lucide-trash-2"
+											block
+											:loading="isDeletingProject"
+											:disabled="isLifecycleBusy"
+											@click="onStatusActionDelete">
+											删除项目
+										</UButton>
+										<p
+											v-if="!statusActionAvailable"
+											class="px-2 py-1 text-xs text-muted">
+											当前状态暂无可执行操作
+										</p>
+									</div>
+								</template>
+							</UPopover>
+
+							<UPopover
+								v-model:open="spacePopoverOpen"
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+								:ui="drawerPopoverUi">
+								<button
+									v-motion="optionCardHoverMotion"
+									type="button"
+									class="w-full rounded-2xl border p-4 text-left transition-colors"
+									:class="
+										isStructureLocked
+											? `${spaceCardClass} cursor-not-allowed opacity-70`
+											: `${spaceCardClass} cursor-pointer`
+									"
+									:disabled="isStructureLocked">
+									<div class="flex items-center gap-2.5">
+										<UIcon
+											:name="spaceCardIcon"
+											class="size-4 shrink-0"
+											:class="spaceCardLabelClass" />
+										<div class="min-w-0 flex-1">
+											<div
+												class="mb-1 text-[11px]"
+												:class="spaceCardLabelClass">
+												所属 Space
+											</div>
+											<div
+												class="truncate text-xs font-semibold"
+												:class="spaceCardValueClass">
+												{{ currentSpaceLabel }}
+											</div>
+										</div>
+									</div>
+								</button>
+								<template #content>
+									<div class="min-w-[180px] p-2">
+										<p
+											v-if="hasChildProjects"
+											class="rounded-lg border border-default/70 bg-elevated/60 px-3 py-2 text-xs text-muted">
+											当前项目存在子项目，暂不支持切换所属 Space。
+										</p>
+										<template v-else>
+											<div
+												v-for="space in spaceOptions"
+												:key="space.value"
+												class="cursor-pointer rounded-lg px-3 py-2 transition-colors hover:bg-elevated"
+												:class="{ 'bg-elevated': spaceIdLocal === space.value }"
+												@click="onSpaceSelect(space.value)">
+												<div class="flex items-center gap-2">
+													<UIcon
+														:name="space.icon"
+														class="size-4 shrink-0"
+														:class="space.iconClass" />
+													<span class="text-sm font-medium">{{ space.label }}</span>
+												</div>
+											</div>
+										</template>
+									</div>
+								</template>
+							</UPopover>
+
+							<UPopover
+								v-model:open="parentPopoverOpen"
+								:mode="'click'"
+								:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
+								:ui="drawerPopoverUi">
+								<button
+									v-motion="optionCardHoverMotion"
+									type="button"
+									class="w-full rounded-2xl border p-4 text-left transition-colors"
+									:class="
+										isStructureLocked
+											? 'cursor-not-allowed bg-elevated/30 border-default/50 opacity-70'
+											: 'cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80'
+									"
+									:disabled="isStructureLocked">
+									<div class="flex items-center gap-2.5">
+										<UIcon
+											name="i-lucide-folder-tree"
+											class="size-4 shrink-0 text-muted" />
+										<div class="min-w-0 flex-1">
+											<div class="mb-1 text-[11px] text-muted">所属 Project</div>
+											<div class="truncate text-xs font-semibold text-default">
+												{{ currentParentLabel }}
+											</div>
+										</div>
+									</div>
+								</button>
+								<template #content>
+									<div class="max-h-[300px] min-w-[220px] overflow-y-auto p-2">
+										<div
+											v-for="option in parentOptions"
+											:key="option.value ?? 'root'"
+											class="cursor-pointer rounded-lg px-3 py-2 transition-colors hover:bg-elevated"
+											:class="{ 'bg-elevated': parentIdLocal === option.value }"
+											:style="{ paddingLeft: `${12 + option.depth * 12}px` }"
+											@click="onParentSelect(option.value)">
+											<div class="flex items-center gap-2">
+												<UIcon
+													:name="PROJECT_ICON"
+													class="size-4 shrink-0"
+													:class="getParentOptionIconClass(option.value, option.depth)" />
+												<span class="truncate text-sm">{{ option.label }}</span>
+											</div>
+										</div>
+									</div>
+								</template>
+							</UPopover>
+						</div>
 					</section>
 
 					<section class="space-y-2">
@@ -306,68 +488,6 @@
 
 					<section class="space-y-2">
 						<div class="flex items-center justify-between">
-							<label class="text-xs font-semibold text-muted">生命周期</label>
-							<span
-								v-if="isLifecycleBusy"
-								class="text-[11px] text-muted">
-								处理中...
-							</span>
-						</div>
-						<div class="flex flex-wrap gap-2">
-							<UButton
-								v-if="canRestoreProject"
-								color="success"
-								variant="soft"
-								size="xs"
-								icon="i-lucide-undo-2"
-								:loading="isRestoringProject"
-								:disabled="isLifecycleBusy"
-								@click="onRestoreProject">
-								恢复项目
-							</UButton>
-							<UButton
-								v-if="canArchiveProject"
-								color="warning"
-								variant="soft"
-								size="xs"
-								icon="i-lucide-archive"
-								:loading="isArchivingProject"
-								:disabled="isLifecycleBusy"
-								@click="onRequestArchiveProject">
-								归档项目
-							</UButton>
-							<UButton
-								v-if="canUnarchiveProject"
-								color="neutral"
-								variant="soft"
-								size="xs"
-								icon="i-lucide-folder-open"
-								:loading="isUnarchivingProject"
-								:disabled="isLifecycleBusy"
-								@click="onUnarchiveProject">
-								取消归档
-							</UButton>
-							<UButton
-								v-if="canDeleteProject"
-								color="error"
-								variant="soft"
-								size="xs"
-								icon="i-lucide-trash-2"
-								:loading="isDeletingProject"
-								:disabled="isLifecycleBusy"
-								@click="onRequestDeleteProject">
-								删除项目
-							</UButton>
-						</div>
-						<p
-							v-if="canRestoreProject"
-							class="text-[11px] text-muted">
-							已删除项目可在此恢复，恢复仅影响当前项目，不会递归恢复后代。
-						</p>
-					</section>
-
-					<section class="space-y-2">
-						<div class="flex items-center justify-between">
 							<label class="text-xs font-semibold text-muted">操作日志</label>
 							<UBadge
 								size="xs"
@@ -481,8 +601,18 @@
 	import { computed, ref } from 'vue'
 	import { storeToRefs } from 'pinia'
 
-	import { PROJECT_STATUS_DISPLAY, type ProjectComputedStatusValue } from '@/config/project'
-	import { createDrawerLayerUi } from '@/config/ui-layer'
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import {
+		PROJECT_ICON,
+		PROJECT_LEVEL_TEXT_CLASSES,
+		PROJECT_ROOT_ICON_CLASS,
+		PROJECT_STATUS_DISPLAY,
+		type ProjectComputedStatusValue,
+		type ProjectPriorityValue,
+	} from '@/config/project'
+	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
+	import { TASK_PRIORITY_STYLES } from '@/config/task'
+	import { createDrawerLayerUi, createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useProjectInspectorActivityLogs } from './composables/useProjectInspectorActivityLogs'
 	import { useProjectInspectorDrawer } from './composables/useProjectInspectorDrawer'
@@ -493,6 +623,7 @@
 		titleLocal,
 		noteLocal,
 		priorityLocal,
+		spaceIdLocal,
 		parentIdLocal,
 		tagsLocal,
 		tagInput,
@@ -503,6 +634,7 @@
 		linkDraftVisible,
 		linkValidationErrorIndex,
 		priorityOptions,
+		spaceOptions,
 		parentOptions,
 		linkKindOptions,
 		rootLabel,
@@ -510,14 +642,11 @@
 		isSaveStateVisible,
 		canRetrySave,
 		canDeleteProject,
-		canRestoreProject,
 		canArchiveProject,
-		canUnarchiveProject,
+		hasChildProjects,
 		isLifecycleBusy,
 		isDeletingProject,
-		isRestoringProject,
 		isArchivingProject,
-		isUnarchivingProject,
 		saveState,
 		addTag,
 		removeTag,
@@ -538,11 +667,10 @@
 		onLinkFieldBlur,
 		onLinkCompositionStart,
 		onLinkCompositionEnd,
+		onSpaceChange,
 		onRetrySave,
 		deleteCurrentProject,
-		restoreCurrentProject,
 		archiveCurrentProject,
-		unarchiveCurrentProject,
 	} = useProjectInspectorDrawer()
 	const refreshSignals = useRefreshSignalsStore()
 	const { projectTick } = storeToRefs(refreshSignals)
@@ -556,6 +684,12 @@
 		content:
 			'w-[460px] max-w-[calc(100vw-1.5rem)] h-[calc(100%-1.5rem)] my-3 mr-3 flex flex-col rounded-3xl border border-default bg-default/92 backdrop-blur-2xl shadow-2xl overflow-hidden',
 	})
+	const drawerPopoverUi = createDrawerPopoverLayerUi()
+	const optionCardHoverMotion = useCardHoverMotionPreset()
+	const priorityPopoverOpen = ref(false)
+	const statusPopoverOpen = ref(false)
+	const spacePopoverOpen = ref(false)
+	const parentPopoverOpen = ref(false)
 
 	const saveStateLabel = computed(() => {
 		if (saveState.value === 'saving') return '保存中'
@@ -578,6 +712,22 @@
 		return 'bg-neutral-500'
 	})
 
+	const priorityOption = computed(() => {
+		return priorityOptions.find((item) => item.value === priorityLocal.value) ?? priorityOptions[0]
+	})
+
+	const priorityLabel = computed(() => priorityOption.value?.label ?? '未设定')
+	const priorityIcon = computed(() => priorityOption.value?.icon ?? 'i-lucide-alert-triangle')
+
+	const priorityStyle = computed(() => {
+		const key = priorityLocal.value as keyof typeof TASK_PRIORITY_STYLES
+		return TASK_PRIORITY_STYLES[key] ?? TASK_PRIORITY_STYLES.default
+	})
+
+	const priorityCardClass = computed(() => priorityStyle.value.cardClass)
+	const priorityIconClass = computed(() => priorityStyle.value.iconClass)
+	const priorityTextClass = computed(() => priorityStyle.value.textClass)
+
 	const createdAtLabel = computed(() => {
 		const timestamp = currentProject.value?.createdAt
 		if (!timestamp) return '未知'
@@ -598,6 +748,81 @@
 	const statusLabel = computed(() => statusDisplay.value.label)
 	const statusDotClass = computed(() => statusDisplay.value.dot)
 	const statusBadgeColor = computed(() => statusDisplay.value.color)
+
+	const statusCardClass = computed(() => {
+		const status = currentProject.value?.computedStatus ?? 'inProgress'
+		switch (status) {
+			case 'done':
+				return 'bg-emerald-50/40 border-emerald-200'
+			case 'archived':
+				return 'bg-slate-50/70 border-slate-200'
+			case 'deleted':
+				return 'bg-rose-50/40 border-rose-200'
+			default:
+				return 'bg-amber-50/40 border-amber-200'
+		}
+	})
+
+	const statusIconName = computed(() => {
+		const status = currentProject.value?.computedStatus ?? 'inProgress'
+		switch (status) {
+			case 'done':
+				return 'i-lucide-check-circle-2'
+			case 'archived':
+				return 'i-lucide-archive'
+			case 'deleted':
+				return 'i-lucide-trash-2'
+			default:
+				return 'i-lucide-loader-circle'
+		}
+	})
+
+	const statusIconClass = computed(() => {
+		const status = currentProject.value?.computedStatus ?? 'inProgress'
+		switch (status) {
+			case 'done':
+				return 'text-emerald-500'
+			case 'archived':
+				return 'text-slate-500'
+			case 'deleted':
+				return 'text-rose-500'
+			default:
+				return 'text-amber-500'
+		}
+	})
+
+	const statusTextClass = computed(() => {
+		const status = currentProject.value?.computedStatus ?? 'inProgress'
+		switch (status) {
+			case 'done':
+				return 'text-emerald-600'
+			case 'archived':
+				return 'text-slate-600'
+			case 'deleted':
+				return 'text-rose-600'
+			default:
+				return 'text-amber-600'
+		}
+	})
+
+	const statusActionAvailable = computed(() => canArchiveProject.value || canDeleteProject.value)
+
+	const spaceDisplay = computed(() => {
+		const sid = spaceIdLocal.value as keyof typeof SPACE_DISPLAY | undefined
+		if (!sid) return DEFAULT_SPACE_DISPLAY
+		return SPACE_DISPLAY[sid] ?? DEFAULT_SPACE_DISPLAY
+	})
+
+	const currentSpaceLabel = computed(() => spaceDisplay.value.label)
+	const spaceCardIcon = computed(() => spaceDisplay.value.icon)
+	const spaceCardClass = computed(() => spaceDisplay.value.cardClass)
+	const spaceCardLabelClass = computed(() => spaceDisplay.value.cardLabelClass)
+	const spaceCardValueClass = computed(() => spaceDisplay.value.cardValueClass)
+
+	const currentParentLabel = computed(() => {
+		const option = parentOptions.value.find((item) => item.value === parentIdLocal.value)
+		return option?.label ?? rootLabel
+	})
 
 	const lastUpdatedLabel = computed(() => {
 		const timestamp = currentProject.value?.lastTaskUpdatedAt ?? currentProject.value?.updatedAt ?? null
@@ -649,6 +874,38 @@
 		return linkKindOptions.find((option) => option.value === kind)?.label ?? '其他'
 	}
 
+	function onPrioritySelect(value: ProjectPriorityValue) {
+		priorityLocal.value = value
+		priorityPopoverOpen.value = false
+	}
+
+	async function onSpaceSelect(value: string) {
+		if (isStructureLocked.value || hasChildProjects.value) return
+		await onSpaceChange(value)
+		spacePopoverOpen.value = false
+	}
+
+	function onParentSelect(value: string | null) {
+		if (isStructureLocked.value) return
+		parentIdLocal.value = value
+		parentPopoverOpen.value = false
+	}
+
+	function onStatusActionArchive() {
+		onRequestArchiveProject()
+		statusPopoverOpen.value = false
+	}
+
+	function onStatusActionDelete() {
+		onRequestDeleteProject()
+		statusPopoverOpen.value = false
+	}
+
+	function getParentOptionIconClass(value: string | null, depth: number): string {
+		if (value === null) return PROJECT_ROOT_ICON_CLASS
+		return PROJECT_LEVEL_TEXT_CLASSES[Math.min(depth, PROJECT_LEVEL_TEXT_CLASSES.length - 1)]
+	}
+
 	function onRequestDeleteProject() {
 		if (isLifecycleBusy.value) return
 		confirmDeleteOpen.value = true
@@ -659,11 +916,6 @@
 		if (ok) {
 			confirmDeleteOpen.value = false
 		}
-	}
-
-	async function onRestoreProject() {
-		if (isLifecycleBusy.value) return
-		await restoreCurrentProject()
 	}
 
 	function onRequestArchiveProject() {
@@ -678,12 +930,4 @@
 		}
 	}
 
-	async function onUnarchiveProject() {
-		if (isLifecycleBusy.value) return
-		await unarchiveCurrentProject()
-	}
-
-	function isParentOption(item: unknown): item is { value: string | null; label: string; depth: number } {
-		return !!item && typeof item === 'object' && 'label' in item && 'depth' in item
-	}
 </script>
