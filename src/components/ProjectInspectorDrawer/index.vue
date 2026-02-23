@@ -160,33 +160,35 @@
 								</button>
 								<template #content>
 									<div class="min-w-[180px] space-y-1 p-2">
-										<UButton
+										<div
 											v-if="canArchiveProject"
-											color="warning"
-											variant="ghost"
-											size="xs"
-											icon="i-lucide-archive"
-											block
-											:loading="isArchivingProject"
-											:disabled="isLifecycleBusy"
-											@click="onStatusActionArchive">
-											归档项目
-										</UButton>
-										<UButton
+											class="rounded-lg px-3 py-2 transition-colors"
+											:class="isLifecycleBusy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-elevated'"
+											@click="!isLifecycleBusy && onStatusActionArchive()">
+											<div class="flex items-center gap-2">
+												<UIcon
+													:name="isArchivingProject ? 'i-lucide-loader-circle' : 'i-lucide-archive'"
+													class="size-4 shrink-0"
+													:class="isArchivingProject ? 'animate-spin text-amber-500' : 'text-amber-500'" />
+												<span class="text-sm">归档项目</span>
+											</div>
+										</div>
+										<div
 											v-if="canDeleteProject"
-											color="error"
-											variant="ghost"
-											size="xs"
-											icon="i-lucide-trash-2"
-											block
-											:loading="isDeletingProject"
-											:disabled="isLifecycleBusy"
-											@click="onStatusActionDelete">
-											删除项目
-										</UButton>
+											class="rounded-lg px-3 py-2 transition-colors"
+											:class="isLifecycleBusy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-elevated'"
+											@click="!isLifecycleBusy && onStatusActionDelete()">
+											<div class="flex items-center gap-2">
+												<UIcon
+													:name="isDeletingProject ? 'i-lucide-loader-circle' : 'i-lucide-trash-2'"
+													class="size-4 shrink-0"
+													:class="isDeletingProject ? 'animate-spin text-rose-500' : 'text-rose-500'" />
+												<span class="text-sm">删除项目</span>
+											</div>
+										</div>
 										<p
 											v-if="!statusActionAvailable"
-											class="px-2 py-1 text-xs text-muted">
+											class="rounded-lg bg-elevated/60 px-3 py-2 text-xs text-muted">
 											当前状态暂无可执行操作
 										</p>
 									</div>
