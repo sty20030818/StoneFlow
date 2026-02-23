@@ -111,11 +111,40 @@ export const useProjectsStore = defineStore('projects', () => {
 		return loadingSpaceIds.value.has(spaceId)
 	}
 
+	function patchProject(spaceId: string, projectId: string, patch: Partial<ProjectDto>) {
+		let nextProject: ProjectDto | null = null
+		projects.value = projects.value.map((project) => {
+			if (project.spaceId !== spaceId || project.id !== projectId) return project
+			nextProject = normalizeProject({
+				...project,
+				...patch,
+			})
+			return nextProject
+		})
+		if (!nextProject) return
+
+		const currentSpaceSnapshot = snapshotBySpace.value[spaceId] ?? []
+		const nextSpaceSnapshot = currentSpaceSnapshot.map((project) => {
+			if (project.id !== projectId) return project
+			return nextProject as ProjectDto
+		})
+		snapshotBySpace.value = {
+			...snapshotBySpace.value,
+			[spaceId]: nextSpaceSnapshot,
+		}
+	}
+
+	function getProjectById(spaceId: string, projectId: string): ProjectDto | null {
+		return getProjectsOfSpace(spaceId).find((project) => project.id === projectId) ?? null
+	}
+
 	return {
 		projects,
 		load,
 		ensureLoaded,
 		getProjectsOfSpace,
+		getProjectById,
+		patchProject,
 		isSpaceLoaded,
 		isSpaceLoading,
 	}

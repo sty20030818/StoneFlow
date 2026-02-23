@@ -3,14 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import type { ProjectDto } from '@/services/api/projects'
 import { getDefaultProject } from '@/services/api/projects'
-import type {
-	CustomFieldItem,
-	LinkDto,
-	LinkInput,
-	TaskDoneReason,
-	TaskDto,
-	TaskStatus,
-} from '@/services/api/tasks'
+import type { CustomFieldItem, LinkDto, LinkInput, TaskDoneReason, TaskDto, TaskStatus } from '@/services/api/tasks'
 import { createTaskWithPatch } from '@/services/api/tasks'
 import {
 	PROJECT_ICON,

@@ -43,7 +43,9 @@ fn restore_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     }
 }
 
-fn resolve_tray_icon<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<tauri::image::Image<'static>> {
+fn resolve_tray_icon<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Option<tauri::image::Image<'static>> {
     if let Some(icon) = app.default_window_icon() {
         return Some(icon.clone().to_owned());
     }

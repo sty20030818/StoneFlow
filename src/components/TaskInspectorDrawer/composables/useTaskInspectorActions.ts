@@ -103,17 +103,29 @@ export function useTaskInspectorActions(params: {
 		return true
 	}
 
-	function queueImmediateUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}, taskId = getCurrentTaskId()) {
+	function queueImmediateUpdate(
+		patch: UpdateTaskPatch,
+		storePatch: Partial<TaskDto> = {},
+		taskId = getCurrentTaskId(),
+	) {
 		if (!stageUpdate(taskId, patch, storePatch)) return
 		void processQueuedUpdates(taskId)
 	}
 
-	function queueDebouncedUpdate(patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}, taskId = getCurrentTaskId()) {
+	function queueDebouncedUpdate(
+		patch: UpdateTaskPatch,
+		storePatch: Partial<TaskDto> = {},
+		taskId = getCurrentTaskId(),
+	) {
 		if (!stageUpdate(taskId, patch, storePatch)) return
 		void processQueuedUpdates(taskId)
 	}
 
-	async function commitUpdateNow(taskId: string, patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): Promise<boolean> {
+	async function commitUpdateNow(
+		taskId: string,
+		patch: UpdateTaskPatch,
+		storePatch: Partial<TaskDto> = {},
+	): Promise<boolean> {
 		if (!hasPatchValue(patch)) return true
 		const activeTaskId = getCurrentTaskId()
 		if (activeTaskId && activeTaskId !== taskId) {
@@ -192,8 +204,7 @@ export function useTaskInspectorActions(params: {
 		} finally {
 			queueRunning = false
 			const activeTaskId = getCurrentTaskId()
-			if (activeTaskId && hasQueuedPatch(activeTaskId))
-				void processQueuedUpdates(activeTaskId)
+			if (activeTaskId && hasQueuedPatch(activeTaskId)) void processQueuedUpdates(activeTaskId)
 		}
 	}
 

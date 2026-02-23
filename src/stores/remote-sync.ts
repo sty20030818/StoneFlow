@@ -175,7 +175,9 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 			log('updateProfileUrl:done', { profileId })
 		} catch (error) {
 			if (previousSecretLoaded) {
-				const rollback = previousSecret ? setRemoteSyncSecret(profileId, previousSecret) : removeRemoteSyncSecret(profileId)
+				const rollback = previousSecret
+					? setRemoteSyncSecret(profileId, previousSecret)
+					: removeRemoteSyncSecret(profileId)
 				await rollback.catch((rollbackError) => {
 					logError('updateProfileUrl:rollback-secret:error', rollbackError)
 				})

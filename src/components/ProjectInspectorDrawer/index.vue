@@ -36,6 +36,7 @@
 							size="lg"
 							class="w-full"
 							:ui="{ rounded: 'rounded-xl' }"
+							@focus="onTitleFocus"
 							@blur="onTitleBlur"
 							@compositionstart="onTitleCompositionStart"
 							@compositionend="onTitleCompositionEnd" />
@@ -134,7 +135,11 @@
 									placeholder="标题（可选）"
 									size="xs"
 									:ui="{ rounded: 'rounded-lg' }"
-									@input="clearLinkValidationError(index)" />
+									@focus="onLinkFieldFocus"
+									@blur="onLinkFieldBlur"
+									@input="clearLinkValidationError(index)"
+									@compositionstart="onLinkCompositionStart"
+									@compositionend="onLinkCompositionEnd" />
 								<USelectMenu
 									v-model="link.kind"
 									:items="linkKindOptions"
@@ -150,7 +155,11 @@
 									placeholder="URL"
 									size="xs"
 									:ui="{ rounded: 'rounded-lg' }"
-									@input="clearLinkValidationError(index)" />
+									@focus="onLinkFieldFocus"
+									@blur="onLinkFieldBlur"
+									@input="clearLinkValidationError(index)"
+									@compositionstart="onLinkCompositionStart"
+									@compositionend="onLinkCompositionEnd" />
 								<UButton
 									color="neutral"
 									variant="ghost"
@@ -173,7 +182,11 @@
 									v-model="linkDraftTitle"
 									placeholder="标题（可选）"
 									size="xs"
-									:ui="{ rounded: 'rounded-lg' }" />
+									:ui="{ rounded: 'rounded-lg' }"
+									@focus="onLinkFieldFocus"
+									@blur="onLinkFieldBlur"
+									@compositionstart="onLinkCompositionStart"
+									@compositionend="onLinkCompositionEnd" />
 								<USelectMenu
 									v-model="linkDraftKind"
 									:items="linkKindOptions"
@@ -188,7 +201,11 @@
 									v-model="linkDraftUrl"
 									placeholder="URL（必填）"
 									size="xs"
-									:ui="{ rounded: 'rounded-lg' }" />
+									:ui="{ rounded: 'rounded-lg' }"
+									@focus="onLinkFieldFocus"
+									@blur="onLinkFieldBlur"
+									@compositionstart="onLinkCompositionStart"
+									@compositionend="onLinkCompositionEnd" />
 								<UButton
 									color="primary"
 									size="xs"
@@ -207,6 +224,7 @@
 							placeholder="为项目补充更多上下文信息..."
 							class="w-full"
 							:ui="{ rounded: 'rounded-xl' }"
+							@focus="onNoteFocus"
 							@blur="onNoteBlur"
 							@compositionstart="onNoteCompositionStart"
 							@compositionend="onNoteCompositionEnd" />
@@ -214,9 +232,7 @@
 				</div>
 
 				<footer class="flex items-center justify-between border-t border-default px-6 py-3">
-					<div class="text-[11px] text-muted">
-						创建于 {{ createdAtLabel }}
-					</div>
+					<div class="text-[11px] text-muted">创建于 {{ createdAtLabel }}</div>
 					<UButton
 						v-if="canRetrySave"
 						color="error"
@@ -267,12 +283,18 @@
 		confirmLinkDraft,
 		removeLink,
 		clearLinkValidationError,
+		onTitleFocus,
 		onTitleBlur,
 		onTitleCompositionStart,
 		onTitleCompositionEnd,
+		onNoteFocus,
 		onNoteBlur,
 		onNoteCompositionStart,
 		onNoteCompositionEnd,
+		onLinkFieldFocus,
+		onLinkFieldBlur,
+		onLinkCompositionStart,
+		onLinkCompositionEnd,
 		onRetrySave,
 	} = useProjectInspectorDrawer()
 

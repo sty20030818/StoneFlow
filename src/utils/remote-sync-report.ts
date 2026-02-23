@@ -71,7 +71,8 @@ function normalizeTableReportMetrics(input: unknown) {
 	const inserted = toSafeNumber(source.inserted ?? source.synced)
 	const updated = toSafeNumber(source.updated)
 	const skippedCandidate = source.skipped ?? source.deduped
-	const skipped = skippedCandidate === undefined ? Math.max(total - inserted - updated, 0) : toSafeNumber(skippedCandidate)
+	const skipped =
+		skippedCandidate === undefined ? Math.max(total - inserted - updated, 0) : toSafeNumber(skippedCandidate)
 	return {
 		total,
 		inserted,

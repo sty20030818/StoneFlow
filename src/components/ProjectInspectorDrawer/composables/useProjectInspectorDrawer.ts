@@ -1,7 +1,12 @@
 import { useEventListener, useTimeoutFn, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { PROJECT_PRIORITY_OPTIONS, PROJECT_ROOT_LABEL, type ProjectPriorityValue, isDefaultProjectId } from '@/config/project'
+import {
+	PROJECT_PRIORITY_OPTIONS,
+	PROJECT_ROOT_LABEL,
+	type ProjectPriorityValue,
+	isDefaultProjectId,
+} from '@/config/project'
 import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
 import { updateProject } from '@/services/api/projects'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
@@ -20,6 +25,12 @@ type ProjectLinkFormItem = {
 	title: string
 	url: string
 	kind: LinkDto['kind']
+}
+
+type SaveBucket = {
+	spaceId: string
+	stagedPatch: UpdateProjectPatch
+	queueRunning: boolean
 }
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
@@ -65,14 +76,18 @@ export function useProjectInspectorDrawer() {
 	const textInteraction = reactive({
 		titleComposing: false,
 		noteComposing: false,
+		titleEditing: false,
+		noteEditing: false,
+		linkComposingCount: 0,
+		linkEditingCount: 0,
 	})
 	const suppressAutosave = ref(false)
 	const pendingSaves = ref(0)
 	const parentOptions = ref<ParentProjectOption[]>([{ value: null, label: PROJECT_ROOT_LABEL, depth: 0 }])
 
-	let stagedPatch: UpdateProjectPatch = {}
-	let queueRunning = false
-	let retryPatch: UpdateProjectPatch | null = null
+	const saveBuckets = new Map<string, SaveBucket>()
+	const retryPatchByProjectId = new Map<string, UpdateProjectPatch>()
+	let syncTicket = 0
 
 	const priorityOptions = PROJECT_PRIORITY_OPTIONS
 	const linkKindOptions = PROJECT_LINK_KIND_OPTIONS
@@ -85,7 +100,11 @@ export function useProjectInspectorDrawer() {
 	})
 
 	const isSaveStateVisible = computed(() => store.saveState !== 'idle')
-	const canRetrySave = computed(() => store.retrySaveAvailable)
+	const canRetrySave = computed(() => {
+		const projectId = currentProject.value?.id
+		if (!projectId) return false
+		return retryPatchByProjectId.has(projectId)
+	})
 
 	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
 		() => {
@@ -101,6 +120,10 @@ export function useProjectInspectorDrawer() {
 		3000,
 		{ immediate: false },
 	)
+
+	function syncRetrySaveAvailability() {
+		store.setRetrySaveAvailable(canRetrySave.value)
+	}
 
 	function clearSaveStateTimer() {
 		stopSavedTimer()
@@ -172,95 +195,164 @@ export function useProjectInspectorDrawer() {
 		}))
 	}
 
-	function stageUpdate(patch: UpdateProjectPatch): boolean {
-		if (!hasPatchValue(patch)) return false
-		stagedPatch = {
-			...stagedPatch,
-			...patch,
-		}
-		return true
-	}
-
-	function queueImmediateUpdate(patch: UpdateProjectPatch) {
-		if (!stageUpdate(patch)) return
-		void processQueuedUpdates()
-	}
-
-	function queueDebouncedUpdate(patch: UpdateProjectPatch) {
-		if (!stageUpdate(patch)) return
-		void processQueuedUpdates()
-	}
-
-	async function refreshStoreProject(spaceId: string, projectId: string) {
-		await projectsStore.load(spaceId, { force: true })
-		const latest = projectsStore.getProjectsOfSpace(spaceId).find((item) => item.id === projectId) ?? null
-		store.setProject(latest)
-	}
-
-	function patchStoreProject(patch: UpdateProjectPatch) {
-		const draftPatch: Partial<ProjectDto> = {}
-		if (patch.title !== undefined) draftPatch.title = patch.title
-		if (patch.note !== undefined) draftPatch.note = patch.note
-		if (patch.priority !== undefined) draftPatch.priority = patch.priority
-		if (patch.parentId !== undefined) draftPatch.parentId = patch.parentId
-		if (patch.tags !== undefined) draftPatch.tags = patch.tags
-		store.patchProject(draftPatch)
-	}
-
-	async function commitUpdateNow(patch: UpdateProjectPatch): Promise<boolean> {
-		const project = currentProject.value
-		if (!project || !hasPatchValue(patch)) return true
-
-		beginSave()
-		try {
-			await updateProject(project.id, patch)
-			patchStoreProject(patch)
-			await refreshStoreProject(project.spaceId, project.id)
-			refreshSignals.bumpProject()
-			retryPatch = null
-			store.setRetrySaveAvailable(false)
-			endSave(true)
-			return true
-		} catch (error) {
-			console.error('更新项目失败:', error)
-			retryPatch = { ...patch }
-			store.setRetrySaveAvailable(true)
-			endSave(false)
-			return false
-		}
-	}
-
-	async function processQueuedUpdates() {
-		if (queueRunning) return
-		queueRunning = true
-
-		try {
-			while (hasPatchValue(stagedPatch)) {
-				const currentPatch = stagedPatch
-				stagedPatch = {}
-				const ok = await commitUpdateNow(currentPatch)
-				if (!ok) {
-					stagedPatch = {
-						...currentPatch,
-						...stagedPatch,
-					}
-					break
-				}
-			}
-		} finally {
-			queueRunning = false
-			if (hasPatchValue(stagedPatch)) {
-				void processQueuedUpdates()
-			}
-		}
-	}
-
 	function withAutosaveSuppressed<T>(fn: () => T): T {
 		suppressAutosave.value = true
 		try {
 			return fn()
 		} finally {
 			suppressAutosave.value = false
+		}
+	}
+
+	function shouldForceRefreshAfterCommit(patch: UpdateProjectPatch): boolean {
+		return patch.title !== undefined || patch.parentId !== undefined
+	}
+
+	function getOrCreateSaveBucket(projectId: string, spaceId: string): SaveBucket {
+		const existing = saveBuckets.get(projectId)
+		if (existing) return existing
+		const created: SaveBucket = {
+			spaceId,
+			stagedPatch: {},
+			queueRunning: false,
+		}
+		saveBuckets.set(projectId, created)
+		return created
+	}
+
+	function clearProjectBucket(projectId: string) {
+		const bucket = saveBuckets.get(projectId)
+		if (!bucket) return
+		if (bucket.queueRunning) return
+		if (hasPatchValue(bucket.stagedPatch)) return
+		if (retryPatchByProjectId.has(projectId)) return
+		saveBuckets.delete(projectId)
+	}
+
+	function cleanupInactiveBuckets(activeProjectId: string | null) {
+		for (const [projectId, bucket] of saveBuckets.entries()) {
+			if (projectId === activeProjectId) continue
+			if (bucket.queueRunning) continue
+			if (hasPatchValue(bucket.stagedPatch)) {
+				console.warn('[ProjectInspector] 丢弃非激活项目待提交补丁:', {
+					projectId,
+				})
+			}
+			saveBuckets.delete(projectId)
+		}
+
+		for (const projectId of retryPatchByProjectId.keys()) {
+			if (projectId === activeProjectId) continue
+			retryPatchByProjectId.delete(projectId)
+		}
+	}
+
+	function stageUpdateForCurrentProject(patch: UpdateProjectPatch): { projectId: string; spaceId: string } | null {
+		const project = currentProject.value
+		if (!project || !hasPatchValue(patch)) return null
+		const bucket = getOrCreateSaveBucket(project.id, project.spaceId)
+		bucket.stagedPatch = {
+			...bucket.stagedPatch,
+			...patch,
+		}
+		return {
+			projectId: project.id,
+			spaceId: project.spaceId,
+		}
+	}
+
+	function queueImmediateUpdate(patch: UpdateProjectPatch) {
+		const context = stageUpdateForCurrentProject(patch)
+		if (!context) return
+		void processQueuedUpdates(context.projectId, context.spaceId)
+	}
+
+	function queueDebouncedUpdate(patch: UpdateProjectPatch) {
+		const context = stageUpdateForCurrentProject(patch)
+		if (!context) return
+		void processQueuedUpdates(context.projectId, context.spaceId)
+	}
+
+	function patchStoreProject(projectId: string, spaceId: string, patch: UpdateProjectPatch) {
+		const draftPatch: Partial<ProjectDto> = {}
+		if (patch.title !== undefined) draftPatch.title = patch.title
+		if (patch.note !== undefined) draftPatch.note = patch.note
+		if (patch.priority !== undefined) draftPatch.priority = patch.priority
+		if (patch.parentId !== undefined) draftPatch.parentId = patch.parentId
+		if (patch.tags !== undefined) draftPatch.tags = patch.tags
+		if (!hasPatchValue(draftPatch)) return
+
+		projectsStore.patchProject(spaceId, projectId, draftPatch)
+		if (currentProject.value?.id === projectId) {
+			store.patchProject(draftPatch)
+		}
+	}
+
+	async function refreshStoreProject(spaceId: string, projectId: string, options: { force?: boolean } = {}) {
+		await projectsStore.load(spaceId, { force: options.force ?? false })
+		const latest = projectsStore.getProjectById(spaceId, projectId)
+		if (currentProject.value?.id !== projectId) return
+		store.setProject(latest)
+	}
+
+	async function commitUpdateNow(projectId: string, spaceId: string, patch: UpdateProjectPatch): Promise<boolean> {
+		if (!hasPatchValue(patch)) return true
+
+		const activeProjectId = currentProject.value?.id ?? null
+		if (activeProjectId !== projectId) {
+			console.warn('[ProjectInspector] 丢弃上下文不一致补丁:', {
+				activeProjectId,
+				bucketProjectId: projectId,
+			})
+			return true
+		}
+
+		beginSave()
+		try {
+			await updateProject(projectId, patch)
+			patchStoreProject(projectId, spaceId, patch)
+			if (shouldForceRefreshAfterCommit(patch)) {
+				void refreshStoreProject(spaceId, projectId, { force: true })
+			}
+			refreshSignals.bumpProject()
+			retryPatchByProjectId.delete(projectId)
+			syncRetrySaveAvailability()
+			endSave(true)
+			return true
+		} catch (error) {
+			console.error('更新项目失败:', error)
+			retryPatchByProjectId.set(projectId, { ...patch })
+			syncRetrySaveAvailability()
+			endSave(false)
+			return false
+		}
+	}
+
+	async function processQueuedUpdates(projectId: string, spaceId: string) {
+		const bucket = getOrCreateSaveBucket(projectId, spaceId)
+		if (bucket.queueRunning) return
+		bucket.queueRunning = true
+
+		try {
+			while (hasPatchValue(bucket.stagedPatch)) {
+				const currentPatch = bucket.stagedPatch
+				bucket.stagedPatch = {}
+				const ok = await commitUpdateNow(projectId, bucket.spaceId, currentPatch)
+				if (!ok) {
+					bucket.stagedPatch = {
+						...currentPatch,
+						...bucket.stagedPatch,
+					}
+					break
+				}
+			}
+		} finally {
+			bucket.queueRunning = false
+			if (hasPatchValue(bucket.stagedPatch) && currentProject.value?.id === projectId) {
+				void processQueuedUpdates(projectId, bucket.spaceId)
+				return
+			}
+			clearProjectBucket(projectId)
 		}
 	}
 
@@ -285,9 +377,7 @@ export function useProjectInspectorDrawer() {
 	}
 
 	function buildParentOptions(project: ProjectDto): ParentProjectOption[] {
-		const projects = projectsStore
-			.getProjectsOfSpace(project.spaceId)
-			.filter((item) => !isDefaultProjectId(item.id))
+		const projects = projectsStore.getProjectsOfSpace(project.spaceId).filter((item) => !isDefaultProjectId(item.id))
 		const descendants = collectDescendantIds(projects, project.id)
 		const disallowedIds = new Set<string>([project.id, ...descendants])
 
@@ -322,35 +412,51 @@ export function useProjectInspectorDrawer() {
 		return options
 	}
 
-	async function syncFromProject(project: ProjectDto) {
-		await projectsStore.load(project.spaceId)
+	function resetLocalDraftState() {
+		tagInput.value = ''
+		linkDraftTitle.value = ''
+		linkDraftUrl.value = ''
+		linkDraftKind.value = 'web'
+		linkDraftVisible.value = false
+		linkValidationErrorIndex.value = null
+	}
+
+	function syncFromProjectSnapshot(project: ProjectDto, mode: 'reset' | 'incremental') {
 		withAutosaveSuppressed(() => {
-			titleLocal.value = project.title
-			noteLocal.value = project.note ?? ''
+			if (mode === 'reset' || (!textInteraction.titleEditing && !textInteraction.titleComposing)) {
+				titleLocal.value = project.title
+			}
+			if (mode === 'reset' || (!textInteraction.noteEditing && !textInteraction.noteComposing)) {
+				noteLocal.value = project.note ?? ''
+			}
+			if (mode === 'reset' || textInteraction.linkEditingCount === 0) {
+				linksLocal.value = toLinkFormItems(project.links)
+			}
+
 			priorityLocal.value = project.priority
 			parentIdLocal.value = project.parentId ?? null
 			tagsLocal.value = [...project.tags]
-			linksLocal.value = toLinkFormItems(project.links)
-			tagInput.value = ''
-			linkDraftTitle.value = ''
-			linkDraftUrl.value = ''
-			linkDraftKind.value = 'web'
-			linkDraftVisible.value = false
-			linkValidationErrorIndex.value = null
+
+			if (mode === 'reset') {
+				resetLocalDraftState()
+			}
 		})
 		parentOptions.value = buildParentOptions(project)
 	}
 
-	async function flushPendingUpdates() {
-		stageTitleUpdate('immediate')
-		stageNoteUpdate('immediate')
-		stageLinksUpdate('immediate')
-		await processQueuedUpdates()
+	async function syncFromProject(project: ProjectDto, mode: 'reset' | 'incremental') {
+		const ticket = ++syncTicket
+		await projectsStore.load(project.spaceId)
+		if (ticket !== syncTicket) return
+
+		const latest = projectsStore.getProjectById(project.spaceId, project.id)
+		const resolved = latest ?? project
+		if (currentProject.value?.id !== resolved.id) return
+		syncFromProjectSnapshot(resolved, mode)
 	}
 
-	async function close() {
-		await flushPendingUpdates()
-		store.close()
+	function onTitleFocus() {
+		textInteraction.titleEditing = true
 	}
 
 	function onTitleCompositionStart() {
@@ -362,6 +468,15 @@ export function useProjectInspectorDrawer() {
 		void flushPendingUpdates()
 	}
 
+	async function onTitleBlur() {
+		textInteraction.titleEditing = false
+		await flushPendingUpdates()
+	}
+
+	function onNoteFocus() {
+		textInteraction.noteEditing = true
+	}
+
 	function onNoteCompositionStart() {
 		textInteraction.noteComposing = true
 	}
@@ -371,12 +486,29 @@ export function useProjectInspectorDrawer() {
 		void flushPendingUpdates()
 	}
 
-	async function onTitleBlur() {
+	async function onNoteBlur() {
+		textInteraction.noteEditing = false
 		await flushPendingUpdates()
 	}
 
-	async function onNoteBlur() {
-		await flushPendingUpdates()
+	function onLinkFieldFocus() {
+		textInteraction.linkEditingCount += 1
+	}
+
+	function onLinkFieldBlur() {
+		textInteraction.linkEditingCount = Math.max(0, textInteraction.linkEditingCount - 1)
+		if (textInteraction.linkEditingCount > 0) return
+		void flushPendingUpdates()
+	}
+
+	function onLinkCompositionStart() {
+		textInteraction.linkComposingCount += 1
+	}
+
+	function onLinkCompositionEnd() {
+		textInteraction.linkComposingCount = Math.max(0, textInteraction.linkComposingCount - 1)
+		if (textInteraction.linkComposingCount > 0) return
+		void flushPendingUpdates()
 	}
 
 	function stageTitleUpdate(mode: 'debounced' | 'immediate') {
@@ -410,7 +542,7 @@ export function useProjectInspectorDrawer() {
 	function stageLinksUpdate(mode: 'debounced' | 'immediate') {
 		const project = currentProject.value
 		if (!project) return
-		if (mode === 'debounced' && suppressAutosave.value) return
+		if (mode === 'debounced' && (suppressAutosave.value || textInteraction.linkComposingCount > 0)) return
 		const invalidIndex = findInvalidLinkIndex()
 		if (invalidIndex >= 0) {
 			linkValidationErrorIndex.value = invalidIndex
@@ -494,17 +626,48 @@ export function useProjectInspectorDrawer() {
 		queueImmediateUpdate({ parentId: value })
 	}
 
+	async function flushPendingUpdates() {
+		stageTitleUpdate('immediate')
+		stageNoteUpdate('immediate')
+		stageLinksUpdate('immediate')
+
+		const project = currentProject.value
+		if (!project) return
+		await processQueuedUpdates(project.id, project.spaceId)
+	}
+
+	async function close() {
+		await flushPendingUpdates()
+		store.close()
+		const activeProjectId = currentProject.value?.id ?? null
+		cleanupInactiveBuckets(activeProjectId)
+		syncRetrySaveAvailability()
+	}
+
 	async function onRetrySave() {
+		const project = currentProject.value
+		if (!project) return
+		const retryPatch = retryPatchByProjectId.get(project.id)
 		if (!retryPatch) return
 		queueImmediateUpdate(retryPatch)
-		await processQueuedUpdates()
+		await processQueuedUpdates(project.id, project.spaceId)
 	}
 
 	watch(
+		() => currentProject.value?.id ?? null,
+		(projectId) => {
+			cleanupInactiveBuckets(projectId)
+			syncRetrySaveAvailability()
+		},
+		{ immediate: true },
+	)
+
+	watch(
 		() => currentProject.value,
-		(project) => {
+		(project, previousProject) => {
 			if (!project) return
-			void syncFromProject(project)
+			const mode = !previousProject || previousProject.id !== project.id ? 'reset' : 'incremental'
+			void syncFromProject(project, mode)
 		},
 		{ immediate: true },
 	)
@@ -585,12 +748,18 @@ export function useProjectInspectorDrawer() {
 		confirmLinkDraft,
 		removeLink,
 		clearLinkValidationError,
+		onTitleFocus,
 		onTitleBlur,
 		onTitleCompositionStart,
 		onTitleCompositionEnd,
+		onNoteFocus,
 		onNoteBlur,
 		onNoteCompositionStart,
 		onNoteCompositionEnd,
+		onLinkFieldFocus,
+		onLinkFieldBlur,
+		onLinkCompositionStart,
+		onLinkCompositionEnd,
 		onRetrySave,
 		flushPendingUpdates,
 		close,

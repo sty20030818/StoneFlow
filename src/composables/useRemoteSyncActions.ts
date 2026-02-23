@@ -16,12 +16,8 @@ export function useRemoteSyncActions() {
 	const isPulling = ref(false)
 	const syncError = ref<string | null>(null)
 	const syncHistory = computed(() => remoteSyncStore.syncHistory)
-	const lastPushReport = computed(
-		() => syncHistory.value.find((entry) => entry.direction === 'push')?.report ?? null,
-	)
-	const lastPullReport = computed(
-		() => syncHistory.value.find((entry) => entry.direction === 'pull')?.report ?? null,
-	)
+	const lastPushReport = computed(() => syncHistory.value.find((entry) => entry.direction === 'push')?.report ?? null)
+	const lastPullReport = computed(() => syncHistory.value.find((entry) => entry.direction === 'pull')?.report ?? null)
 
 	// 同步时间统一交给 VueUse 持久化，并强制 number 序列化，缺省值为 0（表示未同步）。
 	const lastPushedAt = useStorage<number>(LAST_PUSHED_AT_KEY, 0, undefined, {
