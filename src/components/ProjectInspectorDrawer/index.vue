@@ -63,14 +63,16 @@
 					</section>
 
 					<section class="space-y-2">
-						<label class="text-xs font-semibold text-muted">项目标题</label>
 						<UInput
 							v-model="titleLocal"
 							:disabled="isStructureLocked"
 							placeholder="请输入项目标题"
-							size="lg"
-							class="w-full"
-							:ui="{ rounded: 'rounded-xl' }"
+							size="xl"
+							variant="none"
+							:ui="{
+								root: 'w-full',
+								base: 'px-0 py-0 text-2xl font-semibold leading-tight bg-transparent border-none rounded-none focus:ring-0 placeholder:text-muted/40',
+							}"
 							autofocus
 							@focus="onTitleFocus"
 							@blur="onTitleBlur"
@@ -121,7 +123,7 @@
 					</section>
 
 					<section class="space-y-2">
-						<label class="text-xs font-semibold text-muted">标签</label>
+						<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Tags</label>
 						<div class="flex flex-wrap gap-2">
 							<UBadge
 								v-for="tag in tagsLocal"
@@ -139,12 +141,11 @@
 								</template>
 							</UBadge>
 						</div>
-						<UInput
+						<input
 							v-model="tagInput"
-							placeholder="输入标签后回车"
-							size="sm"
-							class="w-full"
-							:ui="{ rounded: 'rounded-xl' }"
+							type="text"
+							placeholder="+ New Tag"
+							class="h-8 w-[120px] bg-transparent border-none px-2 text-xs font-medium placeholder:text-muted/60 focus:outline-none focus:ring-0"
 							@keydown.enter.prevent="addTag" />
 					</section>
 
