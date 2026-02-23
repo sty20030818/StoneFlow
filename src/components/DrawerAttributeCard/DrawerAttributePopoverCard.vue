@@ -26,10 +26,13 @@
 	import { useEventListener, useResizeObserver } from '@vueuse/core'
 	import { computed, nextTick, ref, watch } from 'vue'
 
+	type PopoverCardPopper = Record<string, unknown>
+	type PopoverCardUi = Record<string, string | undefined>
+
 	type Props = {
 		mode?: 'click' | 'hover'
-		popper?: any
-		ui?: any
+		popper?: PopoverCardPopper
+		ui?: PopoverCardUi
 		disabled?: boolean
 		triggerClass?: string
 		contentClass?: string

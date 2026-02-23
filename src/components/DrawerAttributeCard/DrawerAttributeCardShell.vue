@@ -13,7 +13,7 @@
 				{{ label }}
 			</div>
 			<div
-				class="truncate text-xs font-semibold text-default"
+				class="truncate text-xs font-semibold"
 				:class="valueClass">
 				<slot name="value">{{ value }}</slot>
 			</div>
@@ -35,6 +35,6 @@
 		value: '',
 		iconClass: '',
 		labelClass: '',
-		valueClass: '',
+		valueClass: 'text-default',
 	})
 </script>

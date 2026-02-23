@@ -12,6 +12,22 @@ function getDefaultProject<T extends { id: string }>(projects: T[]): T | undefin
 	return projects.find((project) => project.id.endsWith('_default'))
 }
 
+function normalizePriorityKey(priority: string | null | undefined): keyof typeof TASK_PRIORITY_STYLES {
+	const normalized = priority?.trim().toUpperCase() ?? ''
+	if (normalized === 'P0' || normalized === 'P1' || normalized === 'P2' || normalized === 'P3') {
+		return normalized
+	}
+	return 'default'
+}
+
+function normalizeSpaceKey(spaceId: string | null | undefined): keyof typeof SPACE_DISPLAY | null {
+	const normalized = spaceId?.trim().toLowerCase() ?? ''
+	if (normalized === 'work' || normalized === 'personal' || normalized === 'study') {
+		return normalized
+	}
+	return null
+}
+
 export function useTaskInspectorDerived(params: {
 	currentTask: Ref<TaskDto | null>
 	state: TaskInspectorState
@@ -29,33 +45,38 @@ export function useTaskInspectorDerived(params: {
 		return opt?.icon ?? TASK_PRIORITY_OPTIONS[0]?.icon ?? 'i-lucide-alert-triangle'
 	})
 
+	const priorityStyle = computed(() => {
+		const key = normalizePriorityKey(state.priorityLocal.value)
+		return TASK_PRIORITY_STYLES[key]
+	})
+
 	const priorityCardClass = computed(() => {
-		const p = state.priorityLocal.value as keyof typeof TASK_PRIORITY_STYLES
-		return (TASK_PRIORITY_STYLES[p] || TASK_PRIORITY_STYLES.default).cardClass
+		return priorityStyle.value.cardClass
 	})
 
 	const priorityIconClass = computed(() => {
-		const p = state.priorityLocal.value as keyof typeof TASK_PRIORITY_STYLES
-		return (TASK_PRIORITY_STYLES[p] || TASK_PRIORITY_STYLES.default).iconClass
+		return priorityStyle.value.iconClass
 	})
 
 	const priorityTextClass = computed(() => {
-		const p = state.priorityLocal.value as keyof typeof TASK_PRIORITY_STYLES
-		return (TASK_PRIORITY_STYLES[p] || TASK_PRIORITY_STYLES.default).textClass
+		return priorityStyle.value.textClass
 	})
 
 	const spaceCardClass = computed(() => {
-		const display = SPACE_DISPLAY[state.spaceIdLocal.value as keyof typeof SPACE_DISPLAY]
+		const key = normalizeSpaceKey(state.spaceIdLocal.value)
+		const display = key ? SPACE_DISPLAY[key] : null
 		return display?.cardClass ?? DEFAULT_SPACE_DISPLAY.cardClass
 	})
 
 	const spaceCardLabelClass = computed(() => {
-		const display = SPACE_DISPLAY[state.spaceIdLocal.value as keyof typeof SPACE_DISPLAY]
+		const key = normalizeSpaceKey(state.spaceIdLocal.value)
+		const display = key ? SPACE_DISPLAY[key] : null
 		return display?.cardLabelClass ?? DEFAULT_SPACE_DISPLAY.cardLabelClass
 	})
 
 	const spaceCardValueClass = computed(() => {
-		const display = SPACE_DISPLAY[state.spaceIdLocal.value as keyof typeof SPACE_DISPLAY]
+		const key = normalizeSpaceKey(state.spaceIdLocal.value)
+		const display = key ? SPACE_DISPLAY[key] : null
 		return display?.cardValueClass ?? DEFAULT_SPACE_DISPLAY.cardValueClass
 	})
 
@@ -77,21 +98,21 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const currentSpaceLabel = computed(() => {
-		const sid = currentTask.value?.spaceId
-		if (!sid) return DEFAULT_SPACE_DISPLAY.label
-		return SPACE_DISPLAY[sid as keyof typeof SPACE_DISPLAY]?.label ?? sid
+		const key = normalizeSpaceKey(currentTask.value?.spaceId)
+		if (!key) return currentTask.value?.spaceId ?? DEFAULT_SPACE_DISPLAY.label
+		return SPACE_DISPLAY[key].label
 	})
 
 	const currentSpaceIcon = computed(() => {
-		const sid = currentTask.value?.spaceId
-		if (!sid) return DEFAULT_SPACE_DISPLAY.icon
-		return SPACE_DISPLAY[sid as keyof typeof SPACE_DISPLAY]?.icon ?? DEFAULT_SPACE_DISPLAY.icon
+		const key = normalizeSpaceKey(currentTask.value?.spaceId)
+		if (!key) return DEFAULT_SPACE_DISPLAY.icon
+		return SPACE_DISPLAY[key].icon
 	})
 
 	const spacePillClass = computed(() => {
-		const sid = currentTask.value?.spaceId
-		if (!sid) return DEFAULT_SPACE_DISPLAY.pillClass
-		return SPACE_DISPLAY[sid as keyof typeof SPACE_DISPLAY]?.pillClass ?? DEFAULT_SPACE_DISPLAY.pillClass
+		const key = normalizeSpaceKey(currentTask.value?.spaceId)
+		if (!key) return DEFAULT_SPACE_DISPLAY.pillClass
+		return SPACE_DISPLAY[key].pillClass
 	})
 
 	const projectPath = computed(() => {

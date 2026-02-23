@@ -149,13 +149,13 @@ export const TASK_PRIORITY_STYLES: Record<
 		badgeClass: 'bg-blue-200 text-blue-600',
 	},
 	P3: {
-		cardClass: 'bg-elevated/50 border-default/60 hover:bg-elevated/80',
-		iconClass: 'text-muted',
-		textClass: 'text-default',
-		cardBorderClass: 'hover:border-slate-300',
+		cardClass: 'bg-emerald-50/50 border-emerald-200 hover:bg-emerald-50/80',
+		iconClass: 'text-emerald-500',
+		textClass: 'text-emerald-600',
+		cardBorderClass: 'hover:border-emerald-500/60',
 		cardShadowClass: '',
-		badgeColor: 'gray',
-		badgeClass: 'bg-slate-200 text-slate-500',
+		badgeColor: 'green',
+		badgeClass: 'bg-emerald-200 text-emerald-600',
 	},
 	default: {
 		cardClass: 'bg-elevated/50 border-default/60 hover:bg-elevated/80',
@@ -180,7 +180,7 @@ export const TASK_PRIORITY_BADGE_STYLES: Record<
 	P1: {
 		bgClass: 'bg-amber-100',
 		textClass: 'text-amber-600',
-		textOnlyClass: 'text-muted',
+		textOnlyClass: 'text-amber-600',
 	},
 	P2: {
 		bgClass: 'bg-blue-100',
@@ -188,9 +188,9 @@ export const TASK_PRIORITY_BADGE_STYLES: Record<
 		textOnlyClass: 'text-blue-600',
 	},
 	P3: {
-		bgClass: 'bg-gray-100',
-		textClass: 'text-gray-600',
-		textOnlyClass: 'text-muted',
+		bgClass: 'bg-emerald-100',
+		textClass: 'text-emerald-600',
+		textOnlyClass: 'text-emerald-600',
 	},
 }
 

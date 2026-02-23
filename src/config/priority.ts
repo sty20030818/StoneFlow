@@ -20,7 +20,7 @@ export const PRIORITY_ICON_MAP: Record<PriorityValue, { icon: string; iconClass:
 	P0: { icon: 'i-lucide-alert-triangle', iconClass: 'text-red-500' },
 	P1: { icon: 'i-lucide-flame', iconClass: 'text-amber-500' },
 	P2: { icon: 'i-lucide-flag', iconClass: 'text-blue-500' },
-	P3: { icon: 'i-lucide-leaf', iconClass: 'text-muted' },
+	P3: { icon: 'i-lucide-leaf', iconClass: 'text-emerald-500' },
 }
 
 export const PRIORITY_OPTIONS: PriorityOption[] = PRIORITY_VALUES.map((value) => ({

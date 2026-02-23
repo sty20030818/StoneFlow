@@ -146,7 +146,6 @@
 											:icon-class="spaceCardLabelClass"
 											label="所属 Space"
 											:value="currentSpaceLabel"
-											:label-class="spaceCardLabelClass"
 											:value-class="spaceCardValueClass" />
 									</template>
 									<DrawerAttributeOptionList
@@ -164,15 +163,16 @@
 									:disabled="isStructureLocked"
 									:trigger-class="
 										isStructureLocked
-											? 'cursor-not-allowed bg-elevated/30 border-default/50 opacity-70'
-											: 'cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80'
+											? `${parentCardClass} cursor-not-allowed opacity-70`
+											: `${parentCardClass} cursor-pointer`
 									">
 									<template #trigger>
 										<DrawerAttributeCardShell
 											icon-name="i-lucide-folder-tree"
-											icon-class="text-muted"
+											:icon-class="currentParentIconClass"
 											label="所属 Project"
-											:value="currentParentLabel" />
+											:value="currentParentLabel"
+											value-class="text-default" />
 									</template>
 									<DrawerAttributeOptionList
 										:items="parentOptionItems"
@@ -488,7 +488,6 @@
 	import {
 		PROJECT_ICON,
 		PROJECT_LEVEL_TEXT_CLASSES,
-		PROJECT_ROOT_ICON_CLASS,
 		PROJECT_STATUS_DISPLAY,
 		type ProjectComputedStatusValue,
 		type ProjectPriorityValue,
@@ -602,9 +601,17 @@
 	const priorityLabel = computed(() => priorityOption.value?.label ?? '未设定')
 	const priorityIcon = computed(() => priorityOption.value?.icon ?? 'i-lucide-alert-triangle')
 
+	function normalizePriorityKey(priority: string | null | undefined): keyof typeof TASK_PRIORITY_STYLES {
+		const normalized = priority?.trim().toUpperCase() ?? ''
+		if (normalized === 'P0' || normalized === 'P1' || normalized === 'P2' || normalized === 'P3') {
+			return normalized
+		}
+		return 'default'
+	}
+
 	const priorityStyle = computed(() => {
-		const key = priorityLocal.value as keyof typeof TASK_PRIORITY_STYLES
-		return TASK_PRIORITY_STYLES[key] ?? TASK_PRIORITY_STYLES.default
+		const key = normalizePriorityKey(priorityLocal.value)
+		return TASK_PRIORITY_STYLES[key]
 	})
 
 	const priorityCardClass = computed(() => priorityStyle.value.cardClass)
@@ -725,10 +732,18 @@
 		return items
 	})
 
+	function normalizeSpaceKey(spaceId: string | null | undefined): keyof typeof SPACE_DISPLAY | null {
+		const normalized = spaceId?.trim().toLowerCase() ?? ''
+		if (normalized === 'work' || normalized === 'personal' || normalized === 'study') {
+			return normalized
+		}
+		return null
+	}
+
 	const spaceDisplay = computed(() => {
-		const sid = spaceIdLocal.value as keyof typeof SPACE_DISPLAY | undefined
-		if (!sid) return DEFAULT_SPACE_DISPLAY
-		return SPACE_DISPLAY[sid] ?? DEFAULT_SPACE_DISPLAY
+		const key = normalizeSpaceKey(spaceIdLocal.value)
+		if (!key) return DEFAULT_SPACE_DISPLAY
+		return SPACE_DISPLAY[key]
 	})
 
 	const currentSpaceLabel = computed(() => spaceDisplay.value.label)
@@ -754,6 +769,17 @@
 	const currentParentLabel = computed(() => {
 		const option = parentOptions.value.find((item) => item.value === parentIdLocal.value)
 		return option?.label ?? rootLabel
+	})
+	const currentParentOption = computed(() => {
+		return parentOptions.value.find((item) => item.value === parentIdLocal.value) ?? null
+	})
+	const currentParentIconClass = computed(() => {
+		const option = currentParentOption.value
+		return getParentOptionIconClass(option?.value ?? null, option?.depth ?? 0)
+	})
+	const parentCardClass = computed(() => {
+		const option = currentParentOption.value
+		return getParentOptionCardClass(option?.value ?? null, option?.depth ?? 0)
 	})
 	const parentOptionItems = computed<DrawerAttributeOptionItem[]>(() => {
 		return parentOptions.value.map((option) => ({
@@ -849,8 +875,24 @@
 	}
 
 	function getParentOptionIconClass(value: string | null, depth: number): string {
-		if (value === null) return PROJECT_ROOT_ICON_CLASS
+		if (value === null) return PROJECT_LEVEL_TEXT_CLASSES[0]
 		return PROJECT_LEVEL_TEXT_CLASSES[Math.min(depth, PROJECT_LEVEL_TEXT_CLASSES.length - 1)]
+	}
+
+	function getParentOptionCardClass(value: string | null, depth: number): string {
+		if (value === null) return 'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60'
+		switch (Math.min(depth, PROJECT_LEVEL_TEXT_CLASSES.length - 1)) {
+			case 0:
+				return 'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60'
+			case 1:
+				return 'bg-sky-50/40 border-sky-200 hover:bg-sky-50/60'
+			case 2:
+				return 'bg-violet-50/40 border-violet-200 hover:bg-violet-50/60'
+			case 3:
+				return 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/60'
+			default:
+				return 'bg-rose-50/40 border-rose-200 hover:bg-rose-50/60'
+		}
 	}
 
 	function onRequestDeleteProject() {
@@ -876,5 +918,4 @@
 			confirmArchiveOpen.value = false
 		}
 	}
-
 </script>

@@ -91,12 +91,12 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 
 export const PROJECT_STATUS_DISPLAY: Record<
 	ProjectComputedStatusValue,
-	{ label: string; color: 'success' | 'warning' | 'info' | 'neutral'; dot: string }
+	{ label: string; color: 'success' | 'warning' | 'info' | 'neutral' | 'error'; dot: string }
 > = {
 	inProgress: { label: '进行中', color: 'warning', dot: 'bg-amber-500' },
 	done: { label: '已完成', color: 'success', dot: 'bg-emerald-500' },
 	archived: { label: '已归档', color: 'neutral', dot: 'bg-slate-400' },
-	deleted: { label: '已删除', color: 'neutral', dot: 'bg-slate-500' },
+	deleted: { label: '已删除', color: 'error', dot: 'bg-rose-500' },
 }
 
 export type { ProjectPriorityValue, ProjectComputedStatusValue } from '@/types/domain/project'

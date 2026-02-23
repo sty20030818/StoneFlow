@@ -13,7 +13,6 @@
 							:icon-class="spaceCardLabelClass"
 							label="所属 Space"
 							:value="currentSpaceLabel"
-							:label-class="spaceCardLabelClass"
 							:value-class="spaceCardValueClass" />
 					</template>
 					<DrawerAttributeOptionList
@@ -27,13 +26,14 @@
 					v-model:open="projectPopoverOpen"
 					:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
 					:ui="drawerPopoverUi"
-					trigger-class="cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80">
+					:trigger-class="`${projectCardClass} cursor-pointer`">
 					<template #trigger>
 						<DrawerAttributeCardShell
 							icon-name="i-lucide-folder-tree"
-							icon-class="text-muted"
+							:icon-class="projectIconClass"
 							label="所属 Project"
-							:value="currentProjectLabel" />
+							:value="currentProjectLabel"
+							value-class="text-default" />
 					</template>
 					<DrawerAttributeOptionList
 						:items="projectOptionItems"
@@ -90,6 +90,14 @@
 	const spacePopoverOpen = ref(false)
 	const projectPopoverOpen = ref(false)
 	const optionCardHoverMotion = useCardHoverMotionPreset()
+	const PROJECT_LEVEL_CARD_CLASSES = [
+		'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60',
+		'bg-sky-50/40 border-sky-200 hover:bg-sky-50/60',
+		'bg-violet-50/40 border-violet-200 hover:bg-violet-50/60',
+		'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/60',
+		'bg-rose-50/40 border-rose-200 hover:bg-rose-50/60',
+	] as const
+	const FALLBACK_PROJECT_CARD_CLASS = PROJECT_LEVEL_CARD_CLASSES[0]
 
 	const spaceOptionItems = computed<DrawerAttributeOptionItem[]>(() => {
 		return props.spaceOptions.map((option) => ({
@@ -112,6 +120,23 @@
 		}))
 	})
 
+	const currentProjectOption = computed(() => {
+		if (props.projectIdLocal !== null) {
+			return props.projectOptions.find((option) => option.value === props.projectIdLocal) ?? null
+		}
+		return (
+			props.projectOptions.find((option) => typeof option.value === 'string' && option.value.endsWith('_default')) ??
+			null
+		)
+	})
+
+	const projectCardClass = computed(() => {
+		const option = currentProjectOption.value
+		if (!option) return FALLBACK_PROJECT_CARD_CLASS
+		return PROJECT_LEVEL_CARD_CLASSES[Math.min(option.depth, PROJECT_LEVEL_CARD_CLASSES.length - 1)]
+	})
+
+	const projectIconClass = computed(() => currentProjectOption.value?.iconClass ?? 'text-amber-500')
 	const onSpaceChange = (value: string) => {
 		props.onSpaceChange(value)
 		spacePopoverOpen.value = false

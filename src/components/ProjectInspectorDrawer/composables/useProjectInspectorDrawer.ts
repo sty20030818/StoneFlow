@@ -141,12 +141,7 @@ export function useProjectInspectorDrawer() {
 		return projectsStore.getProjectsOfSpace(project.spaceId).some((item) => item.parentId === project.id)
 	})
 	const isLifecycleBusy = computed(() => {
-		return (
-			lifecycleState.deleting ||
-			lifecycleState.restoring ||
-			lifecycleState.archiving ||
-			lifecycleState.unarchiving
-		)
+		return lifecycleState.deleting || lifecycleState.restoring || lifecycleState.archiving || lifecycleState.unarchiving
 	})
 
 	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
@@ -745,9 +740,7 @@ export function useProjectInspectorDrawer() {
 		syncRetrySaveAvailability()
 	}
 
-	async function runLifecycleAction(
-		action: 'delete' | 'restore' | 'archive' | 'unarchive',
-	): Promise<boolean> {
+	async function runLifecycleAction(action: 'delete' | 'restore' | 'archive' | 'unarchive'): Promise<boolean> {
 		const project = currentProject.value
 		if (!project || isLifecycleBusy.value) return false
 
