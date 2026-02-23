@@ -2,7 +2,7 @@ import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS } from '@/config/p
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 
 export const PROJECT_ICON = 'i-lucide-folder'
-export const PROJECT_ROOT_LABEL = 'None (Top Level)'
+export const PROJECT_ROOT_LABEL = '无父级（顶层）'
 export const PROJECT_ROOT_ICON_CLASS = 'text-slate-400'
 export const PROJECT_UNCATEGORIZED_ICON = 'i-lucide-inbox'
 export const PROJECT_UNCATEGORIZED_ICON_CLASS = 'text-slate-400'
@@ -93,10 +93,10 @@ export const PROJECT_STATUS_DISPLAY: Record<
 	ProjectComputedStatusValue,
 	{ label: string; color: 'success' | 'warning' | 'info' | 'neutral'; dot: string }
 > = {
-	inProgress: { label: 'In Progress', color: 'warning', dot: 'bg-amber-500' },
-	done: { label: 'Done', color: 'success', dot: 'bg-emerald-500' },
-	archived: { label: 'Archived', color: 'neutral', dot: 'bg-slate-400' },
-	deleted: { label: 'Deleted', color: 'neutral', dot: 'bg-slate-500' },
+	inProgress: { label: '进行中', color: 'warning', dot: 'bg-amber-500' },
+	done: { label: '已完成', color: 'success', dot: 'bg-emerald-500' },
+	archived: { label: '已归档', color: 'neutral', dot: 'bg-slate-400' },
+	deleted: { label: '已删除', color: 'neutral', dot: 'bg-slate-500' },
 }
 
 export type { ProjectPriorityValue, ProjectComputedStatusValue } from '@/types/domain/project'

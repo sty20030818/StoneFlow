@@ -37,12 +37,12 @@ const TEXT_AUTOSAVE_DEBOUNCE = 600
 const TEXT_AUTOSAVE_MAX_WAIT = 2000
 
 const PROJECT_LINK_KIND_OPTIONS: Array<{ value: LinkDto['kind']; label: string }> = [
-	{ value: 'web', label: 'Web' },
-	{ value: 'doc', label: 'Doc' },
-	{ value: 'design', label: 'Design' },
-	{ value: 'repoLocal', label: 'Repo (Local)' },
-	{ value: 'repoRemote', label: 'Repo (Remote)' },
-	{ value: 'other', label: 'Other' },
+	{ value: 'web', label: '网页' },
+	{ value: 'doc', label: '文档' },
+	{ value: 'design', label: '设计稿' },
+	{ value: 'repoLocal', label: '本地仓库' },
+	{ value: 'repoRemote', label: '远程仓库' },
+	{ value: 'other', label: '其他' },
 ]
 
 export function useProjectInspectorDrawer() {
@@ -584,6 +584,14 @@ export function useProjectInspectorDrawer() {
 		linkDraftVisible.value = true
 	}
 
+	function cancelLinkDraft() {
+		linkDraftTitle.value = ''
+		linkDraftUrl.value = ''
+		linkDraftKind.value = 'web'
+		linkDraftVisible.value = false
+		linkValidationErrorIndex.value = null
+	}
+
 	function confirmLinkDraft() {
 		const url = linkDraftUrl.value.trim()
 		if (!url) return
@@ -711,10 +719,18 @@ export function useProjectInspectorDrawer() {
 	)
 
 	function onKeydown(event: KeyboardEvent) {
-		if (event.key !== 'Escape') return
 		if (!isOpen.value) return
-		event.preventDefault()
-		void close()
+		if (event.isComposing) return
+		const key = event.key.toLowerCase()
+		if ((event.ctrlKey || event.metaKey) && key === 's') {
+			event.preventDefault()
+			void flushPendingUpdates()
+			return
+		}
+		if (event.key === 'Escape') {
+			event.preventDefault()
+			void close()
+		}
 	}
 
 	useEventListener(window, 'keydown', onKeydown)
@@ -745,6 +761,7 @@ export function useProjectInspectorDrawer() {
 		addTag,
 		removeTag,
 		addLinkDraft,
+		cancelLinkDraft,
 		confirmLinkDraft,
 		removeLink,
 		clearLinkValidationError,
