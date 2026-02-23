@@ -11,83 +11,40 @@
 			</button>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
-			<UPopover
-				v-model:open="priorityPopoverOpen"
-				:mode="'click'"
-				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="drawerPopoverUi">
-				<button
-					v-motion="optionCardHoverMotion"
-					type="button"
-					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer"
-					:class="priorityCardClass">
-					<div class="flex items-center gap-2.5">
-						<UIcon
-							:name="priorityIcon"
-							class="size-4 shrink-0"
-							:class="priorityIconClass" />
-						<div class="min-w-0 flex-1">
-							<div class="text-[11px] text-muted mb-1">Priority</div>
-							<div
-								class="text-xs font-semibold"
-								:class="priorityTextClass">
-								{{ priorityLabel }}
-							</div>
-						</div>
-					</div>
-				</button>
-				<template #content>
-					<div class="p-2 min-w-[200px]">
-						<div
-							v-for="opt in priorityOptions"
-							:key="opt.value"
-							class="px-3 py-2 rounded-lg hover:bg-elevated cursor-pointer transition-colors"
-							:class="{
-								'bg-elevated': priority === opt.value,
-							}"
-							@click="onPriorityChange(opt.value)">
-							<div class="flex items-center gap-2">
-								<UIcon
-									:name="opt.icon"
-									class="size-4 shrink-0"
-									:class="opt.iconClass" />
-								<span class="text-sm">{{ opt.label }}</span>
-							</div>
-						</div>
-					</div>
-				</template>
-			</UPopover>
+			<div v-motion="optionCardHoverMotion">
+				<DrawerAttributePopoverCard
+					v-model:open="priorityPopoverOpen"
+					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+					:ui="drawerPopoverUi"
+					:trigger-class="`${priorityCardClass} cursor-pointer`">
+					<template #trigger>
+						<DrawerAttributeCardShell
+							:icon-name="priorityIcon"
+							:icon-class="priorityIconClass"
+							label="Priority"
+							:value="priorityLabel"
+							:value-class="priorityTextClass" />
+					</template>
+					<DrawerAttributeOptionList
+						:items="priorityOptionItems"
+						@select="onPrioritySelect" />
+				</DrawerAttributePopoverCard>
+			</div>
 
-			<UPopover
-				v-model:open="deadlinePopoverOpen"
-				:mode="'click'"
-				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="drawerPopoverUi">
-				<button
-					v-motion="optionCardHoverMotion"
-					type="button"
-					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer"
-					:class="
-						deadline
-							? 'bg-indigo-50/40 border-indigo-200 hover:bg-indigo-50/60'
-							: 'bg-elevated/50 border-default/60 hover:bg-elevated/80'
-					">
-					<div class="flex items-center gap-2.5">
-						<UIcon
-							name="i-lucide-alarm-clock"
-							class="size-4 shrink-0"
-							:class="deadline ? 'text-indigo-500' : 'text-muted'" />
-						<div class="min-w-0 flex-1">
-							<div class="text-[11px] text-muted mb-1">DeadLine</div>
-							<div
-								class="text-xs font-semibold"
-								:class="deadline ? 'text-indigo-600' : 'text-muted'">
-								{{ deadlineLabel }}
-							</div>
-						</div>
-					</div>
-				</button>
-				<template #content>
+			<div v-motion="optionCardHoverMotion">
+				<DrawerAttributePopoverCard
+					v-model:open="deadlinePopoverOpen"
+					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+					:ui="drawerPopoverUi"
+					:trigger-class="`${deadlineCardClass} cursor-pointer`">
+					<template #trigger>
+						<DrawerAttributeCardShell
+							icon-name="i-lucide-alarm-clock"
+							:icon-class="deadlineIconClass"
+							label="DeadLine"
+							:value="deadlineLabel"
+							:value-class="deadlineValueClass" />
+					</template>
 					<div class="p-2">
 						<DatePickerInput
 							v-model="deadline"
@@ -105,16 +62,21 @@
 							</UButton>
 						</div>
 					</div>
-				</template>
-			</UPopover>
+				</DrawerAttributePopoverCard>
+			</div>
 		</div>
 	</section>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import DrawerAttributeCardShell from '@/components/DrawerAttributeCard/DrawerAttributeCardShell.vue'
+	import DrawerAttributeOptionList, {
+		type DrawerAttributeOptionItem,
+	} from '@/components/DrawerAttributeCard/DrawerAttributeOptionList.vue'
+	import DrawerAttributePopoverCard from '@/components/DrawerAttributeCard/DrawerAttributePopoverCard.vue'
 	import DatePickerInput from '@/components/DatePickerInput.vue'
 	import type { PriorityOption, TaskPriorityValue } from '@/config/task'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
@@ -138,7 +100,31 @@
 		onAddCustomField: () => void
 	}
 
-	defineProps<Props>()
+	const props = defineProps<Props>()
+
+	const priorityOptionItems = computed<DrawerAttributeOptionItem[]>(() => {
+		return props.priorityOptions.map((option) => ({
+			value: option.value,
+			label: option.label,
+			icon: option.icon,
+			iconClass: option.iconClass,
+			active: priority.value === option.value,
+		}))
+	})
+
+	const deadlineCardClass = computed(() => {
+		return deadline.value
+			? 'bg-indigo-50/40 border-indigo-200 hover:bg-indigo-50/60'
+			: 'bg-elevated/50 border-default/60 hover:bg-elevated/80'
+	})
+
+	const deadlineIconClass = computed(() => {
+		return deadline.value ? 'text-indigo-500' : 'text-muted'
+	})
+
+	const deadlineValueClass = computed(() => {
+		return deadline.value ? 'text-indigo-600' : 'text-muted'
+	})
 
 	// 事件处理
 	const onPriorityChange = (value: TaskPriorityValue) => {
@@ -153,5 +139,10 @@
 
 	const onDeadlineSelected = () => {
 		deadlinePopoverOpen.value = false
+	}
+
+	const onPrioritySelect = (value: string | number | boolean | null) => {
+		if (typeof value !== 'string') return
+		onPriorityChange(value as TaskPriorityValue)
 	}
 </script>

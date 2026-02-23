@@ -1,104 +1,58 @@
 <template>
 	<section>
 		<div class="grid grid-cols-2 gap-3">
-			<UPopover
-				v-model:open="spacePopoverOpen"
-				:mode="'click'"
-				:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
-				:ui="drawerPopoverUi">
-				<button
-					v-motion="optionCardHoverMotion"
-					type="button"
-					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer"
-					:class="spaceCardClass">
-					<div class="flex items-center gap-2.5">
-						<UIcon
-							name="i-lucide-orbit"
-							class="size-4 shrink-0"
-							:class="spaceCardLabelClass" />
-						<div class="min-w-0 flex-1">
-							<div
-								class="text-[11px] mb-1"
-								:class="spaceCardLabelClass">
-								所属 Space
-							</div>
-							<div
-								class="text-xs font-semibold truncate"
-								:class="spaceCardValueClass">
-								{{ currentSpaceLabel }}
-							</div>
-						</div>
-					</div>
-				</button>
-				<template #content>
-					<div class="p-2 min-w-[180px]">
-						<div
-							v-for="space in spaceOptions"
-							:key="space.value"
-							class="px-3 py-2 rounded-lg hover:bg-elevated cursor-pointer transition-colors"
-							:class="{ 'bg-elevated': spaceIdLocal === space.value }"
-							@click="onSpaceChange(space.value)">
-							<div class="flex items-center gap-2">
-								<UIcon
-									:name="space.icon"
-									class="size-4 shrink-0"
-									:class="space.iconClass" />
-								<span class="text-sm font-medium">{{ space.label }}</span>
-							</div>
-						</div>
-					</div>
-				</template>
-			</UPopover>
+			<div v-motion="optionCardHoverMotion">
+				<DrawerAttributePopoverCard
+					v-model:open="spacePopoverOpen"
+					:popper="{ strategy: 'fixed', placement: 'bottom-start' }"
+					:ui="drawerPopoverUi"
+					:trigger-class="`${spaceCardClass} cursor-pointer`">
+					<template #trigger>
+						<DrawerAttributeCardShell
+							icon-name="i-lucide-orbit"
+							:icon-class="spaceCardLabelClass"
+							label="所属 Space"
+							:value="currentSpaceLabel"
+							:label-class="spaceCardLabelClass"
+							:value-class="spaceCardValueClass" />
+					</template>
+					<DrawerAttributeOptionList
+						:items="spaceOptionItems"
+						@select="onSpaceSelect" />
+				</DrawerAttributePopoverCard>
+			</div>
 
-			<UPopover
-				v-model:open="projectPopoverOpen"
-				:mode="'click'"
-				:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
-				:ui="drawerPopoverUi">
-				<button
-					v-motion="optionCardHoverMotion"
-					type="button"
-					class="p-4 rounded-2xl border transition-colors text-left w-full cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80">
-					<div class="flex items-center gap-2.5">
-						<UIcon
-							name="i-lucide-folder-tree"
-							class="size-4 shrink-0 text-muted" />
-						<div class="min-w-0 flex-1">
-							<div class="text-[11px] text-muted mb-1">所属 Project</div>
-							<div class="text-xs font-semibold text-default truncate">
-								{{ currentProjectLabel }}
-							</div>
-						</div>
-					</div>
-				</button>
-				<template #content>
-					<div class="p-2 min-w-[220px] max-h-[300px] overflow-y-auto">
-						<div
-							v-for="project in projectOptions"
-							:key="project.value ?? 'uncategorized'"
-							class="px-3 py-2 rounded-lg hover:bg-elevated cursor-pointer transition-colors"
-							:class="{ 'bg-elevated': projectIdLocal === project.value }"
-							:style="{ paddingLeft: `${12 + project.depth * 12}px` }"
-							@click="onProjectChange(project.value)">
-							<div class="flex items-center gap-2">
-								<UIcon
-									:name="project.icon"
-									class="size-4 shrink-0"
-									:class="project.iconClass" />
-								<span class="text-sm truncate">{{ project.label }}</span>
-							</div>
-						</div>
-					</div>
-				</template>
-			</UPopover>
+			<div v-motion="optionCardHoverMotion">
+				<DrawerAttributePopoverCard
+					v-model:open="projectPopoverOpen"
+					:popper="{ strategy: 'fixed', placement: 'bottom-end' }"
+					:ui="drawerPopoverUi"
+					trigger-class="cursor-pointer bg-elevated/50 border-default/60 hover:bg-elevated/80">
+					<template #trigger>
+						<DrawerAttributeCardShell
+							icon-name="i-lucide-folder-tree"
+							icon-class="text-muted"
+							label="所属 Project"
+							:value="currentProjectLabel" />
+					</template>
+					<DrawerAttributeOptionList
+						:items="projectOptionItems"
+						@select="onProjectSelect" />
+				</DrawerAttributePopoverCard>
+			</div>
 		</div>
 	</section>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import DrawerAttributeCardShell from '@/components/DrawerAttributeCard/DrawerAttributeCardShell.vue'
+	import DrawerAttributeOptionList, {
+		type DrawerAttributeOptionItem,
+	} from '@/components/DrawerAttributeCard/DrawerAttributeOptionList.vue'
+	import DrawerAttributePopoverCard from '@/components/DrawerAttributeCard/DrawerAttributePopoverCard.vue'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 
 	type SpaceOption = {
@@ -137,6 +91,27 @@
 	const projectPopoverOpen = ref(false)
 	const optionCardHoverMotion = useCardHoverMotionPreset()
 
+	const spaceOptionItems = computed<DrawerAttributeOptionItem[]>(() => {
+		return props.spaceOptions.map((option) => ({
+			value: option.value,
+			label: option.label,
+			icon: option.icon,
+			iconClass: option.iconClass,
+			active: props.spaceIdLocal === option.value,
+		}))
+	})
+
+	const projectOptionItems = computed<DrawerAttributeOptionItem[]>(() => {
+		return props.projectOptions.map((option) => ({
+			value: option.value,
+			label: option.label,
+			icon: option.icon,
+			iconClass: option.iconClass,
+			active: props.projectIdLocal === option.value,
+			indentPx: 12 + option.depth * 12,
+		}))
+	})
+
 	const onSpaceChange = (value: string) => {
 		props.onSpaceChange(value)
 		spacePopoverOpen.value = false
@@ -145,5 +120,15 @@
 	const onProjectChange = (value: string | null) => {
 		props.onProjectChange(value)
 		projectPopoverOpen.value = false
+	}
+
+	const onSpaceSelect = (value: string | number | boolean | null) => {
+		if (typeof value !== 'string') return
+		onSpaceChange(value)
+	}
+
+	const onProjectSelect = (value: string | number | boolean | null) => {
+		if (value !== null && typeof value !== 'string') return
+		onProjectChange(value)
 	}
 </script>
