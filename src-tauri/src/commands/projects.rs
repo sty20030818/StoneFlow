@@ -249,3 +249,25 @@ pub async fn restore_project(
         .await
         .map_err(ApiError::from)
 }
+
+/// 归档项目。
+#[tauri::command]
+pub async fn archive_project(
+    state: State<'_, DbState>,
+    args: DeleteProjectArgs,
+) -> Result<(), ApiError> {
+    ProjectRepo::archive(&state.conn, &args.project_id)
+        .await
+        .map_err(ApiError::from)
+}
+
+/// 取消归档项目。
+#[tauri::command]
+pub async fn unarchive_project(
+    state: State<'_, DbState>,
+    args: DeleteProjectArgs,
+) -> Result<(), ApiError> {
+    ProjectRepo::unarchive(&state.conn, &args.project_id)
+        .await
+        .map_err(ApiError::from)
+}

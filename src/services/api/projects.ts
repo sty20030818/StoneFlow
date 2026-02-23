@@ -148,6 +148,24 @@ export async function restoreProject(projectId: string): Promise<void> {
 	})
 }
 
+export async function archiveProject(projectId: string): Promise<void> {
+	// Rust: commands/projects.rs -> archive_project
+	await tauriInvoke<void>('archive_project', {
+		args: {
+			projectId,
+		},
+	})
+}
+
+export async function unarchiveProject(projectId: string): Promise<void> {
+	// Rust: commands/projects.rs -> unarchive_project
+	await tauriInvoke<void>('unarchive_project', {
+		args: {
+			projectId,
+		},
+	})
+}
+
 /**
  * 更新项目的 rank（和可选的 parentId）用于拖拽排序
  */

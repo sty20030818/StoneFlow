@@ -8,7 +8,7 @@ import {
 	isDefaultProjectId,
 } from '@/config/project'
 import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
-import { updateProject } from '@/services/api/projects'
+import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
@@ -49,6 +49,7 @@ export function useProjectInspectorDrawer() {
 	const store = useProjectInspectorStore()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
+	const toast = useToast()
 
 	const currentProject = computed<ProjectDto | null>(() => store.project ?? null)
 	const isOpen = computed({
@@ -81,6 +82,12 @@ export function useProjectInspectorDrawer() {
 		linkComposingCount: 0,
 		linkEditingCount: 0,
 	})
+	const lifecycleState = reactive({
+		deleting: false,
+		restoring: false,
+		archiving: false,
+		unarchiving: false,
+	})
 	const suppressAutosave = ref(false)
 	const pendingSaves = ref(0)
 	const parentOptions = ref<ParentProjectOption[]>([{ value: null, label: PROJECT_ROOT_LABEL, depth: 0 }])
@@ -104,6 +111,34 @@ export function useProjectInspectorDrawer() {
 		const projectId = currentProject.value?.id
 		if (!projectId) return false
 		return retryPatchByProjectId.has(projectId)
+	})
+	const canDeleteProject = computed(() => {
+		const project = currentProject.value
+		if (!project) return false
+		return project.deletedAt === null
+	})
+	const canRestoreProject = computed(() => {
+		const project = currentProject.value
+		if (!project) return false
+		return project.deletedAt !== null
+	})
+	const canArchiveProject = computed(() => {
+		const project = currentProject.value
+		if (!project || project.deletedAt !== null) return false
+		return project.archivedAt === null
+	})
+	const canUnarchiveProject = computed(() => {
+		const project = currentProject.value
+		if (!project || project.deletedAt !== null) return false
+		return project.archivedAt !== null
+	})
+	const isLifecycleBusy = computed(() => {
+		return (
+			lifecycleState.deleting ||
+			lifecycleState.restoring ||
+			lifecycleState.archiving ||
+			lifecycleState.unarchiving
+		)
 	})
 
 	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
@@ -644,6 +679,121 @@ export function useProjectInspectorDrawer() {
 		await processQueuedUpdates(project.id, project.spaceId)
 	}
 
+	function closeImmediately() {
+		store.close()
+		cleanupInactiveBuckets(null)
+		syncRetrySaveAvailability()
+	}
+
+	async function runLifecycleAction(
+		action: 'delete' | 'restore' | 'archive' | 'unarchive',
+	): Promise<boolean> {
+		const project = currentProject.value
+		if (!project || isLifecycleBusy.value) return false
+
+		await flushPendingUpdates()
+		switch (action) {
+			case 'delete':
+				lifecycleState.deleting = true
+				break
+			case 'restore':
+				lifecycleState.restoring = true
+				break
+			case 'archive':
+				lifecycleState.archiving = true
+				break
+			case 'unarchive':
+				lifecycleState.unarchiving = true
+				break
+		}
+
+		try {
+			if (action === 'delete') {
+				await deleteProject(project.id)
+				refreshSignals.bumpTask()
+				refreshSignals.bumpProject()
+				toast.add({
+					title: '项目已移入回收站',
+					description: project.title,
+					color: 'success',
+				})
+				closeImmediately()
+				return true
+			}
+
+			if (action === 'restore') {
+				await restoreProject(project.id)
+				refreshSignals.bumpProject()
+				await refreshStoreProject(project.spaceId, project.id, { force: true })
+				toast.add({
+					title: '项目已恢复',
+					description: project.title,
+					color: 'success',
+				})
+				return true
+			}
+
+			if (action === 'archive') {
+				await archiveProject(project.id)
+				refreshSignals.bumpProject()
+				await refreshStoreProject(project.spaceId, project.id, { force: true })
+				toast.add({
+					title: '项目已归档',
+					description: project.title,
+					color: 'success',
+				})
+				return true
+			}
+
+			await unarchiveProject(project.id)
+			refreshSignals.bumpProject()
+			await refreshStoreProject(project.spaceId, project.id, { force: true })
+			toast.add({
+				title: '已取消归档',
+				description: project.title,
+				color: 'success',
+			})
+			return true
+		} catch (error) {
+			const description = error instanceof Error ? error.message : '未知错误'
+			const title =
+				action === 'delete'
+					? '删除项目失败'
+					: action === 'restore'
+						? '恢复项目失败'
+						: action === 'archive'
+							? '归档项目失败'
+							: '取消归档失败'
+			toast.add({
+				title,
+				description,
+				color: 'error',
+			})
+			return false
+		} finally {
+			lifecycleState.deleting = false
+			lifecycleState.restoring = false
+			lifecycleState.archiving = false
+			lifecycleState.unarchiving = false
+		}
+	}
+
+	async function deleteCurrentProject() {
+		return await runLifecycleAction('delete')
+	}
+
+	async function restoreCurrentProject() {
+		return await runLifecycleAction('restore')
+	}
+
+	async function archiveCurrentProject() {
+		return await runLifecycleAction('archive')
+	}
+
+	async function unarchiveCurrentProject() {
+		return await runLifecycleAction('unarchive')
+	}
+
 	async function close() {
 		await flushPendingUpdates()
 		store.close()
@@ -757,6 +907,15 @@ export function useProjectInspectorDrawer() {
 		isStructureLocked,
 		isSaveStateVisible,
 		canRetrySave,
+		canDeleteProject,
+		canRestoreProject,
+		canArchiveProject,
+		canUnarchiveProject,
+		isLifecycleBusy,
+		isDeletingProject: computed(() => lifecycleState.deleting),
+		isRestoringProject: computed(() => lifecycleState.restoring),
+		isArchivingProject: computed(() => lifecycleState.archiving),
+		isUnarchivingProject: computed(() => lifecycleState.unarchiving),
 		saveState: computed(() => store.saveState),
 		addTag,
 		removeTag,
@@ -778,6 +937,10 @@ export function useProjectInspectorDrawer() {
 		onLinkCompositionStart,
 		onLinkCompositionEnd,
 		onRetrySave,
+		deleteCurrentProject,
+		restoreCurrentProject,
+		archiveCurrentProject,
+		unarchiveCurrentProject,
 		flushPendingUpdates,
 		close,
 	}

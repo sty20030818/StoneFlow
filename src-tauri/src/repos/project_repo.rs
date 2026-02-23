@@ -701,6 +701,90 @@ impl ProjectRepo {
         .await?;
         Ok(())
     }
+
+    /// 归档项目。
+    pub async fn archive(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
+        if is_default_project_id(project_id) {
+            return Err(AppError::Validation("默认项目不允许归档".to_string()));
+        }
+
+        let txn = conn.begin().await.map_err(AppError::from)?;
+        let model = projects::Entity::find_by_id(project_id)
+            .one(&txn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        if model.deleted_at.is_some() {
+            return Err(AppError::Validation("已删除项目不允许归档".to_string()));
+        }
+        if model.archived_at.is_some() {
+            return Ok(());
+        }
+
+        let now = now_ms();
+        let mut active_model: projects::ActiveModel = model.into();
+        active_model.archived_at = Set(Some(now));
+        active_model.updated_at = Set(now);
+        let saved_model = active_model.update(&txn).await.map_err(AppError::from)?;
+
+        activity_logs::append_archived(
+            &txn,
+            activity_logs::ProjectLogCtx {
+                project_id: saved_model.id.as_str(),
+                space_id: saved_model.space_id.as_str(),
+                create_by: saved_model.create_by.as_str(),
+                created_at: now,
+            },
+            saved_model.title.as_str(),
+        )
+        .await?;
+
+        txn.commit().await.map_err(AppError::from)?;
+        Ok(())
+    }
+
+    /// 取消归档项目。
+    pub async fn unarchive(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
+        if is_default_project_id(project_id) {
+            return Err(AppError::Validation("默认项目不允许取消归档".to_string()));
+        }
+
+        let txn = conn.begin().await.map_err(AppError::from)?;
+        let model = projects::Entity::find_by_id(project_id)
+            .one(&txn)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::Validation(format!("项目 {} 不存在", project_id)))?;
+
+        if model.deleted_at.is_some() {
+            return Err(AppError::Validation("已删除项目不允许取消归档".to_string()));
+        }
+        if model.archived_at.is_none() {
+            return Ok(());
+        }
+
+        let now = now_ms();
+        let mut active_model: projects::ActiveModel = model.into();
+        active_model.archived_at = Set(None);
+        active_model.updated_at = Set(now);
+        let saved_model = active_model.update(&txn).await.map_err(AppError::from)?;
+
+        activity_logs::append_unarchived(
+            &txn,
+            activity_logs::ProjectLogCtx {
+                project_id: saved_model.id.as_str(),
+                space_id: saved_model.space_id.as_str(),
+                create_by: saved_model.create_by.as_str(),
+                created_at: now,
+            },
+            saved_model.title.as_str(),
+        )
+        .await?;
+
+        txn.commit().await.map_err(AppError::from)?;
+        Ok(())
+    }
 }
 
 fn priority_to_string(priority: &Priority) -> String {

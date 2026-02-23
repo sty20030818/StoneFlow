@@ -8,6 +8,8 @@ use crate::types::error::AppError;
 const ACTION_PROJECT_CREATED: &str = "project_created";
 const ACTION_PROJECT_DELETED: &str = "project_deleted";
 const ACTION_PROJECT_RESTORED: &str = "project_restored";
+const ACTION_PROJECT_ARCHIVED: &str = "project_archived";
+const ACTION_PROJECT_UNARCHIVED: &str = "project_unarchived";
 const ACTION_PROJECT_FIELD_UPDATED: &str = "project_field_updated";
 
 #[derive(Debug, Clone)]
@@ -92,6 +94,60 @@ where
             before_value: None,
             after_value: None,
             detail: format!("恢复项目「{}」", title),
+            create_by: ctx.create_by.to_string(),
+            created_at: ctx.created_at,
+        },
+    )
+    .await
+}
+
+pub async fn append_archived<C>(
+    conn: &C,
+    ctx: ProjectLogCtx<'_>,
+    title: &str,
+) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
+    ActivityLogRepo::append_project(
+        conn,
+        NewProjectActivityLogInput {
+            project_id: ctx.project_id.to_string(),
+            space_id: ctx.space_id.to_string(),
+            action: ACTION_PROJECT_ARCHIVED.to_string(),
+            action_label: "归档项目".to_string(),
+            field_key: Some("archivedAt".to_string()),
+            field_label: Some("归档时间".to_string()),
+            before_value: None,
+            after_value: Some(ctx.created_at.to_string()),
+            detail: format!("归档项目「{}」", title),
+            create_by: ctx.create_by.to_string(),
+            created_at: ctx.created_at,
+        },
+    )
+    .await
+}
+
+pub async fn append_unarchived<C>(
+    conn: &C,
+    ctx: ProjectLogCtx<'_>,
+    title: &str,
+) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
+    ActivityLogRepo::append_project(
+        conn,
+        NewProjectActivityLogInput {
+            project_id: ctx.project_id.to_string(),
+            space_id: ctx.space_id.to_string(),
+            action: ACTION_PROJECT_UNARCHIVED.to_string(),
+            action_label: "取消归档".to_string(),
+            field_key: Some("archivedAt".to_string()),
+            field_label: Some("归档时间".to_string()),
+            before_value: None,
+            after_value: None,
+            detail: format!("取消归档项目「{}」", title),
             create_by: ctx.create_by.to_string(),
             created_at: ctx.created_at,
         },

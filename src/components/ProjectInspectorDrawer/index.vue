@@ -305,6 +305,68 @@
 
 					<section class="space-y-2">
 						<div class="flex items-center justify-between">
+							<label class="text-xs font-semibold text-muted">生命周期</label>
+							<span
+								v-if="isLifecycleBusy"
+								class="text-[11px] text-muted">
+								处理中...
+							</span>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							<UButton
+								v-if="canRestoreProject"
+								color="success"
+								variant="soft"
+								size="xs"
+								icon="i-lucide-undo-2"
+								:loading="isRestoringProject"
+								:disabled="isLifecycleBusy"
+								@click="onRestoreProject">
+								恢复项目
+							</UButton>
+							<UButton
+								v-if="canArchiveProject"
+								color="warning"
+								variant="soft"
+								size="xs"
+								icon="i-lucide-archive"
+								:loading="isArchivingProject"
+								:disabled="isLifecycleBusy"
+								@click="onRequestArchiveProject">
+								归档项目
+							</UButton>
+							<UButton
+								v-if="canUnarchiveProject"
+								color="neutral"
+								variant="soft"
+								size="xs"
+								icon="i-lucide-folder-open"
+								:loading="isUnarchivingProject"
+								:disabled="isLifecycleBusy"
+								@click="onUnarchiveProject">
+								取消归档
+							</UButton>
+							<UButton
+								v-if="canDeleteProject"
+								color="error"
+								variant="soft"
+								size="xs"
+								icon="i-lucide-trash-2"
+								:loading="isDeletingProject"
+								:disabled="isLifecycleBusy"
+								@click="onRequestDeleteProject">
+								删除项目
+							</UButton>
+						</div>
+						<p
+							v-if="canRestoreProject"
+							class="text-[11px] text-muted">
+							已删除项目可在此恢复，恢复仅影响当前项目，不会递归恢复后代。
+						</p>
+					</section>
+
+					<section class="space-y-2">
+						<div class="flex items-center justify-between">
 							<label class="text-xs font-semibold text-muted">操作日志</label>
 							<UBadge
 								size="xs"
@@ -362,10 +424,60 @@
 			</div>
 		</template>
 	</USlideover>
+
+	<UModal
+		v-model:open="confirmArchiveOpen"
+		title="确认归档"
+		description="确认归档当前项目">
+		<template #body>
+			<p class="text-sm text-muted">归档后项目状态会变为“已归档”，仍可在抽屉中取消归档。</p>
+		</template>
+		<template #footer>
+			<UButton
+				color="neutral"
+				variant="ghost"
+				size="sm"
+				@click="confirmArchiveOpen = false">
+				取消
+			</UButton>
+			<UButton
+				color="warning"
+				size="sm"
+				:loading="isArchivingProject"
+				@click="onConfirmArchiveProject">
+				确认归档
+			</UButton>
+		</template>
+	</UModal>
+
+	<UModal
+		v-model:open="confirmDeleteOpen"
+		title="确认删除"
+		description="确认删除当前项目">
+		<template #body>
+			<p class="text-sm text-muted">删除后项目会进入回收站，可在回收站或抽屉内恢复。</p>
+		</template>
+		<template #footer>
+			<UButton
+				color="neutral"
+				variant="ghost"
+				size="sm"
+				@click="confirmDeleteOpen = false">
+				取消
+			</UButton>
+			<UButton
+				color="error"
+				size="sm"
+				:loading="isDeletingProject"
+				@click="onConfirmDeleteProject">
+				确认删除
+			</UButton>
+		</template>
+	</UModal>
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { computed, ref } from 'vue'
 	import { storeToRefs } from 'pinia'
 
 	import { PROJECT_STATUS_DISPLAY, type ProjectComputedStatusValue } from '@/config/project'
@@ -396,6 +508,15 @@
 		isStructureLocked,
 		isSaveStateVisible,
 		canRetrySave,
+		canDeleteProject,
+		canRestoreProject,
+		canArchiveProject,
+		canUnarchiveProject,
+		isLifecycleBusy,
+		isDeletingProject,
+		isRestoringProject,
+		isArchivingProject,
+		isUnarchivingProject,
 		saveState,
 		addTag,
 		removeTag,
@@ -417,6 +538,10 @@
 		onLinkCompositionStart,
 		onLinkCompositionEnd,
 		onRetrySave,
+		deleteCurrentProject,
+		restoreCurrentProject,
+		archiveCurrentProject,
+		unarchiveCurrentProject,
 	} = useProjectInspectorDrawer()
 	const refreshSignals = useRefreshSignalsStore()
 	const { projectTick } = storeToRefs(refreshSignals)
@@ -487,6 +612,8 @@
 	})
 
 	const shortcutHint = computed(() => '快捷键：Ctrl/⌘ + S 保存，Esc 关闭')
+	const confirmDeleteOpen = ref(false)
+	const confirmArchiveOpen = ref(false)
 
 	const PROJECT_ACTION_ICON_MAP: Record<string, string> = {
 		project_created: 'i-lucide-circle-plus',
@@ -519,6 +646,40 @@
 
 	function getLinkKindLabel(kind: string): string {
 		return linkKindOptions.find((option) => option.value === kind)?.label ?? '其他'
+	}
+
+	function onRequestDeleteProject() {
+		if (isLifecycleBusy.value) return
+		confirmDeleteOpen.value = true
+	}
+
+	async function onConfirmDeleteProject() {
+		const ok = await deleteCurrentProject()
+		if (ok) {
+			confirmDeleteOpen.value = false
+		}
+	}
+
+	async function onRestoreProject() {
+		if (isLifecycleBusy.value) return
+		await restoreCurrentProject()
+	}
+
+	function onRequestArchiveProject() {
+		if (isLifecycleBusy.value) return
+		confirmArchiveOpen.value = true
+	}
+
+	async function onConfirmArchiveProject() {
+		const ok = await archiveCurrentProject()
+		if (ok) {
+			confirmArchiveOpen.value = false
+		}
+	}
+
+	async function onUnarchiveProject() {
+		if (isLifecycleBusy.value) return
+		await unarchiveCurrentProject()
 	}
 
 	function isParentOption(item: unknown): item is { value: string | null; label: string; depth: number } {
