@@ -28,7 +28,7 @@ pub async fn append_created<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> Re
 where
     C: ConnectionTrait,
 {
-    ActivityLogRepo::append(
+    ActivityLogRepo::append_task(
         conn,
         NewTaskActivityLogInput {
             task_id: ctx.task_id.to_string(),
@@ -52,7 +52,7 @@ pub async fn append_completed<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> 
 where
     C: ConnectionTrait,
 {
-    ActivityLogRepo::append(
+    ActivityLogRepo::append_task(
         conn,
         NewTaskActivityLogInput {
             task_id: ctx.task_id.to_string(),
@@ -76,7 +76,7 @@ pub async fn append_deleted<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> Re
 where
     C: ConnectionTrait,
 {
-    ActivityLogRepo::append(
+    ActivityLogRepo::append_task(
         conn,
         NewTaskActivityLogInput {
             task_id: ctx.task_id.to_string(),
@@ -100,7 +100,7 @@ pub async fn append_restored<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> R
 where
     C: ConnectionTrait,
 {
-    ActivityLogRepo::append(
+    ActivityLogRepo::append_task(
         conn,
         NewTaskActivityLogInput {
             task_id: ctx.task_id.to_string(),
@@ -138,7 +138,7 @@ where
     let before_text = before_value.clone().unwrap_or_else(|| "空".to_string());
     let after_text = after_value.clone().unwrap_or_else(|| "空".to_string());
 
-    ActivityLogRepo::append(
+    ActivityLogRepo::append_task(
         conn,
         NewTaskActivityLogInput {
             task_id: ctx.task_id.to_string(),

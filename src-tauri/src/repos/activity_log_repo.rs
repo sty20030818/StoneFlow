@@ -1,8 +1,8 @@
-//! Task 活动日志仓储。
+//! 活动日志仓储。
 //!
 //! 重点：
-//! - `append` 用于任务动作写入（与业务事务同提交）
-//! - `list` 提供查询接口（按 task/space/project/time 过滤）
+//! - `append_task` / `append_project` 分别写入任务与项目日志
+//! - `list` 按 entity_type 分流查询，并保持统一 DTO 输出
 
 use std::collections::{HashMap, HashSet};
 
@@ -12,7 +12,7 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
-use crate::db::entities::{projects, task_activity_logs};
+use crate::db::entities::{project_activity_logs, projects, task_activity_logs};
 use crate::types::{dto::ActivityLogDto, error::AppError};
 
 pub struct ActivityLogRepo;
@@ -22,6 +22,21 @@ pub struct NewTaskActivityLogInput {
     pub task_id: String,
     pub space_id: String,
     pub project_id: Option<String>,
+    pub action: String,
+    pub action_label: String,
+    pub field_key: Option<String>,
+    pub field_label: Option<String>,
+    pub before_value: Option<String>,
+    pub after_value: Option<String>,
+    pub detail: String,
+    pub create_by: String,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewProjectActivityLogInput {
+    pub project_id: String,
+    pub space_id: String,
     pub action: String,
     pub action_label: String,
     pub field_key: Option<String>,
@@ -49,7 +64,7 @@ const DEFAULT_LIST_LIMIT: u64 = 100;
 const MAX_LIST_LIMIT: u64 = 500;
 
 impl ActivityLogRepo {
-    pub async fn append<C>(conn: &C, input: NewTaskActivityLogInput) -> Result<(), AppError>
+    pub async fn append_task<C>(conn: &C, input: NewTaskActivityLogInput) -> Result<(), AppError>
     where
         C: ConnectionTrait,
     {
@@ -73,16 +88,47 @@ impl ActivityLogRepo {
         Ok(())
     }
 
+    pub async fn append_project<C>(
+        conn: &C,
+        input: NewProjectActivityLogInput,
+    ) -> Result<(), AppError>
+    where
+        C: ConnectionTrait,
+    {
+        let model = project_activity_logs::ActiveModel {
+            id: Set(Uuid::new_v4().to_string()),
+            project_id: Set(input.project_id),
+            space_id: Set(input.space_id),
+            action: Set(input.action),
+            action_label: Set(input.action_label),
+            field_key: Set(input.field_key),
+            field_label: Set(input.field_label),
+            before_value: Set(input.before_value),
+            after_value: Set(input.after_value),
+            detail: Set(input.detail),
+            create_by: Set(input.create_by),
+            created_at: Set(input.created_at),
+        };
+
+        model.insert(conn).await.map_err(AppError::from)?;
+        Ok(())
+    }
+
     pub async fn list(
         conn: &DatabaseConnection,
         input: ListActivityLogsInput,
     ) -> Result<Vec<ActivityLogDto>, AppError> {
-        if let Some(entity_type) = input.entity_type.as_deref() {
-            if entity_type != "task" {
-                return Ok(Vec::new());
-            }
+        match input.entity_type.as_deref() {
+            Some("project") => Self::list_project(conn, input).await,
+            Some("task") | None => Self::list_task(conn, input).await,
+            Some(_) => Ok(Vec::new()),
         }
+    }
 
+    async fn list_task(
+        conn: &DatabaseConnection,
+        input: ListActivityLogsInput,
+    ) -> Result<Vec<ActivityLogDto>, AppError> {
         let mut query = task_activity_logs::Entity::find();
 
         if let Some(task_id) = input.task_id.as_deref() {
@@ -105,12 +151,7 @@ impl ActivityLogRepo {
             query = query.filter(task_activity_logs::Column::CreatedAt.lte(to));
         }
 
-        let limit = input
-            .limit
-            .unwrap_or(DEFAULT_LIST_LIMIT)
-            .min(MAX_LIST_LIMIT);
-        let offset = input.offset.unwrap_or(0);
-
+        let (limit, offset) = resolve_limit_offset(&input);
         let logs = query
             .order_by_desc(task_activity_logs::Column::CreatedAt)
             .limit(limit)
@@ -119,22 +160,13 @@ impl ActivityLogRepo {
             .await
             .map_err(AppError::from)?;
 
-        let project_ids: HashSet<String> =
-            logs.iter().filter_map(|x| x.project_id.clone()).collect();
-        let mut project_name_map: HashMap<String, String> = HashMap::new();
+        let project_name_map = build_project_name_map_from_option_ids(
+            conn,
+            logs.iter().filter_map(|x| x.project_id.clone()).collect(),
+        )
+        .await?;
 
-        if !project_ids.is_empty() {
-            let project_models = projects::Entity::find()
-                .filter(projects::Column::Id.is_in(project_ids))
-                .all(conn)
-                .await
-                .map_err(AppError::from)?;
-            for project in project_models {
-                project_name_map.insert(project.id, project.title);
-            }
-        }
-
-        let items = logs
+        Ok(logs
             .into_iter()
             .map(|model| {
                 let project_name = match model.project_id.as_deref() {
@@ -162,8 +194,109 @@ impl ActivityLogRepo {
                     project_name,
                 }
             })
-            .collect();
-
-        Ok(items)
+            .collect())
     }
+
+    async fn list_project(
+        conn: &DatabaseConnection,
+        input: ListActivityLogsInput,
+    ) -> Result<Vec<ActivityLogDto>, AppError> {
+        let mut query = project_activity_logs::Entity::find();
+
+        if let Some(project_id) = input.project_id.as_deref() {
+            query = query.filter(project_activity_logs::Column::ProjectId.eq(project_id));
+        }
+
+        if let Some(space_id) = input.space_id.as_deref() {
+            query = query.filter(project_activity_logs::Column::SpaceId.eq(space_id));
+        }
+
+        if let Some(from) = input.from {
+            query = query.filter(project_activity_logs::Column::CreatedAt.gte(from));
+        }
+
+        if let Some(to) = input.to {
+            query = query.filter(project_activity_logs::Column::CreatedAt.lte(to));
+        }
+
+        let (limit, offset) = resolve_limit_offset(&input);
+        let logs = query
+            .order_by_desc(project_activity_logs::Column::CreatedAt)
+            .limit(limit)
+            .offset(offset)
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        let project_name_map = build_project_name_map_from_ids(
+            conn,
+            logs.iter().map(|x| x.project_id.clone()).collect(),
+        )
+        .await?;
+
+        Ok(logs
+            .into_iter()
+            .map(|model| {
+                let project_id = model.project_id;
+                let project_name = project_name_map
+                    .get(project_id.as_str())
+                    .cloned()
+                    .unwrap_or_else(|| project_id.clone());
+
+                ActivityLogDto {
+                    id: model.id,
+                    entity_type: "project".to_string(),
+                    entity_id: project_id.clone(),
+                    action: model.action,
+                    action_label: model.action_label,
+                    field_key: model.field_key,
+                    field_label: model.field_label,
+                    before_value: model.before_value,
+                    after_value: model.after_value,
+                    detail: model.detail,
+                    created_at: model.created_at,
+                    space_id: model.space_id,
+                    project_id: Some(project_id),
+                    project_name,
+                }
+            })
+            .collect())
+    }
+}
+
+fn resolve_limit_offset(input: &ListActivityLogsInput) -> (u64, u64) {
+    let limit = input
+        .limit
+        .unwrap_or(DEFAULT_LIST_LIMIT)
+        .min(MAX_LIST_LIMIT);
+    let offset = input.offset.unwrap_or(0);
+    (limit, offset)
+}
+
+async fn build_project_name_map_from_option_ids(
+    conn: &DatabaseConnection,
+    project_ids: Vec<String>,
+) -> Result<HashMap<String, String>, AppError> {
+    build_project_name_map_from_ids(conn, project_ids).await
+}
+
+async fn build_project_name_map_from_ids(
+    conn: &DatabaseConnection,
+    project_ids: Vec<String>,
+) -> Result<HashMap<String, String>, AppError> {
+    if project_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let project_models = projects::Entity::find()
+        .filter(projects::Column::Id.is_in(project_ids.into_iter().collect::<HashSet<_>>()))
+        .all(conn)
+        .await
+        .map_err(AppError::from)?;
+
+    let mut project_name_map = HashMap::new();
+    for project in project_models {
+        project_name_map.insert(project.id, project.title);
+    }
+    Ok(project_name_map)
 }

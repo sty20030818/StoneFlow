@@ -5,6 +5,7 @@ use sea_orm_migration::prelude::*;
 
 mod m01_init;
 mod m02_task_activity_logs;
+mod m03_project_activity_logs;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m01_init::Migration),
             Box::new(m02_task_activity_logs::Migration),
+            Box::new(m03_project_activity_logs::Migration),
         ]
     }
 }

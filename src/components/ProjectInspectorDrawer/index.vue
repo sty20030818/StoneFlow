@@ -302,6 +302,49 @@
 							@compositionstart="onNoteCompositionStart"
 							@compositionend="onNoteCompositionEnd" />
 					</section>
+
+					<section class="space-y-2">
+						<div class="flex items-center justify-between">
+							<label class="text-xs font-semibold text-muted">操作日志</label>
+							<UBadge
+								size="xs"
+								color="neutral"
+								variant="soft">
+								{{ timelineLogs.length }}
+							</UBadge>
+						</div>
+
+						<div
+							v-if="timelineLoading"
+							class="rounded-xl border border-default/70 bg-elevated/60 px-3 py-2 text-xs text-muted">
+							日志加载中...
+						</div>
+
+						<div
+							v-else-if="timelineErrorMessage"
+							class="rounded-xl border border-red-200/70 bg-red-50/50 px-3 py-2.5 space-y-2">
+							<div class="text-xs text-red-600">日志加载失败：{{ timelineErrorMessage }}</div>
+							<UButton
+								color="neutral"
+								variant="soft"
+								size="xs"
+								icon="i-lucide-refresh-cw"
+								@click="reloadTimeline">
+								重试
+							</UButton>
+						</div>
+
+						<div
+							v-else-if="timelineEmpty"
+							class="rounded-xl border border-default/70 bg-elevated/60 px-3 py-2 text-xs text-muted">
+							暂无操作日志
+						</div>
+
+						<UTimeline
+							v-else
+							:items="timelineItems"
+							size="sm" />
+					</section>
 				</div>
 
 				<footer class="flex items-center justify-between border-t border-default px-6 py-3">
@@ -323,9 +366,12 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { storeToRefs } from 'pinia'
 
 	import { PROJECT_STATUS_DISPLAY, type ProjectComputedStatusValue } from '@/config/project'
 	import { createDrawerLayerUi } from '@/config/ui-layer'
+	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+	import { useProjectInspectorActivityLogs } from './composables/useProjectInspectorActivityLogs'
 	import { useProjectInspectorDrawer } from './composables/useProjectInspectorDrawer'
 
 	const {
@@ -372,6 +418,13 @@
 		onLinkCompositionEnd,
 		onRetrySave,
 	} = useProjectInspectorDrawer()
+	const refreshSignals = useRefreshSignalsStore()
+	const { projectTick } = storeToRefs(refreshSignals)
+	const { timelineLogs, timelineLoading, timelineErrorMessage, timelineEmpty, reloadTimeline } =
+		useProjectInspectorActivityLogs({
+			currentProject,
+			projectTick,
+		})
 
 	const drawerUi = createDrawerLayerUi({
 		content:
@@ -434,6 +487,35 @@
 	})
 
 	const shortcutHint = computed(() => '快捷键：Ctrl/⌘ + S 保存，Esc 关闭')
+
+	const PROJECT_ACTION_ICON_MAP: Record<string, string> = {
+		project_created: 'i-lucide-circle-plus',
+		project_deleted: 'i-lucide-trash-2',
+		project_restored: 'i-lucide-undo-2',
+		project_field_updated: 'i-lucide-pencil-line',
+		project_archived: 'i-lucide-archive',
+		project_unarchived: 'i-lucide-folder-open',
+	}
+
+	const timelineItems = computed(() => {
+		return timelineLogs.value.map((item) => ({
+			title: item.actionLabel,
+			description: item.detail || '无详情',
+			date: formatDateTime(item.createdAt),
+			icon: PROJECT_ACTION_ICON_MAP[item.action] ?? 'i-lucide-history',
+		}))
+	})
+
+	function formatDateTime(ts: number): string {
+		const date = new Date(ts)
+		if (Number.isNaN(date.getTime())) return '时间未知'
+		const yyyy = date.getFullYear()
+		const mm = String(date.getMonth() + 1).padStart(2, '0')
+		const dd = String(date.getDate()).padStart(2, '0')
+		const hh = String(date.getHours()).padStart(2, '0')
+		const min = String(date.getMinutes()).padStart(2, '0')
+		return `${yyyy}.${mm}.${dd} ${hh}:${min}`
+	}
 
 	function getLinkKindLabel(kind: string): string {
 		return linkKindOptions.find((option) => option.value === kind)?.label ?? '其他'

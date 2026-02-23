@@ -3,6 +3,7 @@
 
 pub use super::app_settings::Entity as AppSettings;
 pub use super::links::Entity as Links;
+pub use super::project_activity_logs::Entity as ProjectActivityLogs;
 pub use super::project_links::Entity as ProjectLinks;
 pub use super::project_tags::Entity as ProjectTags;
 pub use super::projects::Entity as Projects;

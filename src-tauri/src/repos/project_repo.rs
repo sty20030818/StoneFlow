@@ -24,6 +24,7 @@ use crate::types::{
     error::AppError,
 };
 
+pub mod activity_logs;
 pub mod helpers;
 
 pub struct ProjectRepo;
@@ -110,14 +111,40 @@ impl ProjectRepo {
         unique_project_ids.sort();
         unique_project_ids.dedup();
 
+        let target_models = projects::Entity::find()
+            .filter(projects::Column::Id.is_in(unique_project_ids.clone()))
+            .filter(projects::Column::DeletedAt.is_null())
+            .all(conn)
+            .await
+            .map_err(AppError::from)?;
+
+        if target_models.is_empty() {
+            return Ok(0);
+        }
+
+        let target_ids: Vec<String> = target_models.iter().map(|item| item.id.clone()).collect();
         let res = projects::Entity::update_many()
             .col_expr(projects::Column::DeletedAt, Expr::value(Some(now)))
             .col_expr(projects::Column::UpdatedAt, Expr::value(now))
-            .filter(projects::Column::Id.is_in(unique_project_ids))
+            .filter(projects::Column::Id.is_in(target_ids))
             .filter(projects::Column::DeletedAt.is_null())
             .exec(conn)
             .await
             .map_err(AppError::from)?;
+
+        for model in target_models {
+            activity_logs::append_deleted(
+                conn,
+                activity_logs::ProjectLogCtx {
+                    project_id: model.id.as_str(),
+                    space_id: model.space_id.as_str(),
+                    create_by: model.create_by.as_str(),
+                    created_at: now,
+                },
+                model.title.as_str(),
+            )
+            .await?;
+        }
 
         Ok(res.rows_affected as usize)
     }
@@ -320,6 +347,17 @@ impl ProjectRepo {
         if !links.is_empty() {
             link_repo::sync_links(&txn, LinkEntity::Project, &id, &links).await?;
         }
+        activity_logs::append_created(
+            &txn,
+            activity_logs::ProjectLogCtx {
+                project_id: id.as_str(),
+                space_id: res.space_id.as_str(),
+                create_by: res.create_by.as_str(),
+                created_at: now,
+            },
+            res.title.as_str(),
+        )
+        .await?;
 
         txn.commit().await.map_err(AppError::from)?;
 
@@ -360,9 +398,13 @@ impl ProjectRepo {
         let now = now_ms();
         let old_path = model.path.clone();
         let old_title = model.title.clone();
+        let old_note = model.note.clone();
+        let old_priority = model.priority.clone();
         let old_parent_id = model.parent_id.clone();
 
         let mut next_title = old_title.clone();
+        let mut next_note = old_note.clone();
+        let mut next_priority = old_priority.clone();
         let mut next_parent_id = old_parent_id.clone();
         let mut changed_any = false;
         let mut path_changed = false;
@@ -396,6 +438,7 @@ impl ProjectRepo {
                 }
             });
             if normalized_note != model.note {
+                next_note = normalized_note.clone();
                 active_model.note = Set(normalized_note);
                 changed_any = true;
             }
@@ -404,6 +447,7 @@ impl ProjectRepo {
         if let Some(priority_value) = priority.as_deref() {
             let parsed_priority = common_task_utils::parse_priority(Some(priority_value))?;
             if parsed_priority != model.priority {
+                next_priority = parsed_priority.clone();
                 active_model.priority = Set(parsed_priority);
                 changed_any = true;
             }
@@ -470,6 +514,49 @@ impl ProjectRepo {
             Self::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now)
                 .await?;
         }
+
+        let log_ctx = activity_logs::ProjectLogCtx {
+            project_id: project_id.as_str(),
+            space_id: model.space_id.as_str(),
+            create_by: model.create_by.as_str(),
+            created_at: now,
+        };
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "title",
+            "项目标题",
+            Some(old_title),
+            Some(next_title),
+        )
+        .await?;
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "note",
+            "项目备注",
+            old_note,
+            next_note,
+        )
+        .await?;
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx.clone(),
+            "priority",
+            "优先级",
+            Some(priority_to_string(&old_priority)),
+            Some(priority_to_string(&next_priority)),
+        )
+        .await?;
+        activity_logs::append_field_updated(
+            &txn,
+            log_ctx,
+            "parentId",
+            "父项目",
+            old_parent_id,
+            next_parent_id,
+        )
+        .await?;
 
         txn.commit().await.map_err(AppError::from)?;
         Ok(())
@@ -600,9 +687,30 @@ impl ProjectRepo {
         let mut active_model: projects::ActiveModel = model.into();
         active_model.deleted_at = Set(None);
         active_model.updated_at = Set(now);
-        active_model.update(conn).await.map_err(AppError::from)?;
+        let saved_model = active_model.update(conn).await.map_err(AppError::from)?;
+        activity_logs::append_restored(
+            conn,
+            activity_logs::ProjectLogCtx {
+                project_id: saved_model.id.as_str(),
+                space_id: saved_model.space_id.as_str(),
+                create_by: saved_model.create_by.as_str(),
+                created_at: now,
+            },
+            saved_model.title.as_str(),
+        )
+        .await?;
         Ok(())
     }
+}
+
+fn priority_to_string(priority: &Priority) -> String {
+    match priority {
+        Priority::P0 => "P0",
+        Priority::P1 => "P1",
+        Priority::P2 => "P2",
+        Priority::P3 => "P3",
+    }
+    .to_string()
 }
 
 fn model_to_dto(m: projects::Model) -> ProjectDto {

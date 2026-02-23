@@ -3,6 +3,7 @@ pub mod sea_orm_active_enums;
 
 pub mod app_settings;
 pub mod links;
+pub mod project_activity_logs;
 pub mod project_links;
 pub mod project_tags;
 pub mod projects;
