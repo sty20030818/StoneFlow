@@ -48,11 +48,11 @@
 	import { computed, ref } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import DrawerAttributeCardShell from '@/components/DrawerAttributeCard/DrawerAttributeCardShell.vue'
+	import DrawerAttributeCardShell from '@/components/InspectorDrawer/shared/attributes/DrawerAttributeCardShell.vue'
 	import DrawerAttributeOptionList, {
 		type DrawerAttributeOptionItem,
-	} from '@/components/DrawerAttributeCard/DrawerAttributeOptionList.vue'
-	import DrawerAttributePopoverCard from '@/components/DrawerAttributeCard/DrawerAttributePopoverCard.vue'
+	} from '@/components/InspectorDrawer/shared/attributes/DrawerAttributeOptionList.vue'
+	import DrawerAttributePopoverCard from '@/components/InspectorDrawer/shared/attributes/DrawerAttributePopoverCard.vue'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 
 	type SpaceOption = {

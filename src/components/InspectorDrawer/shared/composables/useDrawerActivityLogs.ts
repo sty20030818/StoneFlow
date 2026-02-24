@@ -1,23 +1,23 @@
 import { useAsyncState } from '@vueuse/core'
 import { computed, watch, type Ref } from 'vue'
 
-import { listActivityLogs, type ActivityLogEntry } from '@/services/api/logs'
-import type { TaskDto } from '@/services/api/tasks'
+import type { ActivityLogEntry } from '@/services/api/logs'
 
-export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto | null>; taskTick: Ref<number> }) {
-	const taskId = computed(() => params.currentTask.value?.id ?? null)
-
+export function useDrawerActivityLogs(params: {
+	entityId: Ref<string | null>
+	tick: Ref<number>
+	loadLogs: (id: string) => Promise<ActivityLogEntry[]>
+	errorFallbackText: string
+}) {
 	const {
 		state: timelineLogs,
 		isLoading: timelineLoading,
 		error: timelineError,
 		execute,
 	} = useAsyncState(
-		async (id: string) =>
-			await listActivityLogs({
-				entityType: 'task',
-				taskId: id,
-			}),
+		async (id: string) => {
+			return await params.loadLogs(id)
+		},
 		[] as ActivityLogEntry[],
 		{
 			immediate: false,
@@ -26,10 +26,10 @@ export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto 
 	)
 
 	const timelineErrorMessage = computed(() => {
-		if (!taskId.value) return null
+		if (!params.entityId.value) return null
 		const error = timelineError.value
 		if (!error) return null
-		return error instanceof Error ? error.message : '加载操作日志失败'
+		return error instanceof Error ? error.message : params.errorFallbackText
 	})
 
 	const timelineEmpty = computed(() => {
@@ -37,7 +37,7 @@ export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto 
 	})
 
 	async function reloadTimeline() {
-		const id = taskId.value
+		const id = params.entityId.value
 		if (!id) {
 			timelineLogs.value = []
 			return
@@ -46,7 +46,7 @@ export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto 
 	}
 
 	watch(
-		taskId,
+		params.entityId,
 		() => {
 			void reloadTimeline()
 		},
@@ -54,9 +54,9 @@ export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto 
 	)
 
 	watch(
-		() => params.taskTick.value,
+		() => params.tick.value,
 		() => {
-			if (!taskId.value) return
+			if (!params.entityId.value) return
 			void reloadTimeline()
 		},
 	)

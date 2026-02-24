@@ -125,8 +125,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
-
+	import { useDrawerEditableListController } from '@/components/InspectorDrawer/shared/composables'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import type { TaskCustomFieldFormItem } from '../composables/taskFieldNormalization'
@@ -153,41 +152,38 @@
 	}
 
 	const props = defineProps<Props>()
-	const showTitleError = ref(false)
-	const editingIndex = ref<number | null>(null)
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
 	const optionCardHoverMotion = useCardHoverMotionPreset()
+	const {
+		editingIndex,
+		draftErrorVisible: showTitleError,
+		onDraftInput,
+		setDraftConfirmResult,
+		resetDraftError,
+		onEditOpenChange,
+	} = useDrawerEditableListController({
+		interaction: props.interaction,
+		onItemInput: (index) => {
+			props.onCustomFieldInput(index)
+		},
+		onFlushEdits: () => {
+			props.onFlushCustomFieldEdits()
+		},
+	})
 
 	function onDraftTitleInput() {
-		if (showTitleError.value && customFieldDraftTitle.value.trim()) {
-			showTitleError.value = false
-		}
+		onDraftInput(customFieldDraftTitle.value)
 	}
 
 	function onConfirmClick() {
-		const ok = props.onConfirmCustomField()
-		showTitleError.value = !ok
+		setDraftConfirmResult(props.onConfirmCustomField())
 	}
 
 	function onCancelClick() {
 		customFieldDraftTitle.value = ''
 		customFieldDraftValue.value = ''
 		customFieldDraftVisible.value = false
-		showTitleError.value = false
-	}
-
-	function onEditOpenChange(index: number, open: boolean) {
-		if (open) {
-			editingIndex.value = index
-			props.interaction.onEditStart()
-			props.onCustomFieldInput(index)
-			return
-		}
-		if (editingIndex.value === index) {
-			editingIndex.value = null
-		}
-		props.interaction.onEditEnd()
-		props.onFlushCustomFieldEdits()
+		resetDraftError()
 	}
 
 	function onCustomFieldInput(index: number) {

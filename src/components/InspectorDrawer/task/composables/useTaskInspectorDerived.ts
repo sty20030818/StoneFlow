@@ -1,10 +1,14 @@
 import { computed, type Ref } from 'vue'
 
-import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 import { UNKNOWN_PROJECT_LABEL } from '@/config/project'
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
 import type { TaskDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
+import {
+	normalizeDrawerSpaceKey,
+	resolveDrawerSpaceDisplay,
+	useDrawerSaveStatePresentation,
+} from '@/components/InspectorDrawer/shared/composables'
 
 import type { TaskInspectorState } from './useTaskInspectorState'
 
@@ -20,20 +24,13 @@ function normalizePriorityKey(priority: string | null | undefined): keyof typeof
 	return 'default'
 }
 
-function normalizeSpaceKey(spaceId: string | null | undefined): keyof typeof SPACE_DISPLAY | null {
-	const normalized = spaceId?.trim().toLowerCase() ?? ''
-	if (normalized === 'work' || normalized === 'personal' || normalized === 'study') {
-		return normalized
-	}
-	return null
-}
-
 export function useTaskInspectorDerived(params: {
 	currentTask: Ref<TaskDto | null>
 	state: TaskInspectorState
 	projectsStore: ReturnType<typeof useProjectsStore>
 }) {
 	const { currentTask, state, projectsStore } = params
+	const { saveStateLabel, saveStateClass, saveStateDotClass } = useDrawerSaveStatePresentation(state.saveState)
 
 	const priorityLabel = computed(() => {
 		const opt = TASK_PRIORITY_OPTIONS.find((item) => item.value === state.priorityLocal.value)
@@ -63,21 +60,15 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const spaceCardClass = computed(() => {
-		const key = normalizeSpaceKey(state.spaceIdLocal.value)
-		const display = key ? SPACE_DISPLAY[key] : null
-		return display?.cardClass ?? DEFAULT_SPACE_DISPLAY.cardClass
+		return resolveDrawerSpaceDisplay(state.spaceIdLocal.value).cardClass
 	})
 
 	const spaceCardLabelClass = computed(() => {
-		const key = normalizeSpaceKey(state.spaceIdLocal.value)
-		const display = key ? SPACE_DISPLAY[key] : null
-		return display?.cardLabelClass ?? DEFAULT_SPACE_DISPLAY.cardLabelClass
+		return resolveDrawerSpaceDisplay(state.spaceIdLocal.value).cardLabelClass
 	})
 
 	const spaceCardValueClass = computed(() => {
-		const key = normalizeSpaceKey(state.spaceIdLocal.value)
-		const display = key ? SPACE_DISPLAY[key] : null
-		return display?.cardValueClass ?? DEFAULT_SPACE_DISPLAY.cardValueClass
+		return resolveDrawerSpaceDisplay(state.spaceIdLocal.value).cardValueClass
 	})
 
 	const currentProjectLabel = computed(() => {
@@ -98,21 +89,18 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const currentSpaceLabel = computed(() => {
-		const key = normalizeSpaceKey(currentTask.value?.spaceId)
-		if (!key) return currentTask.value?.spaceId ?? DEFAULT_SPACE_DISPLAY.label
-		return SPACE_DISPLAY[key].label
+		const spaceId = currentTask.value?.spaceId
+		const key = normalizeDrawerSpaceKey(spaceId)
+		if (!key) return spaceId ?? resolveDrawerSpaceDisplay(spaceId).label
+		return resolveDrawerSpaceDisplay(spaceId).label
 	})
 
 	const currentSpaceIcon = computed(() => {
-		const key = normalizeSpaceKey(currentTask.value?.spaceId)
-		if (!key) return DEFAULT_SPACE_DISPLAY.icon
-		return SPACE_DISPLAY[key].icon
+		return resolveDrawerSpaceDisplay(currentTask.value?.spaceId).icon
 	})
 
 	const spacePillClass = computed(() => {
-		const key = normalizeSpaceKey(currentTask.value?.spaceId)
-		if (!key) return DEFAULT_SPACE_DISPLAY.pillClass
-		return SPACE_DISPLAY[key].pillClass
+		return resolveDrawerSpaceDisplay(currentTask.value?.spaceId).pillClass
 	})
 
 	const projectPath = computed(() => {
@@ -134,27 +122,6 @@ export function useTaskInspectorDerived(params: {
 			.map((item) => item.trim())
 			.filter(Boolean)
 		return parts.length ? parts : [raw]
-	})
-
-	const saveStateLabel = computed(() => {
-		if (state.saveState.value === 'saving') return '保存中'
-		if (state.saveState.value === 'saved') return '已保存'
-		if (state.saveState.value === 'error') return '保存失败'
-		return ''
-	})
-
-	const saveStateClass = computed(() => {
-		if (state.saveState.value === 'saving') return 'text-blue-500'
-		if (state.saveState.value === 'saved') return 'text-emerald-500'
-		if (state.saveState.value === 'error') return 'text-rose-500'
-		return 'text-muted'
-	})
-
-	const saveStateDotClass = computed(() => {
-		if (state.saveState.value === 'saving') return 'bg-blue-500'
-		if (state.saveState.value === 'saved') return 'bg-emerald-500'
-		if (state.saveState.value === 'error') return 'bg-rose-500'
-		return 'bg-muted'
 	})
 
 	return {

@@ -629,6 +629,12 @@ export function useProjectInspectorDrawer() {
 		void onTagsChange()
 	}
 
+	function onTagInputBlur() {
+		if (tagInput.value.trim()) {
+			addTag()
+		}
+	}
+
 	async function onTagsChange() {
 		const project = currentProject.value
 		if (!project || suppressAutosave.value) return
@@ -639,6 +645,7 @@ export function useProjectInspectorDrawer() {
 
 	function addLinkDraft() {
 		linkDraftVisible.value = true
+		linkValidationErrorIndex.value = null
 	}
 
 	function cancelLinkDraft() {
@@ -649,9 +656,9 @@ export function useProjectInspectorDrawer() {
 		linkValidationErrorIndex.value = null
 	}
 
-	function confirmLinkDraft() {
+	function confirmLinkDraft(): boolean {
 		const url = linkDraftUrl.value.trim()
-		if (!url) return
+		if (!url) return false
 		const title = linkDraftTitle.value.trim()
 		linksLocal.value.push({
 			title,
@@ -662,7 +669,9 @@ export function useProjectInspectorDrawer() {
 		linkDraftUrl.value = ''
 		linkDraftKind.value = 'web'
 		linkDraftVisible.value = false
+		linkValidationErrorIndex.value = null
 		stageLinksUpdate('immediate')
+		return true
 	}
 
 	function removeLink(index: number) {
@@ -975,6 +984,7 @@ export function useProjectInspectorDrawer() {
 		saveState: computed(() => store.saveState),
 		addTag,
 		removeTag,
+		onTagInputBlur,
 		addLinkDraft,
 		cancelLinkDraft,
 		confirmLinkDraft,

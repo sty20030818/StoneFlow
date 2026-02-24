@@ -1,12 +1,12 @@
 <template>
 	<section class="space-y-2">
-		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Note</label>
+		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">备注</label>
 		<div
 			class="rounded-2xl border-2 border-default/70 bg-elevated/50 p-4 transition-[border-color] duration-150 hover:border-emerald-200 focus-within:border-emerald-300 hover:focus-within:border-emerald-300">
 			<UTextarea
 				v-model="noteModel"
-				placeholder="记录一些背景信息、想法或链接…"
-				:rows="6"
+				:placeholder="placeholder"
+				:rows="rows"
 				size="sm"
 				autoresize
 				variant="none"
@@ -23,18 +23,18 @@
 </template>
 
 <script setup lang="ts">
+	import type { DrawerTextInteractionHandlers } from '../types'
+
 	const noteModel = defineModel<string>('note', { required: true })
 
-	type TextInteractionHandlers = {
-		onFocus: () => void
-		onBlur: () => void
-		onCompositionStart: () => void
-		onCompositionEnd: () => void
-	}
-
 	type Props = {
-		interaction: TextInteractionHandlers
+		interaction: DrawerTextInteractionHandlers
+		placeholder?: string
+		rows?: number
 	}
 
-	const props = defineProps<Props>()
+	const props = withDefaults(defineProps<Props>(), {
+		placeholder: '记录一些背景信息、想法或链接…',
+		rows: 6,
+	})
 </script>
