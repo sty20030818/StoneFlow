@@ -14,6 +14,7 @@ import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+import { DRAWER_LINK_KIND_OPTIONS } from '../../shared/constants'
 
 type ParentProjectOption = {
 	value: string | null
@@ -36,15 +37,6 @@ type SaveBucket = {
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
 const TEXT_AUTOSAVE_MAX_WAIT = 2000
-
-const PROJECT_LINK_KIND_OPTIONS: Array<{ value: LinkDto['kind']; label: string }> = [
-	{ value: 'web', label: '网页' },
-	{ value: 'doc', label: '文档' },
-	{ value: 'design', label: '设计稿' },
-	{ value: 'repoLocal', label: '本地仓库' },
-	{ value: 'repoRemote', label: '远程仓库' },
-	{ value: 'other', label: '其他' },
-]
 
 export function useProjectInspectorDrawer() {
 	const store = useProjectInspectorStore()
@@ -100,7 +92,7 @@ export function useProjectInspectorDrawer() {
 
 	const priorityOptions = PROJECT_PRIORITY_OPTIONS
 	const spaceOptions = SPACE_OPTIONS
-	const linkKindOptions = PROJECT_LINK_KIND_OPTIONS
+	const linkKindOptions = DRAWER_LINK_KIND_OPTIONS
 	const rootLabel = PROJECT_ROOT_LABEL
 
 	const isStructureLocked = computed(() => {

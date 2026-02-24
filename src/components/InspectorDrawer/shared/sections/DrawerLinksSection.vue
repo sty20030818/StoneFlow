@@ -17,14 +17,15 @@
 			:key="link.id ?? `draft-${index}`"
 			class="space-y-2 rounded-xl border border-default p-3 bg-default">
 			<div class="flex items-start justify-between gap-2">
-				<div class="min-w-0 space-y-1">
+				<div class="min-w-0 flex items-center gap-2">
 					<p class="truncate text-sm font-semibold text-default">
 						{{ link.title.trim() || '未命名链接' }}
 					</p>
 					<UBadge
 						size="xs"
 						color="neutral"
-						variant="soft">
+						variant="soft"
+						class="shrink-0">
 						{{ getKindLabel(link.kind) }}
 					</UBadge>
 				</div>
