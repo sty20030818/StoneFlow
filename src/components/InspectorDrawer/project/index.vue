@@ -4,6 +4,7 @@
 		v-model:open="isOpen"
 		title="项目设置"
 		description="查看并编辑当前项目信息"
+		:content="{ onOpenAutoFocus: onProjectDrawerOpenAutoFocus }"
 		:content-class="DRAWER_CONTENT_CLASS.project">
 		<div class="flex h-full flex-col">
 			<DrawerBreadcrumbHeader
@@ -32,7 +33,6 @@
 					v-model:title="titleLocal"
 					:disabled="isStructureLocked"
 					placeholder="请输入项目标题"
-					autofocus
 					:helper-text="isStructureLocked ? '默认项目的标题与父级不可编辑。' : ''"
 					:on-focus="onTitleFocus"
 					:on-blur="onTitleBlur"
@@ -147,6 +147,10 @@
 		useProjectInspectorDrawer,
 		useProjectLifecycleActions,
 	} from './composables'
+
+	function onProjectDrawerOpenAutoFocus(event: Event) {
+		event.preventDefault()
+	}
 
 	const {
 		currentProject,

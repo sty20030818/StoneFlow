@@ -4,6 +4,7 @@
 		:title="title"
 		:description="description"
 		side="right"
+		:content="props.content"
 		:ui="drawerUi"
 		:close="false">
 		<template #content>
@@ -22,6 +23,7 @@
 		title: string
 		description: string
 		contentClass?: string
+		content?: Record<string, unknown>
 	}
 
 	const props = defineProps<Props>()
