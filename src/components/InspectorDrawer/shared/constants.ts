@@ -14,13 +14,13 @@ export const DRAWER_LINK_SELECT_MENU_UI = {
 	content: 'z-layer-drawer-popover',
 }
 
-export const DRAWER_LINK_KIND_OPTIONS = [
+export const DRAWER_LINK_KIND_OPTIONS: { value: LinkDto['kind']; label: string }[] = [
 	{ value: 'web', label: '网页' },
 	{ value: 'doc', label: '文档' },
 	{ value: 'design', label: '设计稿' },
 	{ value: 'repoLocal', label: '本地仓库' },
 	{ value: 'repoRemote', label: '远程仓库' },
 	{ value: 'other', label: '其他' },
-] as const satisfies Array<{ value: LinkDto['kind']; label: string }>
+]
 
 export const DRAWER_LINKS_EMPTY_TEXT = '暂无关联链接，点击右上角“新增”创建。'

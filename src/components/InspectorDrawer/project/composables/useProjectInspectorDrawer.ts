@@ -591,7 +591,12 @@ export function useProjectInspectorDrawer() {
 	function stageLinksUpdate(mode: 'debounced' | 'immediate') {
 		const project = currentProject.value
 		if (!project) return
-		if (mode === 'debounced' && (suppressAutosave.value || textInteraction.linkComposingCount > 0)) return
+		if (
+			mode === 'debounced' &&
+			(suppressAutosave.value || textInteraction.linkComposingCount > 0 || textInteraction.linkEditingCount > 0)
+		) {
+			return
+		}
 		const invalidIndex = findInvalidLinkIndex()
 		if (invalidIndex >= 0) {
 			linkValidationErrorIndex.value = invalidIndex

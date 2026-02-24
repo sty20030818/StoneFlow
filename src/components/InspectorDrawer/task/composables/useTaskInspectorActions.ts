@@ -257,7 +257,7 @@ export function useTaskInspectorActions(params: {
 
 	function stageLinksUpdate(mode: 'debounced' | 'immediate'): boolean {
 		if (!currentTask.value) return false
-		if (mode === 'debounced' && shouldSkipDebouncedStage('links')) return false
+		if (mode === 'debounced' && (shouldSkipDebouncedStage('links') || state.textInteraction.links.editing)) return false
 		const invalidIndex = findInvalidLinkIndex()
 		if (invalidIndex >= 0) {
 			state.linkValidationErrorIndex.value = invalidIndex

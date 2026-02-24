@@ -16,57 +16,40 @@
 			v-for="(link, index) in linksModel"
 			:key="link.id ?? `draft-${index}`"
 			class="space-y-2 rounded-xl border border-default p-3 bg-default">
-			<div class="flex items-start justify-between gap-2">
-				<div class="min-w-0 flex items-center gap-2">
-					<p class="truncate text-sm font-semibold text-default">
-						{{ link.title.trim() || '未命名链接' }}
-					</p>
-					<UBadge
+			<div
+				v-if="editingIndex === index"
+				class="space-y-2">
+				<div class="grid grid-cols-[1fr_120px_auto_auto_auto] gap-2">
+					<UInput
+						v-model="linksModel[index].title"
+						placeholder="标题（可选）"
 						size="xs"
+						:ui="{ rounded: 'rounded-lg' }"
+						@input="onLinkInput(index)"
+						@compositionstart="onLinkCompositionStart"
+						@compositionend="onLinkCompositionEnd" />
+					<USelectMenu
+						v-model="linksModel[index].kind"
+						:items="linkKindOptions"
+						value-key="value"
+						label-key="label"
+						size="xs"
+						:search-input="false"
+						:ui="selectMenuUi"
+						@update:model-value="onLinkInput(index)" />
+					<UButton
+						color="primary"
+						size="xs"
+						@click="onConfirmEdit(index)">
+						完成
+					</UButton>
+					<UButton
 						color="neutral"
 						variant="soft"
-						class="shrink-0">
-						{{ getKindLabel(link.kind) }}
-					</UBadge>
-				</div>
-				<div class="flex items-center gap-1">
-					<UPopover
-						:open="editingIndex === index"
-						:ui="editPopoverUi"
-						@update:open="(open) => onEditOpenChange(index, open)">
-						<UButton
-							color="neutral"
-							variant="ghost"
-							size="xs"
-							icon="i-lucide-pencil-line" />
-						<template #content>
-							<UInput
-								v-model="linksModel[index].title"
-								placeholder="标题（可选）"
-								size="xs"
-								:ui="{ rounded: 'rounded-lg' }"
-								@input="onLinkInput(index)"
-								@compositionstart="onLinkCompositionStart"
-								@compositionend="onLinkCompositionEnd" />
-							<USelectMenu
-								v-model="linksModel[index].kind"
-								:items="linkKindOptions"
-								value-key="value"
-								label-key="label"
-								size="xs"
-								:search-input="false"
-								:ui="selectMenuUi"
-								@update:model-value="onLinkInput(index)" />
-							<UInput
-								v-model="linksModel[index].url"
-								placeholder="URL（必填）"
-								size="xs"
-								:ui="{ rounded: 'rounded-lg' }"
-								@input="onLinkInput(index)"
-								@compositionstart="onLinkCompositionStart"
-								@compositionend="onLinkCompositionEnd" />
-						</template>
-					</UPopover>
+						size="xs"
+						@click="onCancelEdit(index)">
+						取消
+					</UButton>
 					<UButton
 						color="neutral"
 						variant="ghost"
@@ -74,14 +57,56 @@
 						icon="i-lucide-trash-2"
 						@click="onRemoveLink(index)" />
 				</div>
+				<UInput
+					v-model="linksModel[index].url"
+					placeholder="URL（必填）"
+					size="xs"
+					class="w-full"
+					:ui="{ rounded: 'rounded-lg' }"
+					@input="onLinkInput(index)"
+					@compositionstart="onLinkCompositionStart"
+					@compositionend="onLinkCompositionEnd"
+					@keydown.enter="onConfirmEdit(index)" />
 			</div>
-			<a
-				class="block truncate text-xs text-primary hover:underline"
-				:href="link.url"
-				target="_blank"
-				rel="noreferrer">
-				{{ link.url }}
-			</a>
+			<div
+				v-else
+				class="space-y-2">
+				<div class="flex items-start justify-between gap-2">
+					<div class="min-w-0 flex items-center gap-2">
+						<p class="truncate text-sm font-semibold text-default">
+							{{ link.title.trim() || '未命名链接' }}
+						</p>
+						<UBadge
+							size="xs"
+							color="neutral"
+							variant="soft"
+							class="shrink-0">
+							{{ getKindLabel(link.kind) }}
+						</UBadge>
+					</div>
+					<div class="flex items-center gap-1">
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="xs"
+							icon="i-lucide-pencil-line"
+							@click="onStartEdit(index)" />
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="xs"
+							icon="i-lucide-trash-2"
+							@click="onRemoveLink(index)" />
+					</div>
+				</div>
+				<a
+					class="block truncate text-xs text-primary hover:underline"
+					:href="link.url"
+					target="_blank"
+					rel="noreferrer">
+					{{ link.url }}
+				</a>
+			</div>
 			<p
 				v-if="editingErrorIndex === index"
 				class="text-[11px] text-error">
@@ -148,6 +173,8 @@
 </template>
 
 <script setup lang="ts">
+	import { ref } from 'vue'
+
 	import { DRAWER_LINK_SELECT_MENU_UI, DRAWER_LINKS_EMPTY_TEXT } from '../constants'
 	import { useDrawerEditableListController, useDrawerLinkKindLabelMap } from '../composables'
 	import type { DrawerEditInteractionHandlers, DrawerLinkFormItem, DrawerLinkKindOption } from '../types'
@@ -164,7 +191,7 @@
 		onAddLinkDraft: () => void
 		onConfirmLink: () => boolean
 		onRemoveLink: (index: number) => void
-		onLinkInput: (index: number) => void
+		onLinkInput: (index?: number) => void
 		onFlushLinkEdits: () => void
 		interaction: DrawerEditInteractionHandlers
 		emptyText?: string
@@ -175,6 +202,7 @@
 	})
 
 	const kindLabelMap = useDrawerLinkKindLabelMap(() => props.linkKindOptions)
+	const editSnapshot = ref<DrawerLinkFormItem | null>(null)
 	const {
 		editingIndex,
 		draftErrorVisible: showDraftUrlError,
@@ -191,10 +219,6 @@
 			props.onFlushLinkEdits()
 		},
 	})
-
-	const editPopoverUi = {
-		content: 'w-[280px] rounded-xl p-3 space-y-2 z-layer-drawer-popover',
-	}
 
 	const selectMenuUi = DRAWER_LINK_SELECT_MENU_UI
 
@@ -223,7 +247,7 @@
 		resetDraftError()
 	}
 
-	function onLinkInput(index: number) {
+	function onLinkInput(index?: number) {
 		props.onLinkInput(index)
 	}
 
@@ -235,7 +259,64 @@
 		props.interaction.onCompositionEnd()
 	}
 
+	function cloneLink(item: DrawerLinkFormItem): DrawerLinkFormItem {
+		return {
+			id: item.id,
+			title: item.title,
+			url: item.url,
+			kind: item.kind,
+		}
+	}
+
+	function restoreFromSnapshot(index: number) {
+		const snapshot = editSnapshot.value
+		const target = linksModel.value[index]
+		if (!snapshot || !target) return
+		target.title = snapshot.title
+		target.url = snapshot.url
+		target.kind = snapshot.kind
+	}
+
+	function closeEdit(index: number) {
+		onEditOpenChange(index, false)
+		editSnapshot.value = null
+	}
+
+	function onStartEdit(index: number) {
+		const target = linksModel.value[index]
+		if (!target) return
+		const activeIndex = editingIndex.value
+		if (activeIndex === index) return
+		if (activeIndex !== null) {
+			onCancelEdit(activeIndex)
+		}
+		editSnapshot.value = cloneLink(target)
+		onEditOpenChange(index, true)
+	}
+
+	function onConfirmEdit(index: number) {
+		const target = linksModel.value[index]
+		if (!target || !target.url.trim()) {
+			props.onFlushLinkEdits()
+			return
+		}
+		closeEdit(index)
+	}
+
+	function onCancelEdit(index: number) {
+		restoreFromSnapshot(index)
+		props.onLinkInput(index)
+		closeEdit(index)
+	}
+
 	function onRemoveLink(index: number) {
+		const activeIndex = editingIndex.value
+		if (activeIndex === index) {
+			onCancelEdit(index)
+		} else if (activeIndex !== null && activeIndex > index) {
+			editingIndex.value = activeIndex - 1
+		}
 		props.onRemoveLink(index)
+		props.onLinkInput()
 	}
 </script>
