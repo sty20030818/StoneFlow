@@ -7,6 +7,7 @@ import { MotionPlugin } from '@vueuse/motion'
 
 import { router } from './router'
 import './styles/main.css'
+import { i18n, initializeAppLocale } from '@/i18n'
 import { initializeAppStartup } from '@/startup/initialize'
 import { initializeIcons } from '@/startup/icons'
 import { useSettingsStore } from '@/stores/settings'
@@ -46,7 +47,9 @@ async function bootstrap() {
 	const pinia = createPinia()
 	const launchHashAtBoot = readLaunchHashAtBoot()
 
-	app.use(pinia).use(router).use(ui).use(MotionPlugin)
+	await initializeAppLocale()
+
+	app.use(pinia).use(router).use(i18n).use(ui).use(MotionPlugin)
 
 	try {
 		await Promise.allSettled([initializeAppStartup(router, { launchHashAtBoot }), initializeIcons('critical')])
