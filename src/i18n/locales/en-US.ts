@@ -4,6 +4,7 @@ export default {
 	},
 	locale: {
 		label: 'Language',
+		description: 'Set the app display language',
 		options: {
 			'zh-CN': 'Simplified Chinese',
 			'en-US': 'English (US)',

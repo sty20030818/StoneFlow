@@ -1,4 +1,5 @@
 import type { SpaceId } from '@/types/domain/space'
+import type { AppLocale } from '@/i18n/messages'
 
 export type HomeView = 'today' | 'projects' | 'focus' | 'inbox'
 export type InfoDensity = 'comfortable' | 'compact'
@@ -9,6 +10,7 @@ export type SettingsModel = {
 	density: InfoDensity
 	autoStart: boolean
 	activeSpaceId: SpaceId
+	locale: AppLocale | null
 }
 
 export type WorkspaceLastView = {

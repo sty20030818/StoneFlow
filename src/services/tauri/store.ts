@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: SettingsModel = {
 	density: 'comfortable',
 	autoStart: true,
 	activeSpaceId: 'work',
+	locale: null,
 }
 
 export const DEFAULT_UI_STATE: UiState = {

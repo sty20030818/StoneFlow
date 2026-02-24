@@ -1,48 +1,43 @@
+import { computed } from 'vue'
+import { extendLocale } from '@nuxt/ui/composables'
+import { en, zh_cn } from '@nuxt/ui/locale'
 import { usePreferredLanguages } from '@vueuse/core'
 import { createI18n } from 'vue-i18n'
 
 import { settingsStore } from '@/services/tauri/store'
-import { DEFAULT_LOCALE, messages, SUPPORTED_LOCALES, type AppLocale } from './messages'
+import { DEFAULT_LOCALE, messages, normalizeAppLocale, type AppLocale } from './messages'
 
-const LANGUAGE_PREFIX_TO_LOCALE: Record<string, AppLocale> = {
-	zh: 'zh-CN',
-	en: 'en-US',
-}
+const nuxtUiEnUSLocale = extendLocale(en, {
+	code: 'en-US',
+	name: 'English (US)',
+})
 
-function normalizeLocale(value: string | null | undefined): AppLocale | null {
-	if (!value) return null
-	if ((SUPPORTED_LOCALES as readonly string[]).includes(value)) {
-		return value as AppLocale
-	}
-	const normalized = value.replace('_', '-').toLowerCase()
-	for (const locale of SUPPORTED_LOCALES) {
-		if (locale.toLowerCase() === normalized) {
-			return locale
-		}
-	}
-	return LANGUAGE_PREFIX_TO_LOCALE[normalized] ?? null
-}
+const NUXT_UI_LOCALE_BY_APP_LOCALE = {
+	'zh-CN': zh_cn,
+	'en-US': nuxtUiEnUSLocale,
+} as const
+
+export const appNuxtUiLocales = [
+	NUXT_UI_LOCALE_BY_APP_LOCALE['zh-CN'],
+	NUXT_UI_LOCALE_BY_APP_LOCALE['en-US'],
+]
 
 function resolveLocaleFromPreferredLanguages(languages: readonly string[]): AppLocale | null {
 	for (const raw of languages) {
-		const direct = normalizeLocale(raw)
+		const direct = normalizeAppLocale(raw)
 		if (direct) return direct
-		const prefix = raw.split(/[-_]/)[0]?.toLowerCase()
-		if (prefix && LANGUAGE_PREFIX_TO_LOCALE[prefix]) {
-			return LANGUAGE_PREFIX_TO_LOCALE[prefix]
-		}
 	}
 	return null
 }
 
 type SettingsWithLocale = {
-	locale?: string
+	locale?: string | null
 }
 
 async function resolveLocaleFromUserSettings(): Promise<AppLocale | null> {
 	try {
 		const settings = await settingsStore.get<SettingsWithLocale>('settings')
-		return normalizeLocale(settings?.locale)
+		return normalizeAppLocale(settings?.locale)
 	} catch {
 		return null
 	}
@@ -78,12 +73,21 @@ export const i18n = createI18n({
 	messages,
 })
 
-function setLocale(locale: AppLocale) {
+export function setAppLocale(locale: AppLocale) {
 	i18n.global.locale.value = locale
 }
 
+export function resolveNuxtUiLocale(locale: AppLocale | null | undefined) {
+	if (!locale) return NUXT_UI_LOCALE_BY_APP_LOCALE[DEFAULT_LOCALE]
+	return NUXT_UI_LOCALE_BY_APP_LOCALE[locale] ?? NUXT_UI_LOCALE_BY_APP_LOCALE[DEFAULT_LOCALE]
+}
+
+export const appNuxtUiLocale = computed(() => {
+	return resolveNuxtUiLocale(normalizeAppLocale(i18n.global.locale.value))
+})
+
 export async function initializeAppLocale() {
 	const locale = await resolveInitialLocale()
-	setLocale(locale)
+	setAppLocale(locale)
 	return locale
 }

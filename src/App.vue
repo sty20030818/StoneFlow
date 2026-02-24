@@ -3,7 +3,9 @@
     Nuxt UI v4（Vue 项目）建议用 UApp 包裹根节点，
     否则 toast / tooltip / modal 等全局能力可能不可用。
   -->
-	<UApp :toaster="{ position: 'bottom-right', duration: 3000, max: 5 }">
+	<UApp
+		:toaster="{ position: 'bottom-right', duration: 3000, max: 5 }"
+		:locale="appNuxtUiLocale">
 		<AppShell>
 			<RouterView v-slot="{ Component, route: viewRoute }">
 				<div
@@ -61,6 +63,7 @@
 	import CreateProjectModal from '@/components/CreateProjectModal'
 	import CreateTaskModal from '@/components/CreateTaskModal'
 	import { createModalLayerUi } from '@/config/ui-layer'
+	import { appNuxtUiLocale } from '@/i18n'
 	import UpdateNotification from './components/UpdateNotification.vue'
 	import type { ProjectDto } from './services/api/projects'
 	import type { TaskDto } from './services/api/tasks'

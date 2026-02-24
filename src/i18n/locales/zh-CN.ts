@@ -4,6 +4,7 @@ export default {
 	},
 	locale: {
 		label: '语言',
+		description: '设置应用显示语言',
 		options: {
 			'zh-CN': '简体中文',
 			'en-US': 'English (US)',

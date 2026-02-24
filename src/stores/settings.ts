@@ -3,6 +3,7 @@ import { useStorage } from '@vueuse/core'
 import { computed, reactive, ref } from 'vue'
 
 import { SPACE_IDS } from '@/config/space'
+import { normalizeAppLocale } from '@/i18n/messages'
 import type { SpaceId } from '@/types/domain/space'
 import type { SettingsModel } from '@/services/tauri/store'
 import { DEFAULT_SETTINGS, settingsStore } from '@/services/tauri/store'
@@ -28,14 +29,15 @@ export const useSettingsStore = defineStore('settings', () => {
 
 	async function loadInternal() {
 		const val = await settingsStore.get<SettingsModel>('settings')
-		if (val) {
-			const next = {
-				...val,
-				activeSpaceId: normalizeSpaceId(val.activeSpaceId),
-			}
-			Object.assign(state, next)
-			activeSpaceIdStorage.value = next.activeSpaceId
+		const stored = val ?? DEFAULT_SETTINGS
+		const next = {
+			...DEFAULT_SETTINGS,
+			...stored,
+			activeSpaceId: normalizeSpaceId(stored.activeSpaceId),
+			locale: normalizeAppLocale(stored.locale),
 		}
+		Object.assign(state, next)
+		activeSpaceIdStorage.value = next.activeSpaceId
 		loaded.value = true
 	}
 
@@ -73,8 +75,11 @@ export const useSettingsStore = defineStore('settings', () => {
 		if (patch.activeSpaceId !== undefined) {
 			nextPatch.activeSpaceId = normalizeSpaceId(patch.activeSpaceId)
 		}
+		if (patch.locale !== undefined) {
+			nextPatch.locale = normalizeAppLocale(patch.locale)
+		}
 		Object.assign(state, nextPatch)
-		if (patch.activeSpaceId) {
+		if (patch.activeSpaceId !== undefined) {
 			activeSpaceIdStorage.value = normalizeSpaceId(patch.activeSpaceId)
 		}
 		await settingsStore.set('settings', { ...state })
