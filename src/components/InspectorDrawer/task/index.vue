@@ -4,7 +4,7 @@
 		v-model:open="isOpen"
 		title="任务详情"
 		description="查看与编辑当前任务的详细信息"
-		:content-class="DRAWER_CONTENT_CLASS.task">
+		:content-class="DRAWER_CONTENT_CLASS">
 		<div class="flex flex-col h-full">
 			<div v-motion="drawerHeaderMotion">
 				<DrawerBreadcrumbHeader

@@ -5,7 +5,7 @@
 		title="项目设置"
 		description="查看并编辑当前项目信息"
 		:content="{ onOpenAutoFocus: onProjectDrawerOpenAutoFocus }"
-		:content-class="DRAWER_CONTENT_CLASS.project">
+		:content-class="DRAWER_CONTENT_CLASS">
 		<div class="flex h-full flex-col">
 			<DrawerBreadcrumbHeader
 				:current-space-label="currentSpaceLabel"
@@ -26,8 +26,8 @@
 					:status-label="statusLabel"
 					:todo-task-count="currentProject.todoTaskCount"
 					:done-task-count="currentProject.doneTaskCount"
-					:last-updated-label="lastUpdatedLabel"
-					:shortcut-hint="shortcutHint" />
+					:project-updated-at="currentProject.updatedAt ?? null"
+					:last-task-updated-at="currentProject.lastTaskUpdatedAt ?? null" />
 
 				<DrawerTitleInputSection
 					v-model:title="titleLocal"
@@ -77,6 +77,12 @@
 					:on-remove-tag="removeTag"
 					:on-tag-input-blur="onTagInputBlur" />
 
+				<DrawerNoteSection
+					v-model:note="noteLocal"
+					:interaction="noteInteraction"
+					:rows="4"
+					placeholder="为项目补充更多上下文信息..." />
+
 				<DrawerLinksSection
 					v-model:links="linksLocal"
 					v-model:draft-title="linkDraftTitle"
@@ -91,12 +97,6 @@
 					:on-link-input="clearLinkValidationError"
 					:on-flush-link-edits="flushPendingUpdates"
 					:interaction="linksInteraction" />
-
-				<DrawerNoteSection
-					v-model:note="noteLocal"
-					:interaction="noteInteraction"
-					:rows="4"
-					placeholder="为项目补充更多上下文信息..." />
 
 				<DrawerTimelineSection
 					:timeline-logs="timelineLogs"
@@ -250,12 +250,10 @@
 		statusDotClass,
 		statusBadgeColor,
 		createdAtFooterLabel,
-		lastUpdatedLabel,
 		currentSpaceLabel,
 		currentSpaceIcon,
 		spacePillClass,
 		projectTrail,
-		shortcutHint,
 		spaceDisplay,
 	} = useProjectDrawerPresentation({
 		currentProject,

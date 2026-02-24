@@ -29,6 +29,6 @@
 	const props = defineProps<Props>()
 
 	const drawerUi = createDrawerLayerUi({
-		content: props.contentClass ?? DRAWER_CONTENT_CLASS.task,
+		content: props.contentClass ?? DRAWER_CONTENT_CLASS,
 	})
 </script>

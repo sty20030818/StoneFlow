@@ -32,11 +32,6 @@ export function useProjectDrawerPresentation(params: {
 		})
 	})
 
-	const lastUpdatedLabel = computed(() => {
-		const timestamp = params.currentProject.value?.lastTaskUpdatedAt ?? params.currentProject.value?.updatedAt ?? null
-		return formatDrawerDateTime(timestamp, { fallback: '暂无' })
-	})
-
 	const spaceDisplay = computed(() => {
 		return resolveDrawerSpaceDisplay(params.spaceIdLocal.value)
 	})
@@ -58,8 +53,6 @@ export function useProjectDrawerPresentation(params: {
 		return trail.length > 0 ? trail : [rawPath]
 	})
 
-	const shortcutHint = computed(() => '快捷键：Ctrl/⌘ + S 保存，Esc 关闭')
-
 	return {
 		saveStateLabel,
 		saveStateClass,
@@ -68,12 +61,10 @@ export function useProjectDrawerPresentation(params: {
 		statusDotClass,
 		statusBadgeColor,
 		createdAtFooterLabel,
-		lastUpdatedLabel,
 		currentSpaceLabel,
 		currentSpaceIcon,
 		spacePillClass,
 		projectTrail,
-		shortcutHint,
 		spaceDisplay,
 	}
 }
