@@ -6,7 +6,7 @@
 			class="flex items-center justify-between w-full"
 			@click="onToggle">
 			<div class="flex items-center gap-2">
-				<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">操作日志</label>
+				<label class="text-xs font-semibold text-muted uppercase tracking-widest">操作日志</label>
 				<UBadge
 					size="xs"
 					color="neutral"
@@ -23,7 +23,7 @@
 		<div
 			v-else
 			class="flex items-center justify-between">
-			<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">操作日志</label>
+			<label class="text-xs font-semibold text-muted uppercase tracking-widest">操作日志</label>
 			<UBadge
 				size="xs"
 				color="neutral"

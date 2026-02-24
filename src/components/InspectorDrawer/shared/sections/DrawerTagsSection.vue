@@ -1,6 +1,6 @@
 <template>
 	<section class="space-y-2">
-		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">Tags</label>
+		<label class="text-xs font-semibold text-muted uppercase tracking-widest">Tags</label>
 		<div class="flex flex-wrap gap-2 items-center">
 			<div
 				v-for="tag in tags"

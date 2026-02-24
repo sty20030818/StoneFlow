@@ -1,7 +1,7 @@
 <template>
 	<section>
 		<div class="mb-2 flex items-center justify-between">
-			<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">{{ label }}</label>
+			<label class="text-xs font-semibold text-muted uppercase tracking-widest">{{ label }}</label>
 			<button
 				v-if="showAddButton"
 				type="button"

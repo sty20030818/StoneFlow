@@ -5,7 +5,7 @@ const DRAWER_CONTENT_CLASS_BASE =
 
 export const DRAWER_CONTENT_CLASS = {
 	task: `w-[480px] ${DRAWER_CONTENT_CLASS_BASE}`,
-	project: `w-[460px] ${DRAWER_CONTENT_CLASS_BASE}`,
+	project: `w-[480px] ${DRAWER_CONTENT_CLASS_BASE}`,
 } as const
 
 export const DRAWER_LINK_SELECT_MENU_UI = {
