@@ -13,10 +13,11 @@
 			<WorkspaceLayout>
 				<template #todo>
 					<TaskColumn
-						title="Todo"
+						:title="t('projectView.columns.todo')"
+						column-status="todo"
 						:tasks="todo"
 						:loading="loading"
-						empty-text="暂无待办任务"
+						:empty-text="t('projectView.empty.todo')"
 						:show-complete-button="true"
 						:show-space-label="showSpaceLabel"
 						:show-inline-creator="true"
@@ -33,10 +34,11 @@
 
 				<template #done>
 					<TaskColumn
-						title="Done"
+						:title="t('projectView.columns.done')"
+						column-status="done"
 						:tasks="doneAll"
 						:loading="loading"
-						empty-text="暂无完成记录"
+						:empty-text="t('projectView.empty.done')"
 						:show-time="true"
 						:show-space-label="showSpaceLabel"
 						:is-edit-mode="isEditMode"
@@ -51,11 +53,11 @@
 
 		<UModal
 			v-model:open="confirmDeleteOpen"
-			title="确认删除"
-			description="确认是否删除选中的任务"
+			:title="t('projectView.deleteModal.title')"
+			:description="t('projectView.deleteModal.description')"
 			:ui="deleteModalUi">
 			<template #body>
-				<p class="text-sm text-muted">将删除 {{ deleteCount }} 个任务，可在回收站恢复。</p>
+				<p class="text-sm text-muted">{{ t('projectView.deleteModal.body', { count: deleteCount }) }}</p>
 			</template>
 			<template #footer>
 				<UButton
@@ -63,7 +65,7 @@
 					variant="ghost"
 					size="sm"
 					@click="closeDeleteConfirm">
-					取消
+					{{ t('common.actions.cancel') }}
 				</UButton>
 				<UButton
 					color="error"
@@ -71,7 +73,7 @@
 					:loading="deleting"
 					:disabled="deleteCount === 0"
 					@click="confirmDelete">
-					确认删除
+					{{ t('projectView.deleteModal.confirm') }}
 				</UButton>
 			</template>
 		</UModal>
@@ -79,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { watchDebounced, watchThrottled } from '@vueuse/core'
 	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
@@ -100,6 +103,7 @@
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
 	const route = useRoute()
+	const { t } = useI18n({ useScope: 'global' })
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const projectsStore = useProjectsStore()
 	const settingsStore = useSettingsStore()
@@ -204,15 +208,15 @@
 			refreshSignals.bumpTask()
 			await refresh(true)
 			toast.add({
-				title: '已移入回收站',
-				description: `已删除 ${deletedCount} 项任务`,
+				title: t('projectView.toast.deletedTitle'),
+				description: t('projectView.toast.deletedDescription', { count: deletedCount }),
 				color: 'success',
 			})
 			exitEditMode()
 		} catch (e) {
 			toast.add({
-				title: '删除失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('projectView.toast.deleteFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		} finally {

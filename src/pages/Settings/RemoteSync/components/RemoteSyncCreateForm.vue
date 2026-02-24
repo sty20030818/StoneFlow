@@ -1,17 +1,17 @@
 <template>
 	<div class="space-y-4">
 		<UFormField
-			label="名称"
-			description="用于识别不同数据库">
+			:label="t('settings.remoteSync.form.name')"
+			:description="t('settings.remoteSync.form.nameDescription')">
 			<UInput
 				:model-value="name"
-				placeholder="例如：主库"
+				:placeholder="t('settings.remoteSync.form.namePlaceholder')"
 				@update:model-value="onUpdateName" />
 		</UFormField>
 
 		<UFormField
-			label="数据库地址"
-			description="仅支持 postgres:// 或 postgresql:// 开头的连接字符串">
+			:label="t('settings.remoteSync.form.databaseUrl')"
+			:description="t('settings.remoteSync.form.databaseUrlDescription')">
 			<UTextarea
 				:model-value="url"
 				placeholder="postgresql://..."
@@ -24,6 +24,9 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
+	const { t } = useI18n({ useScope: 'global' })
+
 	defineProps<{
 		name: string
 		url: string

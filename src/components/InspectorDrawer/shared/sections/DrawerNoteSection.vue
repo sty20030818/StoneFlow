@@ -1,14 +1,14 @@
 <template>
 	<section class="space-y-2">
 		<div class="flex items-center justify-between">
-			<label class="text-xs font-semibold text-muted uppercase tracking-widest">备注</label>
+			<label class="text-xs font-semibold text-muted uppercase tracking-widest">{{ t('inspector.note.label') }}</label>
 			<UButton
 				color="neutral"
 				variant="soft"
 				size="xs"
 				:icon="isEditorVisible ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
 				@click="onToggleClick">
-				{{ isEditorVisible ? '收起' : '展开' }}
+				{{ isEditorVisible ? t('inspector.note.collapse') : t('inspector.note.expand') }}
 			</UButton>
 		</div>
 
@@ -43,7 +43,7 @@
 				<UTextarea
 					:id="textareaId"
 					v-model="noteModel"
-					:placeholder="placeholder"
+					:placeholder="resolvedPlaceholder"
 					:rows="rows"
 					size="sm"
 					variant="none"
@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { useMotion } from '@vueuse/motion'
 	import { useElementSize } from '@vueuse/core'
 	import { computed, nextTick, ref, watch } from 'vue'
@@ -77,9 +78,10 @@
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
-		placeholder: '记录一些背景信息、想法或链接…',
+		placeholder: undefined,
 		rows: 6,
 	})
+	const { t } = useI18n({ useScope: 'global' })
 
 	const isEditorVisible = ref(false)
 	const isAnimating = ref(false)
@@ -92,7 +94,8 @@
 	let motionTicket = 0
 
 	const hasNoteContent = computed(() => noteModel.value.trim().length > 0)
-	const previewText = computed(() => (hasNoteContent.value ? noteModel.value.trim() : props.placeholder))
+	const resolvedPlaceholder = computed(() => props.placeholder ?? t('inspector.note.placeholder'))
+	const previewText = computed(() => (hasNoteContent.value ? noteModel.value.trim() : resolvedPlaceholder.value))
 	const { height: previewHeight } = useElementSize(previewRef)
 	const editorCollapsedHeight = computed(() => Math.ceil(previewHeightCache.value))
 

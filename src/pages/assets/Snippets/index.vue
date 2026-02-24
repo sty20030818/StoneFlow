@@ -9,16 +9,16 @@
 					<UIcon
 						name="i-lucide-code"
 						class="text-cyan-500" />
-					<span>Snippets</span>
+					<span>{{ t('assets.snippets.title') }}</span>
 				</div>
-				<div class="text-xs text-muted">代码片段资料库 · 分组、搜索、与 Task/Project 弱关联</div>
+				<div class="text-xs text-muted">{{ t('assets.snippets.subtitle') }}</div>
 			</div>
 
 			<div class="flex items-center gap-2">
 				<UInput
 					v-model="searchKeyword"
 					icon="i-lucide-search"
-					placeholder="搜索标题、标签、内容…"
+					:placeholder="t('assets.snippets.searchPlaceholder')"
 					size="sm"
 					class="w-64" />
 
@@ -27,7 +27,7 @@
 					size="sm"
 					icon="i-lucide-plus"
 					@click="onCreateNew">
-					新建
+					{{ t('common.actions.new') }}
 				</UButton>
 			</div>
 		</header>
@@ -49,7 +49,7 @@
 							<UIcon
 								name="i-lucide-folder"
 								class="size-4" />
-							<span>所有片段</span>
+							<span>{{ t('assets.snippets.allItems') }}</span>
 						</div>
 					</button>
 
@@ -79,7 +79,7 @@
 				<div
 					v-if="filteredSnippets.length === 0 && !loading"
 					class="py-8 text-center text-sm text-muted">
-					暂无代码片段。点击「新建」创建第一个片段。
+					{{ t('assets.snippets.empty') }}
 				</div>
 
 				<div
@@ -135,7 +135,7 @@
 								size="2xs"
 								icon="i-lucide-trash-2"
 								@click.stop="onDelete(snippet.id)">
-								<span class="sr-only">删除</span>
+								<span class="sr-only">{{ t('common.actions.delete') }}</span>
 							</UButton>
 						</div>
 					</div>
@@ -145,8 +145,8 @@
 
 		<UModal
 			v-model:open="editOpen"
-			:title="selectedSnippet?.id ? '编辑代码片段' : '新建代码片段'"
-			description="统一在弹窗中完成字段编辑，避免页面左右来回切换。"
+			:title="selectedSnippet?.id ? t('assets.snippets.modal.editTitle') : t('assets.snippets.modal.newTitle')"
+			:description="t('assets.snippets.modal.description')"
 			:ui="snippetModalUi">
 			<template #body>
 				<div
@@ -154,40 +154,40 @@
 					class="space-y-4">
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<UFormField
-							label="标题"
+							:label="t('assets.snippets.fields.title')"
 							required>
 							<UInput
 								v-model="editForm.title"
-								placeholder="代码片段标题"
+								:placeholder="t('assets.snippets.placeholders.title')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
 						</UFormField>
-						<UFormField label="语言">
+						<UFormField :label="t('assets.snippets.fields.language')">
 							<UInput
 								v-model="editForm.language"
-								placeholder="如 javascript / sql / bash"
+								:placeholder="t('assets.snippets.placeholders.language')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
 						</UFormField>
 					</div>
 
-					<UFormField label="分组（可选）">
+					<UFormField :label="t('assets.snippets.fields.folderOptional')">
 						<UInput
 							v-model="editForm.folder"
-							placeholder="可选：按业务或技术栈分组"
+							:placeholder="t('assets.snippets.placeholders.folderOptional')"
 							size="md"
 							class="w-full"
 							:ui="assetModalInputUi" />
 					</UFormField>
 
 					<UFormField
-						label="内容"
+						:label="t('assets.snippets.fields.content')"
 						required>
 						<UTextarea
 							v-model="editForm.content"
-							placeholder="输入代码或 Markdown 内容…"
+							:placeholder="t('assets.snippets.placeholders.content')"
 							:rows="12"
 							size="md"
 							class="w-full"
@@ -195,10 +195,10 @@
 							:ui="assetModalTextareaUi" />
 					</UFormField>
 
-					<UFormField label="标签（逗号分隔，可选）">
+					<UFormField :label="t('assets.snippets.fields.tagsOptional')">
 						<UInput
 							v-model="tagsInput"
-							placeholder="tag1, tag2, tag3"
+							:placeholder="t('assets.snippets.placeholders.tags')"
 							size="md"
 							class="w-full"
 							:ui="assetModalInputUi"
@@ -216,13 +216,13 @@
 						variant="ghost"
 						size="sm"
 						@click="closeEditor">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
 						size="sm"
 						@click="onSave">
-						保存
+						{{ t('common.actions.save') }}
 					</UButton>
 				</div>
 			</template>
@@ -231,6 +231,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
@@ -250,6 +251,7 @@
 	import { createSnippet, deleteSnippet, listSnippets, updateSnippet } from '@/services/api/snippets'
 
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
@@ -276,8 +278,8 @@
 		resetOnExecute: false,
 		onError: (e) => {
 			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.snippets.toast.loadFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		},
@@ -378,17 +380,17 @@
 			onTagsBlur()
 			if (selectedSnippet.value.id) {
 				await updateSnippet(selectedSnippet.value.id, editForm.value)
-				toast.add({ title: '已保存', color: 'success' })
+				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
 				await createSnippet(editForm.value)
-				toast.add({ title: '已创建', color: 'success' })
+				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()
 			closeEditor()
 		} catch (e) {
 			toast.add({
-				title: '保存失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.saveFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
@@ -397,15 +399,15 @@
 	async function onDelete(id: string) {
 		try {
 			await deleteSnippet(id)
-			toast.add({ title: '已删除', color: 'success' })
+			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
 			if (selectedSnippet.value?.id === id) {
 				closeEditor()
 			}
 			await refresh()
 		} catch (e) {
 			toast.add({
-				title: '删除失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.deleteFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}

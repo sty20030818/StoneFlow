@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 
 import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/config/task'
@@ -24,6 +25,7 @@ export type TaskCardEmits = {
 
 export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 	const inspectorStore = useTaskInspectorStore()
+	const { t, locale } = useI18n({ useScope: 'global' })
 	const displayStatus = computed(() => getDisplayStatus(props.task.status))
 	const isCancelled = computed(() => props.task.doneReason === 'cancelled')
 	const doneReasonKey = computed<TaskDoneReasonValue>(() => (isCancelled.value ? 'cancelled' : 'completed'))
@@ -62,14 +64,14 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 				items: [
 					{
 						id: 'edit',
-						text: '编辑',
+						text: t('common.actions.edit'),
 						action: () => {
 							onRequestEdit()
 						},
 					},
 					{
 						id: 'delete',
-						text: '删除',
+						text: t('common.actions.delete'),
 						action: () => {
 							onRequestDelete()
 						},
@@ -78,7 +80,7 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 			})
 			await menu.popup()
 		} catch (error) {
-			console.error('打开任务右键菜单失败:', error)
+			console.error('Failed to open task context menu:', error)
 		}
 	}
 
@@ -93,14 +95,14 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
 		const diffDays = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-		if (diffDays === 0) return '今天'
-		if (diffDays === 1) return '明天'
-		if (diffDays === -1) return '昨天'
-		if (diffDays > 0 && diffDays <= 7) return `${diffDays}天后`
-		if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)}天前`
+		if (diffDays === 0) return t('taskCard.time.today')
+		if (diffDays === 1) return t('taskCard.time.tomorrow')
+		if (diffDays === -1) return t('taskCard.time.yesterday')
+		if (diffDays > 0 && diffDays <= 7) return t('taskCard.time.inDays', { count: diffDays })
+		if (diffDays < 0 && diffDays >= -7) return t('taskCard.time.daysAgo', { count: Math.abs(diffDays) })
 
 		// 默认显示简短日期
-		return date.toLocaleDateString('zh-CN', {
+		return date.toLocaleDateString(locale.value, {
 			month: 'numeric',
 			day: 'numeric',
 		})

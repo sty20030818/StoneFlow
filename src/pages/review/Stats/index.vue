@@ -8,9 +8,9 @@
 				<UIcon
 					name="i-lucide-bar-chart-3"
 					class="text-blue-500" />
-				<span>Stats</span>
+				<span>{{ t('review.stats.title') }}</span>
 			</div>
-			<div class="text-xs text-muted">Space 关键指标 · 完成趋势 · 状态分布</div>
+			<div class="text-xs text-muted">{{ t('review.stats.subtitle') }}</div>
 		</header>
 
 		<!-- 关键指标卡片：每个 Space 的「本周完成数 / 活跃 Project 数」 -->
@@ -29,24 +29,24 @@
 								:class="s.iconClass" />
 							<div class="text-sm font-semibold">{{ s.label }}</div>
 						</div>
-						<UButton
-							color="neutral"
-							variant="ghost"
-							size="2xs"
-							icon="i-lucide-arrow-right"
-							@click.stop="goToLogs(s.id)">
-							<span class="ml-1 text-[11px]">Logs</span>
-						</UButton>
-					</div>
-				</template>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="2xs"
+								icon="i-lucide-arrow-right"
+								@click.stop="goToLogs(s.id)">
+								<span class="ml-1 text-[11px]">{{ t('review.stats.logsAction') }}</span>
+							</UButton>
+						</div>
+					</template>
 
 				<div class="flex items-end justify-between gap-2">
 					<div>
-						<div class="text-xs text-muted mb-0.5">本周完成</div>
+						<div class="text-xs text-muted mb-0.5">{{ t('review.stats.thisWeekDone') }}</div>
 						<div class="text-2xl font-bold">{{ s.thisWeekDone }}</div>
 					</div>
 					<div class="text-right">
-						<div class="text-xs text-muted mb-0.5">活跃 Project</div>
+						<div class="text-xs text-muted mb-0.5">{{ t('review.stats.activeProjects') }}</div>
 						<div class="text-lg font-semibold">{{ s.activeProjects }}</div>
 					</div>
 				</div>
@@ -64,7 +64,7 @@
 							<UIcon
 								name="i-lucide-line-chart"
 								class="size-4 text-emerald-500" />
-							<div class="text-sm font-semibold">最近 7 天完成趋势</div>
+							<div class="text-sm font-semibold">{{ t('review.stats.trendTitle') }}</div>
 						</div>
 					</div>
 				</template>
@@ -88,13 +88,13 @@
 			<!-- 状态分布 -->
 			<UCard v-motion="statusCardMotion">
 				<template #header>
-					<div class="flex items-center gap-2">
-						<UIcon
-							name="i-lucide-pie-chart"
-							class="size-4 text-purple-500" />
-						<div class="text-sm font-semibold">状态分布</div>
-					</div>
-				</template>
+						<div class="flex items-center gap-2">
+							<UIcon
+								name="i-lucide-pie-chart"
+								class="size-4 text-purple-500" />
+							<div class="text-sm font-semibold">{{ t('review.stats.statusDistributionTitle') }}</div>
+						</div>
+					</template>
 
 				<div class="space-y-3">
 					<div class="relative w-28 h-28 mx-auto">
@@ -123,7 +123,7 @@
 						</svg>
 						<div class="absolute inset-0 flex items-center justify-center">
 							<div class="text-xs text-muted text-center">
-								<div class="text-[11px]">总任务</div>
+								<div class="text-[11px]">{{ t('review.stats.totalTasks') }}</div>
 								<div class="text-base font-semibold">{{ statusTotal }}</div>
 							</div>
 						</div>
@@ -146,7 +146,7 @@
 					<div
 						v-if="loading"
 						class="text-xs text-muted">
-						正在加载统计数据...
+						{{ t('review.stats.loading') }}...
 					</div>
 				</div>
 			</UCard>
@@ -155,6 +155,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { useAsyncState } from '@vueuse/core'
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
@@ -168,14 +169,13 @@
 	import { toBoundedPercent } from '@/composables/base/percent'
 	import {
 		TASK_DONE_REASON_COLORS,
-		TASK_DONE_REASON_LABELS,
 		TASK_STATUS_CHART_COLORS,
-		TASK_STATUS_LABELS,
 	} from '@/config/task'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const router = useRouter()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const cardMotionPreset = useMotionPreset('card')
@@ -196,8 +196,8 @@
 			resetOnExecute: false,
 			onError: (e) => {
 				toast.add({
-					title: '加载统计失败',
-					description: e instanceof Error ? e.message : '未知错误',
+					title: t('review.stats.toast.loadFailedTitle'),
+					description: e instanceof Error ? e.message : t('fallback.unknownError'),
 					color: 'error',
 				})
 			},
@@ -271,19 +271,19 @@
 		const buckets: { key: string; label: string; color: string; match: (t: TaskDto) => boolean }[] = [
 			{
 				key: 'done',
-				label: TASK_DONE_REASON_LABELS.completed,
+				label: t('task.doneReason.completed'),
 				color: TASK_DONE_REASON_COLORS.completed,
 				match: (t) => t.status === 'done' && t.doneReason !== 'cancelled',
 			},
 			{
 				key: 'cancelled',
-				label: TASK_DONE_REASON_LABELS.cancelled,
+				label: t('task.doneReason.cancelled'),
 				color: TASK_DONE_REASON_COLORS.cancelled,
 				match: (t) => t.status === 'done' && t.doneReason === 'cancelled',
 			},
 			{
 				key: 'todo',
-				label: TASK_STATUS_LABELS.todo,
+				label: t('task.status.todo'),
 				color: TASK_STATUS_CHART_COLORS.todo,
 				match: (t) => t.status === 'todo',
 			},

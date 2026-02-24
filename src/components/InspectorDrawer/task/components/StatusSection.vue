@@ -22,7 +22,9 @@
 	<section
 		v-if="props.statusLocal === 'done'"
 		class="space-y-2">
-		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">完成类型</label>
+		<label class="text-[10px] font-semibold text-muted uppercase tracking-widest">
+			{{ t('inspector.task.doneReason.label') }}
+		</label>
 		<UTabs
 			:items="doneReasonTabItems"
 			:model-value="props.doneReasonLocal"
@@ -43,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	import type { DoneReasonOption, StatusSegmentOption, TaskDoneReasonValue, TaskStatusValue } from '@/config/task'
@@ -57,6 +60,7 @@
 	}
 
 	const props = defineProps<Props>()
+	const { t } = useI18n({ useScope: 'global' })
 
 	const segmentTabsBaseUi = {
 		root: 'w-full',

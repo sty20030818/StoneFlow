@@ -1,7 +1,7 @@
 <template>
-	<SettingsSectionCard title="法律与致谢">
+	<SettingsSectionCard :title="t('settings.about.legal.title')">
 		<div class="space-y-3">
-			<div class="text-sm text-muted">开源协议：MIT（详见仓库 LICENSE）</div>
+			<div class="text-sm text-muted">{{ t('settings.about.legal.description') }}</div>
 			<div class="flex flex-wrap gap-2">
 				<UButton
 					color="neutral"
@@ -9,7 +9,7 @@
 					size="xs"
 					icon="i-lucide-file-text"
 					@click="onOpenLink(licenseUrl)">
-					开源协议
+					{{ t('settings.about.legal.openLicense') }}
 				</UButton>
 				<UButton
 					color="neutral"
@@ -17,7 +17,7 @@
 					size="xs"
 					icon="i-lucide-shield"
 					@click="onOpenLink(privacyUrl)">
-					隐私说明
+					{{ t('settings.about.legal.openPrivacy') }}
 				</UButton>
 			</div>
 		</div>
@@ -25,7 +25,10 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
+
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		licenseUrl: string

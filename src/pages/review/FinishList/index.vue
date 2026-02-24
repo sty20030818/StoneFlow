@@ -9,9 +9,9 @@
 					<UIcon
 						name="i-lucide-check-circle-2"
 						class="text-green-500" />
-					<span>Finish List</span>
+					<span>{{ t('review.finishList.title') }}</span>
 				</div>
-				<div class="text-xs text-muted">完成证据库 · 按 Project / Space / 时间复盘已完成任务</div>
+				<div class="text-xs text-muted">{{ t('review.finishList.subtitle') }}</div>
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2 justify-end">
@@ -19,24 +19,24 @@
 					color="success"
 					variant="soft"
 					size="xs">
-					本周完成 {{ stats.thisWeekCount }} 个任务
+					{{ t('review.finishList.badges.thisWeek', { count: stats.thisWeekCount }) }}
 				</UBadge>
 				<UBadge
 					color="primary"
 					variant="soft"
 					size="xs">
-					活跃 Project 数：{{ stats.activeProjectCount }}
+					{{ t('review.finishList.badges.activeProjects', { count: stats.activeProjectCount }) }}
 				</UBadge>
 				<UBadge
 					color="neutral"
 					variant="soft"
 					size="xs">
-					涉及 Space：{{ stats.spaceCount }}
+					{{ t('review.finishList.badges.spaces', { count: stats.spaceCount }) }}
 				</UBadge>
 				<div
 					v-if="loading"
 					class="text-[11px] text-muted">
-					加载中…
+					{{ t('common.status.loading') }}...
 				</div>
 			</div>
 		</header>
@@ -49,7 +49,7 @@
 				<UIcon
 					name="i-lucide-filter"
 					class="size-3.5" />
-				<span>筛选</span>
+				<span>{{ t('common.labels.filters') }}</span>
 			</div>
 
 			<USelectMenu
@@ -77,7 +77,7 @@
 				v-model="tagKeyword"
 				size="xs"
 				icon="i-lucide-hash"
-				placeholder="Tag / 关键词（占位）"
+				:placeholder="t('review.finishList.placeholders.tagKeyword')"
 				class="w-40" />
 		</section>
 
@@ -86,7 +86,7 @@
 			<div
 				v-if="projectGroups.length === 0 && !loading"
 				class="text-sm text-muted">
-				暂无符合条件的完成记录。
+				{{ t('review.finishList.empty') }}
 			</div>
 
 			<div
@@ -101,7 +101,9 @@
 							class="size-4 text-amber-500" />
 						<div class="flex flex-col min-w-0">
 							<div class="text-sm font-medium truncate">{{ group.projectName }}</div>
-							<div class="text-[11px] text-muted">{{ group.spaceLabel }} · 共 {{ group.tasks.length }} 个完成任务</div>
+							<div class="text-[11px] text-muted">
+								{{ t('review.finishList.groupMeta', { space: group.spaceLabel, count: group.tasks.length }) }}
+							</div>
 						</div>
 					</div>
 
@@ -109,20 +111,20 @@
 						color="success"
 						variant="soft"
 						size="xs">
-						Lead 中位数：{{ group.medianLead }}
+						{{ t('review.finishList.medianLead', { value: group.medianLead }) }}
 					</UBadge>
 				</header>
 
 				<div class="divide-y divide-default/60">
 					<div
-						v-for="t in group.tasks"
-						:key="t.id"
+						v-for="task in group.tasks"
+						:key="task.id"
 						class="px-3 py-2 flex items-center justify-between gap-3 text-sm">
 						<div class="min-w-0">
-							<div class="font-medium truncate">{{ t.title }}</div>
+							<div class="font-medium truncate">{{ task.title }}</div>
 							<div class="text-[11px] text-muted">
-								完成于 {{ formatDateTime(t.completedAt ?? 0) }} · Lead
-								{{ formatDuration(t.completedAt && t.createdAt ? t.completedAt - t.createdAt : 0) }}
+								{{ t('review.finishList.completedAt') }} {{ formatDateTime(task.completedAt ?? 0) }} · Lead
+								{{ formatDuration(task.completedAt && task.createdAt ? task.completedAt - task.createdAt : 0) }}
 							</div>
 						</div>
 						<div class="flex items-center gap-1.5">
@@ -131,8 +133,8 @@
 								variant="ghost"
 								size="2xs"
 								icon="i-lucide-message-circle"
-								@click="onOpenReflection(t)">
-								<span class="ml-1 text-[11px]">感想</span>
+								@click="onOpenReflection(task)">
+								<span class="ml-1 text-[11px]">{{ t('review.finishList.reflectionAction') }}</span>
 							</UButton>
 						</div>
 					</div>
@@ -143,8 +145,8 @@
 		<!-- 完成感想记录入口（占位） -->
 		<UModal
 			v-model:open="reflectionOpen"
-			title="完成感想"
-			description="记录任务完成后的感想与复盘"
+			:title="t('review.finishList.reflectionModal.title')"
+			:description="t('review.finishList.reflectionModal.description')"
 			:ui="reflectionModalUi">
 			<template #body>
 				<div
@@ -155,19 +157,21 @@
 							<UIcon
 								name="i-lucide-sparkles"
 								class="size-4 text-pink-500" />
-							<h2 class="text-sm font-semibold">记录完成感想</h2>
+							<h2 class="text-sm font-semibold">{{ t('review.finishList.reflectionModal.heading') }}</h2>
 						</div>
-						<p class="text-xs text-muted">与 Diary / Notes 的弱关联将在后续 v3 步骤中接入，这里先提供占位入口。</p>
+						<p class="text-xs text-muted">{{ t('review.finishList.reflectionModal.hint') }}</p>
 					</header>
 
 					<div class="space-y-1.5">
-						<div class="text-xs text-muted">当前任务</div>
-						<div class="text-xs font-medium truncate">{{ reflectionTask?.title ?? '未选择任务' }}</div>
+						<div class="text-xs text-muted">{{ t('review.finishList.reflectionModal.currentTask') }}</div>
+						<div class="text-xs font-medium truncate">
+							{{ reflectionTask?.title ?? t('review.finishList.reflectionModal.noTaskSelected') }}
+						</div>
 					</div>
 
 					<UTextarea
 						v-model="reflectionText"
-						placeholder="这次完成有什么收获、疑问或需要改进的地方？（占位，不落库）"
+						:placeholder="t('review.finishList.reflectionModal.placeholder')"
 						:rows="5" />
 				</div>
 			</template>
@@ -180,13 +184,13 @@
 						variant="ghost"
 						size="xs"
 						@click="reflectionOpen = false">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
 						size="xs"
 						@click="onReflectionSave">
-						保存（占位）
+						{{ t('review.finishList.reflectionModal.savePlaceholder') }}
 					</UButton>
 				</div>
 			</template>
@@ -195,6 +199,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref, watch } from 'vue'
 
@@ -213,6 +218,7 @@
 	import { useProjectsStore } from '@/stores/projects'
 
 	const toast = useToast()
+	const { t, locale } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
@@ -233,8 +239,8 @@
 		resetOnExecute: false,
 		onError: (e) => {
 			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('review.finishList.toast.loadFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		},
@@ -250,27 +256,16 @@
 	const reflectionTask = ref<TaskDto | null>(null)
 	const reflectionText = ref('')
 
-	const spaceOptions = [
-		{ label: '所有 Space', value: 'all' },
+	const spaceOptions = computed(() => [
+		{ label: t('review.filters.allSpaces'), value: 'all' },
 		...SPACE_IDS.map((id) => ({ label: SPACE_DISPLAY[id].label, value: id })),
-	]
+	])
 
-	const dateRangeOptions = [
-		{ label: '最近 7 天', value: 'this-week' },
-		{ label: '本月', value: 'this-month' },
-		{ label: '全部时间', value: 'all' },
-	]
-
-	// 预留：若后续需要在 UI 中直接显示当前筛选标签，可复用这些 computed
-	// const currentSpaceLabel = computed(() => {
-	// 	const found = spaceOptions.find((x) => x.value === spaceFilter.value)
-	// 	return found?.label ?? '所有 Space'
-	// })
-	//
-	// const currentDateRangeLabel = computed(() => {
-	// 	const found = dateRangeOptions.find((x) => x.value === dateRange.value)
-	// 	return found?.label ?? '最近 7 天'
-	// })
+	const dateRangeOptions = computed(() => [
+		{ label: t('review.filters.thisWeek'), value: 'this-week' },
+		{ label: t('review.filters.thisMonth'), value: 'this-month' },
+		{ label: t('review.filters.allTime'), value: 'all' },
+	])
 
 	function formatDate(ts: number): string {
 		const d = new Date(ts)
@@ -283,7 +278,7 @@
 	function formatDateTime(ts: number): string {
 		const d = new Date(ts)
 		const date = formatDate(ts)
-		const time = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+		const time = d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
 		return `${date} ${time}`
 	}
 
@@ -302,7 +297,7 @@
 	}
 
 	const projectOptions = computed(() => {
-		const all = [{ label: '所有 Project', value: 'all' }]
+		const all = [{ label: t('review.filters.allProjects'), value: 'all' }]
 		const ids = new Set<string>()
 		for (const t of tasks.value) {
 			if (!t.completedAt || t.doneReason === 'cancelled') continue
@@ -321,11 +316,6 @@
 		}
 		return all.concat(options)
 	})
-
-	// const currentProjectLabel = computed(() => {
-	// 	const found = projectOptions.value.find((x) => x.value === projectFilter.value)
-	// 	return found?.label ?? '所有 Project'
-	// })
 
 	function isInDateRange(ts: number | null): boolean {
 		if (!ts) return false
@@ -445,8 +435,8 @@
 
 	function onReflectionSave() {
 		toast.add({
-			title: '已保存到本地占位',
-			description: '实际与 Diary / Notes 的关联将在后续 v3 步骤中落地。',
+			title: t('review.finishList.toast.savedPlaceholderTitle'),
+			description: t('review.finishList.toast.savedPlaceholderDescription'),
 			color: 'neutral',
 		})
 		reflectionOpen.value = false

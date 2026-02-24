@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { PROJECT_STATUS_DISPLAY, type ProjectComputedStatusValue } from '@/config/project'
@@ -14,6 +15,7 @@ export function useProjectDrawerPresentation(params: {
 	saveState: Ref<DrawerSaveState>
 	spaceIdLocal: Ref<string>
 }) {
+	const { t } = useI18n({ useScope: 'global' })
 	const { saveStateLabel, saveStateClass, saveStateDotClass } = useDrawerSaveStatePresentation(params.saveState)
 
 	const statusDisplay = computed(() => {
@@ -21,13 +23,19 @@ export function useProjectDrawerPresentation(params: {
 		return PROJECT_STATUS_DISPLAY[status] ?? PROJECT_STATUS_DISPLAY.inProgress
 	})
 
-	const statusLabel = computed(() => statusDisplay.value.label)
+	const statusLabel = computed(() => {
+		const status = (params.currentProject.value?.computedStatus ?? 'inProgress') as ProjectComputedStatusValue
+		if (status === 'done') return t('inspector.project.status.done')
+		if (status === 'archived') return t('inspector.project.status.archived')
+		if (status === 'deleted') return t('inspector.project.status.deleted')
+		return t('inspector.project.status.inProgress')
+	})
 	const statusDotClass = computed(() => statusDisplay.value.dot)
 	const statusBadgeColor = computed(() => statusDisplay.value.color)
 
 	const createdAtFooterLabel = computed(() => {
 		return formatDrawerDateTime(params.currentProject.value?.createdAt, {
-			fallback: '创建时间未知',
+			fallback: t('inspector.footer.createdAtUnknown'),
 			includeWeekday: true,
 		})
 	})

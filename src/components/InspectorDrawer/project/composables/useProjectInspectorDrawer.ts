@@ -1,9 +1,9 @@
+import { useI18n } from 'vue-i18n'
 import { useEventListener, useTimeoutFn, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
 import {
 	PROJECT_PRIORITY_OPTIONS,
-	PROJECT_ROOT_LABEL,
 	type ProjectPriorityValue,
 	isDefaultProjectId,
 } from '@/config/project'
@@ -14,7 +14,7 @@ import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
-import { DRAWER_LINK_KIND_OPTIONS } from '../../shared/constants'
+import { buildDrawerLinkKindOptions } from '../../shared/constants'
 
 type ParentProjectOption = {
 	value: string | null
@@ -43,6 +43,7 @@ export function useProjectInspectorDrawer() {
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 
 	const currentProject = computed<ProjectDto | null>(() => store.project ?? null)
 	const isOpen = computed({
@@ -84,7 +85,7 @@ export function useProjectInspectorDrawer() {
 	})
 	const suppressAutosave = ref(false)
 	const pendingSaves = ref(0)
-	const parentOptions = ref<ParentProjectOption[]>([{ value: null, label: PROJECT_ROOT_LABEL, depth: 0 }])
+	const parentOptions = ref<ParentProjectOption[]>([{ value: null, label: t('common.labels.projectRoot'), depth: 0 }])
 
 	const saveBuckets = new Map<string, SaveBucket>()
 	const retryPatchByProjectId = new Map<string, UpdateProjectPatch>()
@@ -92,8 +93,8 @@ export function useProjectInspectorDrawer() {
 
 	const priorityOptions = PROJECT_PRIORITY_OPTIONS
 	const spaceOptions = SPACE_OPTIONS
-	const linkKindOptions = DRAWER_LINK_KIND_OPTIONS
-	const rootLabel = PROJECT_ROOT_LABEL
+	const linkKindOptions = computed(() => buildDrawerLinkKindOptions(t))
+	const rootLabel = computed(() => t('common.labels.projectRoot'))
 
 	const isStructureLocked = computed(() => {
 		const project = currentProject.value
@@ -264,7 +265,7 @@ export function useProjectInspectorDrawer() {
 			if (projectId === activeProjectId) continue
 			if (bucket.queueRunning) continue
 			if (hasPatchValue(bucket.stagedPatch)) {
-				console.warn('[ProjectInspector] 丢弃非激活项目待提交补丁:', {
+				console.warn('[ProjectInspector] Discarded queued patch for inactive project:', {
 					projectId,
 				})
 			}
@@ -341,7 +342,7 @@ export function useProjectInspectorDrawer() {
 
 		const activeProjectId = currentProject.value?.id ?? null
 		if (activeProjectId !== projectId) {
-			console.warn('[ProjectInspector] 丢弃上下文不一致补丁:', {
+			console.warn('[ProjectInspector] Discarded patch due to context mismatch:', {
 				activeProjectId,
 				bucketProjectId: projectId,
 			})
@@ -367,7 +368,7 @@ export function useProjectInspectorDrawer() {
 			endSave(true)
 			return true
 		} catch (error) {
-			console.error('更新项目失败:', error)
+			console.error('Failed to update project:', error)
 			retryPatchByProjectId.set(projectId, { ...patch })
 			syncRetrySaveAvailability()
 			endSave(false)
@@ -436,7 +437,7 @@ export function useProjectInspectorDrawer() {
 			grouped.set(item.parentId, bucket)
 		}
 
-		const options: ParentProjectOption[] = [{ value: null, label: PROJECT_ROOT_LABEL, depth: 0 }]
+		const options: ParentProjectOption[] = [{ value: null, label: t('common.labels.projectRoot'), depth: 0 }]
 
 		function appendByParent(parentId: string | null, depth: number) {
 			const children = grouped.get(parentId) ?? []
@@ -702,8 +703,8 @@ export function useProjectInspectorDrawer() {
 		if (!project || suppressAutosave.value || isStructureLocked.value) return
 		if (hasChildProjects.value) {
 			toast.add({
-				title: '暂不支持切换 Space',
-				description: '当前项目存在子项目，请先调整层级后再迁移。',
+				title: t('inspector.project.spaceSwitchBlockedTitle'),
+				description: t('inspector.project.spaceSwitchBlocked'),
 				color: 'warning',
 			})
 			return
@@ -772,7 +773,7 @@ export function useProjectInspectorDrawer() {
 				refreshSignals.bumpTask()
 				refreshSignals.bumpProject()
 				toast.add({
-					title: '项目已移入回收站',
+					title: t('inspector.project.toast.deletedTitle'),
 					description: project.title,
 					color: 'success',
 				})
@@ -785,7 +786,7 @@ export function useProjectInspectorDrawer() {
 				refreshSignals.bumpProject()
 				await refreshStoreProject(project.spaceId, project.id, { force: true })
 				toast.add({
-					title: '项目已恢复',
+					title: t('inspector.project.toast.restoredTitle'),
 					description: project.title,
 					color: 'success',
 				})
@@ -797,7 +798,7 @@ export function useProjectInspectorDrawer() {
 				refreshSignals.bumpProject()
 				await refreshStoreProject(project.spaceId, project.id, { force: true })
 				toast.add({
-					title: '项目已归档',
+					title: t('inspector.project.toast.archivedTitle'),
 					description: project.title,
 					color: 'success',
 				})
@@ -808,21 +809,21 @@ export function useProjectInspectorDrawer() {
 			refreshSignals.bumpProject()
 			await refreshStoreProject(project.spaceId, project.id, { force: true })
 			toast.add({
-				title: '已取消归档',
+				title: t('inspector.project.toast.unarchivedTitle'),
 				description: project.title,
 				color: 'success',
 			})
 			return true
 		} catch (error) {
-			const description = error instanceof Error ? error.message : '未知错误'
+			const description = error instanceof Error ? error.message : t('fallback.unknownError')
 			const title =
 				action === 'delete'
-					? '删除项目失败'
+					? t('inspector.project.toast.deleteFailedTitle')
 					: action === 'restore'
-						? '恢复项目失败'
+						? t('inspector.project.toast.restoreFailedTitle')
 						: action === 'archive'
-							? '归档项目失败'
-							: '取消归档失败'
+							? t('inspector.project.toast.archiveFailedTitle')
+							: t('inspector.project.toast.unarchiveFailedTitle')
 			toast.add({
 				title,
 				description,

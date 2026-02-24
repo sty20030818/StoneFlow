@@ -9,9 +9,9 @@
 					<UIcon
 						name="i-lucide-book-open-text"
 						class="text-indigo-500" />
-					<span>Diary</span>
+					<span>{{ t('assets.diary.title') }}</span>
 				</div>
-				<div class="text-xs text-muted">工作日志 · 时间序列日记 · 与 Finish List 联动</div>
+				<div class="text-xs text-muted">{{ t('assets.diary.subtitle') }}</div>
 			</div>
 
 			<UButton
@@ -19,7 +19,7 @@
 				size="sm"
 				icon="i-lucide-plus"
 				@click="onCreateNew">
-				新建日记
+				{{ t('assets.diary.newAction') }}
 			</UButton>
 		</header>
 
@@ -30,7 +30,7 @@
 			<div
 				v-if="groupedEntries.length === 0 && !loading"
 				class="text-sm text-muted py-8 text-center">
-				暂无日记条目。点击「新建日记」创建第一篇日记。
+				{{ t('assets.diary.empty') }}
 			</div>
 
 			<div
@@ -46,7 +46,7 @@
 							color="neutral"
 							variant="soft"
 							size="xs">
-							{{ group.entries.length }} 篇
+							{{ t('assets.diary.entriesCount', { count: group.entries.length }) }}
 						</UBadge>
 					</div>
 
@@ -60,7 +60,7 @@
 							<div class="flex items-start justify-between gap-2">
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-2 mb-1.5">
-										<span class="text-sm font-medium">{{ e.title || '无标题' }}</span>
+										<span class="text-sm font-medium">{{ e.title || t('assets.common.untitled') }}</span>
 										<UBadge
 											v-if="e.linkedProjectId"
 											color="primary"
@@ -73,7 +73,7 @@
 											color="success"
 											variant="soft"
 											size="2xs">
-											{{ e.linkedTaskIds.length }} Tasks
+											{{ t('assets.diary.tasksCount', { count: e.linkedTaskIds.length }) }}
 										</UBadge>
 									</div>
 									<div class="text-xs text-muted line-clamp-3 mb-2">
@@ -82,7 +82,7 @@
 									<div
 										v-if="group.tasks.length > 0"
 										class="mt-2 pt-2 border-t border-default/60">
-										<div class="text-[11px] text-muted mb-1">当天完成的任务：</div>
+										<div class="text-[11px] text-muted mb-1">{{ t('assets.diary.dayTasks') }}</div>
 										<div class="flex flex-wrap gap-1.5">
 											<UBadge
 												v-for="t in group.tasks"
@@ -103,7 +103,7 @@
 									size="2xs"
 									icon="i-lucide-trash-2"
 									@click.stop="onDelete(e.id)">
-									<span class="sr-only">删除</span>
+									<span class="sr-only">{{ t('common.actions.delete') }}</span>
 								</UButton>
 							</div>
 						</UCard>
@@ -115,15 +115,15 @@
 		<!-- 编辑模态框 -->
 		<UModal
 			v-model:open="editOpen"
-			:title="selectedEntry ? '编辑日记' : '新建日记'"
-			description="统一在弹窗中维护日记内容，减少上下文切换。"
+			:title="selectedEntry ? t('assets.diary.modal.editTitle') : t('assets.diary.modal.newTitle')"
+			:description="t('assets.diary.modal.description')"
 			:ui="diaryModalUi">
 			<template #body>
 				<div
 					v-motion="modalBodyMotion"
 					class="space-y-4">
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<UFormField label="日期">
+						<UFormField :label="t('assets.diary.fields.date')">
 							<UInput
 								v-model="editForm.date"
 								type="date"
@@ -132,11 +132,11 @@
 								:ui="assetModalInputUi" />
 						</UFormField>
 						<UFormField
-							label="标题"
+							:label="t('assets.diary.fields.title')"
 							required>
 							<UInput
 								v-model="editForm.title"
-								placeholder="日记标题"
+								:placeholder="t('assets.diary.placeholders.title')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
@@ -144,11 +144,11 @@
 					</div>
 
 					<UFormField
-						label="内容（Markdown）"
+						:label="t('assets.diary.fields.contentMarkdown')"
 						required>
 						<UTextarea
 							v-model="editForm.content"
-							placeholder="记录感想、灵感、总结…"
+							:placeholder="t('assets.diary.placeholders.content')"
 							:rows="14"
 							size="md"
 							class="w-full"
@@ -156,10 +156,10 @@
 							:ui="assetModalTextareaUi" />
 					</UFormField>
 
-					<UFormField label="关联 Project ID（可选）">
+					<UFormField :label="t('assets.diary.fields.linkedProjectOptional')">
 						<UInput
 							v-model="editForm.linkedProjectId"
-							placeholder="project:xxx"
+							:placeholder="t('assets.diary.placeholders.linkedProject')"
 							size="md"
 							class="w-full"
 							:ui="assetModalInputUi" />
@@ -175,13 +175,13 @@
 						variant="ghost"
 						size="sm"
 						@click="editOpen = false">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
 						size="sm"
 						@click="onSave">
-						保存
+						{{ t('common.actions.save') }}
 					</UButton>
 				</div>
 			</template>
@@ -190,6 +190,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
@@ -212,6 +213,7 @@
 	import { createDiaryEntry, deleteDiaryEntry, listDiaryEntries, updateDiaryEntry } from '@/services/api/diary'
 
 	const toast = useToast()
+	const { t, locale } = useI18n({ useScope: 'global' })
 	const router = useRouter()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const timelineMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
@@ -249,8 +251,8 @@
 			},
 			onError: (e) => {
 				toast.add({
-					title: '加载失败',
-					description: e instanceof Error ? e.message : '未知错误',
+					title: t('assets.diary.toast.loadFailedTitle'),
+					description: e instanceof Error ? e.message : t('fallback.unknownError'),
 					color: 'error',
 				})
 			},
@@ -284,7 +286,7 @@
 		const result: GroupedEntry[] = []
 		for (const [date, entriesList] of byDate.entries()) {
 			const d = new Date(date)
-			const dateLabel = d.toLocaleDateString('zh-CN', {
+			const dateLabel = d.toLocaleDateString(locale.value, {
 				year: 'numeric',
 				month: 'long',
 				day: 'numeric',
@@ -349,17 +351,17 @@
 		try {
 			if (selectedEntry.value) {
 				await updateDiaryEntry(selectedEntry.value.id, editForm.value)
-				toast.add({ title: '已保存', color: 'success' })
+				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
 				await createDiaryEntry(editForm.value)
-				toast.add({ title: '已创建', color: 'success' })
+				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()
 			editOpen.value = false
 		} catch (e) {
 			toast.add({
-				title: '保存失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.saveFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
@@ -368,12 +370,12 @@
 	async function onDelete(id: string) {
 		try {
 			await deleteDiaryEntry(id)
-			toast.add({ title: '已删除', color: 'success' })
+			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
 			await refresh()
 		} catch (e) {
 			toast.add({
-				title: '删除失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.deleteFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}

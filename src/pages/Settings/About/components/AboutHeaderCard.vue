@@ -5,39 +5,28 @@
 				<div class="flex items-start gap-4">
 					<UAvatar
 						:src="avatarUrl"
-						alt="StoneFlow"
+						:alt="t('app.name')"
 						size="xl"
 						:ui="{ root: 'rounded-2xl ring-1 ring-default/50 bg-elevated/60' }" />
 					<div class="space-y-4">
 						<div class="space-y-2">
 							<div class="text-2xl font-semibold text-default">{{ appName }}</div>
-							<div class="text-sm text-muted">像 IDE 一样顺手的任务与项目系统</div>
+							<div class="text-sm text-muted">{{ t('settings.about.header.subtitle') }}</div>
 						</div>
 						<div class="space-y-2 text-xs text-muted">
 							<div class="flex items-start gap-2">
 								<UIcon
 									name="i-lucide-flag"
 									class="mt-0.5 size-3.5 text-primary/80" />
-								<span>Task 是行动，Project 是叙事</span>
+								<span>{{ t('settings.about.header.bullets.taskProject') }}</span>
 							</div>
 							<div class="flex items-start gap-2">
 								<UIcon
 									name="i-lucide-check-circle-2"
 									class="mt-0.5 size-3.5 text-primary/80" />
-								<span>Finish List 记录你走过的路</span>
+								<span>{{ t('settings.about.header.bullets.finishList') }}</span>
 							</div>
 						</div>
-						<!-- <div class="flex flex-wrap items-center gap-2">
-							<span class="rounded-full bg-sky-400 px-3 py-1 text-xs font-medium text-white">
-								🏆 完成系统
-							</span>
-							<span class="rounded-full bg-fuchsia-400 px-3 py-1 text-xs font-medium text-white">
-								🧭 项目骨架
-							</span>
-							<span class="rounded-full bg-amber-400 px-3 py-1 text-xs font-medium text-white">
-								⚡ 高效快捷
-							</span>
-						</div> -->
 					</div>
 				</div>
 
@@ -45,14 +34,14 @@
 					<div class="rounded-3xl border border-default/60 bg-elevated/50 p-4">
 						<div class="flex items-start justify-between gap-4">
 							<div class="space-y-1">
-								<div class="text-xs text-muted">当前版本</div>
+								<div class="text-xs text-muted">{{ t('settings.about.header.currentVersion') }}</div>
 								<div class="text-lg font-semibold text-default">v{{ currentVersion }}</div>
 								<div
 									v-if="buildNumber"
 									class="text-xs text-muted">
 									Build {{ buildNumber }}
 								</div>
-								<div class="text-xs text-muted">上次检查：{{ lastCheckedText }}</div>
+								<div class="text-xs text-muted">{{ t('settings.about.header.lastChecked', { text: lastCheckedText }) }}</div>
 							</div>
 							<UBadge
 								color="neutral"
@@ -67,28 +56,21 @@
 								:loading="isChecking"
 								:disabled="isDownloading"
 								@click="onCheckUpdate">
-								检查更新
+								{{ t('settings.about.actions.checkUpdate') }}
 							</UButton>
-							<!-- <UButton
-								color="neutral"
-								variant="soft"
-								icon="i-lucide-flask-conical"
-								@click="onPreviewUpdateModal">
-								测试更新弹窗
-							</UButton> -->
 							<UButton
 								color="neutral"
 								variant="ghost"
 								icon="i-lucide-external-link"
 								@click="onOpenReleasePage">
-								打开下载页
+								{{ t('settings.about.actions.openReleasePage') }}
 							</UButton>
 							<UButton
 								color="neutral"
 								variant="ghost"
 								icon="i-lucide-scroll-text"
 								@click="onOpenChangelog">
-								查看更新日志
+								{{ t('settings.about.actions.openChangelog') }}
 							</UButton>
 						</div>
 					</div>
@@ -98,7 +80,7 @@
 							type="button"
 							class="flex w-full items-center justify-between text-left"
 							@click="onToggleAdvanced">
-							<span class="text-sm font-medium text-default">更新偏好</span>
+							<span class="text-sm font-medium text-default">{{ t('settings.about.preferences.title') }}</span>
 							<UIcon
 								name="i-lucide-chevron-down"
 								class="size-4 text-muted transition-transform duration-200 ease-out"
@@ -108,7 +90,7 @@
 							v-if="props.advancedOpen"
 							class="mt-3 space-y-3 text-sm">
 							<label class="flex items-center justify-between gap-3">
-								<span class="text-muted">自动检查更新</span>
+								<span class="text-muted">{{ t('settings.about.preferences.autoCheck') }}</span>
 								<input
 									:checked="autoCheckEnabled"
 									type="checkbox"
@@ -116,7 +98,7 @@
 									@change="onAutoCheckChange" />
 							</label>
 							<label class="flex items-center justify-between gap-3">
-								<span class="text-muted">下载完成后提示安装</span>
+								<span class="text-muted">{{ t('settings.about.preferences.promptInstall') }}</span>
 								<input
 									:checked="promptInstallEnabled"
 									type="checkbox"
@@ -124,8 +106,8 @@
 									@change="onPromptInstallChange" />
 							</label>
 							<div class="flex items-center justify-between gap-3">
-								<span class="text-muted">更新通道</span>
-								<span class="text-default">Tauri Updater</span>
+								<span class="text-muted">{{ t('settings.about.preferences.updateChannel') }}</span>
+								<span class="text-default">{{ t('settings.about.preferences.updateChannelValue') }}</span>
 							</div>
 						</div>
 					</div>
@@ -143,7 +125,7 @@
 					v-if="state.status === 'downloading'"
 					class="space-y-2">
 					<div class="flex items-center justify-between text-sm text-muted">
-						<span>下载中</span>
+						<span>{{ t('settings.about.updateState.downloading') }}</span>
 						<span>{{ state.progress }}%</span>
 					</div>
 					<UProgress
@@ -159,7 +141,7 @@
 						icon="i-lucide-download"
 						:loading="isDownloading"
 						@click="onDownloadUpdate">
-						下载更新
+						{{ t('settings.about.actions.downloadUpdate') }}
 					</UButton>
 					<UButton
 						v-if="state.status === 'ready'"
@@ -167,7 +149,7 @@
 						variant="soft"
 						icon="i-lucide-rotate-cw"
 						@click="onRestart">
-						重启安装
+						{{ t('settings.about.actions.restartInstall') }}
 					</UButton>
 				</div>
 			</div>
@@ -176,9 +158,12 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import type { UpdateState } from '@/composables/useUpdater'
 	import avatarUrl from '@/assets/avatar.png'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
+
+	const { t } = useI18n({ useScope: 'global' })
 
 	const props = defineProps<{
 		appName: string

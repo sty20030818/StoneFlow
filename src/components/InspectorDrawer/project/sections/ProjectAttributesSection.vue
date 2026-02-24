@@ -10,7 +10,7 @@
 					<DrawerAttributeCardShell
 						:icon-name="priorityIcon"
 						:icon-class="priorityIconClass"
-						label="Priority"
+						:label="t('inspector.attribute.priority')"
 						:value="priorityLabel"
 						:value-class="priorityTextClass" />
 				</template>
@@ -30,13 +30,13 @@
 					<DrawerAttributeCardShell
 						:icon-name="statusIconName"
 						:icon-class="statusIconClass"
-						label="Status"
+						:label="t('inspector.attribute.status')"
 						:value="statusLabel"
 						:value-class="statusTextClass" />
 				</template>
 				<DrawerAttributeOptionList
 					:items="statusOptionItems"
-					empty-text="当前状态暂无可执行操作"
+					:empty-text="t('inspector.project.statusNoAction')"
 					@select="onStatusActionSelectInternal" />
 			</DrawerAttributePopoverCard>
 		</div>
@@ -54,7 +54,7 @@
 					<DrawerAttributeCardShell
 						:icon-name="spaceCardIcon"
 						:icon-class="spaceCardLabelClass"
-						label="所属 Space"
+						:label="t('inspector.attribute.space')"
 						:value="currentSpaceLabel"
 						:value-class="spaceCardValueClass" />
 				</template>
@@ -78,7 +78,7 @@
 					<DrawerAttributeCardShell
 						icon-name="i-lucide-folder-tree"
 						:icon-class="currentParentIconClass"
-						label="所属 Project"
+						:label="t('inspector.attribute.project')"
 						:value="currentParentLabel"
 						value-class="text-default" />
 				</template>
@@ -91,6 +91,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { ref } from 'vue'
 
 	import DrawerAttributeCardShell from '@/components/InspectorDrawer/shared/attributes/DrawerAttributeCardShell.vue'
@@ -135,6 +136,7 @@
 	}
 
 	const props = defineProps<Props>()
+	const { t } = useI18n({ useScope: 'global' })
 
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
 	const optionCardHoverMotion = useCardHoverMotionPreset()

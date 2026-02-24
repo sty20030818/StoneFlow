@@ -1,5 +1,5 @@
 <template>
-	<SettingsSectionCard title="链接">
+	<SettingsSectionCard :title="t('settings.about.links.title')">
 		<div class="space-y-2">
 			<div
 				v-for="link in links"
@@ -17,15 +17,15 @@
 						size="xs"
 						icon="i-lucide-external-link"
 						@click="onOpenLink(link.value)">
-						打开
+						{{ t('common.actions.open') }}
 					</UButton>
 					<UButton
 						color="neutral"
 						variant="ghost"
 						size="xs"
 						icon="i-lucide-copy"
-						@click="onCopyLink(link.value, `${link.label} 链接已复制`)">
-						复制
+						@click="onCopyLink(link.value, t('settings.about.toast.linkCopied', { label: link.label }))">
+						{{ t('common.actions.copy') }}
 					</UButton>
 				</div>
 			</div>
@@ -34,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 
@@ -43,6 +44,7 @@
 		value: string
 	}
 	const linkItemHoverMotion = useCardHoverMotionPreset()
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		links: AboutLink[]

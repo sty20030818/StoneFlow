@@ -1,14 +1,14 @@
 <template>
 	<section class="space-y-2">
 		<div class="flex items-center justify-between">
-			<label class="text-xs font-semibold text-muted">关联链接</label>
+			<label class="text-xs font-semibold text-muted">{{ t('inspector.links.label') }}</label>
 			<UButton
 				color="neutral"
 				variant="soft"
 				size="xs"
 				icon="i-lucide-plus"
 				@click="onAddLinkDraft">
-				新增
+				{{ t('common.actions.add') }}
 			</UButton>
 		</div>
 
@@ -22,7 +22,7 @@
 				<div class="grid grid-cols-[1fr_120px_auto_auto_auto] gap-2">
 					<UInput
 						v-model="linksModel[index].title"
-						placeholder="标题（可选）"
+						:placeholder="t('inspector.links.placeholders.titleOptional')"
 						size="xs"
 						:ui="{ rounded: 'rounded-lg' }"
 						@input="onLinkInput(index)"
@@ -41,14 +41,14 @@
 						color="primary"
 						size="xs"
 						@click="onConfirmEdit(index)">
-						完成
+						{{ t('common.actions.done') }}
 					</UButton>
 					<UButton
 						color="neutral"
 						variant="soft"
 						size="xs"
 						@click="onCancelEdit(index)">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="neutral"
@@ -59,7 +59,7 @@
 				</div>
 				<UInput
 					v-model="linksModel[index].url"
-					placeholder="URL（必填）"
+					:placeholder="t('inspector.links.placeholders.urlRequired')"
 					size="xs"
 					class="w-full"
 					:ui="{ rounded: 'rounded-lg' }"
@@ -74,7 +74,7 @@
 				<div class="flex items-start justify-between gap-2">
 					<div class="min-w-0 flex items-center gap-2">
 						<p class="truncate text-sm font-semibold text-default">
-							{{ link.title.trim() || '未命名链接' }}
+							{{ link.title.trim() || t('inspector.links.untitled') }}
 						</p>
 						<UBadge
 							size="xs"
@@ -110,7 +110,7 @@
 			<p
 				v-if="editingErrorIndex === index"
 				class="text-[11px] text-error">
-				URL 不能为空
+				{{ t('inspector.links.validation.urlRequired') }}
 			</p>
 		</div>
 
@@ -120,7 +120,7 @@
 			<div class="grid grid-cols-[1fr_120px_auto_auto] gap-2">
 				<UInput
 					v-model="draftTitle"
-					placeholder="标题（可选）"
+					:placeholder="t('inspector.links.placeholders.titleOptional')"
 					size="xs"
 					:ui="{ rounded: 'rounded-lg' }"
 					@compositionstart="onLinkCompositionStart"
@@ -137,20 +137,20 @@
 					color="primary"
 					size="xs"
 					@click="onConfirmClick">
-					确认
+					{{ t('common.actions.confirm') }}
 				</UButton>
 				<UButton
 					color="neutral"
 					variant="soft"
 					size="xs"
 					@click="onCancelClick">
-					取消
+					{{ t('common.actions.cancel') }}
 				</UButton>
 			</div>
 			<div class="space-y-1">
 				<UInput
 					v-model="draftUrl"
-					placeholder="URL（必填）"
+					:placeholder="t('inspector.links.placeholders.urlRequired')"
 					size="xs"
 					class="w-full"
 					:ui="{ rounded: 'rounded-lg' }"
@@ -160,22 +160,23 @@
 				<div
 					v-if="showDraftUrlError"
 					class="text-[11px] text-red-500">
-					URL 不能为空
+					{{ t('inspector.links.validation.urlRequired') }}
 				</div>
 			</div>
 		</div>
 		<p
 			v-if="linksModel.length === 0 && !draftVisible"
 			class="rounded-xl border border-default/70 bg-elevated/50 px-3 py-2 text-xs text-muted">
-			{{ emptyText }}
+			{{ resolvedEmptyText }}
 		</p>
 	</section>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+	import { computed, ref } from 'vue'
 
-	import { DRAWER_LINK_SELECT_MENU_UI, DRAWER_LINKS_EMPTY_TEXT } from '../constants'
+	import { DRAWER_LINK_KIND_FALLBACK_KEY, DRAWER_LINK_SELECT_MENU_UI, DRAWER_LINKS_EMPTY_TEXT_KEY } from '../constants'
 	import { useDrawerEditableListController, useDrawerLinkKindLabelMap } from '../composables'
 	import type { DrawerEditInteractionHandlers, DrawerLinkFormItem, DrawerLinkKindOption } from '../types'
 
@@ -198,8 +199,10 @@
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
-		emptyText: DRAWER_LINKS_EMPTY_TEXT,
+		emptyText: undefined,
 	})
+	const { t } = useI18n({ useScope: 'global' })
+	const resolvedEmptyText = computed(() => props.emptyText ?? t(DRAWER_LINKS_EMPTY_TEXT_KEY))
 
 	const kindLabelMap = useDrawerLinkKindLabelMap(() => props.linkKindOptions)
 	const editSnapshot = ref<DrawerLinkFormItem | null>(null)
@@ -223,7 +226,7 @@
 	const selectMenuUi = DRAWER_LINK_SELECT_MENU_UI
 
 	function getKindLabel(kind: string): string {
-		return kindLabelMap.value.get(kind) ?? '其他'
+		return kindLabelMap.value.get(kind) ?? t(DRAWER_LINK_KIND_FALLBACK_KEY)
 	}
 
 	function onDraftUrlInput() {

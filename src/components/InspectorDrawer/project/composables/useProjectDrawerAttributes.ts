@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import {
@@ -50,10 +51,11 @@ export function useProjectDrawerAttributes(params: {
 	onRequestArchiveProject: () => void
 	onRequestDeleteProject: () => void
 }) {
+	const { t } = useI18n({ useScope: 'global' })
 	const priorityOption = computed(() => {
 		return params.priorityOptions.value.find((item) => item.value === params.priorityLocal.value) ?? params.priorityOptions.value[0]
 	})
-	const priorityLabel = computed(() => priorityOption.value?.label ?? '未设定')
+	const priorityLabel = computed(() => priorityOption.value?.label ?? t('inspector.attribute.notSet'))
 	const priorityIcon = computed(() => priorityOption.value?.icon ?? 'i-lucide-alert-triangle')
 
 	const priorityStyle = computed(() => {
@@ -137,7 +139,7 @@ export function useProjectDrawerAttributes(params: {
 		if (params.canArchiveProject.value) {
 			items.push({
 				value: 'archive',
-				label: '归档项目',
+				label: t('inspector.project.actions.archive'),
 				icon: 'i-lucide-archive',
 				iconClass: 'text-amber-500',
 				labelClass: 'text-amber-600',
@@ -148,7 +150,7 @@ export function useProjectDrawerAttributes(params: {
 		if (params.canDeleteProject.value) {
 			items.push({
 				value: 'delete',
-				label: '删除项目',
+				label: t('inspector.project.actions.delete'),
 				icon: 'i-lucide-trash-2',
 				iconClass: 'text-rose-500',
 				labelClass: 'text-rose-600',
@@ -176,8 +178,8 @@ export function useProjectDrawerAttributes(params: {
 	})
 
 	const spaceOptionEmptyText = computed(() => {
-		if (params.hasChildProjects.value) return '当前项目存在子项目，暂不支持切换所属 Space。'
-		return '暂无可选 Space'
+		if (params.hasChildProjects.value) return t('inspector.project.spaceSwitchBlocked')
+		return t('inspector.project.noAvailableSpace')
 	})
 
 	const currentParentLabel = computed(() => {

@@ -26,7 +26,7 @@
 			v-if="loading"
 			v-motion="loadingMotion"
 			class="text-sm text-muted">
-			加载中...
+			{{ t('common.status.loading') }}...
 		</div>
 
 		<div
@@ -36,7 +36,7 @@
 				<div
 					v-if="deletedProjects.length === 0"
 					class="text-[12px] text-muted px-3 py-2 rounded-md bg-elevated/60 border border-dashed border-default/70">
-					暂无已删除项目
+					{{ t('trash.empty.projects') }}
 				</div>
 				<div
 					v-else
@@ -60,7 +60,7 @@
 								size="xs"
 								:loading="restoringProjectIds.has(project.id)"
 								@click="restoreProjectItem(project)">
-								恢复
+								{{ t('common.actions.restore') }}
 							</UButton>
 						</div>
 					</div>
@@ -71,7 +71,7 @@
 				<div
 					v-if="deletedTasks.length === 0"
 					class="text-[12px] text-muted px-3 py-2 rounded-md bg-elevated/60 border border-dashed border-default/70">
-					暂无已删除任务
+					{{ t('trash.empty.tasks') }}
 				</div>
 				<div
 					v-else
@@ -95,7 +95,7 @@
 								size="xs"
 								:loading="restoringTaskIds.has(task.id)"
 								@click="restoreTaskItem(task)">
-								恢复
+								{{ t('common.actions.restore') }}
 							</UButton>
 						</div>
 					</div>
@@ -106,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
 	import { computed, ref, watch } from 'vue'
 
@@ -120,6 +121,7 @@
 	import { useSettingsStore } from '@/stores/settings'
 
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const headerActionMotion = useAppMotionPreset('statusFeedback', 'stateAction')
 	const loadingMotion = useAppMotionPreset('statusFeedback', 'sectionBase', 8)
 	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
@@ -144,20 +146,20 @@
 	const projectItemMotionCache = new Map<string, number>()
 	const taskItemMotionCache = new Map<string, number>()
 
-	const viewOptions = [
+	const viewOptions = computed(() => [
 		{
 			value: 'projects' as const,
-			label: '项目',
+			label: t('trash.tabs.projects'),
 			icon: 'i-lucide-folder',
 			iconClass: 'text-emerald-600',
 		},
 		{
 			value: 'tasks' as const,
-			label: '任务',
+			label: t('trash.tabs.tasks'),
 			icon: 'i-lucide-list-checks',
 			iconClass: 'text-pink-500',
 		},
-	]
+	])
 	const viewTabsUi = {
 		root: 'w-full',
 		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
@@ -166,12 +168,14 @@
 		leadingIcon: 'size-3.5',
 		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
 	}
-	const viewTabItems = viewOptions.map((opt) => ({
-		label: opt.label,
-		value: opt.value,
-		icon: opt.icon,
-		iconClass: opt.iconClass,
-	}))
+	const viewTabItems = computed(() =>
+		viewOptions.value.map((opt) => ({
+			label: opt.label,
+			value: opt.value,
+			icon: opt.icon,
+			iconClass: opt.iconClass,
+		})),
+	)
 
 	const activeSpaceId = computed(() => settingsStore.settings.activeSpaceId ?? 'work')
 	const scopeKey = computed(() => activeSpaceId.value)
@@ -208,8 +212,8 @@
 		if (value === 'projects' || value === 'tasks') viewMode.value = value
 	}
 	function getTaskProjectLabel(projectId: string | null) {
-		if (!projectId) return '未分类'
-		return projectNameMap.value.get(projectId) ?? '已删除项目'
+		if (!projectId) return t('common.labels.uncategorized')
+		return projectNameMap.value.get(projectId) ?? t('trash.labels.deletedProject')
 	}
 
 	function writeSnapshot(spaceId: string, projects: ProjectDto[], tasks: TaskDto[]) {
@@ -243,7 +247,7 @@
 		let timer: ReturnType<typeof setTimeout> | null = null
 		const timeoutPromise = new Promise<never>((_, reject) => {
 			timer = setTimeout(() => {
-				reject(new Error('回收站加载超时，请稍后重试'))
+				reject(new Error(t('trash.toast.loadTimeout')))
 			}, timeoutMs)
 		})
 		try {
@@ -266,8 +270,8 @@
 			writeSnapshot(spaceId, projects, tasks)
 		} catch (e) {
 			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('trash.toast.loadFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		} finally {
@@ -287,14 +291,14 @@
 			refreshCurrentSnapshot()
 			refreshSignals.bumpProject()
 			toast.add({
-				title: '已恢复项目',
+				title: t('trash.toast.projectRestoredTitle'),
 				description: project.title,
 				color: 'success',
 			})
 		} catch (e) {
 			toast.add({
-				title: '恢复失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('trash.toast.restoreFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		} finally {
@@ -315,14 +319,14 @@
 			refreshCurrentSnapshot()
 			refreshSignals.bumpTask()
 			toast.add({
-				title: '已恢复任务',
+				title: t('trash.toast.taskRestoredTitle'),
 				description: task.title,
 				color: 'success',
 			})
 		} catch (e) {
 			toast.add({
-				title: '恢复失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('trash.toast.restoreFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		} finally {

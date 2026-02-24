@@ -90,7 +90,7 @@
 				<!-- 第二行:备注 | 元信息徽章 | 标签 -->
 				<div class="flex items-center justify-between gap-4 min-h-[20px]">
 					<p class="text-xs text-slate-400 truncate grow pr-4 font-medium">
-						{{ task.note || '暂无备注' }}
+						{{ task.note || t('taskCard.noNote') }}
 					</p>
 
 					<div class="flex items-center gap-2 shrink-0">
@@ -125,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	import { useActionIconHoverMotion, useCardHoverMotionPreset } from '@/composables/base/motion'
@@ -148,6 +149,7 @@
 		formatRelativeTime: (timestamp: number) => string
 		formatAbsoluteTime: (timestamp: number) => string
 	}>()
+	const { t } = useI18n({ useScope: 'global' })
 	const cardHoverMotionPreset = useCardHoverMotionPreset()
 	const deleteButtonMotionPreset = useActionIconHoverMotion({ hoverScale: 1.05 })
 

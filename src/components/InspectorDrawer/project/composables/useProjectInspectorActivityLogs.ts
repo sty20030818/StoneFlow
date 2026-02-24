@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { listActivityLogs } from '@/services/api/logs'
@@ -9,6 +10,7 @@ export function useProjectInspectorActivityLogs(params: {
 	projectTick: Ref<number>
 }) {
 	const projectId = computed(() => params.currentProject.value?.id ?? null)
+	const { t } = useI18n({ useScope: 'global' })
 
 	return useDrawerActivityLogs({
 		entityId: projectId,
@@ -20,6 +22,6 @@ export function useProjectInspectorActivityLogs(params: {
 				limit: 50,
 			})
 		},
-		errorFallbackText: '加载项目日志失败',
+		errorFallbackText: t('inspector.project.timeline.loadFailed'),
 	})
 }

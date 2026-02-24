@@ -1,12 +1,12 @@
 <template>
 	<section>
 		<div class="mb-2 flex items-center justify-between">
-			<label class="text-xs font-semibold text-muted uppercase tracking-widest">{{ label }}</label>
+			<label class="text-xs font-semibold text-muted uppercase tracking-widest">{{ resolvedLabel }}</label>
 			<button
 				v-if="showAddButton"
 				type="button"
 				class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-default/60 bg-elevated/60 text-sm font-semibold text-muted transition-colors hover:bg-elevated"
-				:aria-label="addAriaLabel"
+				:aria-label="resolvedAddAriaLabel"
 				@click="onAddClick">
 				+
 			</button>
@@ -18,6 +18,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+	import { computed } from 'vue'
+
 	type Props = {
 		label?: string
 		showAddButton?: boolean
@@ -25,10 +28,13 @@
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
-		label: '属性',
+		label: undefined,
 		showAddButton: false,
-		addAriaLabel: '新增字段',
+		addAriaLabel: undefined,
 	})
+	const { t } = useI18n({ useScope: 'global' })
+	const resolvedLabel = computed(() => props.label ?? t('inspector.attribute.label'))
+	const resolvedAddAriaLabel = computed(() => props.addAriaLabel ?? t('inspector.attribute.addAria'))
 
 	const emit = defineEmits<{
 		add: []

@@ -1,7 +1,8 @@
 import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { enUS, zhCN } from 'date-fns/locale'
+import { useI18n } from 'vue-i18n'
 
 import { useUpdater } from '@/composables/useUpdater'
 import { useSettingsSystemActions } from '@/pages/Settings/composables/useSettingsSystemActions'
@@ -29,7 +30,7 @@ function parseChangelogSummary(markdown: string): ChangelogEntry[] {
 		const items = buffer.join('\n').trim()
 		entries.push({
 			...current,
-			items: items || '- 暂无更新内容',
+			items,
 		})
 		buffer = []
 	}
@@ -58,6 +59,7 @@ function parseChangelogSummary(markdown: string): ChangelogEntry[] {
 
 export function useAboutPage() {
 	const toast = useToast()
+	const { t, locale } = useI18n({ useScope: 'global' })
 	const {
 		state,
 		autoCheckEnabled,
@@ -81,33 +83,52 @@ export function useAboutPage() {
 	const now = useNow({ interval: 60_000 })
 	const parsedChangelogEntries = parseChangelogSummary(changelogSource)
 
-	const aboutLinks = ABOUT_LINKS
-	const changelogSummary = parsedChangelogEntries
+	const aboutLinks = computed(() => {
+		return ABOUT_LINKS.map((link) => ({
+			id: link.id,
+			label: t(link.labelKey),
+			value: link.value,
+		}))
+	})
+	const changelogSummary = computed(() => {
+		const empty = t('settings.about.changelog.empty')
+		return parsedChangelogEntries.map((entry) => ({
+			...entry,
+			items: entry.items.trim() || empty,
+		}))
+	})
 	const licenseUrl = LICENSE_URL
 	const privacyUrl = PRIVACY_URL
-	const previewNotesFallback = changelogSummary[0]?.items?.trim() || '暂无更新日志'
+	const previewNotesFallback = computed(() => {
+		return changelogSummary.value[0]?.items?.trim() || t('settings.about.changelog.empty')
+	})
 
 	const lastCheckedText = computed(() => {
-		if (!state.value.lastCheckedAt) return '尚未检查'
+		if (!state.value.lastCheckedAt) return t('settings.about.header.lastCheckedNever')
 		// 显式依赖 now，保证相对时间文案自动刷新。
 		void now.value
-		return formatDistanceToNow(state.value.lastCheckedAt, { addSuffix: true, locale: zhCN })
+		return formatDistanceToNow(state.value.lastCheckedAt, {
+			addSuffix: true,
+			locale: locale.value.toLowerCase().startsWith('en') ? enUS : zhCN,
+		})
 	})
 
 	const updateStateLabel = computed(() => {
-		if (state.value.status === 'checking') return '检查中'
-		if (state.value.status === 'downloading') return '下载中'
-		if (state.value.status === 'ready') return '等待安装'
-		if (state.value.status === 'error') return '检查失败'
-		if (state.value.available) return '发现更新'
-		return '已是最新版'
+		if (state.value.status === 'checking') return t('settings.about.updateState.checking')
+		if (state.value.status === 'downloading') return t('settings.about.updateState.downloading')
+		if (state.value.status === 'ready') return t('settings.about.updateState.ready')
+		if (state.value.status === 'error') return t('settings.about.updateState.error')
+		if (state.value.available) return t('settings.about.updateState.available')
+		return t('settings.about.updateState.latest')
 	})
 
 	async function handleCheckUpdate() {
 		const hasUpdate = await checkForUpdate()
 		if (state.value.status === 'error') return
 		toast.add({
-			title: hasUpdate ? `发现更新 v${state.value.version}` : '当前已是最新版',
+			title: hasUpdate
+				? t('settings.about.toast.updateFoundTitle', { version: state.value.version })
+				: t('settings.about.toast.latestTitle'),
 			color: hasUpdate ? 'primary' : 'success',
 		})
 	}
@@ -115,12 +136,16 @@ export function useAboutPage() {
 	async function handleDownloadUpdate() {
 		const ok = await downloadAndInstall()
 		if (ok) {
-			toast.add({ title: '更新下载完成', description: '可重启应用完成安装。', color: 'success' })
+			toast.add({
+				title: t('settings.about.toast.downloadCompletedTitle'),
+				description: t('settings.about.toast.downloadCompletedDescription'),
+				color: 'success',
+			})
 		}
 	}
 
 	function handlePreviewUpdateModal() {
-		const notes = state.value.notes.trim() || previewNotesFallback
+		const notes = state.value.notes.trim() || previewNotesFallback.value
 		state.value.available = true
 		state.value.version = state.value.version || currentVersion.value
 		state.value.notes = notes
@@ -134,7 +159,11 @@ export function useAboutPage() {
 		try {
 			await restartApp()
 		} catch (error) {
-			toast.add({ title: '重启失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.about.toast.restartFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 		}
 	}
 
@@ -147,7 +176,7 @@ export function useAboutPage() {
 	}
 
 	async function handleCopyReleaseLink() {
-		await copy(RELEASE_PAGE_URL, '下载链接已复制')
+		await copy(RELEASE_PAGE_URL, t('settings.about.toast.releaseLinkCopied'))
 	}
 
 	async function openInstallPath() {
@@ -178,7 +207,7 @@ export function useAboutPage() {
 			},
 		}
 
-		await copy(JSON.stringify(payload, null, 2), '诊断信息已复制')
+		await copy(JSON.stringify(payload, null, 2), t('settings.about.toast.diagnosticCopied'))
 	}
 
 	function handleAutoCheckChange(event: Event) {

@@ -8,10 +8,10 @@
 					:ui="drawerPopoverUi"
 					:trigger-class="`${spaceCardClass} cursor-pointer`">
 					<template #trigger>
-						<DrawerAttributeCardShell
+					<DrawerAttributeCardShell
 							icon-name="i-lucide-orbit"
 							:icon-class="spaceCardLabelClass"
-							label="所属 Space"
+							:label="t('inspector.attribute.space')"
 							:value="currentSpaceLabel"
 							:value-class="spaceCardValueClass" />
 					</template>
@@ -28,10 +28,10 @@
 					:ui="drawerPopoverUi"
 					:trigger-class="`${projectCardClass} cursor-pointer`">
 					<template #trigger>
-						<DrawerAttributeCardShell
+					<DrawerAttributeCardShell
 							icon-name="i-lucide-folder-tree"
 							:icon-class="projectIconClass"
-							label="所属 Project"
+							:label="t('inspector.attribute.project')"
 							:value="currentProjectLabel"
 							value-class="text-default" />
 					</template>
@@ -45,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed, ref } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
@@ -90,6 +91,7 @@
 	const spacePopoverOpen = ref(false)
 	const projectPopoverOpen = ref(false)
 	const optionCardHoverMotion = useCardHoverMotionPreset()
+	const { t } = useI18n({ useScope: 'global' })
 	const PROJECT_LEVEL_CARD_CLASSES = [
 		'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60',
 		'bg-sky-50/40 border-sky-200 hover:bg-sky-50/60',

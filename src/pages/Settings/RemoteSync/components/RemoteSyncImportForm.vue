@@ -1,11 +1,11 @@
 <template>
 	<div class="space-y-3">
 		<UFormField
-			label="JSON 文本"
-			description='格式示例：[{"name":"主库","url":"postgresql://..."}]'>
+			:label="t('settings.remoteSync.import.jsonText')"
+			:description="t('settings.remoteSync.import.formatExample')">
 			<UTextarea
 				:model-value="text"
-				placeholder="粘贴 JSON 数组"
+				:placeholder="t('settings.remoteSync.import.placeholder')"
 				:rows="6"
 				class="font-mono text-xs"
 				@update:model-value="onUpdateText" />
@@ -19,6 +19,9 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
+	const { t } = useI18n({ useScope: 'global' })
+
 	defineProps<{
 		text: string
 		error: string

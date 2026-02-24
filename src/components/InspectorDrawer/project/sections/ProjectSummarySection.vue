@@ -4,7 +4,7 @@
 		<div class="flex items-center justify-between gap-4">
 			<div class="min-w-0 space-y-2">
 				<div class="flex items-center pl-5 gap-2">
-					<p class="text-lg font-semibold text-muted uppercase tracking-wider">项目摘要</p>
+					<p class="text-lg font-semibold text-muted uppercase tracking-wider">{{ t('inspector.project.summary.title') }}</p>
 					<!-- <UBadge
 						size="sm"
 						variant="soft"
@@ -23,7 +23,7 @@
 					<UIcon
 						name="i-lucide-calendar-clock"
 						class="size-3.5 shrink-0 opacity-75" />
-					<span>项目更新时间</span>
+					<span>{{ t('inspector.project.summary.projectUpdatedAt') }}</span>
 					<span class="font-semibold text-default">{{ projectUpdatedRelative }}</span>
 				</p>
 
@@ -31,7 +31,7 @@
 					<UIcon
 						name="i-lucide-history"
 						class="size-3.5 shrink-0 opacity-75" />
-					<span>最近任务更新时间</span>
+					<span>{{ t('inspector.project.summary.lastTaskUpdatedAt') }}</span>
 					<span class="font-semibold text-default">{{ lastTaskUpdatedRelative }}</span>
 				</p>
 			</div>
@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	type Props = {
@@ -98,6 +99,7 @@
 	}
 
 	const props = defineProps<Props>()
+	const { t } = useI18n({ useScope: 'global' })
 
 	const totalTaskCount = computed(() => props.todoTaskCount + props.doneTaskCount)
 	const completionRate = computed(() => {
@@ -105,8 +107,12 @@
 		return Math.round((props.doneTaskCount / totalTaskCount.value) * 100)
 	})
 
-	const projectUpdatedRelative = computed(() => formatRelativeTime(props.projectUpdatedAt, '暂无更新'))
-	const lastTaskUpdatedRelative = computed(() => formatRelativeTime(props.lastTaskUpdatedAt, '尚无任务更新'))
+	const projectUpdatedRelative = computed(() =>
+		formatRelativeTime(props.projectUpdatedAt, t('inspector.project.summary.noProjectUpdate')),
+	)
+	const lastTaskUpdatedRelative = computed(() =>
+		formatRelativeTime(props.lastTaskUpdatedAt, t('inspector.project.summary.noTaskUpdate')),
+	)
 
 	const progressUi = {
 		root: 'relative size-24 overflow-visible',
@@ -133,23 +139,23 @@
 	function formatRelativeTime(timestamp: number | null, fallback: string): string {
 		if (!timestamp) return fallback
 		const diff = Date.now() - timestamp
-		if (diff <= 0) return 'just now'
+		if (diff <= 0) return t('inspector.time.justNow')
 
 		const minute = 60 * 1000
 		const hour = 60 * minute
 		const day = 24 * hour
 
-		if (diff < minute) return 'just now'
+		if (diff < minute) return t('inspector.time.justNow')
 		if (diff < hour) {
 			const minutes = Math.floor(diff / minute)
-			return `${minutes} min${minutes === 1 ? '' : 's'} ago`
+			return t('inspector.time.minutesAgo', { count: minutes })
 		}
 		if (diff < day) {
 			const hours = Math.floor(diff / hour)
-			return `${hours} hour${hours === 1 ? '' : 's'} ago`
+			return t('inspector.time.hoursAgo', { count: hours })
 		}
 		const days = Math.floor(diff / day)
-		if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`
+		if (days < 7) return t('inspector.time.daysAgo', { count: days })
 
 		const date = new Date(timestamp)
 		const yyyy = date.getFullYear()

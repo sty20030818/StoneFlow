@@ -84,7 +84,7 @@ export function useTaskInspectorActions(params: {
 	}
 
 	function logDiscardedPatch(taskId: string, activeTaskId: string | null) {
-		console.warn('[TaskInspector] 丢弃过期补丁', { patchTaskId: taskId, activeTaskId })
+		console.warn('[TaskInspector] Discarded stale patch', { patchTaskId: taskId, activeTaskId })
 	}
 
 	function stageUpdate(taskId: string | null, patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): boolean {
@@ -155,7 +155,7 @@ export function useTaskInspectorActions(params: {
 			return true
 		}
 
-		console.error('更新任务失败:', lastError)
+		console.error('Failed to update task:', lastError)
 		endSave(false)
 		return false
 	}

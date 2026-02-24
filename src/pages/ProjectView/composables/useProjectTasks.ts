@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n'
 import { refDebounced } from '@vueuse/core'
 import { computed, ref, watch, type MaybeRefOrGetter, toValue } from 'vue'
 
@@ -21,6 +22,7 @@ export function useProjectTasks(
 	projectId?: MaybeRefOrGetter<string | null | undefined>,
 ) {
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const refreshSignals = useRefreshSignalsStore()
 	const { canBackgroundRefresh } = useRuntimeGate()
 
@@ -66,8 +68,8 @@ export function useProjectTasks(
 		} catch (e) {
 			if (requestId !== latestRequestId || nextScopeKey !== scopeKey.value) return
 			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('projectView.toast.loadFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		} finally {

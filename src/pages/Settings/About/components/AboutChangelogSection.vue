@@ -2,14 +2,14 @@
 	<SettingsSectionCard>
 		<template #header>
 			<div class="flex items-center justify-between gap-3">
-				<div class="text-sm font-semibold text-default">变更日志</div>
+				<div class="text-sm font-semibold text-default">{{ t('settings.about.changelog.title') }}</div>
 				<UButton
 					color="neutral"
 					variant="ghost"
 					size="xs"
 					icon="i-lucide-external-link"
 					@click="onOpenChangelog">
-					查看完整变更日志
+					{{ t('settings.about.changelog.openFull') }}
 				</UButton>
 			</div>
 		</template>
@@ -20,7 +20,9 @@
 				:key="entry.version"
 				v-motion="changelogItemHoverMotion"
 				class="rounded-2xl border border-default/70 bg-elevated/20 px-4 py-3 transition-colors duration-150 hover:bg-elevated/35">
-				<div class="text-sm font-medium text-default">v{{ entry.version }}（{{ entry.date }}）</div>
+				<div class="text-sm font-medium text-default">
+					{{ t('settings.about.changelog.entryTitle', { version: entry.version, date: entry.date }) }}
+				</div>
 				<div
 					class="mt-2 text-sm text-muted leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_a]:text-primary [&_a]:underline"
 					v-html="renderEntryMarkdown(entry.items)" />
@@ -30,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import DOMPurify from 'dompurify'
 	import { createMarkdownExit } from 'markdown-exit'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
@@ -46,6 +49,7 @@
 		breaks: true,
 	})
 	const changelogItemHoverMotion = useCardHoverMotionPreset()
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		entries: ChangelogEntry[]

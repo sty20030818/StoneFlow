@@ -27,12 +27,15 @@
 		<p
 			v-else
 			class="rounded-lg bg-elevated/60 px-3 py-2 text-xs text-muted">
-			{{ emptyText }}
+			{{ resolvedEmptyText }}
 		</p>
 	</div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+	import { computed } from 'vue'
+
 	type OptionValue = string | number | boolean | null
 
 	export type DrawerAttributeOptionItem = {
@@ -53,8 +56,10 @@
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
-		emptyText: '暂无可选项',
+		emptyText: undefined,
 	})
+	const { t } = useI18n({ useScope: 'global' })
+	const resolvedEmptyText = computed(() => props.emptyText ?? t('inspector.attribute.emptyOptions'))
 
 	const emit = defineEmits<{
 		select: [value: OptionValue]

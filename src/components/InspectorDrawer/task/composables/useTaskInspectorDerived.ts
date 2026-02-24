@@ -1,6 +1,6 @@
+import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
-import { UNKNOWN_PROJECT_LABEL } from '@/config/project'
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
 import type { TaskDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
@@ -30,11 +30,12 @@ export function useTaskInspectorDerived(params: {
 	projectsStore: ReturnType<typeof useProjectsStore>
 }) {
 	const { currentTask, state, projectsStore } = params
+	const { t, locale } = useI18n({ useScope: 'global' })
 	const { saveStateLabel, saveStateClass, saveStateDotClass } = useDrawerSaveStatePresentation(state.saveState)
 
 	const priorityLabel = computed(() => {
 		const opt = TASK_PRIORITY_OPTIONS.find((item) => item.value === state.priorityLocal.value)
-		return opt ? opt.label : '未设定'
+		return opt ? opt.label : t('inspector.attribute.notSet')
 	})
 
 	const priorityIcon = computed(() => {
@@ -74,15 +75,15 @@ export function useTaskInspectorDerived(params: {
 	const currentProjectLabel = computed(() => {
 		const projects = projectsStore.getProjectsOfSpace(state.spaceIdLocal.value)
 		const defaultProject = getDefaultProject(projects)
-		if (!state.projectIdLocal.value) return defaultProject?.title ?? UNKNOWN_PROJECT_LABEL
+		if (!state.projectIdLocal.value) return defaultProject?.title ?? t('common.labels.unknownProject')
 		const proj = projects.find((p) => p.id === state.projectIdLocal.value)
-		return proj?.title ?? defaultProject?.title ?? UNKNOWN_PROJECT_LABEL
+		return proj?.title ?? defaultProject?.title ?? t('common.labels.unknownProject')
 	})
 
 	const deadlineLabel = computed(() => {
-		if (!state.deadlineLocal.value) return '未设定'
+		if (!state.deadlineLocal.value) return t('inspector.attribute.notSet')
 		const date = new Date(state.deadlineLocal.value)
-		return date.toLocaleDateString('zh-CN', {
+		return date.toLocaleDateString(locale.value, {
 			month: 'short',
 			day: 'numeric',
 		})
@@ -105,21 +106,21 @@ export function useTaskInspectorDerived(params: {
 
 	const projectPath = computed(() => {
 		const task = currentTask.value
-		if (!task) return UNKNOWN_PROJECT_LABEL
+		if (!task) return t('common.labels.unknownProject')
 		const projects = projectsStore.getProjectsOfSpace(task.spaceId)
 		const defaultProject = getDefaultProject(projects)
 		const project = task.projectId ? projects.find((p) => p.id === task.projectId) : defaultProject
-		if (!project) return UNKNOWN_PROJECT_LABEL
+		if (!project) return t('common.labels.unknownProject')
 		return project.path || project.title
 	})
 
 	const projectTrail = computed(() => {
 		const raw = projectPath.value?.trim()
 		if (!raw) return []
-		if (raw === UNKNOWN_PROJECT_LABEL) return [raw]
+		if (raw === t('common.labels.unknownProject')) return [raw]
 		const parts = raw
 			.split('/')
-			.map((item) => item.trim())
+			.map((item: string) => item.trim())
 			.filter(Boolean)
 		return parts.length ? parts : [raw]
 	})

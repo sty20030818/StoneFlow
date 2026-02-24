@@ -12,7 +12,7 @@
 				v-model="title"
 				type="text"
 				class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/70 select-text"
-				:placeholder="placeholder"
+				:placeholder="inputPlaceholder"
 				:disabled="disabled || submitting" />
 			<span
 				v-if="priority"
@@ -31,13 +31,14 @@
 				v-model="note"
 				rows="1"
 				class="w-full resize-none bg-transparent text-sm leading-5 outline-none placeholder:text-muted/70 select-text"
-				placeholder="写点备注…"
+				:placeholder="t('inlineTaskCreator.notePlaceholder')"
 				:disabled="disabled || submitting"></textarea>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import type { MotionVariants } from '@vueuse/motion'
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { refDebounced, useEventListener } from '@vueuse/core'
@@ -62,11 +63,12 @@
 		{
 			spaceId: undefined,
 			projectId: null,
-			placeholder: '输入标题，Cmd/Ctrl+Enter 创建，Shift+Enter 写备注…',
+			placeholder: undefined,
 			enterDelay: 0,
 			disabled: false,
 		},
 	)
+	const { t } = useI18n({ useScope: 'global' })
 
 	const emit = defineEmits<{
 		created: [task: TaskDto]
@@ -129,6 +131,7 @@
 		if (submitting.value) return 'border-primary/60 bg-primary/5'
 		return 'hover:border-primary/40 hover:bg-elevated/70 hover:shadow-sm focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20'
 	})
+	const inputPlaceholder = computed(() => props.placeholder ?? t('inlineTaskCreator.titlePlaceholder'))
 
 	const priorityBadgeClass = computed(() => getPriorityClass(priority.value ?? 'P1'))
 
@@ -212,7 +215,7 @@
 			const defaultProject = await getDefaultProject(spaceId)
 			return defaultProject.id
 		} catch (error) {
-			console.error('加载默认项目失败:', error)
+			console.error('Failed to load default project:', error)
 			return null
 		}
 	}
@@ -255,7 +258,7 @@
 			expanded.value = false
 			shouldRefocus = true
 		} catch (error) {
-			console.error('内联创建任务失败:', error)
+			console.error('Failed to create inline task:', error)
 		} finally {
 			submitting.value = false
 			if (shouldRefocus && !props.disabled) {

@@ -1,7 +1,7 @@
 <template>
 	<DrawerAttributeGridSection
 		:show-add-button="true"
-		add-aria-label="新增自定义字段"
+		:add-aria-label="t('inspector.attribute.addCustomFieldAria')"
 		@add="props.onAddCustomField">
 		<div v-motion="optionCardHoverMotion">
 			<DrawerAttributePopoverCard
@@ -13,7 +13,7 @@
 					<DrawerAttributeCardShell
 						:icon-name="priorityIcon"
 						:icon-class="priorityIconClass"
-						label="Priority"
+						:label="t('inspector.attribute.priority')"
 						:value="priorityLabel"
 						:value-class="priorityTextClass" />
 				</template>
@@ -33,7 +33,7 @@
 					<DrawerAttributeCardShell
 						icon-name="i-lucide-alarm-clock"
 						:icon-class="deadlineIconClass"
-						label="DeadLine"
+						:label="t('inspector.attribute.deadline')"
 						:value="deadlineLabel"
 						:value-class="deadlineValueClass" />
 				</template>
@@ -50,7 +50,7 @@
 							variant="ghost"
 							size="xs"
 							@click="onDeadlineClear">
-							清除
+							{{ t('common.actions.clear') }}
 						</UButton>
 					</div>
 				</div>
@@ -60,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed, ref } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
@@ -80,6 +81,7 @@
 	const priorityPopoverOpen = ref(false)
 	const deadlinePopoverOpen = ref(false)
 	const optionCardHoverMotion = useCardHoverMotionPreset()
+	const { t } = useI18n({ useScope: 'global' })
 
 	type Props = {
 		priorityIcon: string

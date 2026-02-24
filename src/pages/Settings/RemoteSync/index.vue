@@ -26,9 +26,9 @@
 			v-motion="headerMotion"
 			class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
 			<div class="space-y-1">
-				<div class="text-2xl font-semibold text-default">远端同步</div>
+				<div class="text-2xl font-semibold text-default">{{ t('settings.remoteSync.title') }}</div>
 				<div class="text-sm text-muted">
-					在应用内配置 Neon 数据库连接。支持多配置导入与切换，敏感信息使用 Stronghold 存储。
+					{{ t('settings.remoteSync.description') }}
 				</div>
 			</div>
 		</div>
@@ -66,8 +66,8 @@
 
 	<UModal
 		v-model:open="createOpen"
-		title="新建配置"
-		description="创建新的远端同步配置"
+		:title="t('settings.remoteSync.modals.create.title')"
+		:description="t('settings.remoteSync.modals.create.description')"
 		:ui="remoteSyncModalUi">
 		<template #body>
 			<div v-motion="modalBodyMotion">
@@ -89,14 +89,14 @@
 					:disabled="!canTestNew"
 					icon="i-lucide-activity"
 					@click="handleTestNew">
-					测试连接
+					{{ t('settings.remoteSync.actions.testConnection') }}
 				</UButton>
 				<div class="flex items-center gap-2">
 					<UButton
 						color="neutral"
 						variant="ghost"
 						@click="createOpen = false">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
@@ -105,7 +105,7 @@
 						:disabled="!canSaveNew"
 						icon="i-lucide-plus"
 						@click="handleCreateProfile">
-						保存
+						{{ t('common.actions.save') }}
 					</UButton>
 				</div>
 			</div>
@@ -114,8 +114,8 @@
 
 	<UModal
 		v-model:open="editOpen"
-		title="编辑配置"
-		description="修改当前远端同步配置"
+		:title="t('settings.remoteSync.modals.edit.title')"
+		:description="t('settings.remoteSync.modals.edit.description')"
 		:ui="remoteSyncModalUi">
 		<template #body>
 			<div v-motion="modalBodyMotion">
@@ -137,14 +137,14 @@
 					:disabled="!canTestEdit"
 					icon="i-lucide-activity"
 					@click="handleTestEdit">
-					测试连接
+					{{ t('settings.remoteSync.actions.testConnection') }}
 				</UButton>
 				<div class="flex items-center gap-2">
 					<UButton
 						color="neutral"
 						variant="ghost"
 						@click="editOpen = false">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
@@ -153,7 +153,7 @@
 						:disabled="!canSaveEdit"
 						icon="i-lucide-save"
 						@click="handleSaveEdit">
-						保存
+						{{ t('common.actions.save') }}
 					</UButton>
 				</div>
 			</div>
@@ -162,8 +162,8 @@
 
 	<UModal
 		v-model:open="importOpen"
-		title="导入配置"
-		description="从文本导入远端同步配置"
+		:title="t('settings.remoteSync.modals.import.title')"
+		:description="t('settings.remoteSync.modals.import.description')"
 		:ui="remoteSyncModalUi">
 		<template #body>
 			<div v-motion="modalBodyMotion">
@@ -181,7 +181,7 @@
 					color="neutral"
 					variant="ghost"
 					@click="importOpen = false">
-					取消
+					{{ t('common.actions.cancel') }}
 				</UButton>
 				<UButton
 					color="primary"
@@ -190,7 +190,7 @@
 					:disabled="!canImport"
 					icon="i-lucide-upload"
 					@click="handleImport">
-					导入
+					{{ t('common.actions.import') }}
 				</UButton>
 			</div>
 		</template>
@@ -198,8 +198,8 @@
 
 	<UModal
 		v-model:open="deleteOpen"
-		title="删除配置"
-		description="确认删除当前远端同步配置"
+		:title="t('settings.remoteSync.modals.delete.title')"
+		:description="t('settings.remoteSync.modals.delete.description')"
 		:ui="remoteSyncModalUi">
 		<template #body>
 			<div v-motion="modalBodyMotion">
@@ -214,14 +214,14 @@
 					color="neutral"
 					variant="ghost"
 					@click="deleteOpen = false">
-					取消
+					{{ t('common.actions.cancel') }}
 				</UButton>
 				<UButton
 					color="error"
 					variant="solid"
 					:loading="deleting"
 					@click="confirmDelete">
-					确认删除
+					{{ t('common.actions.confirmDelete') }}
 				</UButton>
 			</div>
 		</template>
@@ -229,6 +229,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { useAppMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import RemoteSyncActionsCard from './components/RemoteSyncActionsCard.vue'
@@ -239,6 +240,7 @@
 	import RemoteSyncProfilesCard from './components/RemoteSyncProfilesCard.vue'
 	import RemoteSyncStatusCard from './components/RemoteSyncStatusCard.vue'
 	import { useRemoteSyncPage } from './composables/useRemoteSyncPage'
+	const { t } = useI18n({ useScope: 'global' })
 
 	const {
 		isPushing,

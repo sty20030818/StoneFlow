@@ -1,6 +1,6 @@
 <template>
 	<SettingsSectionCard
-		title="同步操作"
+		:title="t('settings.remoteSync.actionsCard.title')"
 		card-class="bg-default">
 		<div class="grid grid-cols-2 gap-3">
 			<div class="space-y-2">
@@ -13,9 +13,11 @@
 					:loading="isPushing"
 					:disabled="isPulling || !hasActiveProfile"
 					@click="onPush">
-					上传
+					{{ t('common.actions.upload') }}
 				</UButton>
-				<div class="text-center text-[11px] text-muted">最近上传：{{ lastPushedText }}</div>
+				<div class="text-center text-[11px] text-muted">
+					{{ t('settings.remoteSync.actionsCard.lastPushed', { text: lastPushedText }) }}
+				</div>
 				<div class="text-center text-[10px] text-muted/80 leading-5">{{ lastPushSummaryText }}</div>
 			</div>
 			<div class="space-y-2">
@@ -28,16 +30,18 @@
 					:loading="isPulling"
 					:disabled="isPushing || !hasActiveProfile"
 					@click="onPull">
-					下载
+					{{ t('common.actions.download') }}
 				</UButton>
-				<div class="text-center text-[11px] text-muted">最近下载：{{ lastPulledText }}</div>
+				<div class="text-center text-[11px] text-muted">
+					{{ t('settings.remoteSync.actionsCard.lastPulled', { text: lastPulledText }) }}
+				</div>
 				<div class="text-center text-[10px] text-muted/80 leading-5">{{ lastPullSummaryText }}</div>
 			</div>
 		</div>
 
 		<div class="mt-4 space-y-2">
 			<div class="flex items-center justify-between gap-2">
-				<div class="text-[11px] text-muted">最近同步记录</div>
+				<div class="text-[11px] text-muted">{{ t('settings.remoteSync.history.title') }}</div>
 				<div class="flex items-center gap-2">
 					<USelectMenu
 						:model-value="historyFilter"
@@ -54,14 +58,14 @@
 						:loading="isClearingHistory"
 						:disabled="recentSyncHistory.length === 0"
 						@click="onClearHistory">
-						清空
+						{{ t('common.actions.clear') }}
 					</UButton>
 				</div>
 			</div>
 			<div
 				v-if="recentSyncHistory.length === 0"
 				class="rounded-xl border border-default/70 bg-elevated/40 px-3 py-2 text-[11px] text-muted/80">
-				暂无同步记录
+				{{ t('settings.remoteSync.history.empty') }}
 			</div>
 			<template v-else>
 				<div
@@ -77,7 +81,7 @@
 								variant="ghost"
 								size="2xs"
 								@click="toggleExpand(item.id)">
-								{{ expandedHistoryId === item.id ? '收起' : '明细' }}
+								{{ expandedHistoryId === item.id ? t('common.actions.collapse') : t('common.actions.details') }}
 							</UButton>
 						</div>
 					</div>
@@ -91,7 +95,14 @@
 							class="flex items-center justify-between gap-2 text-[10px] text-muted">
 							<div>{{ table.label }}</div>
 							<div class="shrink-0">
-								总 {{ table.total }} / 新增 {{ table.inserted }} / 更新 {{ table.updated }} / 跳过 {{ table.skipped }}
+								{{
+									t('settings.remoteSync.history.tableStats', {
+										total: table.total,
+										inserted: table.inserted,
+										updated: table.updated,
+										skipped: table.skipped,
+									})
+								}}
 							</div>
 						</div>
 					</div>
@@ -102,15 +113,17 @@
 		<div
 			v-if="syncError"
 			class="mt-3 rounded-2xl border border-error/40 bg-error/10 px-4 py-3 text-sm text-error">
-			同步失败：{{ syncError }}
+			{{ t('settings.remoteSync.actionsCard.syncFailed') }}: {{ syncError }}
 		</div>
 	</SettingsSectionCard>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { ref } from 'vue'
 
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		isPushing: boolean

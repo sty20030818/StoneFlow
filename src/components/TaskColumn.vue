@@ -9,7 +9,7 @@
 				type="button"
 				class="inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
 				:class="columnSelectClass"
-				:aria-label="`选择列 ${title}`"
+				:aria-label="t('taskColumn.selectColumnAria', { title })"
 				@click="$emit('toggle-column-select')">
 				<span
 					v-if="allSelected"
@@ -20,17 +20,19 @@
 					class="size-3.5 text-error" />
 			</button>
 			<!-- 图标指示器（根据状态不同） -->
-			<TaskStatusIcon :status="getStatusFromTitle(title)" />
+			<TaskStatusIcon :status="columnStatusValue" />
 			<h3
 				class="text-base font-extrabold"
-				:class="getStatusFromTitle(title) === 'todo' ? 'text-default' : 'text-muted'">
+				:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
 				{{ title }}
 			</h3>
 		</div>
 
 		<!-- 任务列表 -->
 		<template v-if="loading">
-			<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">加载中...</div>
+			<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">
+				{{ t('common.status.loading') }}...
+			</div>
 		</template>
 		<template v-else>
 			<div class="space-y-3">
@@ -93,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
@@ -101,17 +104,12 @@
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
 	import TaskCard from '@/components/TaskCard'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
-	import { TASK_DONE_REASON_LABELS, TASK_STATUS_LABELS } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
-
-	function getStatusFromTitle(title: string): string {
-		if (title === TASK_STATUS_LABELS.todo || title === 'Todo') return 'todo'
-		if (title.includes(TASK_DONE_REASON_LABELS.completed) || title === 'Done') return 'done'
-		return 'todo'
-	}
+	const { t } = useI18n({ useScope: 'global' })
 
 	const props = defineProps<{
 		title: string
+		columnStatus?: 'todo' | 'done'
 		tasks: TaskDto[]
 		loading: boolean
 		emptyText: string
@@ -155,7 +153,8 @@
 
 	const allSelected = computed(() => props.tasks.length > 0 && selectedCount.value === props.tasks.length)
 	const indeterminate = computed(() => selectedCount.value > 0 && !allSelected.value)
-	const isDoneColumn = computed(() => getStatusFromTitle(props.title) === 'done')
+	const columnStatusValue = computed(() => props.columnStatus ?? 'todo')
+	const isDoneColumn = computed(() => columnStatusValue.value === 'done')
 	const columnHeaderMotion = computed(() => {
 		const delay = isDoneColumn.value ? doneHeaderDelay : todoHeaderDelay
 		return withMotionDelay(columnSectionMotion.value, delay)

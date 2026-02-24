@@ -9,16 +9,16 @@
 					<UIcon
 						name="i-lucide-notebook"
 						class="text-pink-500" />
-					<span>Notes</span>
+					<span>{{ t('assets.notes.title') }}</span>
 				</div>
-				<div class="text-xs text-muted">通用 Markdown 笔记 · 与 Project / Task 弱关联</div>
+				<div class="text-xs text-muted">{{ t('assets.notes.subtitle') }}</div>
 			</div>
 
 			<div class="flex items-center gap-2">
 				<UInput
 					v-model="searchKeyword"
 					icon="i-lucide-search"
-					placeholder="搜索标题、内容…"
+					:placeholder="t('assets.notes.searchPlaceholder')"
 					size="sm"
 					class="w-64" />
 
@@ -27,7 +27,7 @@
 					size="sm"
 					icon="i-lucide-plus"
 					@click="onCreateNew">
-					新建
+					{{ t('common.actions.new') }}
 				</UButton>
 			</div>
 		</header>
@@ -38,7 +38,7 @@
 			<div
 				v-if="filteredNotes.length === 0 && !loading"
 				class="py-8 text-center text-sm text-muted">
-				暂无笔记。点击「新建」创建第一篇笔记。
+				{{ t('assets.notes.empty') }}
 			</div>
 
 			<div
@@ -53,7 +53,7 @@
 					@click="openEditor(note)">
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0 flex-1">
-							<div class="mb-1 truncate text-sm font-medium">{{ note.title || '无标题' }}</div>
+							<div class="mb-1 truncate text-sm font-medium">{{ note.title || t('assets.common.untitled') }}</div>
 							<div class="line-clamp-2 text-xs text-muted">
 								{{ note.content.substring(0, 80) }}{{ note.content.length > 80 ? '...' : '' }}
 							</div>
@@ -74,14 +74,14 @@
 								</UBadge>
 							</div>
 						</div>
-						<UButton
-							color="neutral"
-							variant="ghost"
-							size="2xs"
-							icon="i-lucide-trash-2"
-							@click.stop="onDelete(note.id)">
-							<span class="sr-only">删除</span>
-						</UButton>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="2xs"
+								icon="i-lucide-trash-2"
+								@click.stop="onDelete(note.id)">
+								<span class="sr-only">{{ t('common.actions.delete') }}</span>
+							</UButton>
 					</div>
 				</div>
 			</div>
@@ -89,30 +89,30 @@
 
 		<UModal
 			v-model:open="editOpen"
-			:title="selectedNote?.id ? '编辑笔记' : '新建笔记'"
-			description="统一在弹窗中完成编辑，专注当前笔记内容。"
+			:title="selectedNote?.id ? t('assets.notes.modal.editTitle') : t('assets.notes.modal.newTitle')"
+			:description="t('assets.notes.modal.description')"
 			:ui="noteModalUi">
 			<template #body>
 				<div
 					v-motion="modalBodyMotion"
 					class="space-y-4">
 					<UFormField
-						label="标题"
+						:label="t('assets.notes.fields.title')"
 						required>
 						<UInput
 							v-model="editForm.title"
-							placeholder="笔记标题"
+							:placeholder="t('assets.notes.placeholders.title')"
 							size="md"
 							class="w-full"
 							:ui="assetModalInputUi" />
 					</UFormField>
 
 					<UFormField
-						label="内容（Markdown）"
+						:label="t('assets.notes.fields.contentMarkdown')"
 						required>
 						<UTextarea
 							v-model="editForm.content"
-							placeholder="输入 Markdown 内容…"
+							:placeholder="t('assets.notes.placeholders.content')"
 							:rows="14"
 							size="md"
 							class="w-full"
@@ -121,18 +121,18 @@
 					</UFormField>
 
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<UFormField label="关联 Project ID（可选）">
+						<UFormField :label="t('assets.notes.fields.linkedProjectOptional')">
 							<UInput
 								v-model="editForm.linkedProjectId"
-								placeholder="project:xxx（可选）"
+								:placeholder="t('assets.notes.placeholders.linkedProject')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
 						</UFormField>
-						<UFormField label="关联 Task ID（可选）">
+						<UFormField :label="t('assets.notes.fields.linkedTaskOptional')">
 							<UInput
 								v-model="editForm.linkedTaskId"
-								placeholder="task:xxx（可选）"
+								:placeholder="t('assets.notes.placeholders.linkedTask')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
@@ -150,13 +150,13 @@
 						variant="ghost"
 						size="sm"
 						@click="closeEditor">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
 						size="sm"
 						@click="onSave">
-						保存
+						{{ t('common.actions.save') }}
 					</UButton>
 				</div>
 			</template>
@@ -165,6 +165,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
@@ -184,6 +185,7 @@
 	import { createNote, deleteNote, listNotes, updateNote } from '@/services/api/notes'
 
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const noteItemPreset = useMotionPreset('listItem')
@@ -207,8 +209,8 @@
 		resetOnExecute: false,
 		onError: (e) => {
 			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.notes.toast.loadFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		},
@@ -281,17 +283,17 @@
 		try {
 			if (selectedNote.value.id) {
 				await updateNote(selectedNote.value.id, editForm.value)
-				toast.add({ title: '已保存', color: 'success' })
+				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
 				await createNote(editForm.value)
-				toast.add({ title: '已创建', color: 'success' })
+				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()
 			closeEditor()
 		} catch (e) {
 			toast.add({
-				title: '保存失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.saveFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
@@ -300,15 +302,15 @@
 	async function onDelete(id: string) {
 		try {
 			await deleteNote(id)
-			toast.add({ title: '已删除', color: 'success' })
+			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
 			if (selectedNote.value?.id === id) {
 				closeEditor()
 			}
 			await refresh()
 		} catch (e) {
 			toast.add({
-				title: '删除失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.deleteFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}

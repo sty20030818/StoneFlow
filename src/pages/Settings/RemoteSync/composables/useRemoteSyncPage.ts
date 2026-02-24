@@ -1,7 +1,8 @@
+import { useI18n } from 'vue-i18n'
 import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { enUS, zhCN } from 'date-fns/locale'
 
 import { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
 import { validateWithZod } from '@/composables/base/zod'
@@ -37,6 +38,7 @@ export function useRemoteSyncPage() {
 	const remoteSyncStore = useRemoteSyncStore()
 	const refreshSignals = useRefreshSignalsStore()
 	const toast = useToast()
+	const { t, locale } = useI18n({ useScope: 'global' })
 	// const logPrefix = '[settings-remote-sync]'
 	const now = useNow({ interval: 60_000 })
 
@@ -90,11 +92,11 @@ export function useRemoteSyncPage() {
 	const importing = ref(false)
 	const isClearingHistory = ref(false)
 	const historyFilter = ref<RemoteSyncHistoryFilter>('all')
-	const historyFilterOptions = [
-		{ label: '全部', value: 'all' as const },
-		{ label: '仅上传', value: 'push' as const },
-		{ label: '仅下载', value: 'pull' as const },
-	]
+	const historyFilterOptions = computed(() => [
+		{ label: t('settings.remoteSync.history.filters.all'), value: 'all' as const },
+		{ label: t('settings.remoteSync.history.filters.pushOnly'), value: 'push' as const },
+		{ label: t('settings.remoteSync.history.filters.pullOnly'), value: 'pull' as const },
+	])
 
 	const deleting = ref(false)
 	const deleteTarget = ref<RemoteDbProfile | null>(null)
@@ -107,26 +109,26 @@ export function useRemoteSyncPage() {
 	const statusMessage = computed(() => {
 		switch (status.value) {
 			case 'ok':
-				return '连接可用，已准备同步。'
+				return t('settings.remoteSync.status.message.ok')
 			case 'error':
-				return '连接不可用，请检查数据库地址或网络。'
+				return t('settings.remoteSync.status.message.error')
 			case 'testing':
-				return '正在测试连接…'
+				return t('settings.remoteSync.status.message.testing')
 			default:
-				return '尚未配置数据库，请先新增或选择一个配置。'
+				return t('settings.remoteSync.status.message.missing')
 		}
 	})
 
 	const statusLabel = computed(() => {
 		switch (status.value) {
 			case 'ok':
-				return '可用'
+				return t('settings.remoteSync.status.label.ok')
 			case 'error':
-				return '错误'
+				return t('settings.remoteSync.status.label.error')
 			case 'testing':
-				return '测试中'
+				return t('settings.remoteSync.status.label.testing')
 			default:
-				return '未配置'
+				return t('settings.remoteSync.status.label.missing')
 		}
 	})
 
@@ -160,15 +162,19 @@ export function useRemoteSyncPage() {
 	})
 
 	const lastPushedText = computed(() => {
-		return formatRelativeTime(lastPushedAt.value, '未上传')
+		return formatRelativeTime(lastPushedAt.value, t('settings.remoteSync.history.neverPushed'))
 	})
 
 	const lastPulledText = computed(() => {
-		return formatRelativeTime(lastPulledAt.value, '未下载')
+		return formatRelativeTime(lastPulledAt.value, t('settings.remoteSync.history.neverPulled'))
 	})
 
-	const lastPushSummaryText = computed(() => summarizeRemoteSyncReport(lastPushReport.value, '暂无上传统计'))
-	const lastPullSummaryText = computed(() => summarizeRemoteSyncReport(lastPullReport.value, '暂无下载统计'))
+	const lastPushSummaryText = computed(() =>
+		summarizeRemoteSyncReport(lastPushReport.value, t('settings.remoteSync.history.noPushStats')),
+	)
+	const lastPullSummaryText = computed(() =>
+		summarizeRemoteSyncReport(lastPullReport.value, t('settings.remoteSync.history.noPullStats')),
+	)
 	const filteredSyncHistory = computed(() => {
 		if (historyFilter.value === 'all') return syncHistory.value
 		return syncHistory.value.filter((item) => item.direction === historyFilter.value)
@@ -183,25 +189,34 @@ export function useRemoteSyncPage() {
 		if (!Number.isFinite(date.getTime())) return fallback
 		void now.value
 		try {
-			return formatDistanceToNow(date, { addSuffix: true, locale: zhCN })
+			return formatDistanceToNow(date, {
+				addSuffix: true,
+				locale: locale.value.startsWith('en') ? enUS : zhCN,
+			})
 		} catch {
 			return fallback
 		}
 	}
 
 	function formatProfileMeta(profile: RemoteDbProfile) {
-		const source = profile.source === 'import' ? '导入' : '手动'
-		return `${source} · ${new Date(profile.updatedAt).toLocaleString()}`
+		const source =
+			profile.source === 'import'
+				? t('settings.remoteSync.profile.source.import')
+				: t('settings.remoteSync.profile.source.manual')
+		return `${source} · ${new Date(profile.updatedAt).toLocaleString(locale.value)}`
 	}
 
 	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
 		return {
 			id: item.id,
 			direction: item.direction,
-			directionText: item.direction === 'push' ? '上传' : '下载',
-			profileName: item.profileName || '未命名配置',
-			syncedAtText: new Date(item.syncedAt).toLocaleString(),
-			summary: summarizeRemoteSyncReport(item.report, '无统计数据'),
+			directionText:
+				item.direction === 'push'
+					? t('settings.remoteSync.history.direction.push')
+					: t('settings.remoteSync.history.direction.pull'),
+			profileName: item.profileName || t('settings.remoteSync.profile.unnamed'),
+			syncedAtText: new Date(item.syncedAt).toLocaleString(locale.value),
+			summary: summarizeRemoteSyncReport(item.report, t('settings.remoteSync.history.noStats')),
 			tables: toRemoteSyncTableViewItems(item.report),
 		}
 	}
@@ -217,14 +232,18 @@ export function useRemoteSyncPage() {
 			const direction = historyFilter.value === 'all' ? undefined : historyFilter.value
 			await remoteSyncStore.clearSyncHistory(direction)
 			toast.add({
-				title: '已清空同步记录',
-				description: direction ? `已清空${direction === 'push' ? '上传' : '下载'}记录` : '已清空全部记录',
+				title: t('settings.remoteSync.toast.clearedHistoryTitle'),
+				description: direction
+					? direction === 'push'
+						? t('settings.remoteSync.toast.clearedPushHistoryDescription')
+						: t('settings.remoteSync.toast.clearedPullHistoryDescription')
+					: t('settings.remoteSync.toast.clearedAllHistoryDescription'),
 				color: 'success',
 			})
 		} catch (error) {
 			toast.add({
-				title: '清空失败',
-				description: error instanceof Error ? error.message : '未知错误',
+				title: t('settings.remoteSync.toast.clearFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 			logError('sync:history:clear:error', error)
@@ -253,8 +272,8 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			editUrl.value = ''
 			toast.add({
-				title: '读取配置失败',
-				description: error instanceof Error ? error.message : '未知错误',
+				title: t('settings.remoteSync.toast.readProfileFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 			logError('open:edit:error', error)
@@ -268,14 +287,22 @@ export function useRemoteSyncPage() {
 			testingCurrent.value = true
 			status.value = 'testing'
 			const url = await remoteSyncStore.getActiveProfileUrl()
-			if (!url) throw new Error('未找到数据库地址')
+			if (!url) throw new Error(t('settings.remoteSync.errors.noDatabaseUrl'))
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: url } })
 			status.value = 'ok'
-			toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+			toast.add({
+				title: t('settings.remoteSync.toast.connectionOkTitle'),
+				description: t('settings.remoteSync.toast.connectionOkDescription'),
+				color: 'success',
+			})
 			log('test:current:done')
 		} catch (error) {
 			status.value = 'error'
-			toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.connectionFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('test:current:error', error)
 		} finally {
 			testingCurrent.value = false
@@ -284,67 +311,81 @@ export function useRemoteSyncPage() {
 
 	async function handlePush() {
 		if (testingCurrent.value || testingNew.value || testingEdit.value) {
-			toast.add({ title: '请等待连接测试完成后再上传', color: 'neutral' })
+			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforePush'), color: 'neutral' })
 			return
 		}
 		if (status.value === 'missing') {
-			toast.add({ title: '请先配置并测试连接', color: 'neutral' })
+			toast.add({ title: t('settings.remoteSync.toast.configureAndTestFirst'), color: 'neutral' })
 			return
 		}
 		if (status.value === 'error') {
-			toast.add({ title: '连接状态异常，请先测试连接', color: 'warning' })
+			toast.add({ title: t('settings.remoteSync.toast.statusErrorTestFirst'), color: 'warning' })
 			return
 		}
 		try {
 			log('sync:push:start', { profileId: activeProfileId.value })
 			const report = await pushToRemote()
 			if (!report) {
-				toast.add({ title: '同步进行中，请稍候', color: 'neutral' })
+				toast.add({ title: t('settings.remoteSync.toast.syncInProgressTitle'), color: 'neutral' })
 				return
 			}
 			status.value = 'ok'
 			toast.add({
-				title: '上传成功',
-				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${summarizeRemoteSyncReport(report, '')}`,
+				title: t('settings.remoteSync.toast.pushSuccessTitle'),
+				description: t('settings.remoteSync.toast.syncAtDescription', {
+					time: new Date(report.syncedAt).toLocaleString(locale.value),
+					summary: summarizeRemoteSyncReport(report, ''),
+				}),
 				color: 'success',
 			})
 			log('sync:push:done', { syncedAt: report.syncedAt })
 		} catch (error) {
-			toast.add({ title: '上传失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.pushFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('sync:push:error', error)
 		}
 	}
 
 	async function handlePull() {
 		if (testingCurrent.value || testingNew.value || testingEdit.value) {
-			toast.add({ title: '请等待连接测试完成后再下载', color: 'neutral' })
+			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforePull'), color: 'neutral' })
 			return
 		}
 		if (status.value === 'missing') {
-			toast.add({ title: '请先配置并测试连接', color: 'neutral' })
+			toast.add({ title: t('settings.remoteSync.toast.configureAndTestFirst'), color: 'neutral' })
 			return
 		}
 		if (status.value === 'error') {
-			toast.add({ title: '连接状态异常，请先测试连接', color: 'warning' })
+			toast.add({ title: t('settings.remoteSync.toast.statusErrorTestFirst'), color: 'warning' })
 			return
 		}
 		try {
 			log('sync:pull:start', { profileId: activeProfileId.value })
 			const report = await pullFromRemote()
 			if (!report) {
-				toast.add({ title: '同步进行中，请稍候', color: 'neutral' })
+				toast.add({ title: t('settings.remoteSync.toast.syncInProgressTitle'), color: 'neutral' })
 				return
 			}
 			refreshSignals.bumpProject()
 			status.value = 'ok'
 			toast.add({
-				title: '下载成功',
-				description: `同步时间：${new Date(report.syncedAt).toLocaleString()} · ${summarizeRemoteSyncReport(report, '')}`,
+				title: t('settings.remoteSync.toast.pullSuccessTitle'),
+				description: t('settings.remoteSync.toast.syncAtDescription', {
+					time: new Date(report.syncedAt).toLocaleString(locale.value),
+					summary: summarizeRemoteSyncReport(report, ''),
+				}),
 				color: 'success',
 			})
 			log('sync:pull:done', { syncedAt: report.syncedAt })
 		} catch (error) {
-			toast.add({ title: '下载失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.pullFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('sync:pull:error', error)
 		}
 	}
@@ -362,11 +403,19 @@ export function useRemoteSyncPage() {
 			status.value = 'testing'
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: newUrl.value.trim() } })
 			status.value = 'ok'
-			toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+			toast.add({
+				title: t('settings.remoteSync.toast.connectionOkTitle'),
+				description: t('settings.remoteSync.toast.connectionOkDescription'),
+				color: 'success',
+			})
 			log('test:new:done')
 		} catch (error) {
 			status.value = 'error'
-			toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.connectionFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('test:new:error', error)
 		} finally {
 			testingNew.value = false
@@ -388,10 +437,18 @@ export function useRemoteSyncPage() {
 			newUrl.value = ''
 			createOpen.value = false
 			status.value = 'ok'
-			toast.add({ title: '已创建配置', description: '新配置已保存并设为当前。', color: 'success' })
+			toast.add({
+				title: t('settings.remoteSync.toast.createdProfileTitle'),
+				description: t('settings.remoteSync.toast.createdProfileDescription'),
+				color: 'success',
+			})
 			log('create:done')
 		} catch (error) {
-			toast.add({ title: '创建失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.createFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('create:error', error)
 		} finally {
 			savingNew.value = false
@@ -411,11 +468,19 @@ export function useRemoteSyncPage() {
 			status.value = 'testing'
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: editUrl.value.trim() } })
 			status.value = 'ok'
-			toast.add({ title: '连接成功', description: '数据库连接正常。', color: 'success' })
+			toast.add({
+				title: t('settings.remoteSync.toast.connectionOkTitle'),
+				description: t('settings.remoteSync.toast.connectionOkDescription'),
+				color: 'success',
+			})
 			log('test:edit:done')
 		} catch (error) {
 			status.value = 'error'
-			toast.add({ title: '连接失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.connectionFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('test:edit:error', error)
 		} finally {
 			testingEdit.value = false
@@ -436,10 +501,18 @@ export function useRemoteSyncPage() {
 			await remoteSyncStore.updateProfileUrl(editProfileId.value, editUrl.value.trim())
 			editOpen.value = false
 			status.value = 'ok'
-			toast.add({ title: '保存成功', description: '配置已更新。', color: 'success' })
+			toast.add({
+				title: t('settings.remoteSync.toast.savedProfileTitle'),
+				description: t('settings.remoteSync.toast.savedProfileDescription'),
+				color: 'success',
+			})
 			log('save:edit:done')
 		} catch (error) {
-			toast.add({ title: '保存失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.saveFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('save:edit:error', error)
 		} finally {
 			savingEdit.value = false
@@ -454,8 +527,8 @@ export function useRemoteSyncPage() {
 			log('setActive:done', { profileId })
 		} catch (error) {
 			toast.add({
-				title: '切换失败',
-				description: error instanceof Error ? error.message : '未知错误',
+				title: t('settings.remoteSync.toast.switchFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 			logError('setActive:error', error)
@@ -475,10 +548,14 @@ export function useRemoteSyncPage() {
 			await remoteSyncStore.removeProfile(deleteTarget.value.id)
 			deleteTarget.value = null
 			status.value = remoteSyncStore.activeProfileId ? status.value : 'missing'
-			toast.add({ title: '已删除配置', color: 'success' })
+			toast.add({ title: t('settings.remoteSync.toast.deletedProfileTitle'), color: 'success' })
 			log('delete:done')
 		} catch (error) {
-			toast.add({ title: '删除失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			toast.add({
+				title: t('settings.remoteSync.toast.deleteFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('delete:error', error)
 		} finally {
 			deleting.value = false
@@ -505,11 +582,19 @@ export function useRemoteSyncPage() {
 			importText.value = ''
 			importOpen.value = false
 			status.value = 'ok'
-			toast.add({ title: '导入成功', description: `已导入 ${items.length} 条配置。`, color: 'success' })
+			toast.add({
+				title: t('settings.remoteSync.toast.importedTitle'),
+				description: t('settings.remoteSync.toast.importedDescription', { count: items.length }),
+				color: 'success',
+			})
 			log('import:done', { count: items.length })
 		} catch (error) {
-			importError.value = '解析失败，请确认 JSON 格式'
-			toast.add({ title: '导入失败', description: error instanceof Error ? error.message : '未知错误', color: 'error' })
+			importError.value = t('settings.remoteSync.import.parseError')
+			toast.add({
+				title: t('settings.remoteSync.toast.importFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			logError('import:error', error)
 		} finally {
 			importing.value = false
@@ -525,8 +610,8 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			status.value = 'error'
 			toast.add({
-				title: '读取配置失败',
-				description: error instanceof Error ? error.message : '未知错误',
+				title: t('settings.remoteSync.toast.readProfileFailedTitle'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 			logError('mount:load:error', error)

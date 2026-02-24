@@ -40,13 +40,13 @@
 							base: 'size-8 rounded-full p-0 inline-flex items-center justify-center',
 							leadingIcon: 'size-3.5',
 						}"
-						aria-label="编辑项目设置"
+						:aria-label="t('projectView.header.editProjectSettingsAria')"
 						@click="emit('open-settings')" />
 				</div>
 			</div>
 
 			<div class="pl-5 pr-12 text-base text-slate-500 font-medium leading-relaxed line-clamp-2 max-w-[78%]">
-				{{ project.note || 'No notes yet.' }}
+				{{ project.note || t('projectView.header.noNotes') }}
 			</div>
 
 			<div class="flex items-center justify-between gap-4">
@@ -60,7 +60,7 @@
 							<UIcon
 								name="i-lucide-clock"
 								class="size-3.5 text-slate-400/70" />
-							<span>Created</span>
+							<span>{{ t('projectView.header.createdAt') }}</span>
 							<span class="text-slate-700 font-extrabold">{{ createdAtLabel }}</span>
 						</span>
 					</UBadge>
@@ -73,7 +73,7 @@
 							<UIcon
 								name="i-lucide-edit"
 								class="size-3.5 text-blue-400/80" />
-							<span>Updated</span>
+							<span>{{ t('projectView.header.updatedAt') }}</span>
 							<span class="text-blue-700 font-extrabold">{{ updatedAtRelative }}</span>
 						</span>
 					</UBadge>
@@ -98,6 +98,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	import type { ProjectDto } from '@/services/api/projects'
@@ -111,12 +112,13 @@
 	const props = defineProps<{
 		project: ProjectDto | null
 	}>()
+	const { t } = useI18n({ useScope: 'global' })
 	const emit = defineEmits<{
 		'open-settings': []
 	}>()
 
 	function formatTime(value: number | null) {
-		if (!value) return '—'
+		if (!value) return t('projectView.header.noTime')
 		const date = new Date(value)
 		const yyyy = date.getFullYear()
 		const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -139,7 +141,13 @@
 		return PROJECT_STATUS_DISPLAY[status] ?? PROJECT_STATUS_DISPLAY.inProgress
 	})
 
-	const statusLabel = computed(() => statusConfig.value.label)
+	const statusLabel = computed(() => {
+		const status = (props.project?.computedStatus ?? 'inProgress') as ProjectComputedStatusValue
+		if (status === 'done') return t('project.status.done')
+		if (status === 'archived') return t('project.status.archived')
+		if (status === 'deleted') return t('project.status.deleted')
+		return t('project.status.inProgress')
+	})
 	const statusColor = computed(() => statusConfig.value.color)
 	const statusDotClass = computed(() => statusConfig.value.dot)
 
@@ -147,24 +155,24 @@
 	const updatedAtRelative = computed(() => formatRelativeTime(props.project?.updatedAt ?? null))
 
 	function formatRelativeTime(value: number | null) {
-		if (!value) return '—'
+		if (!value) return t('projectView.header.noTime')
 		const diff = Date.now() - value
-		if (diff < 0) return 'just now'
+		if (diff < 0) return t('projectView.header.justNow')
 		const minute = 60 * 1000
 		const hour = 60 * minute
 		const day = 24 * hour
-		if (diff < minute) return 'just now'
+		if (diff < minute) return t('projectView.header.justNow')
 		if (diff < hour) {
 			const mins = Math.floor(diff / minute)
-			return `${mins} min${mins === 1 ? '' : 's'} ago`
+			return t('projectView.header.minutesAgo', { count: mins })
 		}
 		if (diff < day) {
 			const hours = Math.floor(diff / hour)
-			return `${hours} hour${hours === 1 ? '' : 's'} ago`
+			return t('projectView.header.hoursAgo', { count: hours })
 		}
 		if (diff < 7 * day) {
 			const days = Math.floor(diff / day)
-			return `${days} day${days === 1 ? '' : 's'} ago`
+			return t('projectView.header.daysAgo', { count: days })
 		}
 		return formatTime(value)
 	}

@@ -24,7 +24,7 @@
 							<div class="min-w-0 flex-1">
 								<div class="text-[11px] text-muted mb-1 truncate">{{ field.title }}</div>
 								<div class="text-xs font-semibold text-default wrap-break-words">
-									{{ field.value || '未填写内容' }}
+									{{ field.value || t('inspector.customFields.emptyValue') }}
 								</div>
 							</div>
 						</div>
@@ -41,7 +41,7 @@
 					<div class="p-3 min-w-[320px] space-y-2">
 						<UInput
 							v-model="customFieldsModel[index].title"
-							placeholder="标题"
+							:placeholder="t('inspector.customFields.placeholders.title')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }"
@@ -52,7 +52,7 @@
 						<div class="space-y-1">
 							<UInput
 								v-model="customFieldsModel[index].value"
-								placeholder="内容（可选）"
+								:placeholder="t('inspector.customFields.placeholders.valueOptional')"
 								size="sm"
 								class="w-full"
 								:ui="{ rounded: 'rounded-lg' }"
@@ -63,7 +63,7 @@
 							<div
 								v-if="editingErrorIndex === index"
 								class="text-[11px] text-red-500">
-								标题不能为空
+								{{ t('inspector.customFields.validation.titleRequired') }}
 							</div>
 						</div>
 					</div>
@@ -78,12 +78,12 @@
 				<UIcon
 					name="i-lucide-list-plus"
 					class="size-3.5 shrink-0" />
-				新建字段
+				{{ t('inspector.customFields.newField') }}
 			</div>
 			<div class="grid grid-cols-[1fr_auto] gap-2">
 				<UInput
 					v-model="customFieldDraftTitle"
-					placeholder="标题"
+					:placeholder="t('inspector.customFields.placeholders.title')"
 					size="sm"
 					class="w-full"
 					:ui="{ rounded: 'rounded-lg' }"
@@ -95,7 +95,7 @@
 						size="sm"
 						class="justify-center"
 						@click="onConfirmClick">
-						确认
+						{{ t('common.actions.confirm') }}
 					</UButton>
 					<UButton
 						color="neutral"
@@ -103,21 +103,21 @@
 						size="sm"
 						class="justify-center"
 						@click="onCancelClick">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 				</div>
 			</div>
 			<div class="space-y-1">
 				<UInput
 					v-model="customFieldDraftValue"
-					placeholder="内容（可选）"
+					:placeholder="t('inspector.customFields.placeholders.valueOptional')"
 					size="sm"
 					class="w-full"
 					:ui="{ rounded: 'rounded-lg' }" />
 				<div
 					v-if="showTitleError"
 					class="text-[11px] text-red-500">
-					标题不能为空
+					{{ t('inspector.customFields.validation.titleRequired') }}
 				</div>
 			</div>
 		</div>
@@ -125,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { useDrawerEditableListController } from '@/components/InspectorDrawer/shared/composables'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
@@ -152,6 +153,7 @@
 	}
 
 	const props = defineProps<Props>()
+	const { t } = useI18n({ useScope: 'global' })
 	const drawerPopoverUi = createDrawerPopoverLayerUi()
 	const optionCardHoverMotion = useCardHoverMotionPreset()
 	const {

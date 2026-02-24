@@ -6,17 +6,17 @@ export const LICENSE_URL = 'https://github.com/sty20030818/StoneFlow/blob/main/L
 export const ABOUT_LINKS = [
 	{
 		id: 'github',
-		label: 'GitHub',
+		labelKey: 'settings.about.links.items.github',
 		value: 'https://github.com/sty20030818/StoneFlow',
 	},
 	{
 		id: 'release',
-		label: '下载页',
+		labelKey: 'settings.about.links.items.release',
 		value: RELEASE_PAGE_URL,
 	},
 	{
 		id: 'issues',
-		label: '提交 Issue',
+		labelKey: 'settings.about.links.items.issues',
 		value: 'https://github.com/sty20030818/StoneFlow/issues',
 	},
-]
+] as const

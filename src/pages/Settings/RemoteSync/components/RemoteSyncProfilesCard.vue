@@ -2,7 +2,7 @@
 	<SettingsSectionCard card-class="bg-default">
 		<template #header>
 			<div class="flex items-center justify-between">
-				<div class="text-sm font-semibold">配置列表</div>
+				<div class="text-sm font-semibold">{{ t('settings.remoteSync.profiles.title') }}</div>
 				<div class="flex items-center gap-2">
 					<UButton
 						color="neutral"
@@ -10,7 +10,7 @@
 						size="xs"
 						icon="i-lucide-plus"
 						@click="onOpenCreate">
-						新建配置
+						{{ t('settings.remoteSync.actions.newProfile') }}
 					</UButton>
 					<UButton
 						color="neutral"
@@ -18,7 +18,7 @@
 						size="xs"
 						icon="i-lucide-upload"
 						@click="onOpenImport">
-						导入配置
+						{{ t('settings.remoteSync.actions.importProfiles') }}
 					</UButton>
 				</div>
 			</div>
@@ -27,7 +27,7 @@
 			<div
 				v-if="profiles.length === 0"
 				class="text-sm text-muted">
-				暂无配置
+				{{ t('settings.remoteSync.profiles.empty') }}
 			</div>
 			<div
 				v-for="profile in profiles"
@@ -41,7 +41,7 @@
 							v-if="profile.id === activeProfileId"
 							color="primary"
 							variant="soft">
-							当前
+							{{ t('settings.remoteSync.profiles.current') }}
 						</UBadge>
 					</div>
 					<div class="text-[11px] text-muted">
@@ -55,7 +55,7 @@
 						variant="soft"
 						size="xs"
 						@click="onSetActive(profile.id)">
-						设为当前
+						{{ t('settings.remoteSync.profiles.setCurrent') }}
 					</UButton>
 					<UButton
 						color="neutral"
@@ -63,7 +63,7 @@
 						size="xs"
 						icon="i-lucide-pen"
 						@click="onOpenEdit(profile)">
-						编辑
+						{{ t('common.actions.edit') }}
 					</UButton>
 					<UButton
 						color="neutral"
@@ -71,7 +71,7 @@
 						size="xs"
 						icon="i-lucide-trash-2"
 						@click="onOpenDelete(profile)">
-						删除
+						{{ t('common.actions.delete') }}
 					</UButton>
 				</div>
 			</div>
@@ -80,11 +80,13 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 	import type { RemoteDbProfile } from '@/types/shared/remote-sync'
 
 	const profileItemHoverMotion = useCardHoverMotionPreset()
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		profiles: RemoteDbProfile[]

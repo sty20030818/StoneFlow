@@ -9,16 +9,16 @@
 					<UIcon
 						name="i-lucide-lock"
 						class="text-yellow-500" />
-					<span>Vault</span>
+					<span>{{ t('assets.vault.title') }}</span>
 				</div>
-				<div class="text-xs text-muted">密钥保险箱 · 安全存储 API Key / Token / 密码 / 配置</div>
+				<div class="text-xs text-muted">{{ t('assets.vault.subtitle') }}</div>
 			</div>
 
 			<div class="flex items-center gap-2">
 				<UInput
 					v-model="searchKeyword"
 					icon="i-lucide-search"
-					placeholder="搜索名称、分组…"
+					:placeholder="t('assets.vault.searchPlaceholder')"
 					size="sm"
 					class="w-64" />
 
@@ -27,7 +27,7 @@
 					size="sm"
 					icon="i-lucide-plus"
 					@click="onCreateNew">
-					新建
+					{{ t('common.actions.new') }}
 				</UButton>
 			</div>
 		</header>
@@ -49,7 +49,7 @@
 							<UIcon
 								name="i-lucide-folder"
 								class="size-4" />
-							<span>所有条目</span>
+							<span>{{ t('assets.vault.allItems') }}</span>
 						</div>
 					</button>
 
@@ -79,7 +79,7 @@
 				<div
 					v-if="filteredEntries.length === 0 && !loading"
 					class="py-8 text-center text-sm text-muted">
-					暂无密钥条目。点击「新建」创建第一个条目。
+					{{ t('assets.vault.empty') }}
 				</div>
 
 				<div
@@ -125,7 +125,7 @@
 								size="2xs"
 								icon="i-lucide-trash-2"
 								@click.stop="onDelete(entry.id)">
-								<span class="sr-only">删除</span>
+								<span class="sr-only">{{ t('common.actions.delete') }}</span>
 							</UButton>
 						</div>
 					</div>
@@ -135,8 +135,8 @@
 
 		<UModal
 			v-model:open="editOpen"
-			:title="selectedEntry?.id ? '编辑密钥条目' : '新建密钥条目'"
-			description="统一在弹窗中维护敏感字段，减少页面暴露时间。"
+			:title="selectedEntry?.id ? t('assets.vault.modal.editTitle') : t('assets.vault.modal.newTitle')"
+			:description="t('assets.vault.modal.description')"
 			:ui="vaultModalUi">
 			<template #body>
 				<div
@@ -144,16 +144,16 @@
 					class="space-y-4">
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<UFormField
-							label="名称"
+							:label="t('assets.vault.fields.name')"
 							required>
 							<UInput
 								v-model="editForm.name"
-								placeholder="条目名称"
+								:placeholder="t('assets.vault.placeholders.name')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
 						</UFormField>
-						<UFormField label="类型">
+						<UFormField :label="t('assets.vault.fields.type')">
 							<USelectMenu
 								v-model="editForm.type"
 								:items="typeOptions"
@@ -166,23 +166,23 @@
 						</UFormField>
 					</div>
 
-					<UFormField label="分组（可选）">
+					<UFormField :label="t('assets.vault.fields.folderOptional')">
 						<UInput
 							v-model="editForm.folder"
-							placeholder="可选：例如 cloud / personal / devops"
+							:placeholder="t('assets.vault.placeholders.folderOptional')"
 							size="md"
 							class="w-full"
 							:ui="assetModalInputUi" />
 					</UFormField>
 
 					<UFormField
-						label="值"
+						:label="t('assets.vault.fields.value')"
 						required>
 						<div class="relative">
 							<UInput
 								v-model="editForm.value"
 								:type="showValue ? 'text' : 'password'"
-								placeholder="密钥值"
+								:placeholder="t('assets.vault.placeholders.value')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
@@ -193,15 +193,15 @@
 								:icon="showValue ? 'i-lucide-eye-off' : 'i-lucide-eye'"
 								class="absolute top-1/2 right-1 -translate-y-1/2"
 								@click="showValue = !showValue">
-								<span class="sr-only">显示/隐藏</span>
+								<span class="sr-only">{{ t('assets.vault.toggleSensitive') }}</span>
 							</UButton>
 						</div>
 					</UFormField>
 
-					<UFormField label="备注（可选）">
+					<UFormField :label="t('assets.vault.fields.noteOptional')">
 						<UTextarea
 							v-model="editForm.note"
-							placeholder="可选备注信息"
+							:placeholder="t('assets.vault.placeholders.noteOptional')"
 							:rows="3"
 							size="md"
 							class="w-full"
@@ -220,7 +220,7 @@
 						variant="ghost"
 						size="sm"
 						@click="closeEditor">
-						取消
+						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
@@ -228,13 +228,13 @@
 						size="sm"
 						icon="i-lucide-copy"
 						@click="onCopy">
-						复制值
+						{{ t('assets.vault.copyValueAction') }}
 					</UButton>
 					<UButton
 						color="primary"
 						size="sm"
 						@click="onSave">
-						保存
+						{{ t('common.actions.save') }}
 					</UButton>
 				</div>
 			</template>
@@ -243,6 +243,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { refDebounced, useAsyncState, useClipboard, useTimeoutFn } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 
@@ -262,6 +263,7 @@
 	import { createVaultEntry, deleteVaultEntry, listVaultEntries, updateVaultEntry } from '@/services/api/vault'
 
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
@@ -288,8 +290,8 @@
 		resetOnExecute: false,
 		onError: (e) => {
 			toast.add({
-				title: '加载失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.vault.toast.loadFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		},
@@ -313,15 +315,15 @@
 		note: null as string | null,
 	})
 
-	const typeOptions = [
-		{ label: 'API Key', value: 'api_key' },
-		{ label: 'Token', value: 'token' },
-		{ label: '密码', value: 'password' },
-		{ label: '配置', value: 'config' },
-	]
+	const typeOptions = computed(() => [
+		{ label: t('assets.vault.types.apiKey'), value: 'api_key' },
+		{ label: t('assets.vault.types.token'), value: 'token' },
+		{ label: t('assets.vault.types.password'), value: 'password' },
+		{ label: t('assets.vault.types.config'), value: 'config' },
+	])
 
 	function typeLabel(type: VaultEntryType): string {
-		const found = typeOptions.find((option) => option.value === type)
+		const found = typeOptions.value.find((option) => option.value === type)
 		return found?.label ?? type
 	}
 
@@ -393,18 +395,18 @@
 
 	async function onCopy() {
 		if (!editForm.value.value) {
-			toast.add({ title: '没有可复制的内容', color: 'neutral' })
+			toast.add({ title: t('assets.vault.toast.noCopyValueTitle'), color: 'neutral' })
 			return
 		}
 		try {
 			await copy(editForm.value.value)
-			toast.add({ title: '已复制到剪贴板', color: 'success' })
+			toast.add({ title: t('assets.vault.toast.copiedTitle'), color: 'success' })
 			stopHideValueTimer()
 			hideValueLater()
 		} catch (e) {
 			toast.add({
-				title: '复制失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.vault.toast.copyFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
@@ -424,17 +426,17 @@
 		try {
 			if (selectedEntry.value.id) {
 				await updateVaultEntry(selectedEntry.value.id, editForm.value)
-				toast.add({ title: '已保存', color: 'success' })
+				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
 				await createVaultEntry(editForm.value)
-				toast.add({ title: '已创建', color: 'success' })
+				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()
 			closeEditor()
 		} catch (e) {
 			toast.add({
-				title: '保存失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.saveFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
@@ -443,15 +445,15 @@
 	async function onDelete(id: string) {
 		try {
 			await deleteVaultEntry(id)
-			toast.add({ title: '已删除', color: 'success' })
+			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
 			if (selectedEntry.value?.id === id) {
 				closeEditor()
 			}
 			await refresh()
 		} catch (e) {
 			toast.add({
-				title: '删除失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('assets.common.toast.deleteFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}

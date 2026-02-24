@@ -2,8 +2,8 @@
 	<DrawerShell
 		v-if="currentTask"
 		v-model:open="isOpen"
-		title="任务详情"
-		description="查看与编辑当前任务的详细信息"
+		:title="t('inspector.task.title')"
+		:description="t('inspector.task.description')"
 		:content-class="DRAWER_CONTENT_CLASS">
 		<div class="flex flex-col h-full">
 			<div v-motion="drawerHeaderMotion">
@@ -34,7 +34,7 @@
 				<div v-motion="titleSectionMotion">
 					<DrawerTitleInputSection
 						v-model:title="titleLocal"
-						placeholder="任务标题..."
+						:placeholder="t('inspector.task.placeholders.title')"
 						:on-focus="onTitleFocus"
 						:on-blur="onTitleBlur"
 						:on-composition-start="onTitleCompositionStart"
@@ -134,13 +134,14 @@
 			</div>
 
 			<DrawerFooterInfo
-				:creator-name="currentTask.createBy || 'Stonefish'"
+				:creator-name="currentTask.createBy || t('inspector.footer.defaultCreator')"
 				:right-text="createdAtFooterLabel" />
 		</div>
 	</DrawerShell>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import DrawerShell from '@/components/InspectorDrawer/shared/DrawerShell.vue'
 	import { DRAWER_CONTENT_CLASS } from '@/components/InspectorDrawer/shared/constants'
 	import {
@@ -158,6 +159,7 @@
 	import PriorityDeadlineSection from './components/PriorityDeadlineSection.vue'
 	import StatusSection from './components/StatusSection.vue'
 	import { useTaskDrawerInteractions, useTaskDrawerPresentation, useTaskInspectorDrawer } from './composables'
+	const { t } = useI18n({ useScope: 'global' })
 
 	const {
 		currentTask,

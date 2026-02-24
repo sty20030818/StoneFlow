@@ -1,5 +1,5 @@
 <template>
-	<SettingsSectionCard title="下载与安装">
+	<SettingsSectionCard :title="t('settings.about.download.title')">
 		<div class="space-y-4">
 			<div class="flex flex-wrap gap-2">
 				<UButton
@@ -7,21 +7,23 @@
 					variant="soft"
 					icon="i-lucide-external-link"
 					@click="onOpenReleasePage">
-					打开下载页面
+					{{ t('settings.about.download.actions.openReleasePage') }}
 				</UButton>
 				<UButton
 					color="neutral"
 					variant="ghost"
 					icon="i-lucide-copy"
 					@click="onCopyReleaseLink">
-					复制下载链接
+					{{ t('settings.about.download.actions.copyReleaseLink') }}
 				</UButton>
 			</div>
 
 			<div class="grid gap-3 lg:grid-cols-2">
 				<div class="rounded-2xl border border-default/70 bg-elevated/20 px-4 py-3">
-					<div class="text-xs text-muted">安装路径</div>
-					<div class="truncate text-sm text-default">{{ installPath || '不可用' }}</div>
+					<div class="text-xs text-muted">{{ t('settings.about.download.installPath') }}</div>
+					<div class="truncate text-sm text-default">
+						{{ installPath || t('settings.about.download.unavailable') }}
+					</div>
 					<UButton
 						color="neutral"
 						variant="ghost"
@@ -29,12 +31,14 @@
 						icon="i-lucide-folder-open"
 						:disabled="!installPath"
 						@click="onOpenInstallPath">
-						打开所在文件夹
+						{{ t('settings.about.download.actions.openFolder') }}
 					</UButton>
 				</div>
 				<div class="rounded-2xl border border-default/70 bg-elevated/20 px-4 py-3">
-					<div class="text-xs text-muted">数据目录</div>
-					<div class="truncate text-sm text-default">{{ dataPath || '不可用' }}</div>
+					<div class="text-xs text-muted">{{ t('settings.about.download.dataPath') }}</div>
+					<div class="truncate text-sm text-default">
+						{{ dataPath || t('settings.about.download.unavailable') }}
+					</div>
 					<UButton
 						color="neutral"
 						variant="ghost"
@@ -42,7 +46,7 @@
 						icon="i-lucide-folder-open"
 						:disabled="!dataPath"
 						@click="onOpenDataPath">
-						打开数据目录
+						{{ t('settings.about.download.actions.openDataDir') }}
 					</UButton>
 				</div>
 			</div>
@@ -52,14 +56,17 @@
 				variant="soft"
 				icon="i-lucide-stethoscope"
 				@click="onExportDiagnostic">
-				导出诊断信息
+				{{ t('settings.about.download.actions.exportDiagnostic') }}
 			</UButton>
 		</div>
 	</SettingsSectionCard>
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
+
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		installPath: string

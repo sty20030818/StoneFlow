@@ -2,8 +2,8 @@
 	<DrawerShell
 		v-if="currentProject"
 		v-model:open="isOpen"
-		title="项目设置"
-		description="查看并编辑当前项目信息"
+		:title="t('inspector.project.title')"
+		:description="t('inspector.project.description')"
 		:content="{ onOpenAutoFocus: onProjectDrawerOpenAutoFocus }"
 		:content-class="DRAWER_CONTENT_CLASS">
 		<div class="flex h-full flex-col">
@@ -32,8 +32,8 @@
 				<DrawerTitleInputSection
 					v-model:title="titleLocal"
 					:disabled="isStructureLocked"
-					placeholder="请输入项目标题"
-					:helper-text="isStructureLocked ? '默认项目的标题与父级不可编辑。' : ''"
+					:placeholder="t('inspector.project.placeholders.title')"
+					:helper-text="isStructureLocked ? t('inspector.project.structureLockedHint') : ''"
 					:on-focus="onTitleFocus"
 					:on-blur="onTitleBlur"
 					:on-composition-start="onTitleCompositionStart"
@@ -81,7 +81,7 @@
 					v-model:note="noteLocal"
 					:interaction="noteInteraction"
 					:rows="4"
-					placeholder="为项目补充更多上下文信息..." />
+					:placeholder="t('inspector.project.placeholders.note')" />
 
 				<DrawerLinksSection
 					v-model:links="linksLocal"
@@ -108,7 +108,7 @@
 			</div>
 
 			<DrawerFooterInfo
-				:creator-name="currentProject.createBy || 'Stonefish'"
+				:creator-name="currentProject.createBy || t('inspector.footer.defaultCreator')"
 				:right-text="createdAtFooterLabel" />
 		</div>
 	</DrawerShell>
@@ -123,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 	import { storeToRefs } from 'pinia'
 
@@ -147,6 +148,7 @@
 		useProjectInspectorDrawer,
 		useProjectLifecycleActions,
 	} from './composables'
+	const { t } = useI18n({ useScope: 'global' })
 
 	function onProjectDrawerOpenAutoFocus(event: Event) {
 		event.preventDefault()
@@ -297,7 +299,7 @@
 		priorityOptions: computed(() => priorityOptions),
 		spaceOptions: computed(() => spaceOptions),
 		parentOptions,
-		rootLabel: computed(() => rootLabel),
+		rootLabel,
 		isStructureLocked,
 		hasChildProjects,
 		isLifecycleBusy,
