@@ -170,10 +170,10 @@ export function useRemoteSyncPage() {
 	})
 
 	const lastPushSummaryText = computed(() =>
-		summarizeRemoteSyncReport(lastPushReport.value, t('settings.remoteSync.history.noPushStats')),
+		summarizeRemoteSyncReport(lastPushReport.value, t('settings.remoteSync.history.noPushStats'), t),
 	)
 	const lastPullSummaryText = computed(() =>
-		summarizeRemoteSyncReport(lastPullReport.value, t('settings.remoteSync.history.noPullStats')),
+		summarizeRemoteSyncReport(lastPullReport.value, t('settings.remoteSync.history.noPullStats'), t),
 	)
 	const filteredSyncHistory = computed(() => {
 		if (historyFilter.value === 'all') return syncHistory.value
@@ -216,8 +216,8 @@ export function useRemoteSyncPage() {
 					: t('settings.remoteSync.history.direction.pull'),
 			profileName: item.profileName || t('settings.remoteSync.profile.unnamed'),
 			syncedAtText: new Date(item.syncedAt).toLocaleString(locale.value),
-			summary: summarizeRemoteSyncReport(item.report, t('settings.remoteSync.history.noStats')),
-			tables: toRemoteSyncTableViewItems(item.report),
+			summary: summarizeRemoteSyncReport(item.report, t('settings.remoteSync.history.noStats'), t),
+			tables: toRemoteSyncTableViewItems(item.report, t),
 		}
 	}
 
@@ -334,7 +334,7 @@ export function useRemoteSyncPage() {
 				title: t('settings.remoteSync.toast.pushSuccessTitle'),
 				description: t('settings.remoteSync.toast.syncAtDescription', {
 					time: new Date(report.syncedAt).toLocaleString(locale.value),
-					summary: summarizeRemoteSyncReport(report, ''),
+					summary: summarizeRemoteSyncReport(report, '', t),
 				}),
 				color: 'success',
 			})
@@ -375,7 +375,7 @@ export function useRemoteSyncPage() {
 				title: t('settings.remoteSync.toast.pullSuccessTitle'),
 				description: t('settings.remoteSync.toast.syncAtDescription', {
 					time: new Date(report.syncedAt).toLocaleString(locale.value),
-					summary: summarizeRemoteSyncReport(report, ''),
+					summary: summarizeRemoteSyncReport(report, '', t),
 				}),
 				color: 'success',
 			})

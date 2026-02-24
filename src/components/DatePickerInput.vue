@@ -32,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import { parseDate, type DateValue } from '@internationalized/date'
 	import { computed, ref, useTemplateRef } from 'vue'
 
@@ -53,8 +54,9 @@
 		buttonSize: 'sm',
 		className: 'w-full',
 		locale: 'en-CA',
-		ariaLabel: '选择日期',
+		ariaLabel: undefined,
 	})
+	const { t } = useI18n({ useScope: 'global' })
 
 	const model = defineModel<string>({ required: true })
 
@@ -70,6 +72,7 @@
 		if (!refs?.length) return undefined
 		return refs[refs.length - 1]?.$el
 	})
+	const ariaLabel = computed(() => props.ariaLabel || t('datePicker.ariaLabel'))
 
 	const dateValue = computed<DateValue | undefined>({
 		get() {

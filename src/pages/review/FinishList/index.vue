@@ -211,7 +211,7 @@ import { useI18n } from 'vue-i18n'
 		useCardHoverMotionPreset,
 		useMotionPresetWithDelay,
 	} from '@/composables/base/motion'
-	import { DEFAULT_PROJECT_LABEL } from '@/config/project'
+	import { getDefaultProjectLabel } from '@/config/project'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
@@ -387,7 +387,7 @@ import { useI18n } from 'vue-i18n'
 			result.push({
 				groupKey,
 				projectId: sample.projectId ?? 'default',
-				projectName: project?.title ?? DEFAULT_PROJECT_LABEL,
+				projectName: project?.title ?? getDefaultProjectLabel(),
 				spaceId,
 				spaceLabel: spaceLabelText,
 				tasks: list,

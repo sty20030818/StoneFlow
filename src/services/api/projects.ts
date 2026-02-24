@@ -1,6 +1,6 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
-import { DEFAULT_PROJECT_LABEL, isDefaultProjectId } from '@/config/project'
+import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 
 export type ProjectDto = {
@@ -52,10 +52,11 @@ export type UpdateProjectPatch = {
 
 function normalizeProjectDto(project: ProjectDto): ProjectDto {
 	if (!isDefaultProjectId(project.id)) return project
+	const defaultProjectLabel = getDefaultProjectLabel()
 	return {
 		...project,
-		title: DEFAULT_PROJECT_LABEL,
-		path: `/${DEFAULT_PROJECT_LABEL}`,
+		title: defaultProjectLabel,
+		path: `/${defaultProjectLabel}`,
 	}
 }
 

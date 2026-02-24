@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
-import { DEFAULT_PROJECT_LABEL, isDefaultProjectId } from '@/config/project'
+import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import type { ProjectDto } from '@/services/api/projects'
 import { listProjects } from '@/services/api/projects'
 
@@ -11,10 +11,11 @@ export const useProjectsStore = defineStore('projects', () => {
 
 	function normalizeProject(project: ProjectDto): ProjectDto {
 		if (!isDefaultProjectId(project.id)) return project
+		const defaultProjectLabel = getDefaultProjectLabel()
 		return {
 			...project,
-			title: DEFAULT_PROJECT_LABEL,
-			path: `/${DEFAULT_PROJECT_LABEL}`,
+			title: defaultProjectLabel,
+			path: `/${defaultProjectLabel}`,
 		}
 	}
 

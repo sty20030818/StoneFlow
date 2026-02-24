@@ -1,4 +1,5 @@
 import type { SpaceId } from '@/types/domain/space'
+import { i18n } from '@/i18n'
 
 export const SPACE_IDS = ['work', 'personal', 'study'] as const satisfies readonly SpaceId[]
 
@@ -15,11 +16,19 @@ export type SpaceDisplay = {
 	cardValueClass: string
 }
 
+function t(key: string) {
+	return i18n.global.t(key)
+}
+
 export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 	work: {
 		id: 'work',
-		label: '工作',
-		description: '工作相关任务',
+		get label() {
+			return t('spaces.work')
+		},
+		get description() {
+			return t('spacesDescription.work')
+		},
 		icon: 'i-lucide-briefcase',
 		iconClass: 'text-blue-500',
 		iconMutedClass: 'text-blue-500/70',
@@ -30,8 +39,12 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 	},
 	personal: {
 		id: 'personal',
-		label: '个人',
-		description: '个人事务',
+		get label() {
+			return t('spaces.personal')
+		},
+		get description() {
+			return t('spacesDescription.personal')
+		},
 		icon: 'i-lucide-user',
 		iconClass: 'text-purple-500',
 		iconMutedClass: 'text-purple-500/70',
@@ -42,8 +55,12 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 	},
 	study: {
 		id: 'study',
-		label: '学习',
-		description: '学习相关任务',
+		get label() {
+			return t('spaces.study')
+		},
+		get description() {
+			return t('spacesDescription.study')
+		},
 		icon: 'i-lucide-book-open',
 		iconClass: 'text-emerald-500',
 		iconMutedClass: 'text-emerald-500/70',
@@ -56,8 +73,12 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 
 export const DEFAULT_SPACE_DISPLAY: SpaceDisplay = {
 	id: 'unknown',
-	label: '未知空间',
-	description: '任务列表',
+	get label() {
+		return t('spaces.unknown')
+	},
+	get description() {
+		return t('spacesDescription.unknown')
+	},
 	icon: 'i-lucide-folder',
 	iconClass: 'text-gray-500',
 	iconMutedClass: 'text-gray-500/70',
@@ -69,15 +90,23 @@ export const DEFAULT_SPACE_DISPLAY: SpaceDisplay = {
 
 export const SPACE_OPTIONS = SPACE_IDS.map((id) => ({
 	value: id,
-	label: SPACE_DISPLAY[id].label,
+	get label() {
+		return SPACE_DISPLAY[id].label
+	},
 	icon: SPACE_DISPLAY[id].icon,
 	iconClass: SPACE_DISPLAY[id].iconClass,
 }))
 
 export const SPACE_LABELS: Record<SpaceId, string> = {
-	work: SPACE_DISPLAY.work.label,
-	personal: SPACE_DISPLAY.personal.label,
-	study: SPACE_DISPLAY.study.label,
+	get work() {
+		return SPACE_DISPLAY.work.label
+	},
+	get personal() {
+		return SPACE_DISPLAY.personal.label
+	},
+	get study() {
+		return SPACE_DISPLAY.study.label
+	},
 }
 
 export type { SpaceId } from '@/types/domain/space'

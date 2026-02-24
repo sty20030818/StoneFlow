@@ -1,8 +1,12 @@
 import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS } from '@/config/priority'
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
+import { i18n } from '@/i18n'
+
+function t(key: string) {
+	return i18n.global.t(key)
+}
 
 export const PROJECT_ICON = 'i-lucide-folder'
-export const PROJECT_ROOT_LABEL = '无父级（顶层）'
 export const PROJECT_ROOT_ICON_CLASS = 'text-slate-400'
 export const PROJECT_UNCATEGORIZED_ICON = 'i-lucide-inbox'
 export const PROJECT_UNCATEGORIZED_ICON_CLASS = 'text-slate-400'
@@ -23,10 +27,23 @@ export const PROJECT_LEVEL_PILL_CLASSES = [
 	'bg-rose-500',
 ]
 
-export const UNCATEGORIZED_LABEL = '未分类'
-export const UNKNOWN_PROJECT_LABEL = '未知项目'
 export const DEFAULT_PROJECT_ID_SUFFIX = '_default'
-export const DEFAULT_PROJECT_LABEL = '未归类'
+
+export function getProjectRootLabel() {
+	return t('project.rootTop')
+}
+
+export function getUncategorizedLabel() {
+	return t('common.labels.uncategorized')
+}
+
+export function getUnknownProjectLabel() {
+	return t('common.labels.unknownProject')
+}
+
+export function getDefaultProjectLabel() {
+	return t('project.defaultLabel')
+}
 
 export function isDefaultProjectId(projectId: string): boolean {
 	return projectId.endsWith(DEFAULT_PROJECT_ID_SUFFIX)
@@ -44,7 +61,9 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 	}
 > = {
 	P0: {
-		label: PRIORITY_LABELS.P0,
+		get label() {
+			return PRIORITY_LABELS.P0
+		},
 		pillClass: 'bg-red-500 text-white shadow-red-300/70',
 		iconName: PRIORITY_ICON_MAP.P0.icon,
 		surfaceVars: {
@@ -55,7 +74,9 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 		},
 	},
 	P1: {
-		label: PRIORITY_LABELS.P1,
+		get label() {
+			return PRIORITY_LABELS.P1
+		},
 		pillClass: 'bg-amber-500 text-white shadow-amber-300/70',
 		iconName: PRIORITY_ICON_MAP.P1.icon,
 		surfaceVars: {
@@ -66,7 +87,9 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 		},
 	},
 	P2: {
-		label: PRIORITY_LABELS.P2,
+		get label() {
+			return PRIORITY_LABELS.P2
+		},
 		pillClass: 'bg-blue-500 text-white shadow-blue-300/70',
 		iconName: PRIORITY_ICON_MAP.P2.icon,
 		surfaceVars: {
@@ -77,7 +100,9 @@ export const PROJECT_PRIORITY_DISPLAY: Record<
 		},
 	},
 	P3: {
-		label: PRIORITY_LABELS.P3,
+		get label() {
+			return PRIORITY_LABELS.P3
+		},
 		pillClass: 'bg-slate-500 text-white shadow-slate-300/70',
 		iconName: PRIORITY_ICON_MAP.P3.icon,
 		surfaceVars: {
@@ -93,10 +118,34 @@ export const PROJECT_STATUS_DISPLAY: Record<
 	ProjectComputedStatusValue,
 	{ label: string; color: 'success' | 'warning' | 'info' | 'neutral' | 'error'; dot: string }
 > = {
-	inProgress: { label: '进行中', color: 'warning', dot: 'bg-amber-500' },
-	done: { label: '已完成', color: 'success', dot: 'bg-emerald-500' },
-	archived: { label: '已归档', color: 'neutral', dot: 'bg-slate-400' },
-	deleted: { label: '已删除', color: 'error', dot: 'bg-rose-500' },
+	inProgress: {
+		get label() {
+			return t('project.status.inProgress')
+		},
+		color: 'warning',
+		dot: 'bg-amber-500',
+	},
+	done: {
+		get label() {
+			return t('project.status.done')
+		},
+		color: 'success',
+		dot: 'bg-emerald-500',
+	},
+	archived: {
+		get label() {
+			return t('project.status.archived')
+		},
+		color: 'neutral',
+		dot: 'bg-slate-400',
+	},
+	deleted: {
+		get label() {
+			return t('project.status.deleted')
+		},
+		color: 'error',
+		dot: 'bg-rose-500',
+	},
 }
 
 export type { ProjectPriorityValue, ProjectComputedStatusValue } from '@/types/domain/project'

@@ -1,4 +1,5 @@
 import type { PriorityValue } from '@/types/shared/priority'
+import { i18n } from '@/i18n'
 
 export const PRIORITY_VALUES = ['P0', 'P1', 'P2', 'P3'] as const satisfies readonly PriorityValue[]
 
@@ -9,11 +10,23 @@ export type PriorityOption = {
 	iconClass: string
 }
 
+function t(key: string) {
+	return i18n.global.t(key)
+}
+
 export const PRIORITY_LABELS: Record<PriorityValue, string> = {
-	P0: 'P0 Critical',
-	P1: 'P1 High',
-	P2: 'P2 Medium',
-	P3: 'P3 Low',
+	get P0() {
+		return t('priority.P0')
+	},
+	get P1() {
+		return t('priority.P1')
+	},
+	get P2() {
+		return t('priority.P2')
+	},
+	get P3() {
+		return t('priority.P3')
+	},
 }
 
 export const PRIORITY_ICON_MAP: Record<PriorityValue, { icon: string; iconClass: string }> = {
@@ -25,7 +38,9 @@ export const PRIORITY_ICON_MAP: Record<PriorityValue, { icon: string; iconClass:
 
 export const PRIORITY_OPTIONS: PriorityOption[] = PRIORITY_VALUES.map((value) => ({
 	value,
-	label: PRIORITY_LABELS[value],
+	get label() {
+		return PRIORITY_LABELS[value]
+	},
 	icon: PRIORITY_ICON_MAP[value].icon,
 	iconClass: PRIORITY_ICON_MAP[value].iconClass,
 }))

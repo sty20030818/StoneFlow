@@ -1,6 +1,8 @@
 import type { RemoteSyncCommandReport, RemoteSyncTablesReport } from '@/types/shared/remote-sync'
+import { i18n } from '@/i18n'
 
 type RemoteSyncTableKey = keyof RemoteSyncTablesReport
+type TranslateFn = (key: string, params?: Record<string, unknown>) => string
 
 export type RemoteSyncTableViewItem = {
 	key: RemoteSyncTableKey
@@ -9,19 +11,6 @@ export type RemoteSyncTableViewItem = {
 	inserted: number
 	updated: number
 	skipped: number
-}
-
-const REMOTE_SYNC_TABLE_LABELS: Record<RemoteSyncTableKey, string> = {
-	spaces: '空间',
-	projects: '项目',
-	tags: '标签',
-	links: '关联',
-	tasks: '任务',
-	taskActivityLogs: '日志',
-	taskTags: '任务标签',
-	taskLinks: '任务关联',
-	projectTags: '项目标签',
-	projectLinks: '项目关联',
 }
 
 const REMOTE_SYNC_TABLE_ORDER: RemoteSyncTableKey[] = [
@@ -37,8 +26,17 @@ const REMOTE_SYNC_TABLE_ORDER: RemoteSyncTableKey[] = [
 	'projectLinks',
 ]
 
-export function summarizeRemoteSyncReport(report: RemoteSyncCommandReport | null, fallback: string) {
+function resolveTranslate(translate?: TranslateFn): TranslateFn {
+	return translate ?? ((key, params) => (params ? i18n.global.t(key, params) : i18n.global.t(key)))
+}
+
+export function summarizeRemoteSyncReport(
+	report: RemoteSyncCommandReport | null,
+	fallback: string,
+	translate?: TranslateFn,
+) {
 	if (!report) return fallback
+	const t = resolveTranslate(translate)
 	const tableValues = Object.values(report.tables).map((item) => normalizeTableReportMetrics(item))
 	const totalInserted = tableValues.reduce((acc, item) => acc + item.inserted, 0)
 	const totalUpdated = tableValues.reduce((acc, item) => acc + item.updated, 0)
@@ -47,13 +45,22 @@ export function summarizeRemoteSyncReport(report: RemoteSyncCommandReport | null
 	const logsMetrics = normalizeTableReportMetrics(report.tables.taskActivityLogs)
 	const tasksWrites = tasksMetrics.inserted + tasksMetrics.updated
 	const logsWrites = logsMetrics.inserted + logsMetrics.updated
-	return `任务 ${tasksWrites} 条，日志 ${logsWrites} 条，总写入 ${totalInserted + totalUpdated} 条，跳过 ${totalSkipped} 条`
+	return t('settings.remoteSync.report.summary', {
+		tasks: tasksWrites,
+		logs: logsWrites,
+		written: totalInserted + totalUpdated,
+		skipped: totalSkipped,
+	})
 }
 
-export function toRemoteSyncTableViewItems(report: RemoteSyncCommandReport): RemoteSyncTableViewItem[] {
+export function toRemoteSyncTableViewItems(
+	report: RemoteSyncCommandReport,
+	translate?: TranslateFn,
+): RemoteSyncTableViewItem[] {
+	const t = resolveTranslate(translate)
 	return REMOTE_SYNC_TABLE_ORDER.map((key) => ({
 		key,
-		label: REMOTE_SYNC_TABLE_LABELS[key],
+		label: t(`settings.remoteSync.report.tables.${key}`),
 		...normalizeTableReportMetrics(report.tables[key]),
 	}))
 }

@@ -10,11 +10,26 @@ export default {
 			'en-US': 'English (US)',
 		},
 	},
+	datePicker: {
+		ariaLabel: 'Choose date',
+	},
 	spaces: {
 		work: 'Work',
 		personal: 'Personal',
 		study: 'Study',
 		unknown: 'Unknown Space',
+	},
+	spacesDescription: {
+		work: 'Work-related tasks',
+		personal: 'Personal tasks',
+		study: 'Study-related tasks',
+		unknown: 'Task list',
+	},
+	priority: {
+		P0: 'P0 Critical',
+		P1: 'P1 High',
+		P2: 'P2 Medium',
+		P3: 'P3 Low',
 	},
 	routes: {
 		startupGate: {
@@ -113,6 +128,17 @@ export default {
 			notes: 'Notes',
 			about: 'About',
 			remoteSync: 'Remote Sync',
+		},
+	},
+	updateNotification: {
+		title: 'New version found v{version}',
+		description: 'A new update is available for StoneFlow',
+		notesTitle: 'What\'s New',
+		downloading: 'Downloading',
+		actions: {
+			later: 'Remind Me Later',
+			updateNow: 'Update Now',
+			restartApp: 'Restart App',
 		},
 	},
 	header: {
@@ -248,6 +274,7 @@ export default {
 			import: 'Import',
 			new: 'New',
 			open: 'Open',
+			backToTop: 'Back to top',
 			restore: 'Restore',
 			retry: 'Retry',
 			upload: 'Upload',
@@ -270,6 +297,7 @@ export default {
 	task: {
 		status: {
 			todo: 'To Do',
+			done: 'Done',
 		},
 		doneReason: {
 			completed: 'Completed',
@@ -296,6 +324,8 @@ export default {
 		selectColumnAria: 'Select column: {title}',
 	},
 	project: {
+		rootTop: 'No Parent (Top Level)',
+		defaultLabel: 'Uncategorized',
 		status: {
 			inProgress: 'In Progress',
 			done: 'Done',
@@ -896,6 +926,21 @@ export default {
 				formatExample: 'Format: [{\"name\":\"prod\",\"databaseUrl\":\"postgres://...\"}]',
 				placeholder: 'Paste JSON array',
 				parseError: 'Failed to parse import content',
+			},
+			report: {
+				summary: '{tasks} tasks, {logs} logs, {written} writes, {skipped} skipped',
+				tables: {
+					spaces: 'Spaces',
+					projects: 'Projects',
+					tags: 'Tags',
+					links: 'Links',
+					tasks: 'Tasks',
+					taskActivityLogs: 'Activity Logs',
+					taskTags: 'Task Tags',
+					taskLinks: 'Task Links',
+					projectTags: 'Project Tags',
+					projectLinks: 'Project Links',
+				},
 			},
 			toast: {
 				clearedHistoryTitle: 'Sync history cleared',

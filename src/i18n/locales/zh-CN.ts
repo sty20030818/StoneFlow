@@ -10,11 +10,26 @@ export default {
 			'en-US': 'English (US)',
 		},
 	},
+	datePicker: {
+		ariaLabel: '选择日期',
+	},
 	spaces: {
 		work: '工作',
 		personal: '个人',
 		study: '学习',
 		unknown: '未知空间',
+	},
+	spacesDescription: {
+		work: '工作相关任务',
+		personal: '个人事务',
+		study: '学习相关任务',
+		unknown: '任务列表',
+	},
+	priority: {
+		P0: 'P0 紧急',
+		P1: 'P1 高',
+		P2: 'P2 中',
+		P3: 'P3 低',
 	},
 	routes: {
 		startupGate: {
@@ -113,6 +128,17 @@ export default {
 			notes: '笔记',
 			about: '关于',
 			remoteSync: '远端同步',
+		},
+	},
+	updateNotification: {
+		title: '发现新版本 v{version}',
+		description: 'StoneFlow 有新的更新可用',
+		notesTitle: '更新内容',
+		downloading: '下载中',
+		actions: {
+			later: '稍后提醒',
+			updateNow: '立即更新',
+			restartApp: '重启应用',
 		},
 	},
 	header: {
@@ -248,6 +274,7 @@ export default {
 			import: '导入',
 			new: '新建',
 			open: '打开',
+			backToTop: '回到顶部',
 			restore: '恢复',
 			retry: '重试',
 			upload: '上传',
@@ -270,6 +297,7 @@ export default {
 	task: {
 		status: {
 			todo: '待办',
+			done: '已完成',
 		},
 		doneReason: {
 			completed: '已完成',
@@ -296,6 +324,8 @@ export default {
 		selectColumnAria: '选择列：{title}',
 	},
 	project: {
+		rootTop: '无父级（顶层）',
+		defaultLabel: '未归类',
 		status: {
 			inProgress: '进行中',
 			done: '已完成',
@@ -896,6 +926,21 @@ export default {
 				formatExample: '格式：[{\"name\":\"prod\",\"databaseUrl\":\"postgres://...\"}]',
 				placeholder: '粘贴 JSON 数组',
 				parseError: '导入内容解析失败',
+			},
+			report: {
+				summary: '任务 {tasks} 条，日志 {logs} 条，总写入 {written} 条，跳过 {skipped} 条',
+				tables: {
+					spaces: '空间',
+					projects: '项目',
+					tags: '标签',
+					links: '关联',
+					tasks: '任务',
+					taskActivityLogs: '日志',
+					taskTags: '任务标签',
+					taskLinks: '任务关联',
+					projectTags: '项目标签',
+					projectLinks: '项目关联',
+				},
 			},
 			toast: {
 				clearedHistoryTitle: '已清空同步历史',

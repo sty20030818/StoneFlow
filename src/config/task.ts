@@ -1,5 +1,6 @@
 import { PRIORITY_OPTIONS, type PriorityOption } from '@/config/priority'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/types/domain/task'
+import { i18n } from '@/i18n'
 
 export type StatusOption = {
 	value: TaskStatusValue
@@ -22,24 +23,36 @@ export type DoneReasonOption = {
 
 export type { PriorityOption }
 
+function t(key: string) {
+	return i18n.global.t(key)
+}
+
 export const TASK_STATUS_OPTIONS: StatusOption[] = [
 	{
 		value: 'todo',
-		label: '待办',
+		get label() {
+			return t('task.status.todo')
+		},
 		icon: 'i-lucide-list-todo',
 		iconClass: 'text-blue-500',
 	},
 	{
 		value: 'done',
-		label: '已完成',
+		get label() {
+			return t('task.status.done')
+		},
 		icon: 'i-lucide-check-circle-2',
 		iconClass: 'text-green-500',
 	},
 ]
 
 export const TASK_STATUS_LABELS: Record<TaskStatusValue, string> = {
-	todo: '待办',
-	done: '已完成',
+	get todo() {
+		return t('task.status.todo')
+	},
+	get done() {
+		return t('task.status.done')
+	},
 }
 
 export const TASK_STATUS_CHART_COLORS: Record<TaskStatusValue, string> = {
@@ -50,14 +63,18 @@ export const TASK_STATUS_CHART_COLORS: Record<TaskStatusValue, string> = {
 export const TASK_STATUS_SEGMENT_OPTIONS: StatusSegmentOption[] = [
 	{
 		value: 'todo',
-		label: '待办',
+		get label() {
+			return t('task.status.todo')
+		},
 		icon: 'i-lucide-list-todo',
 		iconClass: 'text-blue-500',
 		activeClass: 'bg-blue-50 text-blue-700 shadow-sm',
 	},
 	{
 		value: 'done',
-		label: '已完成',
+		get label() {
+			return t('task.status.done')
+		},
 		icon: 'i-lucide-check-circle',
 		iconClass: 'text-emerald-500',
 		activeClass: 'bg-emerald-50 text-emerald-700 shadow-sm',
@@ -67,14 +84,18 @@ export const TASK_STATUS_SEGMENT_OPTIONS: StatusSegmentOption[] = [
 export const TASK_DONE_REASON_OPTIONS: DoneReasonOption[] = [
 	{
 		value: 'completed',
-		label: '完成',
+		get label() {
+			return t('task.doneReason.completed')
+		},
 		icon: 'i-lucide-check-circle',
 		iconClass: 'text-emerald-500',
 		activeClass: 'bg-emerald-50 text-emerald-700 shadow-sm',
 	},
 	{
 		value: 'cancelled',
-		label: '取消',
+		get label() {
+			return t('task.doneReason.cancelled')
+		},
 		icon: 'i-lucide-x-circle',
 		iconClass: 'text-red-500',
 		activeClass: 'bg-red-50 text-red-700 shadow-sm',
@@ -82,8 +103,12 @@ export const TASK_DONE_REASON_OPTIONS: DoneReasonOption[] = [
 ]
 
 export const TASK_DONE_REASON_LABELS: Record<TaskDoneReasonValue, string> = {
-	completed: '已完成',
-	cancelled: '已取消',
+	get completed() {
+		return t('task.doneReason.completed')
+	},
+	get cancelled() {
+		return t('task.doneReason.cancelled')
+	},
 }
 
 export const TASK_DONE_REASON_COLORS: Record<TaskDoneReasonValue, string> = {
@@ -98,12 +123,16 @@ export const TASK_DONE_REASON_CARD_STYLES: Record<
 	completed: {
 		ringClass: 'bg-green-100 text-green-600',
 		icon: 'i-lucide-check',
-		badgeLabel: TASK_DONE_REASON_LABELS.completed,
+		get badgeLabel() {
+			return TASK_DONE_REASON_LABELS.completed
+		},
 	},
 	cancelled: {
 		ringClass: 'bg-red-100 text-red-600',
 		icon: 'i-lucide-x-circle',
-		badgeLabel: TASK_DONE_REASON_LABELS.cancelled,
+		get badgeLabel() {
+			return TASK_DONE_REASON_LABELS.cancelled
+		},
 	},
 }
 

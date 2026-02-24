@@ -8,7 +8,7 @@
 			icon="i-lucide-arrow-up"
 			color="neutral"
 			variant="soft"
-			aria-label="回到顶部"
+			:aria-label="t('common.actions.backToTop')"
 			:tabindex="isVisible ? 0 : -1"
 			class="size-11 rounded-full border border-default/70 bg-default/85 text-default shadow-[0_12px_28px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:bg-default hover:text-primary"
 			:ui="{
@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import { useMotion } from '@vueuse/motion'
 	import { useEventListener } from '@vueuse/core'
 	import { computed, ref, toRef, watch } from 'vue'
@@ -36,6 +37,7 @@
 		threshold: 240,
 		minDelta: 8,
 	})
+	const { t } = useI18n({ useScope: 'global' })
 
 	const isVisible = ref(false)
 	const lastTop = ref(0)
