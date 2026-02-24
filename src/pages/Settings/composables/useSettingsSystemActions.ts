@@ -1,12 +1,14 @@
 import { useClipboard } from '@vueuse/core'
+import { useI18n } from 'vue-i18n'
 
 import { copyText, openExternalUrl, openLocalPath } from '@/services/tauri/system-actions'
 
 export function useSettingsSystemActions() {
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const { copy: copyToClipboard, isSupported } = useClipboard()
 
-	async function copy(text: string, successMessage: string, failTitle = '复制失败') {
+	async function copy(text: string, successMessage: string, failTitle = t('toast.settingsActions.copyFailedTitle')) {
 		try {
 			// 统一由 VueUse 封装剪贴板能力，避免页面层分散实现。
 			if (!isSupported.value) {
@@ -18,25 +20,25 @@ export function useSettingsSystemActions() {
 		} catch (error) {
 			toast.add({
 				title: failTitle,
-				description: error instanceof Error ? error.message : '未知错误',
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
 	}
 
-	async function openUrl(url: string, failTitle = '打开失败') {
+	async function openUrl(url: string, failTitle = t('toast.settingsActions.openFailedTitle')) {
 		try {
 			await openExternalUrl(url)
 		} catch (error) {
 			toast.add({
 				title: failTitle,
-				description: error instanceof Error ? error.message : '未知错误',
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}
 	}
 
-	async function openPath(path: string, failTitle = '打开失败') {
+	async function openPath(path: string, failTitle = t('toast.settingsActions.openFailedTitle')) {
 		if (!path) return
 
 		try {
@@ -44,7 +46,7 @@ export function useSettingsSystemActions() {
 		} catch (error) {
 			toast.add({
 				title: failTitle,
-				description: error instanceof Error ? error.message : '未知错误',
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		}

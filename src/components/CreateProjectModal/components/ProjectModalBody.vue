@@ -1,11 +1,11 @@
 <template>
 	<div class="space-y-4">
 		<UFormField
-			label="Project Title"
+			:label="t('modals.createProject.fields.title')"
 			required>
 			<UInput
 				v-model="form.title"
-				placeholder="e.g. Q3 Roadmap"
+				:placeholder="t('modals.createProject.placeholders.title')"
 				size="md"
 				class="w-full"
 				:ui="{
@@ -17,7 +17,7 @@
 		</UFormField>
 
 		<div class="grid grid-cols-1 gap-4">
-			<UFormField label="Space">
+			<UFormField :label="t('modals.createProject.fields.space')">
 				<USelectMenu
 					v-model="form.spaceId"
 					:items="spaceOptions"
@@ -41,7 +41,7 @@
 				</USelectMenu>
 			</UFormField>
 
-			<UFormField label="Parent Project">
+			<UFormField :label="t('modals.createProject.fields.parentProject')">
 				<USelectMenu
 					v-model="form.parentId"
 					:items="parentOptions"
@@ -69,7 +69,7 @@
 		</div>
 
 		<div class="grid grid-cols-1 gap-4">
-			<UFormField label="Priority">
+			<UFormField :label="t('modals.createProject.fields.priority')">
 				<USelectMenu
 					v-model="form.priority"
 					:items="priorityOptions"
@@ -94,7 +94,7 @@
 			</UFormField>
 		</div>
 
-		<UFormField label="Tags (可选)">
+		<UFormField :label="t('modals.createProject.fields.tags')">
 			<div class="space-y-2">
 				<div class="flex flex-wrap gap-2">
 					<UBadge
@@ -115,7 +115,7 @@
 				</div>
 				<UInput
 					v-model="tagInput"
-					placeholder="输入标签后按回车添加"
+					:placeholder="t('modals.createProject.placeholders.tag')"
 					size="md"
 					class="w-full"
 					:ui="{
@@ -125,12 +125,12 @@
 			</div>
 		</UFormField>
 
-		<UFormField label="Links (可选)">
+		<UFormField :label="t('modals.createProject.fields.links')">
 			<div class="space-y-2">
 				<div
 					v-if="form.links.length === 0"
 					class="text-xs text-muted">
-					暂无链接
+					{{ t('modals.createProject.empty.links') }}
 				</div>
 				<div
 					v-for="(link, index) in form.links"
@@ -139,13 +139,13 @@
 					<div class="grid grid-cols-2 gap-2">
 						<UInput
 							v-model="link.title"
-							placeholder="标题（可选）"
+							:placeholder="t('modals.createProject.placeholders.linkTitle')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
 						<UInput
 							v-model="link.url"
-							placeholder="URL（必填）"
+							:placeholder="t('modals.createProject.placeholders.linkUrl')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
@@ -166,7 +166,7 @@
 							size="sm"
 							class="justify-center"
 							@click="emit('remove-link', index)">
-							移除
+							{{ t('modals.createProject.buttons.remove') }}
 						</UButton>
 					</div>
 				</div>
@@ -176,15 +176,15 @@
 					size="sm"
 					icon="i-lucide-plus"
 					@click="emit('add-link')">
-					新增链接
+					{{ t('modals.createProject.buttons.addLink') }}
 				</UButton>
 			</div>
 		</UFormField>
 
-		<UFormField label="Note">
+		<UFormField :label="t('modals.createProject.fields.note')">
 			<UTextarea
 				v-model="form.note"
-				placeholder="What is the goal of this project?"
+				:placeholder="t('modals.createProject.placeholders.note')"
 				:rows="3"
 				class="w-full"
 				:ui="{
@@ -196,6 +196,7 @@
 
 <script setup lang="ts">
 	// 复用边界约束：该组件只负责字段渲染与事件分发，业务流程统一留在 composable。
+	import { useI18n } from 'vue-i18n'
 	import type {
 		CreateProjectFormState,
 		LinkKindOption,
@@ -207,6 +208,7 @@
 
 	const form = defineModel<CreateProjectFormState>('form', { required: true })
 	const tagInput = defineModel<string>('tagInput', { required: true })
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		spaceOptions: SpaceOption[]

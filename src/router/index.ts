@@ -22,7 +22,10 @@ export const routes = [
 	{
 		path: '/',
 		component: StartupGate,
-		meta: { title: 'Startup Gate', description: '启动路由占位，由启动流程决定最终目标页面' },
+		meta: {
+			titleKey: 'routes.startupGate.title',
+			descriptionKey: 'routes.startupGate.description',
+		},
 	},
 
 	// ProjectView (统一的项目视图)
@@ -35,11 +38,11 @@ export const routes = [
 		path: '/space/:spaceId',
 		component: ProjectView,
 		meta: {
-			title: '空间',
+			titleKey: 'routes.space.title',
 			icon: 'i-lucide-folder',
 			iconClass: 'text-gray-500',
 			pillClass: 'bg-gray-500',
-			description: '任务空间',
+			descriptionKey: 'routes.space.description',
 		},
 	},
 
@@ -92,11 +95,11 @@ export const routes = [
 		path: '/settings',
 		component: Settings,
 		meta: {
-			title: '设置',
+			titleKey: 'routes.settings.title',
 			icon: 'i-lucide-settings',
 			iconClass: 'text-gray-500',
 			pillClass: 'bg-gray-500',
-			description: '应用偏好设置',
+			descriptionKey: 'routes.settings.description',
 		},
 		children: [
 			{
@@ -107,22 +110,22 @@ export const routes = [
 				path: 'about',
 				component: SettingsAbout,
 				meta: {
-					title: '关于',
+					titleKey: 'routes.settingsAbout.title',
 					icon: 'i-lucide-info',
 					iconClass: 'text-blue-500',
 					pillClass: 'bg-blue-500',
-					description: '版本、更新与应用信息',
+					descriptionKey: 'routes.settingsAbout.description',
 				},
 			},
 			{
 				path: 'remote-sync',
 				component: SettingsRemoteSync,
 				meta: {
-					title: '远端同步',
+					titleKey: 'routes.settingsRemoteSync.title',
 					icon: 'i-lucide-cloud',
 					iconClass: 'text-cyan-500',
 					pillClass: 'bg-cyan-500',
-					description: '同步配置与上传下载',
+					descriptionKey: 'routes.settingsRemoteSync.description',
 				},
 			},
 		],

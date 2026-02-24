@@ -89,7 +89,7 @@
 				<div class="relative shrink-0">
 					<UInput
 						v-model="searchQuery"
-						placeholder="搜索任务..."
+						:placeholder="t('header.searchPlaceholder')"
 						icon="i-lucide-search"
 						size="sm"
 						:ui="{
@@ -105,14 +105,14 @@
 						variant="ghost"
 						size="xs"
 						icon="i-lucide-filter">
-						<span class="ml-1 text-[11px]">Filter</span>
+						<span class="ml-1 text-[11px]">{{ t('header.filter') }}</span>
 					</UButton>
 					<UButton
 						color="neutral"
 						variant="ghost"
 						size="xs"
 						icon="i-lucide-arrow-up-down">
-						<span class="ml-1 text-[11px]">Sort</span>
+						<span class="ml-1 text-[11px]">{{ t('header.sort') }}</span>
 					</UButton>
 
 					<template v-if="hasEditBridge">
@@ -147,7 +147,7 @@
 					<UIcon
 						name="i-lucide-trash-2"
 						class="size-4" />
-					<span>删除</span>
+					<span>{{ t('header.delete') }}</span>
 					<span class="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white">
 						{{ editSelectedCount }}
 					</span>
@@ -159,18 +159,20 @@
 
 <script setup lang="ts">
 	import { computed, inject, ref, type ComputedRef } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useRoute } from 'vue-router'
 
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { getPageNavByPath } from '@/config/page-nav'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
-	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
+	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useSettingsStore } from '@/stores/settings'
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
 	const route = useRoute()
+	const { t } = useI18n({ useScope: 'global' })
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
@@ -190,7 +192,7 @@
 	const hasEditBridge = computed(() => isWorkspacePage.value && workspaceEditStore.hasHandlers)
 	const isEditMode = computed(() => workspaceEditStore.isEditMode)
 	const editSelectedCount = computed(() => workspaceEditStore.selectedCount)
-	const editButtonLabel = computed(() => (isEditMode.value ? '取消' : '编辑'))
+	const editButtonLabel = computed(() => (isEditMode.value ? t('header.cancelEdit') : t('header.edit')))
 	const editButtonIcon = computed(() => (isEditMode.value ? 'i-lucide-x' : 'i-lucide-pencil'))
 	const editButtonClass = computed(() => {
 		if (isEditMode.value) {
@@ -221,6 +223,18 @@
 		onEnterEditMode()
 	}
 
+	function resolveMetaText(meta: Record<string, unknown> | undefined, field: 'title' | 'description') {
+		const keyField = field === 'title' ? 'titleKey' : 'descriptionKey'
+		const fromKey = meta?.[keyField]
+		if (typeof fromKey === 'string') return t(fromKey)
+		const direct = meta?.[field]
+		return typeof direct === 'string' ? direct : null
+	}
+
+	function isKnownSpaceDisplayKey(value: string): value is keyof typeof SPACE_DISPLAY {
+		return value in SPACE_DISPLAY
+	}
+
 	const currentSpaceId = computed(() => {
 		const sid = route.params.spaceId
 		if (typeof sid === 'string') return sid
@@ -230,7 +244,8 @@
 	const currentSpaceLabel = computed(() => {
 		const spaceId = currentSpaceId.value
 		if (!spaceId) return null
-		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.label ?? spaceId
+		if (isKnownSpaceDisplayKey(spaceId)) return t(`spaces.${spaceId}`)
+		return t('spaces.unknown')
 	})
 
 	const currentSpaceIcon = computed(() => {
@@ -252,7 +267,7 @@
 		if (showSpaceAsLeadingPill.value) return null
 		if (showSettingsAsLeadingPill.value) {
 			const settingsRecord = route.matched.find((item) => item.path === '/settings')
-			const title = settingsRecord?.meta?.title
+			const title = resolveMetaText(settingsRecord?.meta as Record<string, unknown> | undefined, 'title')
 			const icon = settingsRecord?.meta?.icon
 			if (typeof title === 'string' && typeof icon === 'string') {
 				return {
@@ -267,14 +282,17 @@
 		const routeConfig = getPageNavByPath(route.path)
 		if (routeConfig) {
 			return {
-				label: routeConfig.title,
+				label: t(routeConfig.titleKey),
 				icon: routeConfig.icon,
 				pillClass: routeConfig.pillClass,
 				to: undefined as string | undefined,
 			}
 		}
-		const record = [...route.matched].reverse().find((item) => item.meta && typeof item.meta.title === 'string')
-		const title = record?.meta?.title
+		const record = [...route.matched].reverse().find((item) => {
+			const text = resolveMetaText(item.meta as Record<string, unknown> | undefined, 'title')
+			return typeof text === 'string'
+		})
+		const title = resolveMetaText(record?.meta as Record<string, unknown> | undefined, 'title')
 		const icon = record?.meta?.icon
 		if (typeof title !== 'string' || typeof icon !== 'string') return null
 		return {
@@ -308,7 +326,9 @@
 	const breadcrumbItems = computed(() => {
 		// 优先使用 inject 的 breadcrumbItems（来自 workspace 页面），但需要过滤掉 Space 相关的项
 		if (workspaceBreadcrumbItems.value.length > 0) {
-			const spaceLabelSet = new Set(Object.values(SPACE_DISPLAY).map((item) => item.label.toLowerCase()))
+			const staticSpaceLabels = Object.values(SPACE_DISPLAY).map((item) => item.label.toLowerCase())
+			const i18nSpaceLabels = SPACE_IDS.map((id) => t(`spaces.${id}`).toLowerCase())
+			const spaceLabelSet = new Set([...staticSpaceLabels, ...i18nSpaceLabels, t('routes.space.title').toLowerCase()])
 			// 过滤掉 'Space' 和 space label（如 'Work'），只保留 project 路径
 			return workspaceBreadcrumbItems.value.filter((item) => {
 				const label = item.label.toLowerCase()
@@ -316,13 +336,13 @@
 			})
 		}
 		if (route.path === '/trash') {
-			return [{ label: '回收站' }]
+			return [{ label: t('nav.pages.trash.title') }]
 		}
 		if (route.path.startsWith('/settings')) {
 			const currentRecord = [...route.matched]
 				.reverse()
-				.find((item) => typeof item.meta?.title === 'string' && item.path !== '/settings')
-			const currentLabel = typeof currentRecord?.meta?.title === 'string' ? currentRecord.meta.title : null
+				.find((item) => item.path !== '/settings' && resolveMetaText(item.meta as Record<string, unknown>, 'title'))
+			const currentLabel = resolveMetaText(currentRecord?.meta as Record<string, unknown> | undefined, 'title')
 			return currentLabel ? [{ label: currentLabel }] : []
 		}
 		// 如果没有传入，根据路由自动生成（只包含 project，不包含 space）
@@ -342,7 +362,7 @@
 					return base
 				}
 			}
-			base.push({ label: '所有任务' })
+			base.push({ label: t('nav.pages.allTasks.title') })
 			return base
 		}
 		return []

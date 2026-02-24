@@ -1,8 +1,8 @@
 <template>
 	<UModal
 		v-model:open="isOpen"
-		title="New Task"
-		description="快速创建一个新任务"
+		:title="t('modals.createTask.title')"
+		:description="t('modals.createTask.description')"
 		:ui="taskModalUi">
 		<template #body>
 			<div v-motion="modalBodyMotionPreset">
@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import TaskModalBody from './components/TaskModalBody.vue'
 	import TaskModalFooter from './components/TaskModalFooter.vue'
 	import { useMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
@@ -53,6 +54,7 @@
 
 	const props = defineProps<CreateTaskModalProps>()
 	const emit = defineEmits<CreateTaskModalEmits>()
+	const { t } = useI18n({ useScope: 'global' })
 	const modalBodyMotionPreset = useMotionPreset('modalSection')
 	const modalFooterMotionPreset = useMotionPresetWithDelay('statusFeedback', 20)
 	const taskModalUi = createModalLayerUi({

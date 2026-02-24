@@ -54,13 +54,13 @@
 								type="button"
 								class="w-full px-3 py-2 rounded-lg text-left text-sm text-default hover:bg-elevated transition-colors outline-none focus:outline-none"
 								@click="openProjectInspector(item)">
-								编辑项目
+								{{ t('modals.deleteProject.editProject') }}
 							</button>
 							<button
 								type="button"
 								class="w-full px-3 py-2 rounded-lg text-left text-sm text-error hover:bg-elevated transition-colors outline-none focus:outline-none"
 								@click="openDeleteConfirm(item)">
-								删除
+								{{ t('modals.deleteProject.deleteProject') }}
 							</button>
 						</div>
 					</template>
@@ -98,11 +98,13 @@
 
 	<UModal
 		v-model:open="confirmDeleteOpen"
-		title="确认删除"
-		description="确认是否删除当前项目"
+		:title="t('modals.deleteProject.title')"
+		:description="t('modals.deleteProject.description')"
 		:ui="deleteModalUi">
 		<template #body>
-			<p class="text-sm text-muted">将删除项目“{{ deleteTarget?.label }}”，可在回收站恢复。</p>
+			<p class="text-sm text-muted">
+				{{ t('modals.deleteProject.body', { name: deleteTarget?.label ?? '' }) }}
+			</p>
 		</template>
 		<template #footer>
 			<UButton
@@ -110,7 +112,7 @@
 				variant="ghost"
 				size="sm"
 				@click="closeDeleteConfirm">
-				取消
+				{{ t('modals.deleteProject.cancel') }}
 			</UButton>
 			<UButton
 				color="error"
@@ -118,7 +120,7 @@
 				:loading="deleting"
 				:disabled="!deleteTarget"
 				@click="confirmDelete">
-				确认删除
+				{{ t('modals.deleteProject.confirmDelete') }}
 			</UButton>
 		</template>
 	</UModal>
@@ -127,6 +129,7 @@
 <script setup lang="ts">
 	import type { SortableEvent } from 'sortablejs'
 	import { computed, ref, toRefs, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { VueDraggable } from 'vue-draggable-plus'
 
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
@@ -176,6 +179,7 @@
 	}>()
 
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const projectInspectorStore = useProjectInspectorStore()
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
@@ -265,8 +269,8 @@
 		const project = projectsStore.getProjectsOfSpace(spaceId.value).find((candidate) => candidate.id === item.id)
 		if (!project) {
 			toast.add({
-				title: '无法编辑项目',
-				description: '未找到项目详情，请稍后重试',
+				title: t('toast.projectTree.cannotEditTitle'),
+				description: t('toast.projectTree.cannotEditDescription'),
 				color: 'error',
 			})
 			return
@@ -291,15 +295,15 @@
 			await deleteProject(deleteTarget.value.id)
 			refreshSignals.bumpProject()
 			toast.add({
-				title: '已移入回收站',
+				title: t('toast.projectTree.deletedTitle'),
 				description: deleteTarget.value.label,
 				color: 'success',
 			})
 			closeDeleteConfirm()
 		} catch (e) {
 			toast.add({
-				title: '删除失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				title: t('toast.projectTree.deleteFailedTitle'),
+				description: e instanceof Error ? e.message : t('fallback.unknownError'),
 				color: 'error',
 			})
 		} finally {

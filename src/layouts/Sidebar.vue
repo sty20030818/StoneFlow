@@ -29,7 +29,9 @@
 		<!-- 固定区域：Execution Zone -->
 		<div class="px-3 pt-2 shrink-0">
 			<section>
-				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">系统分组</div>
+				<div class="px-1.5 text-[11px] font-medium text-muted uppercase tracking-wide mb-1.5">
+					{{ t('nav.groups.system') }}
+				</div>
 				<nav class="flex flex-col gap-0.5">
 					<RouterLink
 						:to="allTasksPath"
@@ -38,7 +40,7 @@
 						<UIcon
 							:name="allTasksNav.icon"
 							:class="allTasksNav.iconClass" />
-						<span>{{ allTasksNav.title }}</span>
+						<span>{{ t(allTasksNav.titleKey) }}</span>
 					</RouterLink>
 					<!-- 默认 Project 入口 -->
 					<RouterLink
@@ -60,7 +62,7 @@
 						<UIcon
 							:name="trashNav.icon"
 							:class="trashNav.iconClass" />
-						<span>{{ trashNav.title }}</span>
+						<span>{{ t(trashNav.titleKey) }}</span>
 					</RouterLink>
 				</nav>
 			</section>
@@ -71,7 +73,7 @@
 			v-motion="projectHeaderMotion"
 			class="px-3 py-1 shrink-0">
 			<div class="flex items-center justify-between px-1.5">
-				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">项目树</div>
+				<div class="text-[11px] font-medium text-muted uppercase tracking-wide">{{ t('nav.groups.projectTree') }}</div>
 				<UButton
 					color="neutral"
 					variant="ghost"
@@ -102,7 +104,7 @@
 					<div
 						v-else-if="showProjectsEmpty"
 						class="text-[12px] text-muted px-2.5 py-1.5 rounded-md bg-elevated/60 border border-dashed border-default/70">
-						当前 Space 暂无项目
+						{{ t('sidebar.projectsEmpty') }}
 					</div>
 				</div>
 			</section>
@@ -121,7 +123,7 @@
 						<div
 							class="text-[11px] font-medium text-muted uppercase tracking-wide"
 							:class="{ 'opacity-70': isLibraryCollapsed }">
-							资产库
+							{{ t('nav.groups.library') }}
 						</div>
 						<UIcon
 							name="i-lucide-chevron-down"
@@ -142,7 +144,7 @@
 								<UIcon
 									:name="item.icon"
 									:class="item.iconColor" />
-								<span>{{ item.label }}</span>
+								<span>{{ t(item.labelKey) }}</span>
 							</RouterLink>
 						</nav>
 					</Transition>
@@ -166,6 +168,7 @@
 <script setup lang="ts">
 	import { watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
 	import { computed, inject, onMounted, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useRoute } from 'vue-router'
 
 	import { useProjectMotionPreset } from '@/composables/base/motion'
@@ -190,6 +193,7 @@
 	}>()
 
 	const route = useRoute()
+	const { t } = useI18n({ useScope: 'global' })
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const currentPath = computed(() => route.path)
 	const sidebarShellMotion = useProjectMotionPreset('drawerSection', 'sidebarShell')
@@ -211,7 +215,7 @@
 
 	const spaces = SPACE_IDS.map((id) => ({
 		id,
-		label: SPACE_DISPLAY[id].label,
+		label: t(`spaces.${id}`),
 		icon: SPACE_DISPLAY[id].icon,
 		iconClass: SPACE_DISPLAY[id].iconMutedClass,
 		activeIconClass: SPACE_DISPLAY[id].iconClass,

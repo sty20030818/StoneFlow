@@ -1,5 +1,6 @@
 import { useVModel, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import type { ProjectDto } from '@/services/api/projects'
 import { createProject } from '@/services/api/projects'
@@ -9,7 +10,6 @@ import {
 	PROJECT_LEVEL_TEXT_CLASSES,
 	PROJECT_PRIORITY_OPTIONS,
 	PROJECT_ROOT_ICON_CLASS,
-	PROJECT_ROOT_LABEL,
 	type ProjectPriorityValue,
 } from '@/config/project'
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
@@ -66,17 +66,11 @@ export type LinkKindOption = {
 	label: string
 }
 
-const PROJECT_LINK_KIND_OPTIONS: LinkKindOption[] = [
-	{ value: 'web', label: 'Web' },
-	{ value: 'doc', label: 'Doc' },
-	{ value: 'design', label: 'Design' },
-	{ value: 'repoLocal', label: 'Repo (Local)' },
-	{ value: 'repoRemote', label: 'Repo (Remote)' },
-	{ value: 'other', label: 'Other' },
-]
+const PROJECT_LINK_KIND_VALUES: LinkDto['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
 
 export function useCreateProjectModal(props: CreateProjectModalProps, emit: CreateProjectModalEmits) {
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
@@ -102,17 +96,27 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 
 	const canSubmit = computed(() => form.title.trim().length > 0)
 
-	const spaceOptions: SpaceOption[] = SPACE_OPTIONS
+	const spaceOptions = computed<SpaceOption[]>(() =>
+		SPACE_OPTIONS.map((item) => ({
+			...item,
+			label: t(`spaces.${item.value}`),
+		})),
+	)
 	const priorityOptions: PriorityOption[] = PROJECT_PRIORITY_OPTIONS
-	const linkKindOptions: LinkKindOption[] = PROJECT_LINK_KIND_OPTIONS
+	const linkKindOptions = computed<LinkKindOption[]>(() => {
+		return PROJECT_LINK_KIND_VALUES.map((value) => ({
+			value,
+			label: t(`linkKind.${value}`),
+		}))
+	})
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
-	const projectRootLabel = PROJECT_ROOT_LABEL
+	const projectRootLabel = computed(() => t('common.labels.projectRoot'))
 
 	const currentParentProjectOptions = ref<ParentProjectOption[]>([
 		{
 			value: null,
-			label: PROJECT_ROOT_LABEL,
+			label: projectRootLabel.value,
 			icon: PROJECT_ICON,
 			iconClass: PROJECT_ROOT_ICON_CLASS,
 			depth: 0,
@@ -136,7 +140,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		const options: ParentProjectOption[] = [
 			{
 				value: null,
-				label: PROJECT_ROOT_LABEL,
+				label: projectRootLabel.value,
 				icon: PROJECT_ICON,
 				iconClass: PROJECT_ROOT_ICON_CLASS,
 				depth: 0,
@@ -275,6 +279,11 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 			emit('created', project)
 			close()
 		} catch (error) {
+			toast.add({
+				title: t('toast.common.createProjectFailed'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			console.error('创建项目失败:', error)
 		} finally {
 			loading.value = false

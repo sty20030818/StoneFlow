@@ -19,13 +19,13 @@
 		<!-- 命令面板 -->
 		<UModal
 			v-model:open="commandPaletteOpen"
-			title="命令面板"
-			description="搜索页面并执行快捷操作"
+			:title="t('commandPalette.title')"
+			:description="t('commandPalette.description')"
 			:ui="commandPaletteModalUi">
 			<template #content>
 				<UCommandPalette
 					:groups="commandGroups"
-					placeholder="搜索页面或操作..."
+					:placeholder="t('commandPalette.placeholder')"
 					class="h-80"
 					@update:model-value="onCommandSelect" />
 			</template>
@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 	import { computed, provide, ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
@@ -77,6 +78,7 @@
 
 	const router = useRouter()
 	const route = useRoute()
+	const { t } = useI18n({ useScope: 'global' })
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const commandPaletteOpen = ref(false)
 	const createTaskModalOpen = ref(false)
@@ -119,11 +121,11 @@
 	const commandGroups = computed(() => [
 		{
 			id: 'workspace',
-			label: '工作空间',
+			label: t('nav.groups.workspace'),
 			items: [
-				{ label: 'All Tasks', icon: 'i-lucide-list-checks', to: `/space/${currentSpaceId.value}` },
+				{ label: t('commandPalette.items.allTasks'), icon: 'i-lucide-list-checks', to: `/space/${currentSpaceId.value}` },
 				...SPACE_IDS.map((id) => ({
-					label: SPACE_DISPLAY[id].label,
+					label: t(`spaces.${id}`),
 					icon: SPACE_DISPLAY[id].icon,
 					to: `/space/${id}`,
 				})),
@@ -131,28 +133,28 @@
 		},
 		{
 			id: 'review',
-			label: '回顾',
+			label: t('nav.groups.review'),
 			items: [
-				{ label: 'Finish List', icon: 'i-lucide-check-circle', to: '/finish-list' },
-				{ label: 'Stats', icon: 'i-lucide-bar-chart-3', to: '/stats' },
-				{ label: 'Logs', icon: 'i-lucide-scroll-text', to: '/logs' },
+				{ label: t('commandPalette.items.finishList'), icon: 'i-lucide-check-circle', to: '/finish-list' },
+				{ label: t('commandPalette.items.stats'), icon: 'i-lucide-bar-chart-3', to: '/stats' },
+				{ label: t('commandPalette.items.logs'), icon: 'i-lucide-scroll-text', to: '/logs' },
 			],
 		},
 		{
 			id: 'assets',
-			label: '资产库',
+			label: t('nav.groups.assets'),
 			items: [
-				{ label: 'Snippets', icon: 'i-lucide-code', to: '/snippets' },
-				{ label: 'Vault', icon: 'i-lucide-lock', to: '/vault' },
-				{ label: 'Notes', icon: 'i-lucide-notebook', to: '/notes' },
+				{ label: t('commandPalette.items.snippets'), icon: 'i-lucide-code', to: '/snippets' },
+				{ label: t('commandPalette.items.vault'), icon: 'i-lucide-lock', to: '/vault' },
+				{ label: t('commandPalette.items.notes'), icon: 'i-lucide-notebook', to: '/notes' },
 			],
 		},
 		{
 			id: 'settings',
-			label: '设置',
+			label: t('nav.groups.settings'),
 			items: [
-				{ label: 'About', icon: 'i-lucide-info', to: '/settings/about' },
-				{ label: '远端同步', icon: 'i-lucide-cloud', to: '/settings/remote-sync' },
+				{ label: t('commandPalette.items.about'), icon: 'i-lucide-info', to: '/settings/about' },
+				{ label: t('commandPalette.items.remoteSync'), icon: 'i-lucide-cloud', to: '/settings/remote-sync' },
 			],
 		},
 	])

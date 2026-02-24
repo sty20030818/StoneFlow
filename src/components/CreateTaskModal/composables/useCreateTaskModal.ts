@@ -1,5 +1,6 @@
 import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import type { ProjectDto } from '@/services/api/projects'
 import { getDefaultProject } from '@/services/api/projects'
@@ -10,7 +11,6 @@ import {
 	PROJECT_LEVEL_TEXT_CLASSES,
 	PROJECT_UNCATEGORIZED_ICON,
 	PROJECT_UNCATEGORIZED_ICON_CLASS,
-	UNCATEGORIZED_LABEL,
 } from '@/config/project'
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/config/task'
@@ -72,17 +72,11 @@ export type LinkKindOption = {
 	label: string
 }
 
-const TASK_LINK_KIND_OPTIONS: LinkKindOption[] = [
-	{ value: 'web', label: 'Web' },
-	{ value: 'doc', label: 'Doc' },
-	{ value: 'design', label: 'Design' },
-	{ value: 'repoLocal', label: 'Repo (Local)' },
-	{ value: 'repoRemote', label: 'Repo (Remote)' },
-	{ value: 'other', label: 'Other' },
-]
+const TASK_LINK_KIND_VALUES: LinkDto['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
 
 export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTaskModalEmits) {
 	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
 	const refreshSignals = useRefreshSignalsStore()
 
@@ -118,13 +112,23 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 
 	const canSubmit = computed(() => form.value.title.trim().length > 0)
 
-	const spaceOptions = SPACE_OPTIONS
+	const spaceOptions = computed(() =>
+		SPACE_OPTIONS.map((item) => ({
+			...item,
+			label: t(`spaces.${item.value}`),
+		})),
+	)
 	const priorityOptions = TASK_PRIORITY_OPTIONS
 	const doneReasonOptions = TASK_DONE_REASON_OPTIONS
-	const linkKindOptions = TASK_LINK_KIND_OPTIONS
+	const linkKindOptions = computed<LinkKindOption[]>(() => {
+		return TASK_LINK_KIND_VALUES.map((value) => ({
+			value,
+			label: t(`linkKind.${value}`),
+		}))
+	})
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
-	const uncategorizedLabel = UNCATEGORIZED_LABEL
+	const uncategorizedLabel = computed(() => t('common.labels.uncategorized'))
 
 	function normalizeTags(values: string[]): string[] {
 		const seen = new Set<string>()
@@ -220,7 +224,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		const options: ProjectOption[] = [
 			{
 				value: null,
-				label: UNCATEGORIZED_LABEL,
+				label: uncategorizedLabel.value,
 				icon: PROJECT_UNCATEGORIZED_ICON,
 				iconClass: PROJECT_UNCATEGORIZED_ICON_CLASS,
 				depth: 0,
@@ -347,6 +351,11 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			emit('created', task)
 			close()
 		} catch (error) {
+			toast.add({
+				title: t('toast.common.createTaskFailed'),
+				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				color: 'error',
+			})
 			console.error('创建任务失败:', error)
 		} finally {
 			loading.value = false

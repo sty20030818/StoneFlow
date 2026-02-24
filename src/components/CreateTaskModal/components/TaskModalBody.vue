@@ -1,11 +1,11 @@
 <template>
 	<div class="space-y-4">
 		<UFormField
-			label="Title"
+			:label="t('modals.createTask.fields.title')"
 			required>
 			<UInput
 				v-model="form.title"
-				placeholder="输入任务标题..."
+				:placeholder="t('modals.createTask.placeholders.title')"
 				size="md"
 				class="w-full"
 				:ui="{
@@ -17,7 +17,7 @@
 		</UFormField>
 
 		<div class="grid grid-cols-1 gap-4">
-			<UFormField label="Space">
+			<UFormField :label="t('modals.createTask.fields.space')">
 				<USelectMenu
 					v-model="form.spaceId"
 					:items="spaceOptions"
@@ -39,7 +39,7 @@
 				</USelectMenu>
 			</UFormField>
 
-			<UFormField label="Project">
+			<UFormField :label="t('modals.createTask.fields.project')">
 				<USelectMenu
 					v-model="form.projectId"
 					:items="projectOptions"
@@ -66,7 +66,7 @@
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
-			<UFormField label="Status">
+			<UFormField :label="t('modals.createTask.fields.status')">
 				<USelectMenu
 					v-model="form.status"
 					:items="statusOptions"
@@ -90,7 +90,7 @@
 				</USelectMenu>
 			</UFormField>
 
-			<UFormField label="Priority">
+			<UFormField :label="t('modals.createTask.fields.priority')">
 				<USelectMenu
 					v-model="form.priority"
 					:items="priorityOptions"
@@ -114,7 +114,7 @@
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
-			<UFormField label="截止时间">
+			<UFormField :label="t('modals.createTask.fields.deadline')">
 				<DatePickerInput
 					v-model="form.deadlineDate"
 					size="md"
@@ -125,7 +125,7 @@
 
 		<UFormField
 			v-if="form.status === 'done'"
-			label="完成类型">
+			:label="t('modals.createTask.fields.doneReason')">
 			<USelectMenu
 				v-model="form.doneReason"
 				:items="doneReasonOptions"
@@ -147,7 +147,7 @@
 			</USelectMenu>
 		</UFormField>
 
-		<UFormField label="Tags (可选)">
+		<UFormField :label="t('modals.createTask.fields.tags')">
 			<div class="space-y-2">
 				<div class="flex flex-wrap gap-2">
 					<UBadge
@@ -168,7 +168,7 @@
 				</div>
 				<UInput
 					v-model="tagInput"
-					placeholder="输入标签后按回车添加"
+					:placeholder="t('modals.createTask.placeholders.tag')"
 					size="md"
 					class="w-full"
 					:ui="{
@@ -178,12 +178,12 @@
 			</div>
 		</UFormField>
 
-		<UFormField label="Links (可选)">
+		<UFormField :label="t('modals.createTask.fields.links')">
 			<div class="space-y-2">
 				<div
 					v-if="form.links.length === 0"
 					class="text-xs text-muted">
-					暂无链接
+					{{ t('modals.createTask.empty.links') }}
 				</div>
 				<div
 					v-for="(link, index) in form.links"
@@ -192,13 +192,13 @@
 					<div class="grid grid-cols-2 gap-2">
 						<UInput
 							v-model="link.title"
-							placeholder="标题（可选）"
+							:placeholder="t('modals.createTask.placeholders.linkTitle')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
 						<UInput
 							v-model="link.url"
-							placeholder="URL（必填）"
+							:placeholder="t('modals.createTask.placeholders.linkUrl')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
@@ -219,7 +219,7 @@
 							size="sm"
 							class="justify-center"
 							@click="emit('remove-link', index)">
-							移除
+							{{ t('modals.createTask.buttons.remove') }}
 						</UButton>
 					</div>
 				</div>
@@ -229,15 +229,15 @@
 					size="sm"
 					icon="i-lucide-plus"
 					@click="emit('add-link')">
-					新增链接
+					{{ t('modals.createTask.buttons.addLink') }}
 				</UButton>
 			</div>
 		</UFormField>
 
-		<UFormField label="Note (可选)">
+		<UFormField :label="t('modals.createTask.fields.note')">
 			<UTextarea
 				v-model="form.note"
-				placeholder="记录一些背景信息、想法或链接…"
+				:placeholder="t('modals.createTask.placeholders.note')"
 				:rows="3"
 				size="md"
 				class="w-full"
@@ -252,7 +252,7 @@
 				type="button"
 				class="w-full px-3 py-2 text-sm flex items-center justify-between"
 				@click="emit('toggle-advanced')">
-				<span class="font-medium">高级属性</span>
+				<span class="font-medium">{{ t('modals.createTask.fields.advanced') }}</span>
 				<UIcon
 					:name="advancedOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
 					class="size-4" />
@@ -263,7 +263,7 @@
 				<div
 					v-if="form.customFields.length === 0"
 					class="text-xs text-muted">
-					暂无自定义字段
+					{{ t('modals.createTask.empty.customFields') }}
 				</div>
 				<div
 					v-for="(field, index) in form.customFields"
@@ -272,13 +272,13 @@
 					<div class="grid grid-cols-2 gap-2">
 						<UInput
 							v-model="field.title"
-							placeholder="标题"
+							:placeholder="t('modals.createTask.placeholders.customFieldTitle')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
 						<UInput
 							v-model="field.value"
-							placeholder="内容（可选）"
+							:placeholder="t('modals.createTask.placeholders.customFieldValue')"
 							size="sm"
 							class="w-full"
 							:ui="{ rounded: 'rounded-lg' }" />
@@ -289,7 +289,7 @@
 							variant="soft"
 							size="xs"
 							@click="emit('remove-custom-field', index)">
-							移除字段
+							{{ t('modals.createTask.buttons.removeField') }}
 						</UButton>
 					</div>
 				</div>
@@ -299,7 +299,7 @@
 					size="sm"
 					icon="i-lucide-plus"
 					@click="emit('add-custom-field')">
-					新增自定义字段
+					{{ t('modals.createTask.buttons.addCustomField') }}
 				</UButton>
 			</div>
 		</div>
@@ -308,6 +308,7 @@
 
 <script setup lang="ts">
 	// 复用边界约束：该组件只负责字段渲染与事件分发，业务流程统一留在 composable。
+	import { useI18n } from 'vue-i18n'
 	import DatePickerInput from '@/components/DatePickerInput.vue'
 
 	import type { DoneReasonOption, PriorityOption, StatusOption } from '@/config/task'
@@ -323,6 +324,7 @@
 
 	const form = defineModel<CreateTaskFormState>('form', { required: true })
 	const tagInput = defineModel<string>('tagInput', { required: true })
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		spaceOptions: SpaceOption[]

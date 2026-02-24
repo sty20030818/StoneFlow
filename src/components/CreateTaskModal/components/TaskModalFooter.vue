@@ -4,7 +4,7 @@
 		variant="ghost"
 		size="sm"
 		@click="emit('close')">
-		Cancel
+		{{ t('modals.createTask.buttons.cancel') }}
 	</UButton>
 	<UButton
 		color="primary"
@@ -12,15 +12,18 @@
 		:disabled="!canSubmit"
 		:loading="loading"
 		@click="emit('submit')">
-		Create Task
+		{{ t('modals.createTask.buttons.submit') }}
 	</UButton>
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
+
 	defineProps<{
 		loading: boolean
 		canSubmit: boolean
 	}>()
+	const { t } = useI18n({ useScope: 'global' })
 
 	const emit = defineEmits<{
 		close: []

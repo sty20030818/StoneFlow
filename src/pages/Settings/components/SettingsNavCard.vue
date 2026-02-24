@@ -2,8 +2,8 @@
 	<SettingsSectionCard>
 		<template #header>
 			<div class="space-y-1">
-				<div class="text-sm font-semibold text-default">Settings</div>
-				<div class="text-xs text-muted">管理应用配置与关于信息</div>
+				<div class="text-sm font-semibold text-default">{{ t('nav.settings.title') }}</div>
+				<div class="text-xs text-muted">{{ t('nav.settings.description') }}</div>
 			</div>
 		</template>
 		<nav class="space-y-2">
@@ -31,10 +31,12 @@
 
 <script setup lang="ts">
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import { useI18n } from 'vue-i18n'
 	import SettingsSectionCard from './SettingsSectionCard.vue'
 	import type { SettingsNavItem } from '../config'
 
 	const navItemHoverMotion = useCardHoverMotionPreset()
+	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{
 		navItems: ReadonlyArray<SettingsNavItem>

@@ -1,8 +1,8 @@
 <template>
 	<UModal
 		v-model:open="isOpen"
-		title="New Project"
-		description="创建一个新的项目容器"
+		:title="t('modals.createProject.title')"
+		:description="t('modals.createProject.description')"
 		:ui="projectModalUi">
 		<template #body>
 			<div v-motion="modalBodyMotionPreset">
@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import ProjectModalBody from './components/ProjectModalBody.vue'
 	import ProjectModalFooter from './components/ProjectModalFooter.vue'
 	import { useMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
@@ -47,6 +48,7 @@
 
 	const props = defineProps<CreateProjectModalProps>()
 	const emit = defineEmits<CreateProjectModalEmits>()
+	const { t } = useI18n({ useScope: 'global' })
 	const modalBodyMotionPreset = useMotionPreset('modalSection')
 	const modalFooterMotionPreset = useMotionPresetWithDelay('statusFeedback', 20)
 	const projectModalUi = createModalLayerUi({

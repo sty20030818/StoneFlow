@@ -35,31 +35,7 @@ export function normalizeAppLocale(value: string | null | undefined): AppLocale 
 	return prefix ? LOCALE_ALIAS_MAP[prefix] ?? null : null
 }
 
-export type MessageSchema = {
-	app: {
-		name: string
-	}
-	locale: {
-		label: string
-		description: string
-		options: Record<AppLocale, string>
-	}
-	common: {
-		actions: {
-			confirm: string
-			cancel: string
-			save: string
-			close: string
-		}
-		status: {
-			loading: string
-			error: string
-		}
-	}
-	fallback: {
-		unknownError: string
-	}
-}
+export type MessageSchema = Record<string, unknown>
 
 export const DEFAULT_LOCALE: AppLocale = 'zh-CN'
 
