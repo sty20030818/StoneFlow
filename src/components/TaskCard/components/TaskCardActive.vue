@@ -2,6 +2,7 @@
 	<!-- 外层容器:相对定位,用于删除按钮的绝对定位基准 -->
 	<div class="relative group rounded-2xl flex items-center">
 		<!-- 主卡片容器 -->
+		<!-- 临时隐藏任务右键菜单（保留逻辑便于后续恢复） -->
 		<div
 			v-motion="cardHoverMotionPreset"
 			class="relative w-full rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 ease-out hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
@@ -11,8 +12,7 @@
 				isEditMode && !selected ? 'opacity-80' : '',
 				isEditMode ? 'group-hover:mr-14' : '',
 			]"
-			@click="onCardClick"
-			@contextmenu.prevent.stop="onContextMenu">
+			@click="onCardClick">
 			<!-- 编辑模式：选中遮罩 -->
 			<div
 				v-if="isEditMode && selected"

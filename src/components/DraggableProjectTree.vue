@@ -17,12 +17,12 @@
 			v-for="item in localProjects"
 			:key="item.id"
 			class="rounded-lg">
+			<!-- 临时隐藏项目树右键菜单（保留代码便于后续恢复） -->
 			<div
 				class="group relative rounded-lg text-[13px] transition-colors duration-150 select-none"
 				:class="
 					isActiveProject(item.id) ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated hover:text-default'
-				"
-				@contextmenu.prevent="openContextMenu(item)">
+				">
 				<RouterLink
 					:to="`/space/${spaceId}?project=${item.id}`"
 					class="flex w-full items-center gap-2 py-1.5 pr-8"
@@ -50,6 +50,12 @@
 					</button>
 					<template #content>
 						<div class="p-1 min-w-[140px]">
+							<button
+								type="button"
+								class="w-full px-3 py-2 rounded-lg text-left text-sm text-default hover:bg-elevated transition-colors outline-none focus:outline-none"
+								@click="openProjectInspector(item)">
+								编辑项目
+							</button>
 							<button
 								type="button"
 								class="w-full px-3 py-2 rounded-lg text-left text-sm text-error hover:bg-elevated transition-colors outline-none focus:outline-none"
@@ -129,7 +135,6 @@
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { calculateInsertRank } from '@/utils/rank'
-	import { Menu } from '@tauri-apps/api/menu'
 
 	export type ProjectTreeItem = {
 		id: string
@@ -228,31 +233,33 @@
 		emit('update:expandedKeys', newKeys)
 	}
 
-	async function openContextMenu(item: ProjectTreeItem) {
-		try {
-			const menu = await Menu.new({
-				items: [
-					{
-						id: 'edit',
-						text: '编辑',
-						action: () => {
-							openProjectInspector(item)
-						},
-					},
-					{
-						id: 'delete',
-						text: '删除',
-						action: () => {
-							openDeleteConfirm(item)
-						},
-					},
-				],
-			})
-			await menu.popup()
-		} catch (error) {
-			console.error('打开项目右键菜单失败:', error)
-		}
-	}
+	// 临时隐藏项目树右键菜单，后续若需要恢复可启用以下实现：
+	// import { Menu } from '@tauri-apps/api/menu'
+	// async function openContextMenu(item: ProjectTreeItem) {
+	// 	try {
+	// 		const menu = await Menu.new({
+	// 			items: [
+	// 				{
+	// 					id: 'edit',
+	// 					text: '编辑',
+	// 					action: () => {
+	// 						openProjectInspector(item)
+	// 					},
+	// 				},
+	// 				{
+	// 					id: 'delete',
+	// 					text: '删除',
+	// 					action: () => {
+	// 						openDeleteConfirm(item)
+	// 					},
+	// 				},
+	// 			],
+	// 		})
+	// 		await menu.popup()
+	// 	} catch (error) {
+	// 		console.error('打开项目右键菜单失败:', error)
+	// 	}
+	// }
 
 	function openProjectInspector(item: ProjectTreeItem) {
 		const project = projectsStore.getProjectsOfSpace(spaceId.value).find((candidate) => candidate.id === item.id)

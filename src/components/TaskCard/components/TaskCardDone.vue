@@ -2,6 +2,7 @@
 	<!-- 外层容器 -->
 	<div class="relative group rounded-2xl flex items-center">
 		<!-- 主卡片容器 -->
+		<!-- 临时隐藏任务右键菜单（保留逻辑便于后续恢复） -->
 		<div
 			v-motion="cardHoverMotionPreset"
 			class="relative w-full flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 opacity-60 hover:opacity-100 cursor-default items-center select-none"
@@ -10,8 +11,7 @@
 				isEditMode && !selected ? 'opacity-40' : '',
 				isEditMode ? 'group-hover:mr-14' : '',
 			]"
-			@click="onCardClick"
-			@contextmenu.prevent.stop="onContextMenu">
+			@click="onCardClick">
 			<!-- 编辑模式：选中遮罩 -->
 			<div
 				v-if="isEditMode && selected"
