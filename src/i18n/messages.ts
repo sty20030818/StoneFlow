@@ -43,3 +43,12 @@ export const messages = {
 	'zh-CN': zhCN,
 	'en-US': enUS,
 } satisfies Record<AppLocale, MessageSchema>
+
+export function buildRuntimeMessages() {
+	return {
+		...messages,
+		zh: messages['zh-CN'],
+		'zh-Hans': messages['zh-CN'],
+		en: messages['en-US'],
+	} satisfies Record<string, MessageSchema>
+}

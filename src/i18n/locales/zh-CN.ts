@@ -459,6 +459,7 @@ export default {
 		},
 		links: {
 			label: '链接',
+			empty: '暂无链接',
 			untitled: '未命名链接',
 			placeholders: {
 				titleOptional: '标题（可选）',

@@ -5,15 +5,20 @@ import { usePreferredLanguages } from '@vueuse/core'
 import { createI18n } from 'vue-i18n'
 
 import { settingsStore } from '@/services/tauri/store'
-import { DEFAULT_LOCALE, messages, normalizeAppLocale, type AppLocale } from './messages'
+import { buildRuntimeMessages, DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from './messages'
 
 const nuxtUiEnUSLocale = extendLocale(en, {
 	code: 'en-US',
 	name: 'English (US)',
 })
 
+const nuxtUiZhCNLocale = extendLocale(zh_cn, {
+	code: 'zh-CN',
+	name: '简体中文',
+})
+
 const NUXT_UI_LOCALE_BY_APP_LOCALE = {
-	'zh-CN': zh_cn,
+	'zh-CN': nuxtUiZhCNLocale,
 	'en-US': nuxtUiEnUSLocale,
 } as const
 
@@ -70,7 +75,7 @@ export const i18n = createI18n({
 	legacy: false,
 	locale: DEFAULT_LOCALE,
 	fallbackLocale: DEFAULT_LOCALE,
-	messages,
+	messages: buildRuntimeMessages(),
 })
 
 export function setAppLocale(locale: AppLocale) {

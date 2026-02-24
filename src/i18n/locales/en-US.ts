@@ -459,6 +459,7 @@ export default {
 		},
 		links: {
 			label: 'Links',
+			empty: 'No links',
 			untitled: 'Untitled Link',
 			placeholders: {
 				titleOptional: 'Title (Optional)',
