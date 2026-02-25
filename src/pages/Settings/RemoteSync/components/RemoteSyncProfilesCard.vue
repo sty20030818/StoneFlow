@@ -1,9 +1,9 @@
 <template>
 	<SettingsSectionCard card-class="bg-default">
 		<template #header>
-			<div class="flex items-center justify-between">
+			<div class="flex items-center justify-between gap-3">
 				<div class="text-sm font-semibold">{{ t('settings.remoteSync.profiles.title') }}</div>
-				<div class="flex items-center gap-2">
+				<div class="flex flex-wrap items-center justify-end gap-2">
 					<UButton
 						color="neutral"
 						variant="soft"
@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
 	import type { RemoteDbProfile } from '@/types/shared/remote-sync'

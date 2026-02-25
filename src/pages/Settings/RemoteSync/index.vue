@@ -1,12 +1,27 @@
 <template>
-	<section class="max-w-5xl space-y-6">
+	<section class="mx-auto w-full max-w-6xl space-y-6">
+		<div
+			v-motion="headerMotion"
+			class="flex flex-col gap-2">
+			<div class="space-y-1">
+				<div class="text-2xl font-semibold text-default">{{ t('settings.remoteSync.title') }}</div>
+				<div class="text-sm text-muted">
+					{{ t('settings.remoteSync.description') }}
+				</div>
+			</div>
+		</div>
+
 		<div
 			v-motion="actionsCardMotion"
 			class="space-y-6 lg:sticky lg:top-4 lg:self-start">
 			<RemoteSyncActionsCard
 				:is-pushing="isPushing"
 				:is-pulling="isPulling"
+				:testing-current="testingCurrent"
 				:has-active-profile="hasActiveProfile"
+				:status-badge-variant="statusBadgeVariant"
+				:status-badge-class="statusBadgeClass"
+				:status-label="statusLabel"
 				:sync-error="syncError"
 				:last-pushed-text="lastPushedText"
 				:last-pulled-text="lastPulledText"
@@ -18,48 +33,24 @@
 				:recent-sync-history="recentSyncHistory"
 				:on-update-history-filter="setHistoryFilter"
 				:on-clear-history="handleClearSyncHistory"
+				:on-test-current="handleTestCurrent"
 				:on-push="handlePush"
 				:on-pull="handlePull" />
 		</div>
 
 		<div
-			v-motion="headerMotion"
-			class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-			<div class="space-y-1">
-				<div class="text-2xl font-semibold text-default">{{ t('settings.remoteSync.title') }}</div>
-				<div class="text-sm text-muted">
-					{{ t('settings.remoteSync.description') }}
-				</div>
-			</div>
-		</div>
-
-		<div
 			v-motion="contentGridMotion"
-			class="grid gap-6 lg:grid-cols-[1.25fr,0.95fr]">
-			<div class="space-y-6">
-				<div v-motion="statusCardMotion">
-					<RemoteSyncStatusCard
-						:testing-current="testingCurrent"
-						:has-active-profile="hasActiveProfile"
-						:status-badge-variant="statusBadgeVariant"
-						:status-badge-class="statusBadgeClass"
-						:status-label="statusLabel"
-						:status-message="statusMessage"
-						:active-profile="activeProfile"
-						:on-test-current="handleTestCurrent" />
-				</div>
-
-				<div v-motion="profilesCardMotion">
-					<RemoteSyncProfilesCard
-						:profiles="profiles"
-						:active-profile-id="activeProfileId"
-						:format-profile-meta="formatProfileMeta"
-						:on-open-create="openCreate"
-						:on-open-import="openImport"
-						:on-set-active="setActive"
-						:on-open-edit="openEdit"
-						:on-open-delete="openDelete" />
-				</div>
+			class="space-y-6">
+			<div v-motion="profilesCardMotion">
+				<RemoteSyncProfilesCard
+					:profiles="profiles"
+					:active-profile-id="activeProfileId"
+					:format-profile-meta="formatProfileMeta"
+					:on-open-create="openCreate"
+					:on-open-import="openImport"
+					:on-set-active="setActive"
+					:on-open-edit="openEdit"
+					:on-open-delete="openDelete" />
 			</div>
 		</div>
 	</section>
@@ -229,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { useAppMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import RemoteSyncActionsCard from './components/RemoteSyncActionsCard.vue'
@@ -238,7 +229,6 @@ import { useI18n } from 'vue-i18n'
 	import RemoteSyncEditForm from './components/RemoteSyncEditForm.vue'
 	import RemoteSyncImportForm from './components/RemoteSyncImportForm.vue'
 	import RemoteSyncProfilesCard from './components/RemoteSyncProfilesCard.vue'
-	import RemoteSyncStatusCard from './components/RemoteSyncStatusCard.vue'
 	import { useRemoteSyncPage } from './composables/useRemoteSyncPage'
 	const { t } = useI18n({ useScope: 'global' })
 
@@ -261,8 +251,6 @@ import { useI18n } from 'vue-i18n'
 		handlePull,
 		profiles,
 		activeProfileId,
-		activeProfile,
-		statusMessage,
 		statusLabel,
 		statusBadgeVariant,
 		statusBadgeClass,
@@ -308,8 +296,7 @@ import { useI18n } from 'vue-i18n'
 	const actionsCardMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase', 16)
 	const contentGridMotion = useAppMotionPreset('drawerSection', 'sectionBase', 30)
-	const statusCardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 48)
-	const profilesCardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 68)
+	const profilesCardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 48)
 	const modalBodyMotion = useMotionPresetWithDelay('modalSection', 24)
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 </script>

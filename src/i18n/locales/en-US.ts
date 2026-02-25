@@ -6,6 +6,10 @@ export default {
 		label: 'Language',
 		description: 'Set the app display language',
 		trayRestartNotice: 'Tray menu language takes effect after restarting the app',
+		compactOptions: {
+			zh: 'CN',
+			en: 'EN',
+		},
 		options: {
 			'zh-CN': 'Simplified Chinese',
 			'en-US': 'English (US)',

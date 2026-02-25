@@ -6,6 +6,10 @@ export default {
 		label: '语言',
 		description: '设置应用显示语言',
 		trayRestartNotice: '托盘菜单语言在重启应用后生效',
+		compactOptions: {
+			zh: '中文',
+			en: 'EN',
+		},
 		options: {
 			'zh-CN': '简体中文',
 			'en-US': 'English (US)',

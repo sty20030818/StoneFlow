@@ -2,7 +2,7 @@
 	<header
 		v-motion="headerShellMotion"
 		class="z-layer-header shrink-0 px-6 sticky top-0 bg-default/85 backdrop-blur-xl border-b border-default/80">
-		<div class="h-16 flex items-center justify-between">
+		<div class="relative h-16 flex items-center justify-between gap-4">
 			<!-- 左侧：面包屑 -->
 			<div
 				v-motion="headerBreadcrumbMotion"
@@ -76,7 +76,30 @@
 				</template>
 			</div>
 
-			<!-- 右侧：搜索框胶囊 + 操作按钮 -->
+			<!-- 中间：设置页分栏 -->
+			<div
+				v-if="isSettingsPage"
+				class="pointer-events-none absolute left-1/2 -translate-x-1/2">
+				<UTabs
+					:items="settingsTabItems"
+					:model-value="activeSettingsTab"
+					:content="false"
+					color="neutral"
+					variant="pill"
+					size="sm"
+					class="pointer-events-auto"
+					:ui="settingsTabsUi"
+					@update:model-value="onSettingsTabChange">
+					<template #leading="{ item }">
+						<UIcon
+							:name="item.icon"
+							class="size-3.5"
+							:class="activeSettingsTab === item.value ? 'text-default' : 'text-muted'" />
+					</template>
+				</UTabs>
+			</div>
+
+			<!-- 右侧：搜索/语言 + 操作按钮 -->
 			<div
 				v-motion="headerActionsMotion"
 				class="flex items-center gap-2 shrink-0">
@@ -85,8 +108,25 @@
 					id="header-actions-portal"
 					class="flex items-center gap-2"></div>
 
+				<template v-if="isSettingsPage">
+					<UTabs
+						:items="localeTabItems"
+						:model-value="selectedLocale"
+						:content="false"
+						color="neutral"
+						variant="pill"
+						size="sm"
+						:ui="localeTabsUi"
+						@update:model-value="onLocaleTabChange">
+						<template #leading="{ item }">
+							<span class="text-sm leading-none">{{ item.flag }}</span>
+						</template>
+					</UTabs>
+				</template>
 				<!-- 搜索框（胶囊样式） -->
-				<div class="relative shrink-0">
+				<div
+					v-else
+					class="relative shrink-0">
 					<UInput
 						v-model="searchQuery"
 						:placeholder="t('header.searchPlaceholder')"
@@ -160,9 +200,12 @@
 <script setup lang="ts">
 	import { computed, inject, ref, type ComputedRef } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { useRoute } from 'vue-router'
+	import { useRoute, useRouter } from 'vue-router'
 
+	import { setAppLocale } from '@/i18n'
+	import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import { useSettingsNav } from '@/pages/Settings/composables/useSettingsNav'
 	import { getPageNavByPath } from '@/config/page-nav'
 	import type { ProjectDto } from '@/services/api/projects'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
@@ -172,10 +215,13 @@
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
 	const route = useRoute()
-	const { t } = useI18n({ useScope: 'global' })
+	const router = useRouter()
+	const { t, locale } = useI18n({ useScope: 'global' })
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
+	const { navItems: settingsNavItems, isActive: isSettingsNavActive } = useSettingsNav()
+	const toast = useToast()
 
 	const searchQuery = ref('')
 	const projectIcon = PROJECT_ICON
@@ -188,6 +234,80 @@
 	const isWorkspacePage = computed(() => {
 		return route.path.startsWith('/space/') || route.path === '/all-tasks'
 	})
+	const isSettingsPage = computed(() => route.path.startsWith('/settings'))
+
+	const localeTabsUi = {
+		root: 'w-[148px]',
+		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
+		trigger:
+			'flex-1 rounded-full px-2 py-1.5 text-[11px] font-medium hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default data-[state=active]:text-default',
+		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
+	}
+	const settingsTabsUi = {
+		root: 'w-fit',
+		list: 'rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
+		trigger:
+			'rounded-full px-3 py-2 text-xs font-medium hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default data-[state=active]:text-default',
+		leadingIcon: 'size-3.5',
+		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
+	}
+	const settingsTabItems = computed(() =>
+		settingsNavItems.value.map((item) => ({
+			label: item.label,
+			value: item.to,
+			icon: item.icon,
+		})),
+	)
+	const activeSettingsTab = computed(() => {
+		const matched = settingsNavItems.value.find((item) => isSettingsNavActive(item.to))
+		return matched?.to ?? '/settings/about'
+	})
+
+	const localeTabItems = computed(() => [
+		{
+			label: t('locale.compactOptions.zh'),
+			value: 'zh-CN',
+			flag: '🇨🇳',
+		},
+		{
+			label: t('locale.compactOptions.en'),
+			value: 'en-US',
+			flag: '🇺🇸',
+		},
+	])
+
+	const selectedLocale = computed<AppLocale>(() => {
+		return normalizeAppLocale(settingsStore.settings.locale) ?? normalizeAppLocale(locale.value) ?? DEFAULT_LOCALE
+	})
+
+	async function onLocaleTabChange(value: string | number) {
+		if (typeof value !== 'string') return
+		const nextLocale = normalizeAppLocale(value)
+		if (!nextLocale) return
+		let changed = false
+
+		if (normalizeAppLocale(locale.value) !== nextLocale) {
+			setAppLocale(nextLocale)
+			changed = true
+		}
+
+		if (settingsStore.settings.locale !== nextLocale) {
+			await settingsStore.update({ locale: nextLocale })
+			changed = true
+		}
+
+		if (changed) {
+			toast.add({
+				title: t('locale.trayRestartNotice'),
+				color: 'neutral',
+			})
+		}
+	}
+	function onSettingsTabChange(value: string | number) {
+		if (typeof value !== 'string') return
+		if (route.path === value) return
+		void router.push(value)
+	}
 
 	const hasEditBridge = computed(() => isWorkspacePage.value && workspaceEditStore.hasHandlers)
 	const isEditMode = computed(() => workspaceEditStore.isEditMode)
@@ -339,11 +459,7 @@
 			return [{ label: t('nav.pages.trash.title') }]
 		}
 		if (route.path.startsWith('/settings')) {
-			const currentRecord = [...route.matched]
-				.reverse()
-				.find((item) => item.path !== '/settings' && resolveMetaText(item.meta as Record<string, unknown>, 'title'))
-			const currentLabel = resolveMetaText(currentRecord?.meta as Record<string, unknown> | undefined, 'title')
-			return currentLabel ? [{ label: currentLabel }] : []
+			return []
 		}
 		// 如果没有传入，根据路由自动生成（只包含 project，不包含 space）
 		if (route.path.startsWith('/space/') || route.path === '/all-tasks') {

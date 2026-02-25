@@ -1,7 +1,29 @@
 <template>
-	<SettingsSectionCard
-		:title="t('settings.remoteSync.actionsCard.title')"
-		card-class="bg-default">
+	<SettingsSectionCard card-class="bg-default">
+		<template #header>
+			<div class="flex items-center justify-between gap-3">
+				<div class="text-sm font-semibold">{{ t('settings.remoteSync.actionsCard.title') }}</div>
+				<div class="flex items-center gap-2">
+					<UBadge
+						color="neutral"
+						:variant="statusBadgeVariant"
+						:class="statusBadgeClass">
+						{{ statusLabel }}
+					</UBadge>
+					<UButton
+						color="primary"
+						variant="soft"
+						size="sm"
+						:loading="testingCurrent"
+						:disabled="!hasActiveProfile"
+						icon="i-lucide-activity"
+						@click="onTestCurrent">
+						{{ t('settings.remoteSync.actions.testCurrent') }}
+					</UButton>
+				</div>
+			</div>
+		</template>
+
 		<div class="grid grid-cols-2 gap-3">
 			<div class="space-y-2">
 				<UButton
@@ -119,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { ref } from 'vue'
 
 	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
@@ -128,7 +150,11 @@ import { useI18n } from 'vue-i18n'
 	defineProps<{
 		isPushing: boolean
 		isPulling: boolean
+		testingCurrent: boolean
 		hasActiveProfile: boolean
+		statusBadgeVariant: string
+		statusBadgeClass: string
+		statusLabel: string
 		syncError: string | null
 		lastPushedText: string
 		lastPulledText: string
@@ -155,6 +181,7 @@ import { useI18n } from 'vue-i18n'
 		}>
 		onUpdateHistoryFilter: (value: 'all' | 'push' | 'pull') => void
 		onClearHistory: () => void
+		onTestCurrent: () => void
 		onPush: () => void
 		onPull: () => void
 	}>()
