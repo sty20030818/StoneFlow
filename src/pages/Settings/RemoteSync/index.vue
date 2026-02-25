@@ -18,6 +18,7 @@
 				:is-pushing="isPushing"
 				:is-pulling="isPulling"
 				:testing-current="testingCurrent"
+				:is-syncing-now="isSyncingNow"
 				:has-active-profile="hasActiveProfile"
 				:status-badge-variant="statusBadgeVariant"
 				:status-badge-class="statusBadgeClass"
@@ -30,9 +31,21 @@
 				:history-filter="historyFilter"
 				:history-filter-options="historyFilterOptions"
 				:is-clearing-history="isClearingHistory"
+				:sync-preferences="syncPreferences"
+				:auto-sync-interval-options="autoSyncIntervalOptions"
+				:auto-sync-retry-options="autoSyncRetryOptions"
+				:auto-sync-status-text="autoSyncStatusText"
+				:auto-sync-meta-text="autoSyncMetaText"
+				:auto-sync-last-error="autoSyncLastError"
+				:online="online"
 				:recent-sync-history="recentSyncHistory"
 				:on-update-history-filter="setHistoryFilter"
 				:on-clear-history="handleClearSyncHistory"
+				:on-update-auto-sync-enabled="handleUpdateAutoSyncEnabled"
+				:on-update-auto-sync-interval-minutes="handleUpdateAutoSyncIntervalMinutes"
+				:on-update-auto-sync-retry-count="handleUpdateAutoSyncRetryCount"
+				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
+				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus"
 				:on-test-current="handleTestCurrent"
 				:on-push="handlePush"
 				:on-pull="handlePull" />
@@ -235,6 +248,7 @@
 	const {
 		isPushing,
 		isPulling,
+		isSyncingNow,
 		syncError,
 		hasActiveProfile,
 		lastPushedText,
@@ -245,8 +259,20 @@
 		historyFilterOptions,
 		isClearingHistory,
 		recentSyncHistory,
+		syncPreferences,
+		autoSyncIntervalOptions,
+		autoSyncRetryOptions,
+		autoSyncStatusText,
+		autoSyncMetaText,
+		autoSyncLastError,
+		online,
 		setHistoryFilter,
 		handleClearSyncHistory,
+		handleUpdateAutoSyncEnabled,
+		handleUpdateAutoSyncIntervalMinutes,
+		handleUpdateAutoSyncRetryCount,
+		handleUpdateAutoSyncRunOnAppStart,
+		handleUpdateAutoSyncRunOnWindowFocus,
 		handlePush,
 		handlePull,
 		profiles,

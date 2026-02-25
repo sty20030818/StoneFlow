@@ -33,7 +33,7 @@
 					size="xl"
 					icon="i-lucide-cloud-upload"
 					:loading="isPushing"
-					:disabled="isPulling || !hasActiveProfile"
+					:disabled="isPulling || isSyncingNow || !hasActiveProfile"
 					@click="onPush">
 					{{ t('common.actions.upload') }}
 				</UButton>
@@ -50,7 +50,7 @@
 					size="xl"
 					icon="i-lucide-cloud-download"
 					:loading="isPulling"
-					:disabled="isPushing || !hasActiveProfile"
+					:disabled="isPushing || isSyncingNow || !hasActiveProfile"
 					@click="onPull">
 					{{ t('common.actions.download') }}
 				</UButton>
@@ -58,6 +58,74 @@
 					{{ t('settings.remoteSync.actionsCard.lastPulled', { text: lastPulledText }) }}
 				</div>
 				<div class="text-center text-[10px] text-muted/80 leading-5">{{ lastPullSummaryText }}</div>
+			</div>
+		</div>
+
+		<div class="mt-4 rounded-xl border border-default/70 bg-elevated/30 p-3">
+			<div class="flex items-center justify-between gap-3">
+				<div class="text-[11px] font-medium text-default">{{ t('settings.remoteSync.autoSync.title') }}</div>
+				<USwitch
+					:model-value="syncPreferences.enabled"
+					:disabled="!hasActiveProfile"
+					@update:model-value="(value) => onUpdateAutoSyncEnabled(Boolean(value))" />
+			</div>
+			<div class="mt-1 text-[10px] text-muted/80">{{ t('settings.remoteSync.autoSync.description') }}</div>
+
+			<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<div class="space-y-1">
+					<div class="text-[10px] text-muted">{{ t('settings.remoteSync.autoSync.interval') }}</div>
+					<USelectMenu
+						:model-value="syncPreferences.intervalMinutes"
+						:options="autoSyncIntervalOptions"
+						value-attribute="value"
+						option-attribute="label"
+						size="xs"
+						:disabled="!syncPreferences.enabled || !hasActiveProfile"
+						@update:model-value="(value) => onUpdateAutoSyncIntervalMinutes(Number(value))" />
+				</div>
+				<div class="space-y-1">
+					<div class="text-[10px] text-muted">{{ t('settings.remoteSync.autoSync.retryCount') }}</div>
+					<USelectMenu
+						:model-value="syncPreferences.retryCount"
+						:options="autoSyncRetryOptions"
+						value-attribute="value"
+						option-attribute="label"
+						size="xs"
+						:disabled="!syncPreferences.enabled || !hasActiveProfile"
+						@update:model-value="(value) => onUpdateAutoSyncRetryCount(Number(value))" />
+				</div>
+			</div>
+
+			<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<div class="flex items-center justify-between rounded-lg border border-default/60 bg-default px-2 py-1.5">
+					<div class="text-[10px] text-muted">{{ t('settings.remoteSync.autoSync.runOnAppStart') }}</div>
+					<USwitch
+						:model-value="syncPreferences.runOnAppStart"
+						:disabled="!syncPreferences.enabled || !hasActiveProfile"
+						@update:model-value="(value) => onUpdateAutoSyncRunOnAppStart(Boolean(value))" />
+				</div>
+				<div class="flex items-center justify-between rounded-lg border border-default/60 bg-default px-2 py-1.5">
+					<div class="text-[10px] text-muted">{{ t('settings.remoteSync.autoSync.runOnWindowFocus') }}</div>
+					<USwitch
+						:model-value="syncPreferences.runOnWindowFocus"
+						:disabled="!syncPreferences.enabled || !hasActiveProfile"
+						@update:model-value="(value) => onUpdateAutoSyncRunOnWindowFocus(Boolean(value))" />
+				</div>
+			</div>
+
+			<div class="mt-3 rounded-lg border border-default/60 bg-default px-2 py-1.5">
+				<div class="text-[10px] text-muted">{{ autoSyncStatusText }}</div>
+				<div class="text-[10px] text-muted/80">{{ autoSyncMetaText }}</div>
+				<div
+					v-if="!online"
+					class="text-[10px] text-amber-600">
+					{{ t('settings.remoteSync.autoSync.offlineHint') }}
+				</div>
+				<div
+					v-if="autoSyncLastError"
+					class="text-[10px] text-error">
+					{{ autoSyncLastError }}
+				</div>
 			</div>
 		</div>
 
@@ -151,6 +219,7 @@
 		isPushing: boolean
 		isPulling: boolean
 		testingCurrent: boolean
+		isSyncingNow: boolean
 		hasActiveProfile: boolean
 		statusBadgeVariant: string
 		statusBadgeClass: string
@@ -163,6 +232,19 @@
 		historyFilter: 'all' | 'push' | 'pull'
 		historyFilterOptions: Array<{ label: string; value: 'all' | 'push' | 'pull' }>
 		isClearingHistory: boolean
+		syncPreferences: {
+			enabled: boolean
+			intervalMinutes: number
+			runOnAppStart: boolean
+			runOnWindowFocus: boolean
+			retryCount: number
+		}
+		autoSyncIntervalOptions: Array<{ label: string; value: number }>
+		autoSyncRetryOptions: Array<{ label: string; value: number }>
+		autoSyncStatusText: string
+		autoSyncMetaText: string
+		autoSyncLastError: string | null
+		online: boolean
 		recentSyncHistory: Array<{
 			id: string
 			direction: 'push' | 'pull'
@@ -181,6 +263,11 @@
 		}>
 		onUpdateHistoryFilter: (value: 'all' | 'push' | 'pull') => void
 		onClearHistory: () => void
+		onUpdateAutoSyncEnabled: (value: boolean) => void
+		onUpdateAutoSyncIntervalMinutes: (value: number) => void
+		onUpdateAutoSyncRetryCount: (value: number) => void
+		onUpdateAutoSyncRunOnAppStart: (value: boolean) => void
+		onUpdateAutoSyncRunOnWindowFocus: (value: boolean) => void
 		onTestCurrent: () => void
 		onPush: () => void
 		onPull: () => void

@@ -1,6 +1,6 @@
 import { useI18n } from 'vue-i18n'
-import { useNow } from '@vueuse/core'
-import { computed, onMounted, ref } from 'vue'
+import { useDocumentVisibility, useIntervalFn, useNow, useOnline } from '@vueuse/core'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
 import { validateWithZod } from '@/composables/base/zod'
@@ -45,6 +45,8 @@ export function useRemoteSyncPage() {
 	const {
 		isPushing,
 		isPulling,
+		isSyncingNow,
+		isSyncing,
 		syncError,
 		lastPushedAt,
 		lastPulledAt,
@@ -54,6 +56,7 @@ export function useRemoteSyncPage() {
 		hasActiveProfile,
 		pushToRemote,
 		pullFromRemote,
+		syncNow,
 	} = useRemoteSyncActions()
 
 	function log(...args: unknown[]) {
@@ -97,6 +100,8 @@ export function useRemoteSyncPage() {
 		{ label: t('settings.remoteSync.history.filters.pushOnly'), value: 'push' as const },
 		{ label: t('settings.remoteSync.history.filters.pullOnly'), value: 'pull' as const },
 	])
+	const visibility = useDocumentVisibility()
+	const online = useOnline()
 
 	const deleting = ref(false)
 	const deleteTarget = ref<RemoteDbProfile | null>(null)
@@ -104,6 +109,52 @@ export function useRemoteSyncPage() {
 	const profiles = computed(() => remoteSyncStore.profiles)
 	const activeProfileId = computed(() => remoteSyncStore.activeProfileId)
 	const activeProfile = computed(() => remoteSyncStore.activeProfile)
+	const syncPreferences = computed(() => remoteSyncStore.syncPreferences)
+	const autoSyncIntervalOptions = computed(() =>
+		[5, 15, 30, 60].map((minutes) => ({
+			label: t('settings.remoteSync.autoSync.intervalOption', { minutes }),
+			value: minutes,
+		})),
+	)
+	const autoSyncRetryOptions = computed(() =>
+		[0, 1, 2, 3].map((count) => ({
+			label: t('settings.remoteSync.autoSync.retryOption', { count }),
+			value: count,
+		})),
+	)
+	const autoSyncRunning = ref(false)
+	const autoSyncEnqueued = ref(false)
+	const autoSyncLastStatus = ref<'idle' | 'running' | 'success' | 'failed'>('idle')
+	const autoSyncLastError = ref<string | null>(null)
+	const autoSyncLastTriggeredAt = ref(0)
+	const autoSyncLastSource = ref<'interval' | 'focus' | 'appStart' | null>(null)
+	const autoSyncStatusText = computed(() => {
+		switch (autoSyncLastStatus.value) {
+			case 'running':
+				return t('settings.remoteSync.autoSync.status.running')
+			case 'success':
+				return t('settings.remoteSync.autoSync.status.success')
+			case 'failed':
+				return t('settings.remoteSync.autoSync.status.failed')
+			default:
+				return t('settings.remoteSync.autoSync.status.idle')
+		}
+	})
+	const autoSyncMetaText = computed(() => {
+		if (!syncPreferences.value.enabled) return t('settings.remoteSync.autoSync.meta.disabled')
+		if (!online.value) return t('settings.remoteSync.autoSync.meta.offline')
+		if (autoSyncLastTriggeredAt.value <= 0) return t('settings.remoteSync.autoSync.meta.neverRun')
+		const sourceText =
+			autoSyncLastSource.value === 'interval'
+				? t('settings.remoteSync.autoSync.trigger.interval')
+				: autoSyncLastSource.value === 'focus'
+					? t('settings.remoteSync.autoSync.trigger.focus')
+					: t('settings.remoteSync.autoSync.trigger.appStart')
+		return t('settings.remoteSync.autoSync.meta.lastRun', {
+			source: sourceText,
+			time: formatDateTime(autoSyncLastTriggeredAt.value, { locale: locale.value }),
+		})
+	})
 
 	const status = ref<'missing' | 'ok' | 'error' | 'testing'>('missing')
 	const statusMessage = computed(() => {
@@ -257,6 +308,93 @@ export function useRemoteSyncPage() {
 
 	function setHistoryFilter(filter: RemoteSyncHistoryFilter) {
 		historyFilter.value = filter
+	}
+
+	function sleep(ms: number) {
+		return new Promise<void>((resolve) => setTimeout(resolve, ms))
+	}
+
+	async function updateSyncPreferencesPatch(patch: Parameters<typeof remoteSyncStore.updateSyncPreferences>[0]) {
+		try {
+			await remoteSyncStore.updateSyncPreferences(patch)
+		} catch (error) {
+			toast.add({
+				title: t('settings.remoteSync.toast.updateAutoSyncFailedTitle'),
+				description: resolveErrorMessage(error, t),
+				color: 'error',
+			})
+			logError('auto-sync:preferences:update:error', error)
+		}
+	}
+
+	function handleUpdateAutoSyncEnabled(value: boolean) {
+		void updateSyncPreferencesPatch({ enabled: value })
+	}
+
+	function handleUpdateAutoSyncIntervalMinutes(value: number) {
+		if (!Number.isFinite(value) || value <= 0) return
+		void updateSyncPreferencesPatch({ intervalMinutes: Math.round(value) })
+	}
+
+	function handleUpdateAutoSyncRetryCount(value: number) {
+		if (!Number.isFinite(value) || value < 0) return
+		void updateSyncPreferencesPatch({ retryCount: Math.round(value) })
+	}
+
+	function handleUpdateAutoSyncRunOnAppStart(value: boolean) {
+		void updateSyncPreferencesPatch({ runOnAppStart: value })
+	}
+
+	function handleUpdateAutoSyncRunOnWindowFocus(value: boolean) {
+		void updateSyncPreferencesPatch({ runOnWindowFocus: value })
+	}
+
+	async function triggerAutoSync(source: 'interval' | 'focus' | 'appStart') {
+		if (!syncPreferences.value.enabled) return
+		if (!online.value) return
+		if (testingCurrent.value || testingNew.value || testingEdit.value) return
+		if (autoSyncEnqueued.value || autoSyncRunning.value || isSyncing.value) return
+
+		autoSyncEnqueued.value = true
+		autoSyncRunning.value = true
+		autoSyncLastStatus.value = 'running'
+		autoSyncLastError.value = null
+		autoSyncLastTriggeredAt.value = Date.now()
+		autoSyncLastSource.value = source
+
+		try {
+			const maxRetries = Math.max(0, Math.floor(syncPreferences.value.retryCount))
+			for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+				const summary = await syncNow()
+				if (summary.status === 'success') {
+					status.value = 'ok'
+					autoSyncLastStatus.value = 'success'
+					autoSyncLastError.value = null
+					refreshSignals.bumpProject()
+					return
+				}
+
+				const errorMessage = summary.errorSummary ?? t('settings.remoteSync.toast.syncInProgressTitle')
+				autoSyncLastError.value = errorMessage
+				status.value = isMissingProfileError(errorMessage) ? 'missing' : 'error'
+
+				if (attempt >= maxRetries) {
+					autoSyncLastStatus.value = 'failed'
+					return
+				}
+
+				await sleep(Math.min(4000, 1000 * (attempt + 1)))
+			}
+		} catch (error) {
+			const message = resolveErrorMessage(error, t)
+			autoSyncLastStatus.value = 'failed'
+			autoSyncLastError.value = message
+			status.value = isMissingProfileError(message) ? 'missing' : 'error'
+			logError('auto-sync:run:error', error)
+		} finally {
+			autoSyncRunning.value = false
+			autoSyncEnqueued.value = false
+		}
 	}
 
 	async function handleClearSyncHistory() {
@@ -648,11 +786,46 @@ export function useRemoteSyncPage() {
 		}
 	}
 
+	const autoSyncIntervalMs = computed(() => Math.max(1, syncPreferences.value.intervalMinutes) * 60_000)
+	const { pause: pauseAutoSyncTimer, resume: resumeAutoSyncTimer } = useIntervalFn(
+		() => {
+			void triggerAutoSync('interval')
+		},
+		autoSyncIntervalMs,
+		{ immediate: false, immediateCallback: false },
+	)
+
+	watch(
+		() => syncPreferences.value.enabled,
+		(enabled) => {
+			if (enabled) {
+				resumeAutoSyncTimer()
+				return
+			}
+			pauseAutoSyncTimer()
+			autoSyncLastStatus.value = 'idle'
+		},
+		{ immediate: true },
+	)
+
+	watch(
+		visibility,
+		(next, previous) => {
+			if (next !== 'visible' || previous === 'visible') return
+			if (!syncPreferences.value.enabled || !syncPreferences.value.runOnWindowFocus) return
+			void triggerAutoSync('focus')
+		},
+		{ flush: 'post' },
+	)
+
 	onMounted(async () => {
 		log('mount:load:start')
 		try {
 			await remoteSyncStore.load()
 			await refreshStatusByActiveProfileCache()
+			if (syncPreferences.value.enabled && syncPreferences.value.runOnAppStart) {
+				void triggerAutoSync('appStart')
+			}
 			log('mount:load:done', { activeProfileId: remoteSyncStore.activeProfileId })
 		} catch (error) {
 			status.value = 'error'
@@ -668,6 +841,7 @@ export function useRemoteSyncPage() {
 	return {
 		isPushing,
 		isPulling,
+		isSyncingNow,
 		syncError,
 		hasActiveProfile,
 		lastPushedText,
@@ -678,8 +852,20 @@ export function useRemoteSyncPage() {
 		historyFilterOptions,
 		isClearingHistory,
 		recentSyncHistory,
+		syncPreferences,
+		autoSyncIntervalOptions,
+		autoSyncRetryOptions,
+		autoSyncStatusText,
+		autoSyncMetaText,
+		autoSyncLastError,
+		online,
 		setHistoryFilter,
 		handleClearSyncHistory,
+		handleUpdateAutoSyncEnabled,
+		handleUpdateAutoSyncIntervalMinutes,
+		handleUpdateAutoSyncRetryCount,
+		handleUpdateAutoSyncRunOnAppStart,
+		handleUpdateAutoSyncRunOnWindowFocus,
 		handlePush,
 		handlePull,
 		profiles,
