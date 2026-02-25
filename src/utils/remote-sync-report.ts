@@ -10,6 +10,7 @@ export type RemoteSyncTableViewItem = {
 	total: number
 	inserted: number
 	updated: number
+	conflicted: number
 	skipped: number
 }
 
@@ -40,6 +41,7 @@ export function summarizeRemoteSyncReport(
 	const tableValues = Object.values(report.tables).map((item) => normalizeTableReportMetrics(item))
 	const totalInserted = tableValues.reduce((acc, item) => acc + item.inserted, 0)
 	const totalUpdated = tableValues.reduce((acc, item) => acc + item.updated, 0)
+	const totalConflicted = tableValues.reduce((acc, item) => acc + item.conflicted, 0)
 	const totalSkipped = tableValues.reduce((acc, item) => acc + item.skipped, 0)
 	const tasksMetrics = normalizeTableReportMetrics(report.tables.tasks)
 	const logsMetrics = normalizeTableReportMetrics(report.tables.taskActivityLogs)
@@ -49,6 +51,7 @@ export function summarizeRemoteSyncReport(
 		tasks: tasksWrites,
 		logs: logsWrites,
 		written: totalInserted + totalUpdated,
+		conflicted: totalConflicted,
 		skipped: totalSkipped,
 	})
 }
@@ -70,6 +73,7 @@ function normalizeTableReportMetrics(input: unknown) {
 		total: unknown
 		inserted: unknown
 		updated: unknown
+		conflicted: unknown
 		skipped: unknown
 		synced: unknown
 		deduped: unknown
@@ -77,13 +81,17 @@ function normalizeTableReportMetrics(input: unknown) {
 	const total = toSafeNumber(source.total)
 	const inserted = toSafeNumber(source.inserted ?? source.synced)
 	const updated = toSafeNumber(source.updated)
+	const conflicted = toSafeNumber(source.conflicted)
 	const skippedCandidate = source.skipped ?? source.deduped
 	const skipped =
-		skippedCandidate === undefined ? Math.max(total - inserted - updated, 0) : toSafeNumber(skippedCandidate)
+		skippedCandidate === undefined
+			? Math.max(total - inserted - updated - conflicted, 0)
+			: toSafeNumber(skippedCandidate)
 	return {
 		total,
 		inserted,
 		updated,
+		conflicted,
 		skipped,
 	}
 }

@@ -899,7 +899,7 @@ export default {
 				noPushStats: 'No push stats',
 				noPullStats: 'No pull stats',
 				noStats: 'No stats',
-				tableStats: 'Total {total}, inserted {inserted}, updated {updated}, skipped {skipped}',
+				tableStats: 'Total {total}, inserted {inserted}, updated {updated}, conflicts {conflicted}, skipped {skipped}',
 				direction: {
 					push: 'Push',
 					pull: 'Pull',
@@ -969,7 +969,7 @@ export default {
 				parseError: 'Failed to parse import content',
 			},
 			report: {
-				summary: '{tasks} tasks, {logs} logs, {written} writes, {skipped} skipped',
+				summary: '{tasks} tasks, {logs} logs, {written} writes, {conflicted} conflicts, {skipped} skipped',
 				tables: {
 					spaces: 'Spaces',
 					projects: 'Projects',

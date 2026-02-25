@@ -12,7 +12,7 @@ use sea_orm::{
     QuerySelect, Set,
 };
 use sea_orm_migration::MigratorTrait;
-use std::collections::HashSet;
+use std::collections::HashMap;
 // 定义常量 Key
 const KEY_LAST_PUSHED_AT: &str = "last_pushed_at";
 const KEY_LAST_PULLED_AT: &str = "last_pulled_at";
@@ -29,16 +29,19 @@ pub struct SyncTableReport {
     pub total: usize,
     pub inserted: usize,
     pub updated: usize,
+    pub conflicted: usize,
     pub skipped: usize,
 }
 
 impl SyncTableReport {
-    fn upsert(total: usize, inserted: usize, updated: usize) -> Self {
+    fn upsert(total: usize, inserted: usize, updated: usize, conflicted: usize) -> Self {
         Self {
             total,
             inserted,
             updated,
-            skipped: total.saturating_sub(inserted.saturating_add(updated)),
+            conflicted,
+            skipped: total
+                .saturating_sub(inserted.saturating_add(updated).saturating_add(conflicted)),
         }
     }
 
@@ -47,6 +50,7 @@ impl SyncTableReport {
             total,
             inserted,
             updated: 0,
+            conflicted: 0,
             skipped: total.saturating_sub(inserted),
         }
     }
@@ -71,7 +75,42 @@ pub struct SyncTablesReport {
 #[serde(rename_all = "camelCase")]
 pub struct SyncCommandReport {
     pub synced_at: i64,
+    pub conflict_guard_enabled: bool,
     pub tables: SyncTablesReport,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum UpsertDecision {
+    Insert,
+    Update,
+    ConflictSkip,
+}
+
+fn is_conflict_guard_enabled() -> bool {
+    match std::env::var("STONEFLOW_SYNC_CONFLICT_GUARD") {
+        Ok(raw) => {
+            let normalized = raw.trim().to_ascii_lowercase();
+            !matches!(normalized.as_str(), "0" | "false" | "off" | "no")
+        }
+        Err(_) => true,
+    }
+}
+
+fn decide_upsert(
+    existing_updated_at: Option<i64>,
+    incoming_updated_at: i64,
+    guard_enabled: bool,
+) -> UpsertDecision {
+    match existing_updated_at {
+        None => UpsertDecision::Insert,
+        Some(existing) => {
+            if guard_enabled && incoming_updated_at <= existing {
+                UpsertDecision::ConflictSkip
+            } else {
+                UpsertDecision::Update
+            }
+        }
+    }
 }
 
 /// 辅助函数：获取远程连接 (复用)
@@ -162,6 +201,7 @@ pub async fn pull_from_neon(
     let last_pulled_at = get_sync_time(local_db, KEY_LAST_PULLED_AT)
         .await
         .map_err(|e| format!("读取本地 last_pulled_at 失败: {}", e))?;
+    let conflict_guard_enabled = is_conflict_guard_enabled();
 
     // 重点：按 last_pulled_at 增量拉取，减小网络与写入成本。
     // 1. 同步 Spaces
@@ -171,12 +211,12 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Spaces 失败: {}", e))?;
     let spaces_total = remote_spaces.len();
-    let existing_space_ids: HashSet<String> = if remote_spaces.is_empty() {
-        HashSet::new()
+    let existing_space_versions: HashMap<String, i64> = if remote_spaces.is_empty() {
+        HashMap::new()
     } else {
         Spaces::find()
             .select_only()
-            .column(spaces::Column::Id)
+            .columns([spaces::Column::Id, spaces::Column::UpdatedAt])
             .filter(
                 spaces::Column::Id.is_in(
                     remote_spaces
@@ -185,7 +225,7 @@ pub async fn pull_from_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(local_db)
             .await
             .map_err(|e| format!("读取本地 Spaces 既有数据失败: {}", e))?
@@ -194,12 +234,20 @@ pub async fn pull_from_neon(
     };
     let mut spaces_inserted = 0usize;
     let mut spaces_updated = 0usize;
+    let mut spaces_conflicted = 0usize;
 
     for m in remote_spaces {
-        if existing_space_ids.contains(&m.id) {
-            spaces_updated += 1;
-        } else {
-            spaces_inserted += 1;
+        match decide_upsert(
+            existing_space_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => spaces_inserted += 1,
+            UpsertDecision::Update => spaces_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                spaces_conflicted += 1;
+                continue;
+            }
         }
         let am: spaces::ActiveModel = m.into();
         spaces::Entity::insert(am)
@@ -225,12 +273,12 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Projects 失败: {}", e))?;
     let projects_total = remote_projects.len();
-    let existing_project_ids: HashSet<String> = if remote_projects.is_empty() {
-        HashSet::new()
+    let existing_project_versions: HashMap<String, i64> = if remote_projects.is_empty() {
+        HashMap::new()
     } else {
         Projects::find()
             .select_only()
-            .column(projects::Column::Id)
+            .columns([projects::Column::Id, projects::Column::UpdatedAt])
             .filter(
                 projects::Column::Id.is_in(
                     remote_projects
@@ -239,7 +287,7 @@ pub async fn pull_from_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(local_db)
             .await
             .map_err(|e| format!("读取本地 Projects 既有数据失败: {}", e))?
@@ -248,12 +296,20 @@ pub async fn pull_from_neon(
     };
     let mut projects_inserted = 0usize;
     let mut projects_updated = 0usize;
+    let mut projects_conflicted = 0usize;
 
     for m in remote_projects {
-        if existing_project_ids.contains(&m.id) {
-            projects_updated += 1;
-        } else {
-            projects_inserted += 1;
+        match decide_upsert(
+            existing_project_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => projects_inserted += 1,
+            UpsertDecision::Update => projects_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                projects_conflicted += 1;
+                continue;
+            }
         }
         let am: projects::ActiveModel = m.into();
         projects::Entity::insert(am)
@@ -307,12 +363,12 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Links 失败: {}", e))?;
     let links_total = remote_links.len();
-    let existing_link_ids: HashSet<String> = if remote_links.is_empty() {
-        HashSet::new()
+    let existing_link_versions: HashMap<String, i64> = if remote_links.is_empty() {
+        HashMap::new()
     } else {
         Links::find()
             .select_only()
-            .column(links::Column::Id)
+            .columns([links::Column::Id, links::Column::UpdatedAt])
             .filter(
                 links::Column::Id.is_in(
                     remote_links
@@ -321,7 +377,7 @@ pub async fn pull_from_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(local_db)
             .await
             .map_err(|e| format!("读取本地 Links 既有数据失败: {}", e))?
@@ -330,12 +386,20 @@ pub async fn pull_from_neon(
     };
     let mut links_inserted = 0usize;
     let mut links_updated = 0usize;
+    let mut links_conflicted = 0usize;
 
     for m in remote_links {
-        if existing_link_ids.contains(&m.id) {
-            links_updated += 1;
-        } else {
-            links_inserted += 1;
+        match decide_upsert(
+            existing_link_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => links_inserted += 1,
+            UpsertDecision::Update => links_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                links_conflicted += 1;
+                continue;
+            }
         }
         let am: links::ActiveModel = m.into();
         links::Entity::insert(am)
@@ -362,12 +426,12 @@ pub async fn pull_from_neon(
         .await
         .map_err(|e| format!("拉取远程 Tasks 失败: {}", e))?;
     let tasks_total = remote_tasks.len();
-    let existing_task_ids: HashSet<String> = if remote_tasks.is_empty() {
-        HashSet::new()
+    let existing_task_versions: HashMap<String, i64> = if remote_tasks.is_empty() {
+        HashMap::new()
     } else {
         Tasks::find()
             .select_only()
-            .column(tasks::Column::Id)
+            .columns([tasks::Column::Id, tasks::Column::UpdatedAt])
             .filter(
                 tasks::Column::Id.is_in(
                     remote_tasks
@@ -376,7 +440,7 @@ pub async fn pull_from_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(local_db)
             .await
             .map_err(|e| format!("读取本地 Tasks 既有数据失败: {}", e))?
@@ -385,12 +449,20 @@ pub async fn pull_from_neon(
     };
     let mut tasks_inserted = 0usize;
     let mut tasks_updated = 0usize;
+    let mut tasks_conflicted = 0usize;
 
     for m in remote_tasks {
-        if existing_task_ids.contains(&m.id) {
-            tasks_updated += 1;
-        } else {
-            tasks_inserted += 1;
+        match decide_upsert(
+            existing_task_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => tasks_inserted += 1,
+            UpsertDecision::Update => tasks_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                tasks_conflicted += 1;
+                continue;
+            }
         }
         let am: tasks::ActiveModel = m.into();
         tasks::Entity::insert(am)
@@ -534,12 +606,33 @@ pub async fn pull_from_neon(
 
     Ok(SyncCommandReport {
         synced_at: current_sync_start,
+        conflict_guard_enabled,
         tables: SyncTablesReport {
-            spaces: SyncTableReport::upsert(spaces_total, spaces_inserted, spaces_updated),
-            projects: SyncTableReport::upsert(projects_total, projects_inserted, projects_updated),
+            spaces: SyncTableReport::upsert(
+                spaces_total,
+                spaces_inserted,
+                spaces_updated,
+                spaces_conflicted,
+            ),
+            projects: SyncTableReport::upsert(
+                projects_total,
+                projects_inserted,
+                projects_updated,
+                projects_conflicted,
+            ),
             tags: SyncTableReport::dedup(tags_total, tags_inserted),
-            links: SyncTableReport::upsert(links_total, links_inserted, links_updated),
-            tasks: SyncTableReport::upsert(tasks_total, tasks_inserted, tasks_updated),
+            links: SyncTableReport::upsert(
+                links_total,
+                links_inserted,
+                links_updated,
+                links_conflicted,
+            ),
+            tasks: SyncTableReport::upsert(
+                tasks_total,
+                tasks_inserted,
+                tasks_updated,
+                tasks_conflicted,
+            ),
             task_activity_logs: SyncTableReport::dedup(
                 task_activity_logs_total,
                 task_activity_logs_inserted,
@@ -567,6 +660,7 @@ pub async fn push_to_neon(
     let last_pushed_at = get_sync_time(local_db, KEY_LAST_PUSHED_AT)
         .await
         .map_err(|e| format!("读取本地 last_pushed_at 失败: {}", e))?;
+    let conflict_guard_enabled = is_conflict_guard_enabled();
 
     // push 与 pull 对称：读取本地增量，写入远端。
     // 1. 推送 Spaces
@@ -576,12 +670,12 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Spaces 失败: {}", e))?;
     let spaces_total = local_spaces.len();
-    let existing_space_ids: HashSet<String> = if local_spaces.is_empty() {
-        HashSet::new()
+    let existing_space_versions: HashMap<String, i64> = if local_spaces.is_empty() {
+        HashMap::new()
     } else {
         Spaces::find()
             .select_only()
-            .column(spaces::Column::Id)
+            .columns([spaces::Column::Id, spaces::Column::UpdatedAt])
             .filter(
                 spaces::Column::Id.is_in(
                     local_spaces
@@ -590,7 +684,7 @@ pub async fn push_to_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(&remote_db)
             .await
             .map_err(|e| format!("读取远程 Spaces 既有数据失败: {}", e))?
@@ -599,12 +693,20 @@ pub async fn push_to_neon(
     };
     let mut spaces_inserted = 0usize;
     let mut spaces_updated = 0usize;
+    let mut spaces_conflicted = 0usize;
 
     for m in local_spaces {
-        if existing_space_ids.contains(&m.id) {
-            spaces_updated += 1;
-        } else {
-            spaces_inserted += 1;
+        match decide_upsert(
+            existing_space_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => spaces_inserted += 1,
+            UpsertDecision::Update => spaces_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                spaces_conflicted += 1;
+                continue;
+            }
         }
         let am: spaces::ActiveModel = m.into();
         spaces::Entity::insert(am)
@@ -629,12 +731,12 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Projects 失败: {}", e))?;
     let projects_total = local_projects.len();
-    let existing_project_ids: HashSet<String> = if local_projects.is_empty() {
-        HashSet::new()
+    let existing_project_versions: HashMap<String, i64> = if local_projects.is_empty() {
+        HashMap::new()
     } else {
         Projects::find()
             .select_only()
-            .column(projects::Column::Id)
+            .columns([projects::Column::Id, projects::Column::UpdatedAt])
             .filter(
                 projects::Column::Id.is_in(
                     local_projects
@@ -643,7 +745,7 @@ pub async fn push_to_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(&remote_db)
             .await
             .map_err(|e| format!("读取远程 Projects 既有数据失败: {}", e))?
@@ -652,12 +754,20 @@ pub async fn push_to_neon(
     };
     let mut projects_inserted = 0usize;
     let mut projects_updated = 0usize;
+    let mut projects_conflicted = 0usize;
 
     for m in local_projects {
-        if existing_project_ids.contains(&m.id) {
-            projects_updated += 1;
-        } else {
-            projects_inserted += 1;
+        match decide_upsert(
+            existing_project_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => projects_inserted += 1,
+            UpsertDecision::Update => projects_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                projects_conflicted += 1;
+                continue;
+            }
         }
         let am: projects::ActiveModel = m.into();
         projects::Entity::insert(am)
@@ -711,12 +821,12 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Links 失败: {}", e))?;
     let links_total = local_links.len();
-    let existing_link_ids: HashSet<String> = if local_links.is_empty() {
-        HashSet::new()
+    let existing_link_versions: HashMap<String, i64> = if local_links.is_empty() {
+        HashMap::new()
     } else {
         Links::find()
             .select_only()
-            .column(links::Column::Id)
+            .columns([links::Column::Id, links::Column::UpdatedAt])
             .filter(
                 links::Column::Id.is_in(
                     local_links
@@ -725,7 +835,7 @@ pub async fn push_to_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(&remote_db)
             .await
             .map_err(|e| format!("读取远程 Links 既有数据失败: {}", e))?
@@ -734,12 +844,20 @@ pub async fn push_to_neon(
     };
     let mut links_inserted = 0usize;
     let mut links_updated = 0usize;
+    let mut links_conflicted = 0usize;
 
     for m in local_links {
-        if existing_link_ids.contains(&m.id) {
-            links_updated += 1;
-        } else {
-            links_inserted += 1;
+        match decide_upsert(
+            existing_link_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => links_inserted += 1,
+            UpsertDecision::Update => links_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                links_conflicted += 1;
+                continue;
+            }
         }
         let am: links::ActiveModel = m.into();
         links::Entity::insert(am)
@@ -766,12 +884,12 @@ pub async fn push_to_neon(
         .await
         .map_err(|e| format!("读取本地 Tasks 失败: {}", e))?;
     let tasks_total = local_tasks.len();
-    let existing_task_ids: HashSet<String> = if local_tasks.is_empty() {
-        HashSet::new()
+    let existing_task_versions: HashMap<String, i64> = if local_tasks.is_empty() {
+        HashMap::new()
     } else {
         Tasks::find()
             .select_only()
-            .column(tasks::Column::Id)
+            .columns([tasks::Column::Id, tasks::Column::UpdatedAt])
             .filter(
                 tasks::Column::Id.is_in(
                     local_tasks
@@ -780,7 +898,7 @@ pub async fn push_to_neon(
                         .collect::<Vec<_>>(),
                 ),
             )
-            .into_tuple::<String>()
+            .into_tuple::<(String, i64)>()
             .all(&remote_db)
             .await
             .map_err(|e| format!("读取远程 Tasks 既有数据失败: {}", e))?
@@ -789,12 +907,20 @@ pub async fn push_to_neon(
     };
     let mut tasks_inserted = 0usize;
     let mut tasks_updated = 0usize;
+    let mut tasks_conflicted = 0usize;
 
     for m in local_tasks {
-        if existing_task_ids.contains(&m.id) {
-            tasks_updated += 1;
-        } else {
-            tasks_inserted += 1;
+        match decide_upsert(
+            existing_task_versions.get(&m.id).copied(),
+            m.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => tasks_inserted += 1,
+            UpsertDecision::Update => tasks_updated += 1,
+            UpsertDecision::ConflictSkip => {
+                tasks_conflicted += 1;
+                continue;
+            }
         }
         let am: tasks::ActiveModel = m.into();
         tasks::Entity::insert(am)
@@ -938,12 +1064,33 @@ pub async fn push_to_neon(
 
     Ok(SyncCommandReport {
         synced_at: current_sync_start,
+        conflict_guard_enabled,
         tables: SyncTablesReport {
-            spaces: SyncTableReport::upsert(spaces_total, spaces_inserted, spaces_updated),
-            projects: SyncTableReport::upsert(projects_total, projects_inserted, projects_updated),
+            spaces: SyncTableReport::upsert(
+                spaces_total,
+                spaces_inserted,
+                spaces_updated,
+                spaces_conflicted,
+            ),
+            projects: SyncTableReport::upsert(
+                projects_total,
+                projects_inserted,
+                projects_updated,
+                projects_conflicted,
+            ),
             tags: SyncTableReport::dedup(tags_total, tags_inserted),
-            links: SyncTableReport::upsert(links_total, links_inserted, links_updated),
-            tasks: SyncTableReport::upsert(tasks_total, tasks_inserted, tasks_updated),
+            links: SyncTableReport::upsert(
+                links_total,
+                links_inserted,
+                links_updated,
+                links_conflicted,
+            ),
+            tasks: SyncTableReport::upsert(
+                tasks_total,
+                tasks_inserted,
+                tasks_updated,
+                tasks_conflicted,
+            ),
             task_activity_logs: SyncTableReport::dedup(
                 task_activity_logs_total,
                 task_activity_logs_inserted,
@@ -963,4 +1110,70 @@ pub async fn push_to_neon(
 pub async fn test_neon_connection(args: DatabaseUrlArgs) -> Result<(), String> {
     let _ = get_remote_db(&args.database_url).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn simulate_upsert_batch(
+        store: &mut HashMap<String, i64>,
+        incoming: &[(&str, i64)],
+        guard_enabled: bool,
+    ) -> (usize, usize, usize) {
+        let mut inserted = 0usize;
+        let mut updated = 0usize;
+        let mut conflicted = 0usize;
+
+        for (id, incoming_updated_at) in incoming {
+            match decide_upsert(store.get(*id).copied(), *incoming_updated_at, guard_enabled) {
+                UpsertDecision::Insert => {
+                    inserted += 1;
+                    store.insert((*id).to_string(), *incoming_updated_at);
+                }
+                UpsertDecision::Update => {
+                    updated += 1;
+                    store.insert((*id).to_string(), *incoming_updated_at);
+                }
+                UpsertDecision::ConflictSkip => conflicted += 1,
+            }
+        }
+
+        (inserted, updated, conflicted)
+    }
+
+    #[test]
+    fn should_skip_conflict_when_incoming_timestamp_is_older() {
+        let decision = decide_upsert(Some(200), 100, true);
+        assert_eq!(decision, UpsertDecision::ConflictSkip);
+    }
+
+    #[test]
+    fn should_allow_older_update_when_guard_disabled() {
+        let decision = decide_upsert(Some(200), 100, false);
+        assert_eq!(decision, UpsertDecision::Update);
+    }
+
+    #[test]
+    fn should_be_idempotent_for_replayed_payload_when_guard_enabled() {
+        let mut store = HashMap::new();
+        let first_batch = [("task-a", 100), ("task-b", 200)];
+        let second_batch = [("task-a", 100), ("task-b", 200)];
+
+        let first = simulate_upsert_batch(&mut store, &first_batch, true);
+        let second = simulate_upsert_batch(&mut store, &second_batch, true);
+
+        assert_eq!(first, (2, 0, 0));
+        assert_eq!(second, (0, 0, 2));
+        assert_eq!(store.get("task-a"), Some(&100));
+        assert_eq!(store.get("task-b"), Some(&200));
+    }
+
+    #[test]
+    fn should_return_zero_for_empty_update_batch() {
+        let mut store = HashMap::new();
+        let result = simulate_upsert_batch(&mut store, &[], true);
+        assert_eq!(result, (0, 0, 0));
+        assert!(store.is_empty());
+    }
 }

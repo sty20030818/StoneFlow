@@ -899,7 +899,7 @@ export default {
 				noPushStats: '暂无上传统计',
 				noPullStats: '暂无下载统计',
 				noStats: '暂无统计',
-				tableStats: '总计 {total}，新增 {inserted}，更新 {updated}，跳过 {skipped}',
+				tableStats: '总计 {total}，新增 {inserted}，更新 {updated}，冲突 {conflicted}，跳过 {skipped}',
 				direction: {
 					push: '上传',
 					pull: '下载',
@@ -969,7 +969,7 @@ export default {
 				parseError: '导入内容解析失败',
 			},
 			report: {
-				summary: '任务 {tasks} 条，日志 {logs} 条，总写入 {written} 条，跳过 {skipped} 条',
+				summary: '任务 {tasks} 条，日志 {logs} 条，总写入 {written} 条，冲突 {conflicted} 条，跳过 {skipped} 条',
 				tables: {
 					spaces: '空间',
 					projects: '项目',

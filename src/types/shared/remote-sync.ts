@@ -17,6 +17,7 @@ export type RemoteSyncTableReport = {
 	total: number
 	inserted: number
 	updated: number
+	conflicted?: number
 	skipped: number
 }
 
@@ -35,6 +36,7 @@ export type RemoteSyncTablesReport = {
 
 export type RemoteSyncCommandReport = {
 	syncedAt: number
+	conflictGuardEnabled?: boolean
 	tables: RemoteSyncTablesReport
 }
 

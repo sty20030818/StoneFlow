@@ -206,6 +206,7 @@
 										total: table.total,
 										inserted: table.inserted,
 										updated: table.updated,
+										conflicted: table.conflicted,
 										skipped: table.skipped,
 									})
 								}}
@@ -277,6 +278,7 @@
 				inserted: number
 				updated: number
 				skipped: number
+				conflicted: number
 			}>
 		}>
 		onUpdateHistoryFilter: (value: 'all' | 'push' | 'pull') => void
