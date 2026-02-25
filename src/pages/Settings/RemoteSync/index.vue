@@ -13,16 +13,18 @@
 
 		<div
 			v-motion="actionsCardMotion"
-			class="space-y-6 lg:sticky lg:top-4 lg:self-start">
+			class="space-y-6">
 			<RemoteSyncActionsCard
 				:is-pushing="isPushing"
 				:is-pulling="isPulling"
 				:testing-current="testingCurrent"
 				:is-syncing-now="isSyncingNow"
+				:is-syncing="isSyncing"
 				:has-active-profile="hasActiveProfile"
 				:status-badge-variant="statusBadgeVariant"
 				:status-badge-class="statusBadgeClass"
 				:status-label="statusLabel"
+				:status-message="statusMessage"
 				:sync-error="syncError"
 				:last-pushed-text="lastPushedText"
 				:last-pulled-text="lastPulledText"
@@ -47,6 +49,7 @@
 				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
 				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus"
 				:on-test-current="handleTestCurrent"
+				:on-sync-now="handleSyncNow"
 				:on-push="handlePush"
 				:on-pull="handlePull" />
 		</div>
@@ -249,6 +252,7 @@
 		isPushing,
 		isPulling,
 		isSyncingNow,
+		isSyncing,
 		syncError,
 		hasActiveProfile,
 		lastPushedText,
@@ -273,10 +277,12 @@
 		handleUpdateAutoSyncRetryCount,
 		handleUpdateAutoSyncRunOnAppStart,
 		handleUpdateAutoSyncRunOnWindowFocus,
+		handleSyncNow,
 		handlePush,
 		handlePull,
 		profiles,
 		activeProfileId,
+		statusMessage,
 		statusLabel,
 		statusBadgeVariant,
 		statusBadgeClass,

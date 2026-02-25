@@ -2,7 +2,10 @@
 	<SettingsSectionCard card-class="bg-default">
 		<template #header>
 			<div class="flex items-center justify-between gap-3">
-				<div class="text-sm font-semibold">{{ t('settings.remoteSync.actionsCard.title') }}</div>
+				<div>
+					<div class="text-sm font-semibold">{{ t('settings.remoteSync.actionsCard.title') }}</div>
+					<div class="text-[11px] text-muted mt-0.5">{{ statusMessage }}</div>
+				</div>
 				<div class="flex items-center gap-2">
 					<UBadge
 						color="neutral"
@@ -15,7 +18,7 @@
 						variant="soft"
 						size="sm"
 						:loading="testingCurrent"
-						:disabled="!hasActiveProfile"
+						:disabled="!hasActiveProfile || isSyncing"
 						icon="i-lucide-activity"
 						@click="onTestCurrent">
 						{{ t('settings.remoteSync.actions.testCurrent') }}
@@ -24,16 +27,29 @@
 			</div>
 		</template>
 
+		<UButton
+			block
+			color="primary"
+			variant="solid"
+			size="xl"
+			icon="i-lucide-refresh-cw"
+			:loading="isSyncingNow"
+			:disabled="!hasActiveProfile || isPushing || isPulling"
+			@click="onSyncNow">
+			{{ t('settings.remoteSync.actions.syncNow') }}
+		</UButton>
+
+		<div class="mt-3 text-[11px] text-muted">{{ t('settings.remoteSync.actionsCard.advancedTitle') }}</div>
 		<div class="grid grid-cols-2 gap-3">
 			<div class="space-y-2">
 				<UButton
 					block
 					color="primary"
-					variant="solid"
-					size="xl"
+					variant="soft"
+					size="lg"
 					icon="i-lucide-cloud-upload"
 					:loading="isPushing"
-					:disabled="isPulling || isSyncingNow || !hasActiveProfile"
+					:disabled="isSyncing || !hasActiveProfile"
 					@click="onPush">
 					{{ t('common.actions.upload') }}
 				</UButton>
@@ -46,11 +62,11 @@
 				<UButton
 					block
 					color="neutral"
-					variant="soft"
-					size="xl"
+					variant="outline"
+					size="lg"
 					icon="i-lucide-cloud-download"
 					:loading="isPulling"
-					:disabled="isPushing || isSyncingNow || !hasActiveProfile"
+					:disabled="isSyncing || !hasActiveProfile"
 					@click="onPull">
 					{{ t('common.actions.download') }}
 				</UButton>
@@ -220,10 +236,12 @@
 		isPulling: boolean
 		testingCurrent: boolean
 		isSyncingNow: boolean
+		isSyncing: boolean
 		hasActiveProfile: boolean
 		statusBadgeVariant: string
 		statusBadgeClass: string
 		statusLabel: string
+		statusMessage: string
 		syncError: string | null
 		lastPushedText: string
 		lastPulledText: string
@@ -269,6 +287,7 @@
 		onUpdateAutoSyncRunOnAppStart: (value: boolean) => void
 		onUpdateAutoSyncRunOnWindowFocus: (value: boolean) => void
 		onTestCurrent: () => void
+		onSyncNow: () => void
 		onPush: () => void
 		onPull: () => void
 	}>()

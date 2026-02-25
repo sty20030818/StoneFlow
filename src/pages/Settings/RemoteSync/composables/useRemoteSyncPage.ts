@@ -12,6 +12,7 @@ import { resolveErrorMessage } from '@/utils/error-message'
 import type {
 	RemoteDbProfile,
 	RemoteDbProfileInput,
+	RemoteSyncCommandReport,
 	RemoteSyncDirection,
 	RemoteSyncHistoryItem,
 } from '@/types/shared/remote-sync'
@@ -156,7 +157,7 @@ export function useRemoteSyncPage() {
 		})
 	})
 
-	const status = ref<'missing' | 'ok' | 'error' | 'testing'>('missing')
+	const status = ref<'missing' | 'ok' | 'error' | 'testing' | 'syncing'>('missing')
 	const statusMessage = computed(() => {
 		switch (status.value) {
 			case 'ok':
@@ -165,6 +166,8 @@ export function useRemoteSyncPage() {
 				return t('settings.remoteSync.status.message.error')
 			case 'testing':
 				return t('settings.remoteSync.status.message.testing')
+			case 'syncing':
+				return t('settings.remoteSync.status.message.syncing')
 			default:
 				return t('settings.remoteSync.status.message.missing')
 		}
@@ -178,12 +181,14 @@ export function useRemoteSyncPage() {
 				return t('settings.remoteSync.status.label.error')
 			case 'testing':
 				return t('settings.remoteSync.status.label.testing')
+			case 'syncing':
+				return t('settings.remoteSync.status.label.syncing')
 			default:
 				return t('settings.remoteSync.status.label.missing')
 		}
 	})
 
-	const statusBadgeVariant = computed(() => (status.value === 'ok' ? 'soft' : 'outline'))
+	const statusBadgeVariant = computed(() => (status.value === 'ok' || status.value === 'syncing' ? 'soft' : 'outline'))
 	const statusBadgeClass = computed(() => {
 		switch (status.value) {
 			case 'ok':
@@ -192,6 +197,8 @@ export function useRemoteSyncPage() {
 				return 'bg-error/10 text-error'
 			case 'testing':
 				return 'bg-amber-500/10 text-amber-600'
+			case 'syncing':
+				return 'bg-primary/10 text-primary'
 			default:
 				return 'bg-elevated text-muted'
 		}
@@ -291,6 +298,26 @@ export function useRemoteSyncPage() {
 		)
 	}
 
+	function resolveSyncSummaryError(summaryError: string | null) {
+		return summaryError ?? t('settings.remoteSync.toast.syncInProgressTitle')
+	}
+
+	function summarizeSyncNowResult(
+		pullReport: RemoteSyncCommandReport | null,
+		pushReport: RemoteSyncCommandReport | null,
+	) {
+		const pullText = pullReport
+			? summarizeRemoteSyncReport(pullReport, t('settings.remoteSync.history.noPullStats'), t)
+			: t('settings.remoteSync.history.noPullStats')
+		const pushText = pushReport
+			? summarizeRemoteSyncReport(pushReport, t('settings.remoteSync.history.noPushStats'), t)
+			: t('settings.remoteSync.history.noPushStats')
+		return t('settings.remoteSync.actionsCard.syncNowSummary', {
+			pull: pullText,
+			push: pushText,
+		})
+	}
+
 	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
 		return {
 			id: item.id,
@@ -361,6 +388,7 @@ export function useRemoteSyncPage() {
 		autoSyncLastError.value = null
 		autoSyncLastTriggeredAt.value = Date.now()
 		autoSyncLastSource.value = source
+		status.value = 'syncing'
 
 		try {
 			const maxRetries = Math.max(0, Math.floor(syncPreferences.value.retryCount))
@@ -374,7 +402,7 @@ export function useRemoteSyncPage() {
 					return
 				}
 
-				const errorMessage = summary.errorSummary ?? t('settings.remoteSync.toast.syncInProgressTitle')
+				const errorMessage = resolveSyncSummaryError(summary.errorSummary)
 				autoSyncLastError.value = errorMessage
 				status.value = isMissingProfileError(errorMessage) ? 'missing' : 'error'
 
@@ -504,6 +532,7 @@ export function useRemoteSyncPage() {
 			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforePush'), color: 'neutral' })
 			return
 		}
+		status.value = 'syncing'
 		log('sync:push:start', { profileId: activeProfileId.value })
 		const summary = await pushToRemote()
 		const report = summary.reports.push
@@ -521,13 +550,14 @@ export function useRemoteSyncPage() {
 			return
 		}
 
-		status.value = isMissingProfileError(summary.errorSummary) ? 'missing' : 'error'
+		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
+		status.value = isMissingProfileError(errorMessage) ? 'missing' : 'error'
 		toast.add({
 			title: t('settings.remoteSync.toast.pushFailedTitle'),
-			description: summary.errorSummary ?? t('settings.remoteSync.toast.syncInProgressTitle'),
+			description: errorMessage,
 			color: 'error',
 		})
-		logError('sync:push:error', summary.errorSummary)
+		logError('sync:push:error', errorMessage)
 	}
 
 	async function handlePull() {
@@ -535,6 +565,7 @@ export function useRemoteSyncPage() {
 			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforePull'), color: 'neutral' })
 			return
 		}
+		status.value = 'syncing'
 		log('sync:pull:start', { profileId: activeProfileId.value })
 		const summary = await pullFromRemote()
 		const report = summary.reports.pull
@@ -553,13 +584,50 @@ export function useRemoteSyncPage() {
 			return
 		}
 
-		status.value = isMissingProfileError(summary.errorSummary) ? 'missing' : 'error'
+		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
+		status.value = isMissingProfileError(errorMessage) ? 'missing' : 'error'
 		toast.add({
 			title: t('settings.remoteSync.toast.pullFailedTitle'),
-			description: summary.errorSummary ?? t('settings.remoteSync.toast.syncInProgressTitle'),
+			description: errorMessage,
 			color: 'error',
 		})
-		logError('sync:pull:error', summary.errorSummary)
+		logError('sync:pull:error', errorMessage)
+	}
+
+	async function handleSyncNow() {
+		if (testingCurrent.value || testingNew.value || testingEdit.value) {
+			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforeSyncNow'), color: 'neutral' })
+			return
+		}
+		status.value = 'syncing'
+		log('sync:now:start', { profileId: activeProfileId.value })
+		const summary = await syncNow()
+		const pullReport = summary.reports.pull
+		const pushReport = summary.reports.push
+		if (summary.status === 'success' && (pullReport || pushReport)) {
+			refreshSignals.bumpProject()
+			status.value = 'ok'
+			const syncedAt = pushReport?.syncedAt ?? pullReport?.syncedAt ?? Date.now()
+			toast.add({
+				title: t('settings.remoteSync.toast.syncNowSuccessTitle'),
+				description: t('settings.remoteSync.toast.syncAtDescription', {
+					time: formatDateTime(syncedAt, { locale: locale.value }),
+					summary: summarizeSyncNowResult(pullReport, pushReport),
+				}),
+				color: 'success',
+			})
+			log('sync:now:done', { syncedAt, fromCache: summary.usedConnectionCache })
+			return
+		}
+
+		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
+		status.value = isMissingProfileError(errorMessage) ? 'missing' : 'error'
+		toast.add({
+			title: t('settings.remoteSync.toast.syncNowFailedTitle'),
+			description: errorMessage,
+			color: 'error',
+		})
+		logError('sync:now:error', errorMessage)
 	}
 
 	async function handleTestNew() {
@@ -842,6 +910,7 @@ export function useRemoteSyncPage() {
 		isPushing,
 		isPulling,
 		isSyncingNow,
+		isSyncing,
 		syncError,
 		hasActiveProfile,
 		lastPushedText,
@@ -861,6 +930,7 @@ export function useRemoteSyncPage() {
 		online,
 		setHistoryFilter,
 		handleClearSyncHistory,
+		handleSyncNow,
 		handleUpdateAutoSyncEnabled,
 		handleUpdateAutoSyncIntervalMinutes,
 		handleUpdateAutoSyncRetryCount,
