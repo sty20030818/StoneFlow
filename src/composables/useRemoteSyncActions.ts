@@ -129,12 +129,16 @@ export function useRemoteSyncActions() {
 
 		try {
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl } })
-			await remoteSyncStore.setConnectionHealth({
-				profileId: profile.id,
-				databaseUrl,
-				result: 'ok',
-				errorDigest: null,
-			})
+			try {
+				await remoteSyncStore.setConnectionHealth({
+					profileId: profile.id,
+					databaseUrl,
+					result: 'ok',
+					errorDigest: null,
+				})
+			} catch (cacheError) {
+				logError('ensureConnectionReady:cache:ok:error', cacheError)
+			}
 			return {
 				profile,
 				databaseUrl,
@@ -142,12 +146,16 @@ export function useRemoteSyncActions() {
 			}
 		} catch (error) {
 			const normalizedError = normalizeSyncError(error, fallbackKey)
-			await remoteSyncStore.setConnectionHealth({
-				profileId: profile.id,
-				databaseUrl,
-				result: 'error',
-				errorDigest: normalizedError.message,
-			})
+			try {
+				await remoteSyncStore.setConnectionHealth({
+					profileId: profile.id,
+					databaseUrl,
+					result: 'error',
+					errorDigest: normalizedError.message,
+				})
+			} catch (cacheError) {
+				logError('ensureConnectionReady:cache:error:error', cacheError)
+			}
 			throw normalizedError
 		}
 	}

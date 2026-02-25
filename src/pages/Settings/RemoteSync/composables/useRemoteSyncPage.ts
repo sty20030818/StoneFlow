@@ -250,6 +250,17 @@ export function useRemoteSyncPage() {
 		})
 	}
 
+	async function persistConnectionHealthSafely(
+		input: Parameters<typeof remoteSyncStore.setConnectionHealth>[0],
+		logTag: string,
+	) {
+		try {
+			await remoteSyncStore.setConnectionHealth(input)
+		} catch (error) {
+			logError(logTag, error)
+		}
+	}
+
 	async function refreshStatusByActiveProfileCache() {
 		const currentProfileId = remoteSyncStore.activeProfileId
 		if (!currentProfileId) {
@@ -489,12 +500,15 @@ export function useRemoteSyncPage() {
 			const url = await remoteSyncStore.getActiveProfileUrl()
 			if (!url) throw new Error(t('settings.remoteSync.errors.noDatabaseUrl'))
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: url } })
-			await remoteSyncStore.setConnectionHealth({
-				profileId: activeProfileId.value,
-				databaseUrl: url,
-				result: 'ok',
-				errorDigest: null,
-			})
+			await persistConnectionHealthSafely(
+				{
+					profileId: activeProfileId.value,
+					databaseUrl: url,
+					result: 'ok',
+					errorDigest: null,
+				},
+				'test:current:cache:ok:error',
+			)
 			status.value = 'ok'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionOkTitle'),
@@ -508,12 +522,15 @@ export function useRemoteSyncPage() {
 				? await remoteSyncStore.getProfileUrl(currentProfileId).catch(() => null)
 				: null
 			if (currentProfileId && currentProfileUrl) {
-				await remoteSyncStore.setConnectionHealth({
-					profileId: currentProfileId,
-					databaseUrl: currentProfileUrl,
-					result: 'error',
-					errorDigest: resolveErrorMessage(error, t),
-				})
+				await persistConnectionHealthSafely(
+					{
+						profileId: currentProfileId,
+						databaseUrl: currentProfileUrl,
+						result: 'error',
+						errorDigest: resolveErrorMessage(error, t),
+					},
+					'test:current:cache:error',
+				)
 			}
 			status.value = 'error'
 			toast.add({
@@ -708,12 +725,15 @@ export function useRemoteSyncPage() {
 			testingEdit.value = true
 			status.value = 'testing'
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: editUrl.value.trim() } })
-			await remoteSyncStore.setConnectionHealth({
-				profileId: editProfileId.value,
-				databaseUrl: editUrl.value.trim(),
-				result: 'ok',
-				errorDigest: null,
-			})
+			await persistConnectionHealthSafely(
+				{
+					profileId: editProfileId.value,
+					databaseUrl: editUrl.value.trim(),
+					result: 'ok',
+					errorDigest: null,
+				},
+				'test:edit:cache:ok:error',
+			)
 			status.value = 'ok'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionOkTitle'),
@@ -722,12 +742,15 @@ export function useRemoteSyncPage() {
 			})
 			log('test:edit:done')
 		} catch (error) {
-			await remoteSyncStore.setConnectionHealth({
-				profileId: editProfileId.value,
-				databaseUrl: editUrl.value.trim(),
-				result: 'error',
-				errorDigest: resolveErrorMessage(error, t),
-			})
+			await persistConnectionHealthSafely(
+				{
+					profileId: editProfileId.value,
+					databaseUrl: editUrl.value.trim(),
+					result: 'error',
+					errorDigest: resolveErrorMessage(error, t),
+				},
+				'test:edit:cache:error',
+			)
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
