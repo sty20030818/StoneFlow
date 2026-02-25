@@ -5,6 +5,7 @@ export default {
 	locale: {
 		label: 'Language',
 		description: 'Set the app display language',
+		trayRestartNotice: 'Tray menu language takes effect after restarting the app',
 		options: {
 			'zh-CN': 'Simplified Chinese',
 			'en-US': 'English (US)',

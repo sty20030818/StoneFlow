@@ -7,6 +7,9 @@
 			:locales="appNuxtUiLocales"
 			:search-input="false"
 			class="w-full" />
+		<p class="mt-2 text-xs text-muted">
+			{{ t('locale.trayRestartNotice') }}
+		</p>
 	</SettingsSectionCard>
 </template>
 
@@ -20,6 +23,7 @@
 	import SettingsSectionCard from './SettingsSectionCard.vue'
 
 	const settingsStore = useSettingsStore()
+	const toast = useToast()
 	const { locale, t } = useI18n({ useScope: 'global' })
 
 	const selectedLocale = computed<AppLocale>({
@@ -31,13 +35,23 @@
 		async set(value) {
 			const nextLocale = normalizeAppLocale(value)
 			if (!nextLocale) return
+			let changed = false
 
 			if (normalizeAppLocale(locale.value) !== nextLocale) {
 				setAppLocale(nextLocale)
+				changed = true
 			}
 
 			if (settingsStore.settings.locale !== nextLocale) {
 				await settingsStore.update({ locale: nextLocale })
+				changed = true
+			}
+
+			if (changed) {
+				toast.add({
+					title: t('locale.trayRestartNotice'),
+					color: 'neutral',
+				})
 			}
 		},
 	})

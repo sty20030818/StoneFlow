@@ -27,6 +27,7 @@ use commands::tasks::{
     complete_task, create_task, create_task_with_patch, delete_tasks, list_deleted_tasks,
     list_tasks, rebalance_ranks, reorder_task, restore_tasks, update_task,
 };
+use serde_json::Value;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -35,6 +36,61 @@ use tauri::{
 
 const TRAY_MENU_SHOW_MAIN: &str = "show_main_window";
 const TRAY_MENU_QUIT_APP: &str = "quit_app";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TrayLocale {
+    ZhCn,
+    EnUs,
+}
+
+fn normalize_tray_locale(raw: &str) -> Option<TrayLocale> {
+    let normalized = raw.trim().replace('_', "-").to_lowercase();
+    if normalized.starts_with("zh") {
+        return Some(TrayLocale::ZhCn);
+    }
+    if normalized.starts_with("en") {
+        return Some(TrayLocale::EnUs);
+    }
+    None
+}
+
+fn resolve_tray_locale_from_settings<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<TrayLocale> {
+    let data_dir = app.path().app_local_data_dir().ok()?;
+    let settings_path = data_dir.join("settings.json");
+    let raw = std::fs::read_to_string(settings_path).ok()?;
+    let payload: Value = serde_json::from_str(&raw).ok()?;
+    let stored_locale = payload
+        .pointer("/settings/locale")
+        .and_then(Value::as_str)
+        .or_else(|| payload.pointer("/settings/value/locale").and_then(Value::as_str))
+        .or_else(|| payload.get("locale").and_then(Value::as_str))?;
+    normalize_tray_locale(stored_locale)
+}
+
+fn resolve_tray_locale_from_system() -> Option<TrayLocale> {
+    const SYSTEM_LOCALE_ENV_KEYS: [&str; 4] = ["LC_ALL", "LC_MESSAGES", "LANGUAGE", "LANG"];
+    for key in SYSTEM_LOCALE_ENV_KEYS {
+        if let Ok(value) = std::env::var(key) {
+            if let Some(locale) = normalize_tray_locale(&value) {
+                return Some(locale);
+            }
+        }
+    }
+    None
+}
+
+fn resolve_tray_locale<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> TrayLocale {
+    resolve_tray_locale_from_settings(app)
+        .or_else(resolve_tray_locale_from_system)
+        .unwrap_or(TrayLocale::ZhCn)
+}
+
+fn resolve_tray_menu_labels(locale: TrayLocale) -> (&'static str, &'static str) {
+    match locale {
+        TrayLocale::ZhCn => ("显示主窗口", "退出应用"),
+        TrayLocale::EnUs => ("Show Main Window", "Quit App"),
+    }
+}
 
 fn restore_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     if let Some(window) = app.get_webview_window("main") {
@@ -69,9 +125,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
+            // 托盘菜单语言策略：应用启动时读取 locale，运行中切换语言后重启生效。
+            let tray_locale = resolve_tray_locale(app.handle());
+            let (show_main_label, quit_label) = resolve_tray_menu_labels(tray_locale);
             let show_main_item =
-                MenuItemBuilder::with_id(TRAY_MENU_SHOW_MAIN, "显示主窗口").build(app)?;
-            let quit_item = MenuItemBuilder::with_id(TRAY_MENU_QUIT_APP, "退出应用").build(app)?;
+                MenuItemBuilder::with_id(TRAY_MENU_SHOW_MAIN, show_main_label).build(app)?;
+            let quit_item = MenuItemBuilder::with_id(TRAY_MENU_QUIT_APP, quit_label).build(app)?;
             let tray_menu = MenuBuilder::new(app)
                 .items(&[&show_main_item, &quit_item])
                 .build()?;
