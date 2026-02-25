@@ -43,7 +43,9 @@
 				{{ t('settings.remoteSync.actionsCard.lastSynced', { text: lastSyncedText }) }}
 			</div>
 			<div class="text-[10px] text-muted/80 leading-5">
-				{{ t('settings.remoteSync.actionsCard.syncNowSummary', { pull: lastPullSummaryText, push: lastPushSummaryText }) }}
+				{{
+					t('settings.remoteSync.actionsCard.syncNowSummary', { pull: lastPullSummaryText, push: lastPushSummaryText })
+				}}
 			</div>
 		</div>
 
