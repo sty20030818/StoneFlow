@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, toRaw } from 'vue'
 
 import {
 	DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS,
@@ -131,14 +131,27 @@ function normalizeConnectionHealthMap(input: unknown) {
 }
 
 function cloneSettings(input: RemoteSyncSettings): RemoteSyncSettings {
-	return structuredClone({
-		profiles: input.profiles,
-		activeProfileId: input.activeProfileId,
-		connectionHealth: input.connectionHealth,
-		syncPreferences: input.syncPreferences,
-		profileSyncTimes: input.profileSyncTimes,
-		syncHistory: input.syncHistory,
-	})
+	const rawSettings = toRaw(input)
+	const clonedConnectionHealth: RemoteSyncSettings['connectionHealth'] = {}
+	for (const [profileId, item] of Object.entries(toRaw(rawSettings.connectionHealth))) {
+		clonedConnectionHealth[profileId] = { ...toRaw(item) }
+	}
+	const clonedProfileSyncTimes: RemoteSyncSettings['profileSyncTimes'] = {}
+	for (const [profileId, item] of Object.entries(toRaw(rawSettings.profileSyncTimes))) {
+		clonedProfileSyncTimes[profileId] = { ...toRaw(item) }
+	}
+
+	return {
+		profiles: toRaw(rawSettings.profiles).map((profile) => ({ ...toRaw(profile) })),
+		activeProfileId: rawSettings.activeProfileId,
+		connectionHealth: clonedConnectionHealth,
+		syncPreferences: { ...toRaw(rawSettings.syncPreferences) },
+		profileSyncTimes: clonedProfileSyncTimes,
+		syncHistory: toRaw(rawSettings.syncHistory).map((item) => ({
+			...toRaw(item),
+			report: structuredClone(toRaw(item.report)),
+		})),
+	}
 }
 
 function sanitizeByProfiles(input: RemoteSyncSettings): RemoteSyncSettings {
