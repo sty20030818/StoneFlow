@@ -894,6 +894,7 @@ export default {
 			history: {
 				title: '同步历史',
 				empty: '暂无同步记录',
+				neverSynced: '从未同步',
 				neverPushed: '从未上传',
 				neverPulled: '从未下载',
 				noPushStats: '暂无上传统计',
@@ -913,6 +914,9 @@ export default {
 			actionsCard: {
 				title: '同步操作',
 				advancedTitle: '高级操作',
+				showAdvanced: '展开',
+				hideAdvanced: '收起',
+				lastSynced: '最近同步：{text}',
 				lastPushed: '最近上传：{text}',
 				lastPulled: '最近下载：{text}',
 				syncNowSummary: '下载：{pull}；上传：{push}',
