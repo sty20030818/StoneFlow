@@ -26,6 +26,7 @@
 				:status-label="statusLabel"
 				:status-message="statusMessage"
 				:sync-error="syncError"
+				:last-synced-text="lastSyncedText"
 				:last-pushed-text="lastPushedText"
 				:last-pulled-text="lastPulledText"
 				:last-push-summary-text="lastPushSummaryText"
@@ -33,21 +34,9 @@
 				:history-filter="historyFilter"
 				:history-filter-options="historyFilterOptions"
 				:is-clearing-history="isClearingHistory"
-				:sync-preferences="syncPreferences"
-				:auto-sync-interval-options="autoSyncIntervalOptions"
-				:auto-sync-retry-options="autoSyncRetryOptions"
-				:auto-sync-status-text="autoSyncStatusText"
-				:auto-sync-meta-text="autoSyncMetaText"
-				:auto-sync-last-error="autoSyncLastError"
-				:online="online"
 				:recent-sync-history="recentSyncHistory"
 				:on-update-history-filter="setHistoryFilter"
 				:on-clear-history="handleClearSyncHistory"
-				:on-update-auto-sync-enabled="handleUpdateAutoSyncEnabled"
-				:on-update-auto-sync-interval-minutes="handleUpdateAutoSyncIntervalMinutes"
-				:on-update-auto-sync-retry-count="handleUpdateAutoSyncRetryCount"
-				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
-				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus"
 				:on-test-current="handleTestCurrent"
 				:on-sync-now="handleSyncNow"
 				:on-push="handlePush"
@@ -255,6 +244,7 @@
 		isSyncing,
 		syncError,
 		hasActiveProfile,
+		lastSyncedText,
 		lastPushedText,
 		lastPulledText,
 		lastPushSummaryText,
@@ -263,20 +253,8 @@
 		historyFilterOptions,
 		isClearingHistory,
 		recentSyncHistory,
-		syncPreferences,
-		autoSyncIntervalOptions,
-		autoSyncRetryOptions,
-		autoSyncStatusText,
-		autoSyncMetaText,
-		autoSyncLastError,
-		online,
 		setHistoryFilter,
 		handleClearSyncHistory,
-		handleUpdateAutoSyncEnabled,
-		handleUpdateAutoSyncIntervalMinutes,
-		handleUpdateAutoSyncRetryCount,
-		handleUpdateAutoSyncRunOnAppStart,
-		handleUpdateAutoSyncRunOnWindowFocus,
 		handleSyncNow,
 		handlePush,
 		handlePull,

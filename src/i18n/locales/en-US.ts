@@ -894,6 +894,7 @@ export default {
 			history: {
 				title: 'Sync History',
 				empty: 'No sync records yet',
+				neverSynced: 'Never synced',
 				neverPushed: 'Never pushed',
 				neverPulled: 'Never pulled',
 				noPushStats: 'No push stats',
@@ -913,6 +914,9 @@ export default {
 			actionsCard: {
 				title: 'Sync Actions',
 				advancedTitle: 'Advanced Actions',
+				showAdvanced: 'Expand',
+				hideAdvanced: 'Collapse',
+				lastSynced: 'Last synced: {text}',
 				lastPushed: 'Last pushed: {text}',
 				lastPulled: 'Last pulled: {text}',
 				syncNowSummary: 'Pull: {pull}; Push: {push}',

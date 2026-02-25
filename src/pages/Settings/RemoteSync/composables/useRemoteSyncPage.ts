@@ -226,6 +226,10 @@ export function useRemoteSyncPage() {
 	const lastPulledText = computed(() => {
 		return formatRelativeTime(lastPulledAt.value, t('settings.remoteSync.history.neverPulled'))
 	})
+	const lastSyncedText = computed(() => {
+		const latestSyncedAt = Math.max(lastPushedAt.value, lastPulledAt.value)
+		return formatRelativeTime(latestSyncedAt, t('settings.remoteSync.history.neverSynced'))
+	})
 
 	const lastPushSummaryText = computed(() =>
 		summarizeRemoteSyncReport(lastPushReport.value, t('settings.remoteSync.history.noPushStats'), t),
@@ -938,6 +942,7 @@ export function useRemoteSyncPage() {
 		hasActiveProfile,
 		lastPushedText,
 		lastPulledText,
+		lastSyncedText,
 		lastPushSummaryText,
 		lastPullSummaryText,
 		historyFilter,
