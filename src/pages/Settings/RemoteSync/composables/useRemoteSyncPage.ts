@@ -232,6 +232,14 @@ export function useRemoteSyncPage() {
 		return `${source} · ${formatDateTime(profile.updatedAt, { locale: locale.value })}`
 	}
 
+	function isMissingProfileError(message: string | null) {
+		if (!message) return false
+		return (
+			message === t('settings.remoteSync.errors.noActiveProfile') ||
+			message === t('settings.remoteSync.errors.noDatabaseUrl')
+		)
+	}
+
 	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
 		return {
 			id: item.id,
@@ -358,21 +366,10 @@ export function useRemoteSyncPage() {
 			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforePush'), color: 'neutral' })
 			return
 		}
-		if (status.value === 'missing') {
-			toast.add({ title: t('settings.remoteSync.toast.configureAndTestFirst'), color: 'neutral' })
-			return
-		}
-		if (status.value === 'error') {
-			toast.add({ title: t('settings.remoteSync.toast.statusErrorTestFirst'), color: 'warning' })
-			return
-		}
-		try {
-			log('sync:push:start', { profileId: activeProfileId.value })
-			const report = await pushToRemote()
-			if (!report) {
-				toast.add({ title: t('settings.remoteSync.toast.syncInProgressTitle'), color: 'neutral' })
-				return
-			}
+		log('sync:push:start', { profileId: activeProfileId.value })
+		const summary = await pushToRemote()
+		const report = summary.reports.push
+		if (summary.status === 'success' && report) {
 			status.value = 'ok'
 			toast.add({
 				title: t('settings.remoteSync.toast.pushSuccessTitle'),
@@ -382,15 +379,17 @@ export function useRemoteSyncPage() {
 				}),
 				color: 'success',
 			})
-			log('sync:push:done', { syncedAt: report.syncedAt })
-		} catch (error) {
-			toast.add({
-				title: t('settings.remoteSync.toast.pushFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
-			})
-			logError('sync:push:error', error)
+			log('sync:push:done', { syncedAt: report.syncedAt, fromCache: summary.usedConnectionCache })
+			return
 		}
+
+		status.value = isMissingProfileError(summary.errorSummary) ? 'missing' : 'error'
+		toast.add({
+			title: t('settings.remoteSync.toast.pushFailedTitle'),
+			description: summary.errorSummary ?? t('settings.remoteSync.toast.syncInProgressTitle'),
+			color: 'error',
+		})
+		logError('sync:push:error', summary.errorSummary)
 	}
 
 	async function handlePull() {
@@ -398,21 +397,10 @@ export function useRemoteSyncPage() {
 			toast.add({ title: t('settings.remoteSync.toast.waitTestingBeforePull'), color: 'neutral' })
 			return
 		}
-		if (status.value === 'missing') {
-			toast.add({ title: t('settings.remoteSync.toast.configureAndTestFirst'), color: 'neutral' })
-			return
-		}
-		if (status.value === 'error') {
-			toast.add({ title: t('settings.remoteSync.toast.statusErrorTestFirst'), color: 'warning' })
-			return
-		}
-		try {
-			log('sync:pull:start', { profileId: activeProfileId.value })
-			const report = await pullFromRemote()
-			if (!report) {
-				toast.add({ title: t('settings.remoteSync.toast.syncInProgressTitle'), color: 'neutral' })
-				return
-			}
+		log('sync:pull:start', { profileId: activeProfileId.value })
+		const summary = await pullFromRemote()
+		const report = summary.reports.pull
+		if (summary.status === 'success' && report) {
 			refreshSignals.bumpProject()
 			status.value = 'ok'
 			toast.add({
@@ -423,15 +411,17 @@ export function useRemoteSyncPage() {
 				}),
 				color: 'success',
 			})
-			log('sync:pull:done', { syncedAt: report.syncedAt })
-		} catch (error) {
-			toast.add({
-				title: t('settings.remoteSync.toast.pullFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
-			})
-			logError('sync:pull:error', error)
+			log('sync:pull:done', { syncedAt: report.syncedAt, fromCache: summary.usedConnectionCache })
+			return
 		}
+
+		status.value = isMissingProfileError(summary.errorSummary) ? 'missing' : 'error'
+		toast.add({
+			title: t('settings.remoteSync.toast.pullFailedTitle'),
+			description: summary.errorSummary ?? t('settings.remoteSync.toast.syncInProgressTitle'),
+			color: 'error',
+		})
+		logError('sync:pull:error', summary.errorSummary)
 	}
 
 	async function handleTestNew() {
