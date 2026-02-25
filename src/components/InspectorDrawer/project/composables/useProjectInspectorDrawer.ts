@@ -2,11 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { useEventListener, useTimeoutFn, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
-import {
-	PROJECT_PRIORITY_OPTIONS,
-	type ProjectPriorityValue,
-	isDefaultProjectId,
-} from '@/config/project'
+import { PROJECT_PRIORITY_OPTIONS, type ProjectPriorityValue, isDefaultProjectId } from '@/config/project'
 import { SPACE_OPTIONS } from '@/config/space'
 import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
 import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'

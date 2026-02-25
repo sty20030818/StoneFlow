@@ -6,7 +6,9 @@
 			class="flex items-center justify-between w-full"
 			@click="onToggle">
 			<div class="flex items-center gap-2">
-				<label class="text-xs font-semibold text-muted uppercase tracking-widest">{{ t('inspector.timeline.label') }}</label>
+				<label class="text-xs font-semibold text-muted uppercase tracking-widest">
+					{{ t('inspector.timeline.label') }}
+				</label>
 				<UBadge
 					size="xs"
 					color="neutral"
@@ -23,7 +25,9 @@
 		<div
 			v-else
 			class="flex items-center justify-between">
-			<label class="text-xs font-semibold text-muted uppercase tracking-widest">{{ t('inspector.timeline.label') }}</label>
+			<label class="text-xs font-semibold text-muted uppercase tracking-widest">
+				{{ t('inspector.timeline.label') }}
+			</label>
 			<UBadge
 				size="xs"
 				color="neutral"
@@ -70,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	import { toDrawerTimelineItems } from '../composables/useDrawerShared'

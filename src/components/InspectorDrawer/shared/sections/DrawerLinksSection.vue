@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { computed, ref } from 'vue'
 
 	import { DRAWER_LINK_KIND_FALLBACK_KEY, DRAWER_LINK_SELECT_MENU_UI, DRAWER_LINKS_EMPTY_TEXT_KEY } from '../constants'

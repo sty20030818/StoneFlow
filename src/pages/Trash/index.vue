@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
 	import { computed, ref, watch } from 'vue'
 

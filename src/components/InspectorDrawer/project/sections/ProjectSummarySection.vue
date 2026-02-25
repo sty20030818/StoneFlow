@@ -4,7 +4,9 @@
 		<div class="flex items-center justify-between gap-4">
 			<div class="min-w-0 space-y-2">
 				<div class="flex items-center pl-5 gap-2">
-					<p class="text-lg font-semibold text-muted uppercase tracking-wider">{{ t('inspector.project.summary.title') }}</p>
+					<p class="text-lg font-semibold text-muted uppercase tracking-wider">
+						{{ t('inspector.project.summary.title') }}
+					</p>
 					<!-- <UBadge
 						size="sm"
 						variant="soft"
@@ -85,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	type Props = {

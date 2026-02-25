@@ -22,10 +22,7 @@ const NUXT_UI_LOCALE_BY_APP_LOCALE = {
 	'en-US': nuxtUiEnUSLocale,
 } as const
 
-export const appNuxtUiLocales = [
-	NUXT_UI_LOCALE_BY_APP_LOCALE['zh-CN'],
-	NUXT_UI_LOCALE_BY_APP_LOCALE['en-US'],
-]
+export const appNuxtUiLocales = [NUXT_UI_LOCALE_BY_APP_LOCALE['zh-CN'], NUXT_UI_LOCALE_BY_APP_LOCALE['en-US']]
 
 function resolveLocaleFromPreferredLanguages(languages: readonly string[]): AppLocale | null {
 	for (const raw of languages) {

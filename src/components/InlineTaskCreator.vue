@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import type { MotionVariants } from '@vueuse/motion'
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { refDebounced, useEventListener } from '@vueuse/core'

@@ -28,9 +28,7 @@
 
 	const selectedLocale = computed<AppLocale>({
 		get() {
-			return (
-				normalizeAppLocale(settingsStore.settings.locale) ?? normalizeAppLocale(locale.value) ?? DEFAULT_LOCALE
-			)
+			return normalizeAppLocale(settingsStore.settings.locale) ?? normalizeAppLocale(locale.value) ?? DEFAULT_LOCALE
 		},
 		async set(value) {
 			const nextLocale = normalizeAppLocale(value)

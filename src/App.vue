@@ -123,7 +123,11 @@
 			id: 'workspace',
 			label: t('nav.groups.workspace'),
 			items: [
-				{ label: t('commandPalette.items.allTasks'), icon: 'i-lucide-list-checks', to: `/space/${currentSpaceId.value}` },
+				{
+					label: t('commandPalette.items.allTasks'),
+					icon: 'i-lucide-list-checks',
+					to: `/space/${currentSpaceId.value}`,
+				},
 				...SPACE_IDS.map((id) => ({
 					label: t(`spaces.${id}`),
 					icon: SPACE_DISPLAY[id].icon,

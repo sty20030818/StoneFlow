@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { useMotion } from '@vueuse/motion'
 	import { useElementSize } from '@vueuse/core'
 	import { computed, nextTick, ref, watch } from 'vue'
@@ -129,16 +129,12 @@ import { useI18n } from 'vue-i18n'
 		}
 	})
 
-	const noteEditorMotion = useMotion(
-		editorWrapRef,
-		noteEditorVariants,
-		{
-			syncVariants: false,
-			lifeCycleHooks: false,
-			eventListeners: false,
-			visibilityHooks: false,
-		},
-	)
+	const noteEditorMotion = useMotion(editorWrapRef, noteEditorVariants, {
+		syncVariants: false,
+		lifeCycleHooks: false,
+		eventListeners: false,
+		visibilityHooks: false,
+	})
 
 	function getTextareaElement(): HTMLTextAreaElement | null {
 		const node = document.getElementById(textareaId)

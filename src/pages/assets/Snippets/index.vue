@@ -231,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 

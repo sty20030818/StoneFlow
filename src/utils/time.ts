@@ -55,7 +55,9 @@ export function isTodayLocal(ts: number | null): boolean {
 	const date = toValidDate(ts)
 	if (!date) return false
 	const now = new Date()
-	return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+	return (
+		date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+	)
 }
 
 /**

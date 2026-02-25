@@ -41,7 +41,9 @@
 									class="text-xs text-muted">
 									Build {{ buildNumber }}
 								</div>
-								<div class="text-xs text-muted">{{ t('settings.about.header.lastChecked', { text: lastCheckedText }) }}</div>
+								<div class="text-xs text-muted">
+									{{ t('settings.about.header.lastChecked', { text: lastCheckedText }) }}
+								</div>
 							</div>
 							<UBadge
 								color="neutral"

@@ -8,7 +8,7 @@
 					:ui="drawerPopoverUi"
 					:trigger-class="`${spaceCardClass} cursor-pointer`">
 					<template #trigger>
-					<DrawerAttributeCardShell
+						<DrawerAttributeCardShell
 							icon-name="i-lucide-orbit"
 							:icon-class="spaceCardLabelClass"
 							:label="t('inspector.attribute.space')"
@@ -28,7 +28,7 @@
 					:ui="drawerPopoverUi"
 					:trigger-class="`${projectCardClass} cursor-pointer`">
 					<template #trigger>
-					<DrawerAttributeCardShell
+						<DrawerAttributeCardShell
 							icon-name="i-lucide-folder-tree"
 							:icon-class="projectIconClass"
 							:label="t('inspector.attribute.project')"
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { computed, ref } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'

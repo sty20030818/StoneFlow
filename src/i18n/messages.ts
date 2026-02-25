@@ -32,7 +32,7 @@ export function normalizeAppLocale(value: string | null | undefined): AppLocale 
 	}
 
 	const prefix = normalized.split('-')[0]
-	return prefix ? LOCALE_ALIAS_MAP[prefix] ?? null : null
+	return prefix ? (LOCALE_ALIAS_MAP[prefix] ?? null) : null
 }
 
 export type MessageSchema = Record<string, unknown>

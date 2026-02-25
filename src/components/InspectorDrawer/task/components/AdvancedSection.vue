@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { useDrawerEditableListController } from '@/components/InspectorDrawer/shared/composables'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'

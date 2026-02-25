@@ -1,11 +1,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
-import {
-	PROJECT_ICON,
-	PROJECT_LEVEL_TEXT_CLASSES,
-	type ProjectPriorityValue,
-} from '@/config/project'
+import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, type ProjectPriorityValue } from '@/config/project'
 import type { SpaceDisplay } from '@/config/space'
 import { TASK_PRIORITY_STYLES } from '@/config/task'
 import type { DrawerAttributeOptionItem } from '@/components/InspectorDrawer/shared/attributes/DrawerAttributeOptionList.vue'
@@ -53,7 +49,10 @@ export function useProjectDrawerAttributes(params: {
 }) {
 	const { t } = useI18n({ useScope: 'global' })
 	const priorityOption = computed(() => {
-		return params.priorityOptions.value.find((item) => item.value === params.priorityLocal.value) ?? params.priorityOptions.value[0]
+		return (
+			params.priorityOptions.value.find((item) => item.value === params.priorityLocal.value) ??
+			params.priorityOptions.value[0]
+		)
 	})
 	const priorityLabel = computed(() => priorityOption.value?.label ?? t('inspector.attribute.notSet'))
 	const priorityIcon = computed(() => priorityOption.value?.icon ?? 'i-lucide-alert-triangle')
@@ -61,9 +60,7 @@ export function useProjectDrawerAttributes(params: {
 	const priorityStyle = computed(() => {
 		const normalized = params.priorityLocal.value?.trim().toUpperCase() ?? ''
 		const key =
-			normalized === 'P0' || normalized === 'P1' || normalized === 'P2' || normalized === 'P3'
-				? normalized
-				: 'default'
+			normalized === 'P0' || normalized === 'P1' || normalized === 'P2' || normalized === 'P3' ? normalized : 'default'
 		return TASK_PRIORITY_STYLES[key]
 	})
 

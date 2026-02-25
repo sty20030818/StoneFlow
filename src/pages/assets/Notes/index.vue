@@ -74,14 +74,14 @@
 								</UBadge>
 							</div>
 						</div>
-							<UButton
-								color="neutral"
-								variant="ghost"
-								size="2xs"
-								icon="i-lucide-trash-2"
-								@click.stop="onDelete(note.id)">
-								<span class="sr-only">{{ t('common.actions.delete') }}</span>
-							</UButton>
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="2xs"
+							icon="i-lucide-trash-2"
+							@click.stop="onDelete(note.id)">
+							<span class="sr-only">{{ t('common.actions.delete') }}</span>
+						</UButton>
 					</div>
 				</div>
 			</div>
@@ -165,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { refDebounced, useAsyncState } from '@vueuse/core'
 	import { computed, ref } from 'vue'
 

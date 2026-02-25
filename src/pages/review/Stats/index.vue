@@ -29,16 +29,16 @@
 								:class="s.iconClass" />
 							<div class="text-sm font-semibold">{{ s.label }}</div>
 						</div>
-							<UButton
-								color="neutral"
-								variant="ghost"
-								size="2xs"
-								icon="i-lucide-arrow-right"
-								@click.stop="goToLogs(s.id)">
-								<span class="ml-1 text-[11px]">{{ t('review.stats.logsAction') }}</span>
-							</UButton>
-						</div>
-					</template>
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="2xs"
+							icon="i-lucide-arrow-right"
+							@click.stop="goToLogs(s.id)">
+							<span class="ml-1 text-[11px]">{{ t('review.stats.logsAction') }}</span>
+						</UButton>
+					</div>
+				</template>
 
 				<div class="flex items-end justify-between gap-2">
 					<div>
@@ -88,13 +88,13 @@
 			<!-- 状态分布 -->
 			<UCard v-motion="statusCardMotion">
 				<template #header>
-						<div class="flex items-center gap-2">
-							<UIcon
-								name="i-lucide-pie-chart"
-								class="size-4 text-purple-500" />
-							<div class="text-sm font-semibold">{{ t('review.stats.statusDistributionTitle') }}</div>
-						</div>
-					</template>
+					<div class="flex items-center gap-2">
+						<UIcon
+							name="i-lucide-pie-chart"
+							class="size-4 text-purple-500" />
+						<div class="text-sm font-semibold">{{ t('review.stats.statusDistributionTitle') }}</div>
+					</div>
+				</template>
 
 				<div class="space-y-3">
 					<div class="relative w-28 h-28 mx-auto">
@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { useAsyncState } from '@vueuse/core'
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
@@ -167,10 +167,7 @@ import { useI18n } from 'vue-i18n'
 		useMotionPreset,
 	} from '@/composables/base/motion'
 	import { toBoundedPercent } from '@/composables/base/percent'
-	import {
-		TASK_DONE_REASON_COLORS,
-		TASK_STATUS_CHART_COLORS,
-	} from '@/config/task'
+	import { TASK_DONE_REASON_COLORS, TASK_STATUS_CHART_COLORS } from '@/config/task'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import { resolveErrorMessage } from '@/utils/error-message'

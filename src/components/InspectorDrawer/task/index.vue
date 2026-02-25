@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import DrawerShell from '@/components/InspectorDrawer/shared/DrawerShell.vue'
 	import { DRAWER_CONTENT_CLASS } from '@/components/InspectorDrawer/shared/constants'
 	import {

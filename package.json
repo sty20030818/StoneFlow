@@ -14,14 +14,13 @@
 		"docs": "vitepress dev docs --port 8888",
 		"docs:build": "vitepress build docs",
 		"docs:preview": "vitepress preview docs --port 7777",
-		"tauri": "tauri",
 		"version:sync": "bun scripts/sync-version.mjs",
 		"release": "bun scripts/release-prepare.mjs",
 		"release:json": "bun scripts/release-prepare.mjs --json-only"
 	},
 	"dependencies": {
-		"@iconify-json/lucide": "^1.2.93",
-		"@nuxt/ui": "^4.4.0",
+		"@iconify-json/lucide": "^1.2.94",
+		"@nuxt/ui": "^4.5.0",
 		"@tailwindcss/vite": "^4.2.1",
 		"@tauri-apps/api": "^2.10.1",
 		"@tauri-apps/plugin-opener": "^2.5.3",

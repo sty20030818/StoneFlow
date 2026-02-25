@@ -138,7 +138,7 @@ export default {
 	updateNotification: {
 		title: 'New version found v{version}',
 		description: 'A new update is available for StoneFlow',
-		notesTitle: 'What\'s New',
+		notesTitle: "What's New",
 		downloading: 'Downloading',
 		actions: {
 			later: 'Remind Me Later',
@@ -683,7 +683,7 @@ export default {
 			},
 			placeholders: {
 				title: 'Enter diary title',
-				content: 'Write today\'s notes...',
+				content: "Write today's notes...",
 				linkedProject: 'Enter Project ID',
 			},
 			toast: {

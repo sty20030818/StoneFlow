@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
 	type OptionValue = string | number | boolean | null

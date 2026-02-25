@@ -54,7 +54,9 @@ fn normalize_tray_locale(raw: &str) -> Option<TrayLocale> {
     None
 }
 
-fn resolve_tray_locale_from_settings<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<TrayLocale> {
+fn resolve_tray_locale_from_settings<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Option<TrayLocale> {
     let data_dir = app.path().app_local_data_dir().ok()?;
     let settings_path = data_dir.join("settings.json");
     let raw = std::fs::read_to_string(settings_path).ok()?;
@@ -62,7 +64,11 @@ fn resolve_tray_locale_from_settings<R: tauri::Runtime>(app: &tauri::AppHandle<R
     let stored_locale = payload
         .pointer("/settings/locale")
         .and_then(Value::as_str)
-        .or_else(|| payload.pointer("/settings/value/locale").and_then(Value::as_str))
+        .or_else(|| {
+            payload
+                .pointer("/settings/value/locale")
+                .and_then(Value::as_str)
+        })
         .or_else(|| payload.get("locale").and_then(Value::as_str))?;
     normalize_tray_locale(stored_locale)
 }
