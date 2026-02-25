@@ -216,6 +216,8 @@ import { useI18n } from 'vue-i18n'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import { useProjectsStore } from '@/stores/projects'
+	import { resolveErrorMessage } from '@/utils/error-message'
+	import { formatDate as formatDateByLocale, formatTimeOfDay } from '@/utils/time'
 
 	const toast = useToast()
 	const { t, locale } = useI18n({ useScope: 'global' })
@@ -240,7 +242,7 @@ import { useI18n } from 'vue-i18n'
 		onError: (e) => {
 			toast.add({
 				title: t('review.finishList.toast.loadFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		},
@@ -268,17 +270,17 @@ import { useI18n } from 'vue-i18n'
 	])
 
 	function formatDate(ts: number): string {
-		const d = new Date(ts)
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
+		return formatDateByLocale(ts, {
+			locale: locale.value,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+		})
 	}
 
 	function formatDateTime(ts: number): string {
-		const d = new Date(ts)
 		const date = formatDate(ts)
-		const time = d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
+		const time = formatTimeOfDay(ts, { locale: locale.value })
 		return `${date} ${time}`
 	}
 

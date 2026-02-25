@@ -261,6 +261,7 @@ import { useI18n } from 'vue-i18n'
 	import { assetModalInputUi, assetModalSelectMenuUi, assetModalTextareaUi } from '../shared/modal-form-ui'
 	import type { VaultEntryDto, VaultEntryType } from '@/services/api/vault'
 	import { createVaultEntry, deleteVaultEntry, listVaultEntries, updateVaultEntry } from '@/services/api/vault'
+	import { resolveErrorMessage } from '@/utils/error-message'
 
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
@@ -291,7 +292,7 @@ import { useI18n } from 'vue-i18n'
 		onError: (e) => {
 			toast.add({
 				title: t('assets.vault.toast.loadFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		},
@@ -406,7 +407,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.vault.toast.copyFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}
@@ -436,7 +437,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}
@@ -453,7 +454,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}

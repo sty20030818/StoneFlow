@@ -18,6 +18,7 @@ import { validateWithZod } from '@/composables/base/zod'
 import { taskSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+import { resolveErrorMessage } from '@/utils/error-message'
 import { statusOptions } from '@/utils/task'
 
 export type CreateTaskModalProps = {
@@ -353,7 +354,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		} catch (error) {
 			toast.add({
 				title: t('toast.common.createTaskFailed'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			console.error('创建任务失败:', error)

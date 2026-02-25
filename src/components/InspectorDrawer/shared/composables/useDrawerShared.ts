@@ -2,6 +2,7 @@ import { computed } from 'vue'
 
 import type { DrawerLinkKindOption, DrawerTimelineLogEntry } from '../types'
 import { i18n } from '@/i18n'
+import { formatDateTime } from '@/utils/time'
 
 const ACTION_ICON_MAP: Record<string, string> = {
 	task_created: 'i-lucide-circle-plus',
@@ -18,32 +19,18 @@ const ACTION_ICON_MAP: Record<string, string> = {
 	project_unarchived: 'i-lucide-folder-open',
 }
 
-function formatWeekday(date: Date, locale: string): string {
-	const normalized = locale.startsWith('en') ? 'en-US' : 'zh-CN'
-	return new Intl.DateTimeFormat(normalized, { weekday: 'long' }).format(date)
-}
-
 export function formatDrawerDateTime(
 	ts: number | null | undefined,
 	options: { fallback?: string; includeWeekday?: boolean } = {},
 ): string {
 	const fallback = options.fallback ?? i18n.global.t('inspector.time.unknown')
 	if (ts === null || ts === undefined) return fallback
-	const date = new Date(ts)
-	if (Number.isNaN(date.getTime())) return fallback
 
-	const locale = String(i18n.global.locale.value || 'zh-CN').toLowerCase()
-
-	const yyyy = date.getFullYear()
-	const mm = String(date.getMonth() + 1).padStart(2, '0')
-	const dd = String(date.getDate()).padStart(2, '0')
-	const hh = String(date.getHours()).padStart(2, '0')
-	const min = String(date.getMinutes()).padStart(2, '0')
-	if (options.includeWeekday) {
-		const weekday = formatWeekday(date, locale)
-		return `${yyyy}.${mm}.${dd} ${weekday} ${hh}:${min}`
-	}
-	return `${yyyy}.${mm}.${dd} ${hh}:${min}`
+	return formatDateTime(ts, {
+		locale: String(i18n.global.locale.value || 'zh-CN'),
+		fallback,
+		weekday: options.includeWeekday ? 'long' : undefined,
+	})
 }
 
 export function resolveDrawerActivityIcon(action: string): string {

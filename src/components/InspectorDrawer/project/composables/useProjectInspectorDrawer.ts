@@ -14,6 +14,7 @@ import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+import { resolveErrorMessage } from '@/utils/error-message'
 import { buildDrawerLinkKindOptions } from '../../shared/constants'
 
 type ParentProjectOption = {
@@ -815,7 +816,7 @@ export function useProjectInspectorDrawer() {
 			})
 			return true
 		} catch (error) {
-			const description = error instanceof Error ? error.message : t('fallback.unknownError')
+			const description = resolveErrorMessage(error, t)
 			const title =
 				action === 'delete'
 					? t('inspector.project.toast.deleteFailedTitle')

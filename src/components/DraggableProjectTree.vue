@@ -137,6 +137,7 @@
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+	import { resolveErrorMessage } from '@/utils/error-message'
 	import { calculateInsertRank } from '@/utils/rank'
 
 	export type ProjectTreeItem = {
@@ -303,7 +304,7 @@
 		} catch (e) {
 			toast.add({
 				title: t('toast.projectTree.deleteFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		} finally {

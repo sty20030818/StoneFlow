@@ -101,6 +101,7 @@ import { useI18n } from 'vue-i18n'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useSettingsStore } from '@/stores/settings'
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
+	import { resolveErrorMessage } from '@/utils/error-message'
 
 	const route = useRoute()
 	const { t } = useI18n({ useScope: 'global' })
@@ -216,7 +217,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('projectView.toast.deleteFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		} finally {

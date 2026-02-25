@@ -5,6 +5,7 @@ import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/config
 import type { TaskDto } from '@/services/api/tasks'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { getDisplayStatus } from '@/utils/task'
+import { formatDate, formatDateTime, formatTimeOfDay } from '@/utils/time'
 import { Menu } from '@tauri-apps/api/menu'
 
 export type TaskCardProps = {
@@ -101,8 +102,8 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		if (diffDays > 0 && diffDays <= 7) return t('taskCard.time.inDays', { count: diffDays })
 		if (diffDays < 0 && diffDays >= -7) return t('taskCard.time.daysAgo', { count: Math.abs(diffDays) })
 
-		// 默认显示简短日期
-		return date.toLocaleDateString(locale.value, {
+		return formatDate(date, {
+			locale: locale.value,
 			month: 'numeric',
 			day: 'numeric',
 		})
@@ -112,25 +113,23 @@ export function useTaskCard(props: TaskCardProps, emit: TaskCardEmits) {
 		const date = new Date(timestamp)
 		const now = new Date()
 
-		const pad = (n: number) => n.toString().padStart(2, '0')
-		const month = pad(date.getMonth() + 1)
-		const day = pad(date.getDate())
-		const hour = pad(date.getHours())
-		const minute = pad(date.getMinutes())
-		const year = date.getFullYear()
-
 		const isToday = date.toDateString() === now.toDateString()
-		const isThisYear = year === now.getFullYear()
+		const isThisYear = date.getFullYear() === now.getFullYear()
 
 		if (isToday) {
-			return `${hour}:${minute}`
+			return formatTimeOfDay(date, { locale: locale.value })
 		}
 
 		if (isThisYear) {
-			return `${month}/${day} ${hour}:${minute}`
+			return formatDateTime(date, {
+				locale: locale.value,
+				year: undefined,
+			})
 		}
 
-		return `${year} ${month}/${day}`
+		return formatDate(date, {
+			locale: locale.value,
+		})
 	}
 
 	return {

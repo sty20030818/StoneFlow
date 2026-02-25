@@ -1,8 +1,6 @@
 import { useI18n } from 'vue-i18n'
 import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
-import { formatDistanceToNow } from 'date-fns'
-import { enUS, zhCN } from 'date-fns/locale'
 
 import { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
 import { validateWithZod } from '@/composables/base/zod'
@@ -10,6 +8,7 @@ import { postgresUrlSchema, remoteImportListSchema, remoteProfileSchema } from '
 import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
+import { resolveErrorMessage } from '@/utils/error-message'
 import type {
 	RemoteDbProfile,
 	RemoteDbProfileInput,
@@ -21,6 +20,7 @@ import {
 	summarizeRemoteSyncReport,
 	toRemoteSyncTableViewItems,
 } from '@/utils/remote-sync-report'
+import { formatDateTime, formatRelativeDistance } from '@/utils/time'
 
 type RemoteSyncHistoryFilter = 'all' | RemoteSyncDirection
 
@@ -185,17 +185,11 @@ export function useRemoteSyncPage() {
 
 	function formatRelativeTime(timestamp: number, fallback: string) {
 		if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback
-		const date = new Date(timestamp)
-		if (!Number.isFinite(date.getTime())) return fallback
 		void now.value
-		try {
-			return formatDistanceToNow(date, {
-				addSuffix: true,
-				locale: locale.value.startsWith('en') ? enUS : zhCN,
-			})
-		} catch {
-			return fallback
-		}
+		return formatRelativeDistance(timestamp, {
+			locale: locale.value,
+			fallback,
+		})
 	}
 
 	function formatProfileMeta(profile: RemoteDbProfile) {
@@ -203,7 +197,7 @@ export function useRemoteSyncPage() {
 			profile.source === 'import'
 				? t('settings.remoteSync.profile.source.import')
 				: t('settings.remoteSync.profile.source.manual')
-		return `${source} · ${new Date(profile.updatedAt).toLocaleString(locale.value)}`
+		return `${source} · ${formatDateTime(profile.updatedAt, { locale: locale.value })}`
 	}
 
 	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
@@ -215,7 +209,7 @@ export function useRemoteSyncPage() {
 					? t('settings.remoteSync.history.direction.push')
 					: t('settings.remoteSync.history.direction.pull'),
 			profileName: item.profileName || t('settings.remoteSync.profile.unnamed'),
-			syncedAtText: new Date(item.syncedAt).toLocaleString(locale.value),
+			syncedAtText: formatDateTime(item.syncedAt, { locale: locale.value }),
 			summary: summarizeRemoteSyncReport(item.report, t('settings.remoteSync.history.noStats'), t),
 			tables: toRemoteSyncTableViewItems(item.report, t),
 		}
@@ -243,7 +237,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.clearFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('sync:history:clear:error', error)
@@ -273,7 +267,7 @@ export function useRemoteSyncPage() {
 			editUrl.value = ''
 			toast.add({
 				title: t('settings.remoteSync.toast.readProfileFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('open:edit:error', error)
@@ -300,7 +294,7 @@ export function useRemoteSyncPage() {
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('test:current:error', error)
@@ -333,7 +327,7 @@ export function useRemoteSyncPage() {
 			toast.add({
 				title: t('settings.remoteSync.toast.pushSuccessTitle'),
 				description: t('settings.remoteSync.toast.syncAtDescription', {
-					time: new Date(report.syncedAt).toLocaleString(locale.value),
+					time: formatDateTime(report.syncedAt, { locale: locale.value }),
 					summary: summarizeRemoteSyncReport(report, '', t),
 				}),
 				color: 'success',
@@ -342,7 +336,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.pushFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('sync:push:error', error)
@@ -374,7 +368,7 @@ export function useRemoteSyncPage() {
 			toast.add({
 				title: t('settings.remoteSync.toast.pullSuccessTitle'),
 				description: t('settings.remoteSync.toast.syncAtDescription', {
-					time: new Date(report.syncedAt).toLocaleString(locale.value),
+					time: formatDateTime(report.syncedAt, { locale: locale.value }),
 					summary: summarizeRemoteSyncReport(report, '', t),
 				}),
 				color: 'success',
@@ -383,7 +377,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.pullFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('sync:pull:error', error)
@@ -413,7 +407,7 @@ export function useRemoteSyncPage() {
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('test:new:error', error)
@@ -446,7 +440,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.createFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('create:error', error)
@@ -478,7 +472,7 @@ export function useRemoteSyncPage() {
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('test:edit:error', error)
@@ -510,7 +504,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.saveFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('save:edit:error', error)
@@ -528,7 +522,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.switchFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('setActive:error', error)
@@ -553,7 +547,7 @@ export function useRemoteSyncPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.remoteSync.toast.deleteFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('delete:error', error)
@@ -592,7 +586,7 @@ export function useRemoteSyncPage() {
 			importError.value = t('settings.remoteSync.import.parseError')
 			toast.add({
 				title: t('settings.remoteSync.toast.importFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('import:error', error)
@@ -611,7 +605,7 @@ export function useRemoteSyncPage() {
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.readProfileFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			logError('mount:load:error', error)

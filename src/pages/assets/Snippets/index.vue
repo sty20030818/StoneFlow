@@ -249,6 +249,7 @@ import { useI18n } from 'vue-i18n'
 	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
 	import type { SnippetDto } from '@/services/api/snippets'
 	import { createSnippet, deleteSnippet, listSnippets, updateSnippet } from '@/services/api/snippets'
+	import { resolveErrorMessage } from '@/utils/error-message'
 
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
@@ -279,7 +280,7 @@ import { useI18n } from 'vue-i18n'
 		onError: (e) => {
 			toast.add({
 				title: t('assets.snippets.toast.loadFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		},
@@ -390,7 +391,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}
@@ -407,7 +408,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}

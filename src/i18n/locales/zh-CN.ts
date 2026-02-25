@@ -913,7 +913,9 @@ export default {
 				hint: '删除后需重新创建或导入才能继续使用。',
 			},
 			errors: {
+				noActiveProfile: '请先配置远端同步',
 				noDatabaseUrl: '数据库 URL 不能为空',
+				connectionPoolTimeout: '连接池超时，请稍后重试或降低并发后再同步',
 			},
 			profile: {
 				unnamed: '未命名配置',
@@ -976,6 +978,13 @@ export default {
 				importedDescription: '共导入 {count} 条配置',
 				importFailedTitle: '导入失败',
 			},
+		},
+	},
+	errors: {
+		codes: {
+			VALIDATION_ERROR: '参数不合法，请检查输入后重试',
+			DB_ERROR: '数据库操作失败，请稍后重试',
+			INTERNAL_ERROR: '系统内部错误，请稍后重试',
 		},
 	},
 	fallback: {

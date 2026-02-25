@@ -49,7 +49,7 @@ function normalizeInvokeError(err: unknown): ApiError {
 		}
 	}
 
-	return new ApiError('未知错误')
+	return new ApiError('')
 }
 
 const SENSITIVE_KEYS = ['databaseurl', 'token', 'password']

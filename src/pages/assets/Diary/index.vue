@@ -211,6 +211,8 @@ import { useI18n } from 'vue-i18n'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
 	import type { DiaryEntryDto } from '@/services/api/diary'
 	import { createDiaryEntry, deleteDiaryEntry, listDiaryEntries, updateDiaryEntry } from '@/services/api/diary'
+	import { resolveErrorMessage } from '@/utils/error-message'
+	import { formatDate } from '@/utils/time'
 
 	const toast = useToast()
 	const { t, locale } = useI18n({ useScope: 'global' })
@@ -252,7 +254,7 @@ import { useI18n } from 'vue-i18n'
 			onError: (e) => {
 				toast.add({
 					title: t('assets.diary.toast.loadFailedTitle'),
-					description: e instanceof Error ? e.message : t('fallback.unknownError'),
+					description: resolveErrorMessage(e, t),
 					color: 'error',
 				})
 			},
@@ -285,8 +287,8 @@ import { useI18n } from 'vue-i18n'
 
 		const result: GroupedEntry[] = []
 		for (const [date, entriesList] of byDate.entries()) {
-			const d = new Date(date)
-			const dateLabel = d.toLocaleDateString(locale.value, {
+			const dateLabel = formatDate(date, {
+				locale: locale.value,
 				year: 'numeric',
 				month: 'long',
 				day: 'numeric',
@@ -361,7 +363,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}
@@ -375,7 +377,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		}

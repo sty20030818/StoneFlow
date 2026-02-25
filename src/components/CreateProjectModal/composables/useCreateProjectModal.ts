@@ -17,6 +17,7 @@ import { validateWithZod } from '@/composables/base/zod'
 import { projectSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+import { resolveErrorMessage } from '@/utils/error-message'
 
 export type CreateProjectModalProps = {
 	modelValue: boolean
@@ -281,7 +282,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		} catch (error) {
 			toast.add({
 				title: t('toast.common.createProjectFailed'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 			console.error('创建项目失败:', error)

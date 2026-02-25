@@ -1,11 +1,11 @@
 import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
-import { formatDistanceToNow } from 'date-fns'
-import { enUS, zhCN } from 'date-fns/locale'
 import { useI18n } from 'vue-i18n'
 
 import { useUpdater } from '@/composables/useUpdater'
 import { useSettingsSystemActions } from '@/pages/Settings/composables/useSettingsSystemActions'
+import { resolveErrorMessage } from '@/utils/error-message'
+import { formatRelativeDistance } from '@/utils/time'
 import { getIdentifier, getName, getVersion } from '@tauri-apps/api/app'
 import { appLocalDataDir, executableDir } from '@tauri-apps/api/path'
 import changelogSource from '../../../../../changelog/changelog.md?raw'
@@ -107,9 +107,9 @@ export function useAboutPage() {
 		if (!state.value.lastCheckedAt) return t('settings.about.header.lastCheckedNever')
 		// 显式依赖 now，保证相对时间文案自动刷新。
 		void now.value
-		return formatDistanceToNow(state.value.lastCheckedAt, {
-			addSuffix: true,
-			locale: locale.value.toLowerCase().startsWith('en') ? enUS : zhCN,
+		return formatRelativeDistance(state.value.lastCheckedAt, {
+			locale: locale.value,
+			fallback: t('settings.about.header.lastCheckedNever'),
 		})
 	})
 
@@ -161,7 +161,7 @@ export function useAboutPage() {
 		} catch (error) {
 			toast.add({
 				title: t('settings.about.toast.restartFailedTitle'),
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 		}

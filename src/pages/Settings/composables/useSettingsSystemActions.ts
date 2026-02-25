@@ -2,6 +2,7 @@ import { useClipboard } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 
 import { copyText, openExternalUrl, openLocalPath } from '@/services/tauri/system-actions'
+import { resolveErrorMessage } from '@/utils/error-message'
 
 export function useSettingsSystemActions() {
 	const toast = useToast()
@@ -20,7 +21,7 @@ export function useSettingsSystemActions() {
 		} catch (error) {
 			toast.add({
 				title: failTitle,
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 		}
@@ -32,7 +33,7 @@ export function useSettingsSystemActions() {
 		} catch (error) {
 			toast.add({
 				title: failTitle,
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 		}
@@ -46,7 +47,7 @@ export function useSettingsSystemActions() {
 		} catch (error) {
 			toast.add({
 				title: failTitle,
-				description: error instanceof Error ? error.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(error, t),
 				color: 'error',
 			})
 		}

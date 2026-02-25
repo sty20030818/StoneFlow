@@ -4,6 +4,7 @@ import { computed, type Ref } from 'vue'
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
 import type { TaskDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
+import { formatDate } from '@/utils/time'
 import {
 	normalizeDrawerSpaceKey,
 	resolveDrawerSpaceDisplay,
@@ -82,8 +83,8 @@ export function useTaskInspectorDerived(params: {
 
 	const deadlineLabel = computed(() => {
 		if (!state.deadlineLocal.value) return t('inspector.attribute.notSet')
-		const date = new Date(state.deadlineLocal.value)
-		return date.toLocaleDateString(locale.value, {
+		return formatDate(state.deadlineLocal.value, {
+			locale: locale.value,
 			month: 'short',
 			day: 'numeric',
 		})

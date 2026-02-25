@@ -119,6 +119,7 @@ import { useI18n } from 'vue-i18n'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useSettingsStore } from '@/stores/settings'
+	import { resolveErrorMessage } from '@/utils/error-message'
 
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
@@ -271,7 +272,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('trash.toast.loadFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		} finally {
@@ -298,7 +299,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('trash.toast.restoreFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		} finally {
@@ -326,7 +327,7 @@ import { useI18n } from 'vue-i18n'
 		} catch (e) {
 			toast.add({
 				title: t('trash.toast.restoreFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		} finally {

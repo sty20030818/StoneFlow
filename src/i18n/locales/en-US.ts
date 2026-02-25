@@ -913,7 +913,9 @@ export default {
 				hint: 'You need to create or import a profile again to continue.',
 			},
 			errors: {
+				noActiveProfile: 'Please configure remote sync first',
 				noDatabaseUrl: 'Database URL cannot be empty',
+				connectionPoolTimeout: 'Connection pool timed out, please retry later or reduce concurrency',
 			},
 			profile: {
 				unnamed: 'Unnamed profile',
@@ -976,6 +978,13 @@ export default {
 				importedDescription: 'Imported {count} profiles',
 				importFailedTitle: 'Import failed',
 			},
+		},
+	},
+	errors: {
+		codes: {
+			VALIDATION_ERROR: 'Invalid request parameters, please check your input',
+			DB_ERROR: 'Database operation failed, please try again later',
+			INTERNAL_ERROR: 'Internal error, please try again later',
 		},
 	},
 	fallback: {

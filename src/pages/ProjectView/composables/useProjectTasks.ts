@@ -7,6 +7,7 @@ import { useTaskSnapshotState } from '@/composables/domain/task/useTaskSnapshotS
 import { useTaskActions } from '@/composables/useTaskActions'
 import { listTasks, type TaskDto } from '@/services/api/tasks'
 import { useRefreshSignalsStore } from '@/stores/refresh-signals'
+import { resolveErrorMessage } from '@/utils/error-message'
 
 /**
  * 统一的项目任务数据加载与操作逻辑
@@ -69,7 +70,7 @@ export function useProjectTasks(
 			if (requestId !== latestRequestId || nextScopeKey !== scopeKey.value) return
 			toast.add({
 				title: t('projectView.toast.loadFailedTitle'),
-				description: e instanceof Error ? e.message : t('fallback.unknownError'),
+				description: resolveErrorMessage(e, t),
 				color: 'error',
 			})
 		} finally {

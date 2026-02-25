@@ -173,6 +173,7 @@ import { useI18n } from 'vue-i18n'
 	} from '@/config/task'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { listTasks, type TaskDto } from '@/services/api/tasks'
+	import { resolveErrorMessage } from '@/utils/error-message'
 
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
@@ -197,7 +198,7 @@ import { useI18n } from 'vue-i18n'
 			onError: (e) => {
 				toast.add({
 					title: t('review.stats.toast.loadFailedTitle'),
-					description: e instanceof Error ? e.message : t('fallback.unknownError'),
+					description: resolveErrorMessage(e, t),
 					color: 'error',
 				})
 			},
