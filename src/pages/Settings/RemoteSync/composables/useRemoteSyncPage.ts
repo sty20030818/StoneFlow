@@ -192,6 +192,38 @@ export function useRemoteSyncPage() {
 		})
 	}
 
+	async function refreshStatusByActiveProfileCache() {
+		const currentProfileId = remoteSyncStore.activeProfileId
+		if (!currentProfileId) {
+			status.value = 'missing'
+			return
+		}
+
+		try {
+			const url = await remoteSyncStore.getActiveProfileUrl()
+			if (!url) {
+				status.value = 'missing'
+				return
+			}
+
+			if (remoteSyncStore.isConnectionHealthy(currentProfileId, url)) {
+				status.value = 'ok'
+				return
+			}
+
+			const health = remoteSyncStore.getConnectionHealth(currentProfileId, url)
+			if (!health) {
+				status.value = 'missing'
+				return
+			}
+
+			status.value = health.result === 'ok' ? 'ok' : 'error'
+		} catch (error) {
+			logError('status:refresh:error', error)
+			status.value = 'error'
+		}
+	}
+
 	function formatProfileMeta(profile: RemoteDbProfile) {
 		const source =
 			profile.source === 'import'
@@ -283,6 +315,12 @@ export function useRemoteSyncPage() {
 			const url = await remoteSyncStore.getActiveProfileUrl()
 			if (!url) throw new Error(t('settings.remoteSync.errors.noDatabaseUrl'))
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: url } })
+			await remoteSyncStore.setConnectionHealth({
+				profileId: activeProfileId.value,
+				databaseUrl: url,
+				result: 'ok',
+				errorDigest: null,
+			})
 			status.value = 'ok'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionOkTitle'),
@@ -291,6 +329,18 @@ export function useRemoteSyncPage() {
 			})
 			log('test:current:done')
 		} catch (error) {
+			const currentProfileId = activeProfileId.value
+			const currentProfileUrl = currentProfileId
+				? await remoteSyncStore.getProfileUrl(currentProfileId).catch(() => null)
+				: null
+			if (currentProfileId && currentProfileUrl) {
+				await remoteSyncStore.setConnectionHealth({
+					profileId: currentProfileId,
+					databaseUrl: currentProfileUrl,
+					result: 'error',
+					errorDigest: resolveErrorMessage(error, t),
+				})
+			}
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
@@ -430,7 +480,7 @@ export function useRemoteSyncPage() {
 			newName.value = ''
 			newUrl.value = ''
 			createOpen.value = false
-			status.value = 'ok'
+			status.value = 'missing'
 			toast.add({
 				title: t('settings.remoteSync.toast.createdProfileTitle'),
 				description: t('settings.remoteSync.toast.createdProfileDescription'),
@@ -456,11 +506,18 @@ export function useRemoteSyncPage() {
 			toast.add({ title: validation.message, color: 'error' })
 			return
 		}
+		if (!editProfileId.value) return
 		try {
 			log('test:edit:start', { profileId: editProfileId.value })
 			testingEdit.value = true
 			status.value = 'testing'
 			await tauriInvoke('test_neon_connection', { args: { databaseUrl: editUrl.value.trim() } })
+			await remoteSyncStore.setConnectionHealth({
+				profileId: editProfileId.value,
+				databaseUrl: editUrl.value.trim(),
+				result: 'ok',
+				errorDigest: null,
+			})
 			status.value = 'ok'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionOkTitle'),
@@ -469,6 +526,12 @@ export function useRemoteSyncPage() {
 			})
 			log('test:edit:done')
 		} catch (error) {
+			await remoteSyncStore.setConnectionHealth({
+				profileId: editProfileId.value,
+				databaseUrl: editUrl.value.trim(),
+				result: 'error',
+				errorDigest: resolveErrorMessage(error, t),
+			})
 			status.value = 'error'
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
@@ -494,7 +557,7 @@ export function useRemoteSyncPage() {
 			await remoteSyncStore.updateProfileName(editProfileId.value, editName.value.trim())
 			await remoteSyncStore.updateProfileUrl(editProfileId.value, editUrl.value.trim())
 			editOpen.value = false
-			status.value = 'ok'
+			await refreshStatusByActiveProfileCache()
 			toast.add({
 				title: t('settings.remoteSync.toast.savedProfileTitle'),
 				description: t('settings.remoteSync.toast.savedProfileDescription'),
@@ -517,7 +580,7 @@ export function useRemoteSyncPage() {
 		log('setActive:start', { profileId })
 		try {
 			await remoteSyncStore.setActiveProfile(profileId)
-			status.value = 'missing'
+			await refreshStatusByActiveProfileCache()
 			log('setActive:done', { profileId })
 		} catch (error) {
 			toast.add({
@@ -575,7 +638,7 @@ export function useRemoteSyncPage() {
 			await remoteSyncStore.importProfiles(items)
 			importText.value = ''
 			importOpen.value = false
-			status.value = 'ok'
+			await refreshStatusByActiveProfileCache()
 			toast.add({
 				title: t('settings.remoteSync.toast.importedTitle'),
 				description: t('settings.remoteSync.toast.importedDescription', { count: items.length }),
@@ -599,7 +662,7 @@ export function useRemoteSyncPage() {
 		log('mount:load:start')
 		try {
 			await remoteSyncStore.load()
-			status.value = 'missing'
+			await refreshStatusByActiveProfileCache()
 			log('mount:load:done', { activeProfileId: remoteSyncStore.activeProfileId })
 		} catch (error) {
 			status.value = 'error'

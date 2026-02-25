@@ -40,6 +40,30 @@ export type RemoteSyncCommandReport = {
 
 export type RemoteSyncDirection = 'push' | 'pull'
 
+export type RemoteSyncConnectionHealthResult = 'ok' | 'error'
+
+export type RemoteSyncConnectionHealth = {
+	profileId: string
+	urlHash: string
+	lastTestedAt: number
+	result: RemoteSyncConnectionHealthResult
+	errorDigest: string | null
+	ttlMs: number
+}
+
+export type RemoteSyncPreferences = {
+	enabled: boolean
+	intervalMinutes: number
+	runOnAppStart: boolean
+	runOnWindowFocus: boolean
+	retryCount: number
+}
+
+export type RemoteSyncProfileSyncTime = {
+	lastPushedAt: number
+	lastPulledAt: number
+}
+
 export type RemoteSyncHistoryItem = {
 	id: string
 	profileId: string | null
@@ -53,5 +77,8 @@ export type RemoteSyncHistoryItem = {
 export type RemoteSyncSettings = {
 	profiles: RemoteDbProfile[]
 	activeProfileId: string | null
+	connectionHealth: Record<string, RemoteSyncConnectionHealth>
+	syncPreferences: RemoteSyncPreferences
+	profileSyncTimes: Record<string, RemoteSyncProfileSyncTime>
 	syncHistory: RemoteSyncHistoryItem[]
 }

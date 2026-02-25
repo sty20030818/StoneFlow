@@ -1,4 +1,3 @@
-import { StorageSerializers, useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -6,9 +5,6 @@ import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 import { resolveErrorMessage } from '@/utils/error-message'
 import type { RemoteSyncCommandReport } from '@/types/shared/remote-sync'
-
-const LAST_PUSHED_AT_KEY = 'neon_last_pushed_at'
-const LAST_PULLED_AT_KEY = 'neon_last_pulled_at'
 
 export function useRemoteSyncActions() {
 	const remoteSyncStore = useRemoteSyncStore()
@@ -21,14 +17,8 @@ export function useRemoteSyncActions() {
 	const syncHistory = computed(() => remoteSyncStore.syncHistory)
 	const lastPushReport = computed(() => syncHistory.value.find((entry) => entry.direction === 'push')?.report ?? null)
 	const lastPullReport = computed(() => syncHistory.value.find((entry) => entry.direction === 'pull')?.report ?? null)
-
-	// 同步时间统一交给 VueUse 持久化，并强制 number 序列化，缺省值为 0（表示未同步）。
-	const lastPushedAt = useStorage<number>(LAST_PUSHED_AT_KEY, 0, undefined, {
-		serializer: StorageSerializers.number,
-	})
-	const lastPulledAt = useStorage<number>(LAST_PULLED_AT_KEY, 0, undefined, {
-		serializer: StorageSerializers.number,
-	})
+	const lastPushedAt = computed(() => remoteSyncStore.getLastSyncAt(remoteSyncStore.activeProfileId, 'push'))
+	const lastPulledAt = computed(() => remoteSyncStore.getLastSyncAt(remoteSyncStore.activeProfileId, 'pull'))
 
 	const hasActiveProfile = computed(() => !!remoteSyncStore.activeProfileId)
 
@@ -84,7 +74,6 @@ export function useRemoteSyncActions() {
 			try {
 				const { profile, databaseUrl } = await resolveActiveProfileAndUrl()
 				const report = await tauriInvoke<RemoteSyncCommandReport>('push_to_neon', { args: { databaseUrl } })
-				lastPushedAt.value = report.syncedAt
 				try {
 					await remoteSyncStore.appendSyncHistory({
 						direction: 'push',
@@ -115,7 +104,6 @@ export function useRemoteSyncActions() {
 			try {
 				const { profile, databaseUrl } = await resolveActiveProfileAndUrl()
 				const report = await tauriInvoke<RemoteSyncCommandReport>('pull_from_neon', { args: { databaseUrl } })
-				lastPulledAt.value = report.syncedAt
 				try {
 					await remoteSyncStore.appendSyncHistory({
 						direction: 'pull',
