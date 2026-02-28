@@ -220,8 +220,8 @@
 	const editForm = ref({
 		title: '',
 		content: '',
-		linkedProjectId: null as string | null,
-		linkedTaskId: null as string | null,
+		linkedProjectId: '',
+		linkedTaskId: '',
 	})
 
 	const filteredNotes = computed(() => {
@@ -250,8 +250,8 @@
 		editForm.value = {
 			title: note.title,
 			content: note.content,
-			linkedProjectId: note.linkedProjectId,
-			linkedTaskId: note.linkedTaskId,
+			linkedProjectId: note.linkedProjectId ?? '',
+			linkedTaskId: note.linkedTaskId ?? '',
 		}
 		editOpen.value = true
 	}
@@ -282,11 +282,16 @@
 		}
 
 		try {
+			const payload = {
+				...editForm.value,
+				linkedProjectId: editForm.value.linkedProjectId.trim() || null,
+				linkedTaskId: editForm.value.linkedTaskId.trim() || null,
+			}
 			if (selectedNote.value.id) {
-				await updateNote(selectedNote.value.id, editForm.value)
+				await updateNote(selectedNote.value.id, payload)
 				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
-				await createNote(editForm.value)
+				await createNote(payload)
 				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()

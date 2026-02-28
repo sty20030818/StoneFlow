@@ -41,7 +41,7 @@ export type CreateProjectFormState = {
 	title: string
 	spaceId: SpaceId
 	parentId: string | null
-	note: string | null
+	note: string
 	priority: ProjectPriorityValue
 	tags: string[]
 	links: ProjectLinkFormItem[]
@@ -89,7 +89,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		title: '',
 		spaceId: normalizeSpaceId(props.spaceId),
 		parentId: null,
-		note: null,
+		note: '',
 		priority: 'P1',
 		tags: [],
 		links: [],
@@ -246,7 +246,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 
 		form.title = ''
 		form.parentId = null
-		form.note = null
+		form.note = ''
 		form.priority = 'P1'
 		form.tags = []
 		form.links = []
