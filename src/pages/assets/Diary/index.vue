@@ -266,7 +266,7 @@
 		title: '',
 		content: '',
 		linkedTaskIds: [] as string[],
-		linkedProjectId: null as string | null,
+		linkedProjectId: '',
 	})
 
 	type GroupedEntry = {
@@ -326,7 +326,7 @@
 			title: e.title,
 			content: e.content,
 			linkedTaskIds: [...e.linkedTaskIds],
-			linkedProjectId: e.linkedProjectId,
+			linkedProjectId: e.linkedProjectId ?? '',
 		}
 		editOpen.value = true
 	}
@@ -338,7 +338,7 @@
 			title: '',
 			content: '',
 			linkedTaskIds: [],
-			linkedProjectId: null,
+			linkedProjectId: '',
 		}
 		editOpen.value = true
 	}
@@ -351,11 +351,15 @@
 		}
 
 		try {
+			const payload = {
+				...editForm.value,
+				linkedProjectId: editForm.value.linkedProjectId.trim() || null,
+			}
 			if (selectedEntry.value) {
-				await updateDiaryEntry(selectedEntry.value.id, editForm.value)
+				await updateDiaryEntry(selectedEntry.value.id, payload)
 				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
-				await createDiaryEntry(editForm.value)
+				await createDiaryEntry(payload)
 				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()

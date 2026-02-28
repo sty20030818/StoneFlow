@@ -312,8 +312,8 @@
 		name: '',
 		type: 'api_key' as VaultEntryType,
 		value: '',
-		folder: null as string | null,
-		note: null as string | null,
+		folder: '',
+		note: '',
 	})
 
 	const typeOptions = computed(() => [
@@ -367,8 +367,8 @@
 			name: entry.name,
 			type: entry.type,
 			value: entry.value,
-			folder: entry.folder,
-			note: entry.note,
+			folder: entry.folder ?? '',
+			note: entry.note ?? '',
 		}
 		showValue.value = false
 		editOpen.value = true
@@ -425,11 +425,16 @@
 		}
 
 		try {
+			const payload = {
+				...editForm.value,
+				folder: editForm.value.folder.trim() || null,
+				note: editForm.value.note.trim() || null,
+			}
 			if (selectedEntry.value.id) {
-				await updateVaultEntry(selectedEntry.value.id, editForm.value)
+				await updateVaultEntry(selectedEntry.value.id, payload)
 				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
-				await createVaultEntry(editForm.value)
+				await createVaultEntry(payload)
 				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()

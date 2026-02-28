@@ -290,7 +290,7 @@
 		title: '',
 		language: 'plaintext',
 		content: '',
-		folder: null as string | null,
+		folder: '',
 		tags: [] as string[],
 	})
 	const tagsInput = ref('')
@@ -335,7 +335,7 @@
 			title: snippet.title,
 			language: snippet.language,
 			content: snippet.content,
-			folder: snippet.folder,
+			folder: snippet.folder ?? '',
 			tags: [...snippet.tags],
 		}
 		tagsInput.value = snippet.tags.join(', ')
@@ -379,11 +379,15 @@
 
 		try {
 			onTagsBlur()
+			const payload = {
+				...editForm.value,
+				folder: editForm.value.folder.trim() || null,
+			}
 			if (selectedSnippet.value.id) {
-				await updateSnippet(selectedSnippet.value.id, editForm.value)
+				await updateSnippet(selectedSnippet.value.id, payload)
 				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
 			} else {
-				await createSnippet(editForm.value)
+				await createSnippet(payload)
 				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
 			}
 			await refresh()
