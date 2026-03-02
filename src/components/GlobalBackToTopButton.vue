@@ -10,10 +10,10 @@
 			variant="soft"
 			:aria-label="t('common.actions.backToTop')"
 			:tabindex="isVisible ? 0 : -1"
-			class="size-11 rounded-full border border-default/70 bg-default/85 text-default shadow-[0_12px_28px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:bg-default hover:text-primary"
+			class="size-12 cursor-pointer rounded-full border border-default/70 bg-default/85 text-default shadow-[0_12px_28px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:bg-default hover:text-primary"
 			:ui="{
 				base: 'justify-center transition-colors duration-200',
-				leadingIcon: 'size-4',
+				leadingIcon: 'size-5',
 			}"
 			@click="scrollToTop" />
 	</div>
@@ -57,17 +57,18 @@
 		if (!container) return
 
 		const currentTop = container.scrollTop
+		const delta = Math.abs(currentTop - lastTop.value)
 		if (currentTop <= props.threshold) {
 			isVisible.value = false
 			lastTop.value = currentTop
 			return
 		}
 
-		const delta = currentTop - lastTop.value
 		// 过滤触控板高频微抖动，避免按钮在边界场景闪烁。
-		if (Math.abs(delta) < props.minDelta) return
+		if (delta < props.minDelta) return
 
-		isVisible.value = delta > 0
+		// 超过阈值后保持显示，避免仅因轻微上滑就回缩。
+		isVisible.value = true
 		lastTop.value = currentTop
 	}
 

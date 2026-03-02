@@ -224,7 +224,7 @@
 		root: 'w-full',
 		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
 		trigger:
-			'flex-1 rounded-full px-3 py-2 text-[11px] font-medium hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm data-[state=active]:text-default',
+			'flex-1 cursor-pointer rounded-full px-3 py-2 text-[11px] font-medium hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm data-[state=active]:text-default',
 		leadingIcon: 'size-3.5',
 		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
 	}
