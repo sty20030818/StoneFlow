@@ -327,6 +327,10 @@ export default {
 	},
 	taskColumn: {
 		selectColumnAria: '选择列：{title}',
+		collapseSectionAria: '折叠分区：{title}',
+		expandSectionAria: '展开分区：{title}',
+		collapseSection: '折叠',
+		expandSection: '展开',
 		createTask: '新建任务',
 		createTaskAria: '新建任务',
 		emptyCtaTitle: '暂无待办任务',

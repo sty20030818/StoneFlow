@@ -1,62 +1,83 @@
 <template>
-	<section>
-		<!-- 简单的标题（不带 Card 包裹） -->
-		<div
-			v-motion="columnHeaderMotion"
-			class="mb-4 flex items-center justify-between gap-3 px-2">
-			<div class="flex min-w-0 items-center gap-3">
-				<button
-					v-if="isEditMode"
-					type="button"
-					class="inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
-					:class="columnSelectClass"
-					:aria-label="t('taskColumn.selectColumnAria', { title })"
-					@click="$emit('toggle-column-select')">
-					<span
-						v-if="allSelected"
-						class="size-3.5 rounded-full bg-error/80"></span>
-					<UIcon
-						v-else-if="indeterminate"
-						name="i-lucide-minus"
-						class="size-3.5 text-error" />
-				</button>
-				<!-- 图标指示器（根据状态不同） -->
-				<TaskStatusIcon :status="columnStatusValue" />
-				<h3
-					class="text-base font-extrabold"
-					:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
-					{{ title }}
-				</h3>
+		<section>
+			<div
+				class="z-10 bg-default/92 pb-1 pt-2 backdrop-blur-md"
+				:class="stickyContainerClass"
+				:style="stickyContainerStyle">
+			<div
+				v-motion="columnHeaderMotion"
+				class="flex items-center justify-between gap-3 px-2">
+				<div class="flex min-w-0 items-center gap-3">
+					<button
+						v-if="isEditMode"
+						type="button"
+						class="inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+						:class="columnSelectClass"
+						:aria-label="t('taskColumn.selectColumnAria', { title })"
+						@click="$emit('toggle-column-select')">
+						<span
+							v-if="allSelected"
+							class="size-3.5 rounded-full bg-error/80"></span>
+						<UIcon
+							v-else-if="indeterminate"
+							name="i-lucide-minus"
+							class="size-3.5 text-error" />
+					</button>
+					<TaskStatusIcon :status="columnStatusValue" />
+					<h3
+						class="text-base font-extrabold"
+						:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
+						{{ title }}
+					</h3>
+					<button
+						type="button"
+						class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-elevated/70 hover:text-default"
+						:aria-expanded="!isCollapsed"
+						:aria-controls="contentId"
+						:aria-label="collapseToggleAria"
+						:title="collapseToggleTitle"
+						@click="toggleCollapse">
+						<UIcon
+							name="i-lucide-chevron-down"
+							class="size-4 transition-transform"
+							:class="isCollapsed ? '-rotate-90' : 'rotate-0'" />
+					</button>
+				</div>
+
+				<UButton
+					v-if="showCreateTaskAction"
+					size="lg"
+					color="secondary"
+					variant="solid"
+					icon="i-lucide-plus"
+					class="shrink-0 cursor-pointer rounded-full"
+					:aria-label="t('taskColumn.createTaskAria')"
+					@click="handleCreateTask">
+					{{ t('taskColumn.createTask') }}
+				</UButton>
 			</div>
 
-			<UButton
-				v-if="showCreateTaskAction"
-				size="lg"
-				color="secondary"
-				variant="solid"
-				icon="i-lucide-plus"
-				class="shrink-0 cursor-pointer rounded-full"
-				:aria-label="t('taskColumn.createTaskAria')"
-				@click="handleCreateTask">
-				{{ t('taskColumn.createTask') }}
-			</UButton>
-		</div>
-
-		<!-- 任务列表 -->
-		<template v-if="loading">
-			<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">
-				{{ t('common.status.loading') }}...
-			</div>
-		</template>
-		<template v-else>
-			<div class="space-y-3">
+			<div
+				v-if="showStickyInlineCreator"
+				class="px-0.5 pb-1 pt-2">
 				<InlineTaskCreator
-					v-if="showInlineCreator && !isDoneColumn"
 					:space-id="spaceId"
 					:project-id="projectId"
 					:enter-delay="todoInlineDelay"
 					:disabled="!spaceId || isEditMode" />
+			</div>
+		</div>
 
+		<div
+			v-if="!isCollapsed"
+			:id="contentId"
+			class="space-y-3 pt-2">
+			<template v-if="loading">
+				<div class="rounded-md border border-default bg-elevated px-3 py-2 text-xs text-muted">
+					{{ t('common.status.loading') }}...
+				</div>
+			</template>
+			<template v-else>
 				<div
 					v-if="tasks.length === 0"
 					v-motion="emptyStateMotion">
@@ -114,14 +135,14 @@
 							@request-delete="$emit('request-task-delete', task.id)" />
 					</div>
 				</div>
-			</div>
-		</template>
+			</template>
+		</div>
 	</section>
 </template>
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { computed } from 'vue'
+	import { computed, ref, watch } from 'vue'
 
 	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import DraggableTaskList from '@/components/DraggableTaskList.vue'
@@ -149,6 +170,8 @@
 		projectId?: string | null
 		isEditMode?: boolean
 		selectedTaskIdSet?: Set<string>
+		stickyOffset?: number
+		resetCollapseKey?: string
 	}>()
 
 	const emit = defineEmits<{
@@ -172,6 +195,7 @@
 	const doneListStep = getProjectMotionPhaseDelay('listStep')
 	const doneListMax = getProjectMotionPhaseDelay('listMax')
 	const priorityGroupStep = 14
+	const isCollapsed = ref(false)
 
 	const selectedCount = computed(() => {
 		if (!props.selectedTaskIdSet) return 0
@@ -203,7 +227,21 @@
 		if (indeterminate.value) return 'border-error/70 bg-error/10'
 		return 'border-default/60 bg-transparent hover:border-default'
 	})
+	const contentId = computed(() => `task-column-content-${columnStatusValue.value}`)
+	const collapseToggleAria = computed(() =>
+		isCollapsed.value
+			? t('taskColumn.expandSectionAria', { title: props.title })
+			: t('taskColumn.collapseSectionAria', { title: props.title }),
+	)
+	const collapseToggleTitle = computed(() =>
+		isCollapsed.value ? t('taskColumn.expandSection') : t('taskColumn.collapseSection'),
+	)
+	const stickyContainerClass = computed(() => (props.isEditMode ? 'relative' : 'sticky'))
+	const stickyContainerStyle = computed(() => (props.isEditMode ? {} : { top: `${Math.max(props.stickyOffset ?? 0, 0)}px` }))
 	const showCreateTaskAction = computed(() => !isDoneColumn.value && Boolean(props.showCreateTaskAction))
+	const showStickyInlineCreator = computed(
+		() => !isDoneColumn.value && !isCollapsed.value && !props.loading && Boolean(props.showInlineCreator),
+	)
 	const showTodoEmptyCta = computed(() => showCreateTaskAction.value && props.tasks.length === 0)
 	const columnEmptyIcon = computed(() => (isDoneColumn.value ? 'i-lucide-check-circle' : 'i-lucide-list-todo'))
 
@@ -250,4 +288,15 @@
 	function handleCreateTask() {
 		emit('create-task')
 	}
+
+	function toggleCollapse() {
+		isCollapsed.value = !isCollapsed.value
+	}
+
+	watch(
+		() => props.resetCollapseKey,
+		() => {
+			isCollapsed.value = false
+		},
+	)
 </script>

@@ -18,6 +18,8 @@
 						:tasks="todo"
 						:loading="loading"
 						:empty-text="t('projectView.empty.todo')"
+						:sticky-offset="columnStickyOffset"
+						:reset-collapse-key="collapseResetKey"
 						:show-complete-button="true"
 						:show-space-label="showSpaceLabel"
 						:show-inline-creator="true"
@@ -41,6 +43,8 @@
 						:tasks="doneAll"
 						:loading="loading"
 						:empty-text="t('projectView.empty.done')"
+						:sticky-offset="columnStickyOffset"
+						:reset-collapse-key="collapseResetKey"
 						:show-time="true"
 						:show-space-label="showSpaceLabel"
 						:is-edit-mode="isEditMode"
@@ -139,6 +143,7 @@
 		}
 		return spaceId.value
 	})
+	const collapseResetKey = computed(() => `${route.path}|${spaceId.value ?? 'all'}|${projectId.value ?? 'none'}`)
 
 	// 统一使用 useProjectTasks composable
 	const { loading, todo, doneAll, refresh, onComplete } = useProjectTasks(taskSpaceId, projectId)
@@ -148,6 +153,7 @@
 	const deleting = ref(false)
 	const selectedTaskIds = ref<Set<string>>(new Set())
 	const deleteTargetIds = ref<string[] | null>(null)
+	const columnStickyOffset = computed(() => (isEditMode.value ? 48 : 0))
 
 	const selectedCount = computed(() => selectedTaskIds.value.size)
 	const deleteCount = computed(() => deleteTargetIds.value?.length ?? selectedCount.value)
