@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* 桌面端（Tauri）强制启用 hover 变体，避免 WebView 误判为无 hover 设备。 */
+@custom-variant hover (&:hover);
+@custom-variant group-hover (&:is(:where(.group):hover *));
+@custom-variant peer-hover (&:is(:where(.peer):hover ~ *));
+
 @font-face {
 	font-family: "MapleMono";
 	src: url("/fonts/MapleMono.woff2") format("woff2");
