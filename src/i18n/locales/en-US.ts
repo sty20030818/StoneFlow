@@ -327,6 +327,10 @@ export default {
 	},
 	taskColumn: {
 		selectColumnAria: 'Select column: {title}',
+		collapseSectionAria: 'Collapse section: {title}',
+		expandSectionAria: 'Expand section: {title}',
+		collapseSection: 'Collapse',
+		expandSection: 'Expand',
 		createTask: 'New Task',
 		createTaskAria: 'Create task',
 		emptyCtaTitle: 'No tasks yet',
