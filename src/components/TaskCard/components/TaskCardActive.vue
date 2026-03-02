@@ -1,28 +1,34 @@
 <template>
 	<!-- 外层容器:相对定位,用于删除按钮的绝对定位基准 -->
-	<div class="relative group rounded-2xl flex items-center">
+	<div
+		class="relative rounded-2xl flex items-center"
+		@mouseenter="onWrapperMouseEnter"
+		@mouseleave="onWrapperMouseLeave">
 		<!-- 主卡片容器 -->
 		<!-- 临时隐藏任务右键菜单（保留逻辑便于后续恢复） -->
 		<div
-			v-motion="cardHoverMotionPreset"
-			class="relative w-full rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 ease-out hover:shadow-md flex gap-4 items-start cursor-default overflow-hidden select-none"
+			:key="isEditModeActive ? 'edit-card' : 'normal-card'"
+			v-motion="resolvedCardMotionPreset"
+			class="relative w-full rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 ease-out flex gap-4 items-start cursor-default overflow-hidden select-none"
 			:class="[
 				cardBorderClass,
-				isEditMode && selected ? 'bg-red-50/50' : 'bg-white',
-				isEditMode && !selected ? 'opacity-80' : '',
-				isEditMode ? 'group-hover:mr-14' : '',
+				isEditModeActive && selected ? 'bg-red-50/50' : 'bg-white',
+				isEditModeActive && !selected ? 'opacity-80' : '',
+				isEditModeActive ? 'task-card-edit-static' : '',
+				!isEditModeActive ? 'hover:shadow-md' : '',
+				editActionVisible ? 'mr-14' : '',
 			]"
 			@click="onCardClick">
 			<!-- 编辑模式：选中遮罩 -->
 			<div
-				v-if="isEditMode && selected"
+				v-if="isEditModeActive && selected"
 				class="pointer-events-none absolute inset-0 z-10 rounded-2xl ring-2 ring-red-500/20 bg-red-500/5"></div>
 
 			<!-- 左侧操作区:垂直布局 (圆圈 + 拖拽手柄) - 保持不动 -->
 			<div class="shrink-0 flex flex-col items-center gap-1">
 				<!-- 编辑模式选择圆圈 -->
 				<button
-					v-if="isEditMode"
+					v-if="isEditModeActive"
 					type="button"
 					class="no-drag size-6 rounded-full border-2 hover:border-red-500 hover:bg-red-50 transition-colors flex items-center justify-center cursor-pointer"
 					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50' : 'border-slate-300']"
@@ -62,7 +68,7 @@
 
 						<h3
 							class="min-w-0 flex-1 font-bold text-slate-800 line-clamp-2 leading-tight"
-							:class="{ 'text-slate-400': isEditMode && !selected }">
+							:class="{ 'text-slate-400': isEditModeActive && !selected }">
 							{{ task.title }}
 						</h3>
 					</div>
@@ -112,10 +118,10 @@
 
 		<!-- 右侧删除按钮 (独立于卡片，绝对定位在右侧) -->
 		<button
-			v-if="isEditMode"
+			v-if="isEditModeActive"
 			type="button"
-			v-motion="deleteButtonMotionPreset"
-			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-[opacity,background-color,color,box-shadow] duration-300 ease-out opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md z-0"
+			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md z-10"
+			:class="editActionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
 			@click.stop="onRequestDelete">
 			<UIcon
 				name="i-lucide-trash-2"
@@ -126,9 +132,9 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { computed } from 'vue'
+	import { computed, ref, watch } from 'vue'
 
-	import { useActionIconHoverMotion, useCardHoverMotionPreset } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SpaceLabel from '@/components/SpaceLabel.vue'
 	import { TASK_PRIORITY_STYLES } from '@/config/task'
 	import type { TaskDto } from '@/services/api/tasks'
@@ -151,7 +157,24 @@
 	}>()
 	const { t } = useI18n({ useScope: 'global' })
 	const cardHoverMotionPreset = useCardHoverMotionPreset()
-	const deleteButtonMotionPreset = useActionIconHoverMotion({ hoverScale: 1.05 })
+	const isEditModeActive = computed(() => props.isEditMode === true)
+	const isEditHovering = ref(false)
+	const resolvedCardMotionPreset = computed(() =>
+		isEditModeActive.value
+			? {
+					initial: {
+						y: 0,
+						scale: 1,
+					},
+					enter: {
+						y: 0,
+						scale: 1,
+						transition: cardHoverMotionPreset.value.enter?.transition,
+					},
+				}
+			: cardHoverMotionPreset.value,
+	)
+	const editActionVisible = computed(() => Boolean(isEditModeActive.value && isEditHovering.value))
 
 	// 优先级配置
 	const priorityConfig = computed(() => {
@@ -159,7 +182,7 @@
 	})
 
 	const cardBorderClass = computed(() => {
-		if (props.isEditMode && props.selected) return 'border-red-200'
+		if (isEditModeActive.value && props.selected) return 'border-red-200'
 		const base = 'border-slate-200'
 
 		if (!priorityConfig.value) return base + ' hover:border-slate-300'
@@ -175,4 +198,27 @@
 		const now = Date.now()
 		return timestamp < now
 	}
+
+	function onWrapperMouseEnter() {
+		if (!isEditModeActive.value) return
+		isEditHovering.value = true
+	}
+
+	function onWrapperMouseLeave() {
+		isEditHovering.value = false
+	}
+
+	watch(
+		isEditModeActive,
+		(enabled) => {
+			if (!enabled) isEditHovering.value = false
+		},
+	)
 </script>
+
+<style scoped>
+	/* 编辑态严格禁止 motion 对卡片做位移/缩放，只保留左移与删除按钮显隐。 */
+	.task-card-edit-static {
+		transform: none !important;
+	}
+</style>
