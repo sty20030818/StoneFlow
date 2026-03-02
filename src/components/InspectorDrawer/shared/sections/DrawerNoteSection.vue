@@ -45,6 +45,7 @@
 					v-model="noteModel"
 					:placeholder="resolvedPlaceholder"
 					:rows="rows"
+					:fixed="true"
 					size="sm"
 					variant="none"
 					:ui="{
