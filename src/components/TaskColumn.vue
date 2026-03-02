@@ -1,9 +1,13 @@
 <template>
-		<section>
+	<section>
 			<div
-				class="z-10 bg-default/92 pb-1 pt-2 backdrop-blur-md"
-				:class="stickyContainerClass"
+				ref="stickyRef"
+				class="z-20 isolate -mx-4 bg-white px-4"
+				:class="[stickyContainerClass, stickyVisualClass, stickyDensityClass]"
 				:style="stickyContainerStyle">
+			<div
+				v-if="showStickyDivider"
+				class="pointer-events-none absolute -bottom-px -left-2 -right-2 h-px bg-slate-200/80"></div>
 			<div
 				v-motion="columnHeaderMotion"
 				class="flex items-center justify-between gap-3 px-2">
@@ -29,19 +33,24 @@
 						:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
 						{{ title }}
 					</h3>
-					<button
-						type="button"
-						class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-elevated/70 hover:text-default"
-						:aria-expanded="!isCollapsed"
-						:aria-controls="contentId"
-						:aria-label="collapseToggleAria"
-						:title="collapseToggleTitle"
-						@click="toggleCollapse">
-						<UIcon
-							name="i-lucide-chevron-down"
-							class="size-4 transition-transform"
-							:class="isCollapsed ? '-rotate-90' : 'rotate-0'" />
-					</button>
+						<UButton
+							size="sm"
+							color="neutral"
+							variant="ghost"
+							:ui="{ base: 'size-7 rounded-full p-0 inline-flex items-center justify-center' }"
+							class="shrink-0 text-muted transition-colors hover:bg-elevated/70 hover:text-default active:bg-elevated/80"
+							:aria-expanded="!isCollapsed"
+							:aria-controls="contentId"
+							:aria-label="collapseToggleAria"
+							:title="collapseToggleTitle"
+							@click="toggleCollapse">
+							<span class="inline-flex size-4 items-center justify-center">
+								<UIcon
+									name="i-lucide-chevron-down"
+									class="size-4 transition-transform"
+									:class="isCollapsed ? '-rotate-90' : 'rotate-0'" />
+							</span>
+						</UButton>
 				</div>
 
 				<UButton
@@ -142,7 +151,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { computed, ref, watch } from 'vue'
+	import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import DraggableTaskList from '@/components/DraggableTaskList.vue'
@@ -196,6 +205,9 @@
 	const doneListMax = getProjectMotionPhaseDelay('listMax')
 	const priorityGroupStep = 14
 	const isCollapsed = ref(false)
+	const isStuck = ref(false)
+	const stickyRef = ref<HTMLElement | null>(null)
+	const scrollParentRef = ref<HTMLElement | Window | null>(null)
 
 	const selectedCount = computed(() => {
 		if (!props.selectedTaskIdSet) return 0
@@ -236,8 +248,15 @@
 	const collapseToggleTitle = computed(() =>
 		isCollapsed.value ? t('taskColumn.expandSection') : t('taskColumn.collapseSection'),
 	)
-	const stickyContainerClass = computed(() => (props.isEditMode ? 'relative' : 'sticky'))
-	const stickyContainerStyle = computed(() => (props.isEditMode ? {} : { top: `${Math.max(props.stickyOffset ?? 0, 0)}px` }))
+	const stickyContainerClass = computed(() => (props.isEditMode ? 'relative' : 'sticky relative'))
+	const stickyVisualClass = computed(() =>
+		props.isEditMode || !isStuck.value ? '' : 'shadow-[0_8px_16px_-14px_rgba(15,23,42,0.42)]',
+	)
+	const stickyDensityClass = computed(() => (isDoneColumn.value ? 'py-2.5' : 'pb-1 pt-2'))
+	const stickyContainerStyle = computed(() =>
+		props.isEditMode ? {} : { top: `${Math.max(props.stickyOffset ?? 0, 0)}px` },
+	)
+	const showStickyDivider = computed(() => !props.isEditMode && isStuck.value)
 	const showCreateTaskAction = computed(() => !isDoneColumn.value && Boolean(props.showCreateTaskAction))
 	const showStickyInlineCreator = computed(
 		() => !isDoneColumn.value && !isCollapsed.value && !props.loading && Boolean(props.showInlineCreator),
@@ -293,10 +312,76 @@
 		isCollapsed.value = !isCollapsed.value
 	}
 
+	function resolveScrollParent(node: HTMLElement | null): HTMLElement | Window {
+		if (!node) return window
+		let current: HTMLElement | null = node.parentElement
+		while (current) {
+			const style = window.getComputedStyle(current)
+			const overflowY = style.overflowY
+			if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+				return current
+			}
+			current = current.parentElement
+		}
+		return window
+	}
+
+	function updateStickyState() {
+		if (props.isEditMode) {
+			isStuck.value = false
+			return
+		}
+		const node = stickyRef.value
+		if (!node) return
+		const offset = Math.max(props.stickyOffset ?? 0, 0)
+		const nodeTop = node.getBoundingClientRect().top
+		const parent = scrollParentRef.value
+
+		if (parent && !(parent instanceof Window)) {
+			const rootTop = parent.getBoundingClientRect().top
+			isStuck.value = nodeTop <= rootTop + offset + 0.5
+			return
+		}
+		isStuck.value = nodeTop <= offset + 0.5
+	}
+
+	function bindScrollListener() {
+		const target = scrollParentRef.value
+		if (!target) return
+		const listenerTarget = target === window ? window : target
+		listenerTarget.addEventListener('scroll', updateStickyState, { passive: true })
+		window.addEventListener('resize', updateStickyState, { passive: true })
+	}
+
+	function unbindScrollListener() {
+		const target = scrollParentRef.value
+		if (!target) return
+		const listenerTarget = target === window ? window : target
+		listenerTarget.removeEventListener('scroll', updateStickyState)
+		window.removeEventListener('resize', updateStickyState)
+	}
+
 	watch(
 		() => props.resetCollapseKey,
 		() => {
 			isCollapsed.value = false
 		},
 	)
+
+	watch(
+		() => [props.isEditMode, props.stickyOffset] as const,
+		() => {
+			nextTick(updateStickyState)
+		},
+	)
+
+	onMounted(() => {
+		scrollParentRef.value = resolveScrollParent(stickyRef.value)
+		bindScrollListener()
+		nextTick(updateStickyState)
+	})
+
+	onBeforeUnmount(() => {
+		unbindScrollListener()
+	})
 </script>
