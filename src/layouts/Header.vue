@@ -131,7 +131,7 @@
 						v-model="searchQuery"
 						:placeholder="t('header.searchPlaceholder')"
 						icon="i-lucide-search"
-						size="sm"
+						size="lg"
 						:ui="{
 							width: 'w-64',
 						}"
@@ -140,20 +140,20 @@
 
 				<!-- Filter/Sort 独立按钮 -->
 				<template v-if="isWorkspacePage">
-					<UButton
+					<!-- <UButton
 						color="neutral"
 						variant="ghost"
-						size="xs"
+						size="sm"
 						icon="i-lucide-filter">
-						<span class="ml-1 text-[11px]">{{ t('header.filter') }}</span>
+						<span class="ml-1 text-[12px]">{{ t('header.filter') }}</span>
 					</UButton>
 					<UButton
 						color="neutral"
 						variant="ghost"
-						size="xs"
+						size="sm"
 						icon="i-lucide-arrow-up-down">
-						<span class="ml-1 text-[11px]">{{ t('header.sort') }}</span>
-					</UButton>
+						<span class="ml-1 text-[12px]">{{ t('header.sort') }}</span>
+					</UButton> -->
 
 					<template v-if="hasEditBridge">
 						<button

@@ -296,7 +296,7 @@ export default {
 		},
 	},
 	inlineTaskCreator: {
-		titlePlaceholder: 'Quick add a task title, press Enter to create',
+		titlePlaceholder: '+ Quick create task · ⌘/Ctrl+Enter create · Shift+Enter note · Tab switch priority',
 		notePlaceholder: 'Add a note (optional)',
 	},
 	task: {
@@ -327,6 +327,10 @@ export default {
 	},
 	taskColumn: {
 		selectColumnAria: 'Select column: {title}',
+		createTask: 'New Task',
+		createTaskAria: 'Create task',
+		emptyCtaTitle: 'No tasks yet',
+		emptyCtaDescription: 'Create quickly: use New Task, press ⌘/Ctrl+T, or hit Enter in the quick input above.',
 	},
 	project: {
 		rootTop: 'No Parent (Top Level)',

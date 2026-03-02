@@ -2,7 +2,7 @@
 	<UCard
 		v-motion="userCardHoverMotion"
 		variant="subtle"
-		class="group cursor-default hover:shadow-lg transition-[box-shadow] duration-300"
+		class="group cursor-default hover:shadow-lg transition-shadow duration-300"
 		:ui="{
 			root: 'rounded-xl',
 			body: 'p-2.5 sm:p-2.5',
@@ -21,7 +21,7 @@
 
 			<div class="flex flex-col flex-1 min-w-0">
 				<span class="text-[13px] font-medium text-default truncate">石头鱼</span>
-				<span class="text-[11px] text-muted">Creator</span>
+				<span class="text-[11px] text-muted">创建者</span>
 			</div>
 
 			<RouterLink
