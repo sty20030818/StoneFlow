@@ -21,12 +21,14 @@
 						:show-complete-button="true"
 						:show-space-label="showSpaceLabel"
 						:show-inline-creator="true"
+						:show-create-task-action="true"
 						:space-id="taskSpaceId"
 						:project-id="projectId"
 						:is-edit-mode="isEditMode"
 						:selected-task-id-set="selectedTaskIds"
 						@complete="onComplete"
 						@task-click="onTaskClick"
+						@create-task="onCreateTaskRequest"
 						@toggle-task-select="toggleTaskSelect"
 						@toggle-column-select="() => toggleColumnSelect(todo)"
 						@request-task-delete="requestDeleteTask" />
@@ -83,7 +85,7 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 	import { watchDebounced, watchThrottled } from '@vueuse/core'
-	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+	import { computed, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 	import { useRoute } from 'vue-router'
 
 	import TaskColumn from '@/components/TaskColumn.vue'
@@ -111,6 +113,7 @@
 	const refreshSignals = useRefreshSignalsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
 	const projectInspectorStore = useProjectInspectorStore()
+	const openCreateTaskModal = inject<(spaceId?: string) => void>('openCreateTaskModal')
 	const toast = useToast()
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
@@ -228,6 +231,10 @@
 	function requestDeleteTask(taskId: string) {
 		deleteTargetIds.value = [taskId]
 		confirmDeleteOpen.value = true
+	}
+
+	function onCreateTaskRequest() {
+		openCreateTaskModal?.(taskSpaceId.value)
 	}
 
 	// 当前项目数据（仅在 project 模式下有值）

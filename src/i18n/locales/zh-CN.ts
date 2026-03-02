@@ -296,7 +296,7 @@ export default {
 		},
 	},
 	inlineTaskCreator: {
-		titlePlaceholder: '快速输入任务标题，回车创建',
+		titlePlaceholder: '+ 快速创建任务 · ⌘/Ctrl+Enter 创建 · Shift+Enter 备注 · Tab 切换优先级',
 		notePlaceholder: '补充备注（可选）',
 	},
 	task: {
@@ -327,6 +327,10 @@ export default {
 	},
 	taskColumn: {
 		selectColumnAria: '选择列：{title}',
+		createTask: '新建任务',
+		createTaskAria: '新建任务',
+		emptyCtaTitle: '暂无待办任务',
+		emptyCtaDescription: '点击右上角新建、按 ⌘/Ctrl+T，或在上方输入框回车快速创建。',
 	},
 	project: {
 		rootTop: '无父级（顶层）',

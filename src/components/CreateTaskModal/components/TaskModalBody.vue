@@ -16,7 +16,7 @@
 				@keydown.ctrl.enter.prevent="emit('submit')" />
 		</UFormField>
 
-		<div class="grid grid-cols-1 gap-4">
+		<div class="grid grid-cols-2 gap-4">
 			<UFormField :label="t('modals.createTask.fields.space')">
 				<USelectMenu
 					v-model="form.spaceId"
@@ -66,7 +66,7 @@
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
-			<UFormField :label="t('modals.createTask.fields.status')">
+			<!-- <UFormField :label="t('modals.createTask.fields.status')">
 				<USelectMenu
 					v-model="form.status"
 					:items="statusOptions"
@@ -88,7 +88,7 @@
 						</div>
 					</template>
 				</USelectMenu>
-			</UFormField>
+			</UFormField> -->
 
 			<UFormField :label="t('modals.createTask.fields.priority')">
 				<USelectMenu
@@ -111,9 +111,7 @@
 					</template>
 				</USelectMenu>
 			</UFormField>
-		</div>
 
-		<div class="grid grid-cols-2 gap-4">
 			<UFormField :label="t('modals.createTask.fields.deadline')">
 				<DatePickerInput
 					v-model="form.deadlineDate"
@@ -122,6 +120,16 @@
 					:popover-ui="{ content: 'z-layer-modal-popover' }" />
 			</UFormField>
 		</div>
+
+		<!-- <div class="grid grid-cols-2 gap-4">
+			<UFormField :label="t('modals.createTask.fields.deadline')">
+				<DatePickerInput
+					v-model="form.deadlineDate"
+					size="md"
+					class-name="w-full"
+					:popover-ui="{ content: 'z-layer-modal-popover' }" />
+			</UFormField>
+		</div> -->
 
 		<UFormField
 			v-if="form.status === 'done'"

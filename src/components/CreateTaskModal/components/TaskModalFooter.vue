@@ -2,13 +2,13 @@
 	<UButton
 		color="neutral"
 		variant="ghost"
-		size="sm"
+		size="lg"
 		@click="emit('close')">
 		{{ t('modals.createTask.buttons.cancel') }}
 	</UButton>
 	<UButton
 		color="primary"
-		size="sm"
+		size="lg"
 		:disabled="!canSubmit"
 		:loading="loading"
 		@click="emit('submit')">

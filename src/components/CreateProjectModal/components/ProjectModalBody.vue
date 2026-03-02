@@ -16,7 +16,7 @@
 				@keydown.ctrl.enter.prevent="emit('submit')" />
 		</UFormField>
 
-		<div class="grid grid-cols-1 gap-4">
+		<div class="grid grid-cols-2 gap-4">
 			<UFormField :label="t('modals.createProject.fields.space')">
 				<USelectMenu
 					v-model="form.spaceId"
@@ -68,7 +68,7 @@
 			</UFormField>
 		</div>
 
-		<div class="grid grid-cols-1 gap-4">
+		<div class="grid grid-cols-2 gap-4">
 			<UFormField :label="t('modals.createProject.fields.priority')">
 				<USelectMenu
 					v-model="form.priority"

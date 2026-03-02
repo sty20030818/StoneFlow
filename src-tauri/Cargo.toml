@@ -1,7 +1,7 @@
 [package]
 name = "stoneflow"
 version = "0.1.4"
-description = "A Tauri App"
+description = "一个以「完成」为核心、以「项目」为骨架的本地优先桌面效率系统"
 authors = ["stonefish"]
 edition = "2021"
 

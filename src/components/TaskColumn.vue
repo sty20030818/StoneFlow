@@ -3,29 +3,43 @@
 		<!-- 简单的标题（不带 Card 包裹） -->
 		<div
 			v-motion="columnHeaderMotion"
-			class="flex items-center gap-3 mb-4 px-2">
-			<button
-				v-if="isEditMode"
-				type="button"
-				class="inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
-				:class="columnSelectClass"
-				:aria-label="t('taskColumn.selectColumnAria', { title })"
-				@click="$emit('toggle-column-select')">
-				<span
-					v-if="allSelected"
-					class="size-3.5 rounded-full bg-error/80"></span>
-				<UIcon
-					v-else-if="indeterminate"
-					name="i-lucide-minus"
-					class="size-3.5 text-error" />
-			</button>
-			<!-- 图标指示器（根据状态不同） -->
-			<TaskStatusIcon :status="columnStatusValue" />
-			<h3
-				class="text-base font-extrabold"
-				:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
-				{{ title }}
-			</h3>
+			class="mb-4 flex items-center justify-between gap-3 px-2">
+			<div class="flex min-w-0 items-center gap-3">
+				<button
+					v-if="isEditMode"
+					type="button"
+					class="inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+					:class="columnSelectClass"
+					:aria-label="t('taskColumn.selectColumnAria', { title })"
+					@click="$emit('toggle-column-select')">
+					<span
+						v-if="allSelected"
+						class="size-3.5 rounded-full bg-error/80"></span>
+					<UIcon
+						v-else-if="indeterminate"
+						name="i-lucide-minus"
+						class="size-3.5 text-error" />
+				</button>
+				<!-- 图标指示器（根据状态不同） -->
+				<TaskStatusIcon :status="columnStatusValue" />
+				<h3
+					class="text-base font-extrabold"
+					:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
+					{{ title }}
+				</h3>
+			</div>
+
+			<UButton
+				v-if="showCreateTaskAction"
+				size="lg"
+				color="secondary"
+				variant="solid"
+				icon="i-lucide-plus"
+				class="shrink-0 cursor-pointer rounded-full"
+				:aria-label="t('taskColumn.createTaskAria')"
+				@click="handleCreateTask">
+				{{ t('taskColumn.createTask') }}
+			</UButton>
 		</div>
 
 		<!-- 任务列表 -->
@@ -46,7 +60,18 @@
 				<div
 					v-if="tasks.length === 0"
 					v-motion="emptyStateMotion">
-					<EmptyState :text="emptyText" />
+					<EmptyState
+						v-if="showTodoEmptyCta"
+						:text="t('taskColumn.emptyCtaTitle')"
+						icon="i-lucide-list-todo"
+						class="bg-elevated/40">
+						<p>{{ t('taskColumn.emptyCtaDescription') }}</p>
+					</EmptyState>
+					<EmptyState
+						v-else
+						:text="emptyText"
+						:icon="columnEmptyIcon"
+						class="bg-elevated/40" />
 				</div>
 
 				<template v-if="!isDoneColumn && tasks.length > 0">
@@ -119,19 +144,21 @@
 		showTime?: boolean
 		showSpaceLabel?: boolean
 		showInlineCreator?: boolean
+		showCreateTaskAction?: boolean
 		spaceId?: string
 		projectId?: string | null
 		isEditMode?: boolean
 		selectedTaskIdSet?: Set<string>
 	}>()
 
-	defineEmits<{
+	const emit = defineEmits<{
 		complete: [taskId: string]
 		'task-click': [task: TaskDto]
 		'toggle-task-select': [taskId: string]
 		'toggle-column-select': []
 		'request-task-delete': [taskId: string]
 		reorder: [tasks: TaskDto[]]
+		'create-task': []
 	}>()
 	const doneTaskItemMotion = useMotionPreset('listItem')
 	const columnSectionMotion = useMotionPreset('listItem')
@@ -176,6 +203,9 @@
 		if (indeterminate.value) return 'border-error/70 bg-error/10'
 		return 'border-default/60 bg-transparent hover:border-default'
 	})
+	const showCreateTaskAction = computed(() => !isDoneColumn.value && Boolean(props.showCreateTaskAction))
+	const showTodoEmptyCta = computed(() => showCreateTaskAction.value && props.tasks.length === 0)
+	const columnEmptyIcon = computed(() => (isDoneColumn.value ? 'i-lucide-check-circle' : 'i-lucide-list-todo'))
 
 	const priorityList = computed(() => {
 		if (props.priority && props.priority !== 'all') {
@@ -215,5 +245,9 @@
 
 	function isTaskSelected(taskId: string) {
 		return props.selectedTaskIdSet?.has(taskId) ?? false
+	}
+
+	function handleCreateTask() {
+		emit('create-task')
 	}
 </script>
