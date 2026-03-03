@@ -174,7 +174,7 @@
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import BrandLogo from '@/components/BrandLogo.vue'
-	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
+	import { DraggableProjectTree, type ProjectTreeItem } from '@/features/workspace'
 	import UserCard from '@/components/UserCard.vue'
 	import { LIBRARY_NAV_ITEMS, PAGE_NAV_CONFIG } from '@/config/page-nav'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/config/project'

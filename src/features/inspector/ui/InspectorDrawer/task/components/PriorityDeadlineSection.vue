@@ -70,7 +70,7 @@
 	} from '../../shared/attributes/DrawerAttributeOptionList.vue'
 	import DrawerAttributePopoverCard from '../../shared/attributes/DrawerAttributePopoverCard.vue'
 	import { DrawerAttributeGridSection } from '../../shared/sections'
-	import DatePickerInput from '@/components/DatePickerInput.vue'
+	import DatePickerInput from '@/components/base/DatePickerInput.vue'
 	import type { PriorityOption, TaskPriorityValue } from '@/config/task'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 

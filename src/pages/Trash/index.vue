@@ -109,7 +109,7 @@
 	import { computed } from 'vue'
 
 	import { useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
-	import TimeDisplay from '@/components/TimeDisplay.vue'
+	import TimeDisplay from '@/components/shared/TimeDisplay.vue'
 	import { useTrashPage } from '@/features/trash'
 
 	const headerActionMotion = useAppMotionPreset('statusFeedback', 'stateAction')
