@@ -1,10 +1,10 @@
-import type { CustomFieldItem, CustomFields, LinkDto, LinkInput } from '../../model'
+import type { InspectorCustomField, InspectorCustomFields, InspectorLink, InspectorLinkInput } from '../../model'
 
 export type TaskLinkFormItem = {
 	id?: string
 	title: string
 	url: string
-	kind: LinkDto['kind']
+	kind: InspectorLink['kind']
 }
 
 export type TaskCustomFieldFormItem = {
@@ -56,7 +56,7 @@ export function toDeadlineTimestamp(value: string): number | null {
 	return timestamp
 }
 
-export function toLinksFormItems(links: LinkDto[] | null | undefined): TaskLinkFormItem[] {
+export function toLinksFormItems(links: InspectorLink[] | null | undefined): TaskLinkFormItem[] {
 	if (!links?.length) return []
 	return links.map((item) => ({
 		id: item.id,
@@ -66,8 +66,8 @@ export function toLinksFormItems(links: LinkDto[] | null | undefined): TaskLinkF
 	}))
 }
 
-export function toLinkPatch(values: TaskLinkFormItem[]): LinkInput[] {
-	const result: LinkInput[] = []
+export function toLinkPatch(values: TaskLinkFormItem[]): InspectorLinkInput[] {
+	const result: InspectorLinkInput[] = []
 	for (const item of values) {
 		const url = item.url.trim()
 		if (!url) continue
@@ -82,7 +82,7 @@ export function toLinkPatch(values: TaskLinkFormItem[]): LinkInput[] {
 	return result
 }
 
-export function areLinkPatchesEqual(left: LinkInput[], right: LinkInput[]): boolean {
+export function areLinkPatchesEqual(left: InspectorLinkInput[], right: InspectorLinkInput[]): boolean {
 	if (left.length !== right.length) return false
 	for (let index = 0; index < left.length; index += 1) {
 		const l = left[index]
@@ -96,7 +96,7 @@ export function areLinkPatchesEqual(left: LinkInput[], right: LinkInput[]): bool
 	return true
 }
 
-export function toCustomFieldsFormItems(customFields: CustomFields | null | undefined): TaskCustomFieldFormItem[] {
+export function toCustomFieldsFormItems(customFields: InspectorCustomFields | null | undefined): TaskCustomFieldFormItem[] {
 	if (!customFields?.fields?.length) return []
 
 	return customFields.fields
@@ -114,7 +114,7 @@ export function toCustomFieldsFormItems(customFields: CustomFields | null | unde
 		.sort((a, b) => a.rank - b.rank)
 }
 
-export function toCustomFieldItems(values: TaskCustomFieldFormItem[]): CustomFieldItem[] {
+export function toCustomFieldItems(values: TaskCustomFieldFormItem[]): InspectorCustomField[] {
 	const sorted = values
 		.map((item, index) => ({ item, index }))
 		.sort((left, right) => {
@@ -123,7 +123,7 @@ export function toCustomFieldItems(values: TaskCustomFieldFormItem[]): CustomFie
 			return left.index - right.index
 		})
 
-	const result: CustomFieldItem[] = []
+	const result: InspectorCustomField[] = []
 	for (const { item } of sorted) {
 		const title = item.title.trim()
 		if (!title) continue
@@ -147,15 +147,15 @@ export function getNextCustomFieldRank(values: TaskCustomFieldFormItem[]): numbe
 	)
 }
 
-export function toCustomFieldsPatch(values: TaskCustomFieldFormItem[]): CustomFields | null {
+export function toCustomFieldsPatch(values: TaskCustomFieldFormItem[]): InspectorCustomFields | null {
 	const fields = toCustomFieldItems(values)
 	if (fields.length === 0) return null
 	return { fields }
 }
 
 export function areCustomFieldsEqual(
-	left: CustomFields | null | undefined,
-	right: CustomFields | null | undefined,
+	left: InspectorCustomFields | null | undefined,
+	right: InspectorCustomFields | null | undefined,
 ): boolean {
 	const leftFields = toCustomFieldItems(toCustomFieldsFormItems(left))
 	const rightFields = toCustomFieldItems(toCustomFieldsFormItems(right))

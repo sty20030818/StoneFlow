@@ -1,12 +1,12 @@
 import { useAsyncState } from '@vueuse/core'
 import { computed, watch, type Ref } from 'vue'
 
-import type { ActivityLogEntry } from '../../model'
+import type { InspectorActivityLog } from '../../model'
 
 export function useDrawerActivityLogs(params: {
 	entityId: Ref<string | null>
 	tick?: Ref<number> | null
-	loadLogs: (id: string) => Promise<ActivityLogEntry[]>
+	loadLogs: (id: string) => Promise<InspectorActivityLog[]>
 	errorFallbackText: string
 }) {
 	const {
@@ -18,7 +18,7 @@ export function useDrawerActivityLogs(params: {
 		async (id: string) => {
 			return await params.loadLogs(id)
 		},
-		[] as ActivityLogEntry[],
+		[] as InspectorActivityLog[],
 		{
 			immediate: false,
 			resetOnExecute: false,

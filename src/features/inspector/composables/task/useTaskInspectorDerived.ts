@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
-import type { TaskDto } from '../../model'
+import type { InspectorTask } from '../../model'
 import type { useProjectsStore } from '@/stores/projects'
 import { formatDate } from '@/utils/time'
 import {
@@ -27,7 +27,7 @@ function normalizePriorityKey(priority: string | null | undefined): keyof typeof
 }
 
 export function useTaskInspectorDerived(params: {
-	currentTask: Ref<TaskDto | null>
+	currentTask: Ref<InspectorTask | null>
 	state: TaskInspectorState
 	projectsStore: ReturnType<typeof useProjectsStore>
 	saveState: Ref<DrawerSaveState>

@@ -3,9 +3,9 @@ import { computed, type Ref } from 'vue'
 
 import { useDrawerActivityLogs } from '../shared'
 import { listInspectorActivityLogs } from '../../queries'
-import type { TaskDto } from '../../model'
+import type { InspectorTask } from '../../model'
 
-export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto | null> }) {
+export function useTaskInspectorActivityLogs(params: { currentTask: Ref<InspectorTask | null> }) {
 	const taskId = computed(() => params.currentTask.value?.id ?? null)
 	const { t } = useI18n({ useScope: 'global' })
 	return useDrawerActivityLogs({

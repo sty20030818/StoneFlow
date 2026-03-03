@@ -27,21 +27,6 @@ export type InspectorTaskPatch = InspectorTaskPatchDto
 export type InspectorProject = InspectorProjectDto
 export type InspectorProjectPatch = InspectorProjectPatchDto
 
-/**
- * 历史兼容别名：逐步迁移到 Inspector* 命名。
- */
-export type ActivityLogEntry = InspectorActivityLog
-export type ActivityLogEntityType = InspectorActivityLogEntityType
-export type ListActivityLogsArgs = InspectorActivityLogsArgs
-export type LinkDto = InspectorLink
-export type LinkInput = InspectorLinkInput
-export type CustomFieldItem = InspectorCustomField
-export type CustomFields = InspectorCustomFields
-export type TaskDto = InspectorTask
-export type UpdateTaskPatch = InspectorTaskPatch
-export type ProjectDto = InspectorProject
-export type UpdateProjectPatch = InspectorProjectPatch
-
 function mapInspectorLinkDtoToDomain(link: InspectorLinkDto): InspectorLink {
 	return {
 		...link,

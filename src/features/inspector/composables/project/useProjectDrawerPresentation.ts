@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { PROJECT_STATUS_DISPLAY, type ProjectComputedStatusValue } from '@/config/project'
-import type { ProjectDto } from '../../model'
+import type { InspectorProject } from '../../model'
 import {
 	formatDrawerDateTime,
 	resolveDrawerSpaceDisplay,
@@ -11,7 +11,7 @@ import {
 } from '../shared'
 
 export function useProjectDrawerPresentation(params: {
-	currentProject: Ref<ProjectDto | null>
+	currentProject: Ref<InspectorProject | null>
 	saveState: Ref<DrawerSaveState>
 	spaceIdLocal: Ref<string>
 }) {

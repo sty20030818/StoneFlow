@@ -4,7 +4,7 @@ import { watchDebounced } from '@vueuse/core'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
 import { usePatchQueue } from '../shared'
 import { updateInspectorTask } from '../../mutations'
-import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '../../model'
+import type { InspectorLink, InspectorLinkInput, InspectorTask, InspectorTaskPatch } from '../../model'
 import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 import type { useProjectsStore } from '@/stores/projects'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
@@ -24,17 +24,17 @@ import {
 const TEXT_AUTOSAVE_DEBOUNCE = 600
 const TEXT_AUTOSAVE_MAX_WAIT = 2000
 
-function hasPatchValue(patch: UpdateTaskPatch): boolean {
+function hasPatchValue(patch: InspectorTaskPatch): boolean {
 	return Object.keys(patch).length > 0
 }
 
 type TaskPatchQueuePayload = {
-	patch: UpdateTaskPatch
-	storePatch: Partial<TaskDto>
+	patch: InspectorTaskPatch
+	storePatch: Partial<InspectorTask>
 }
 
 export function useTaskInspectorActions(params: {
-	currentTask: Ref<TaskDto | null>
+	currentTask: Ref<InspectorTask | null>
 	state: TaskInspectorState
 	store: ReturnType<typeof useTaskInspectorStore>
 	projectsStore: ReturnType<typeof useProjectsStore>
@@ -106,8 +106,8 @@ export function useTaskInspectorActions(params: {
 	})
 
 	function queueImmediateUpdate(
-		patch: UpdateTaskPatch,
-		storePatch: Partial<TaskDto> = {},
+		patch: InspectorTaskPatch,
+		storePatch: Partial<InspectorTask> = {},
 		taskId = getCurrentTaskId(),
 	) {
 		patchQueue.setActiveContext(taskId)
@@ -115,8 +115,8 @@ export function useTaskInspectorActions(params: {
 	}
 
 	function queueDebouncedUpdate(
-		patch: UpdateTaskPatch,
-		storePatch: Partial<TaskDto> = {},
+		patch: InspectorTaskPatch,
+		storePatch: Partial<InspectorTask> = {},
 		taskId = getCurrentTaskId(),
 	) {
 		patchQueue.setActiveContext(taskId)
@@ -513,7 +513,7 @@ export function useTaskInspectorActions(params: {
 		patchQueue.clearAll()
 	}
 
-	function buildStoreLinks(currentLinks: LinkDto[], nextLinks: LinkInput[]): LinkDto[] {
+	function buildStoreLinks(currentLinks: InspectorLink[], nextLinks: InspectorLinkInput[]): InspectorLink[] {
 		const byId = new Map(currentLinks.map((item) => [item.id, item]))
 		const now = Date.now()
 		return nextLinks.map((item, index) => {

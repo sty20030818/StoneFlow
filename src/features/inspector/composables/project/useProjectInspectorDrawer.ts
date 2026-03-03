@@ -11,7 +11,7 @@ import {
 	unarchiveInspectorProject,
 	updateInspectorProject,
 } from '../../mutations'
-import type { LinkDto, LinkInput, ProjectDto, UpdateProjectPatch } from '../../model'
+import type { InspectorLink, InspectorLinkInput, InspectorProject, InspectorProjectPatch } from '../../model'
 import { invalidateWorkspaceTaskAndProjectQueries, invalidateWorkspaceProjectQueries } from '@/features/workspace/model'
 import { SPACE_OPTIONS } from '@/config/space'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
@@ -29,12 +29,12 @@ type ProjectLinkFormItem = {
 	id?: string
 	title: string
 	url: string
-	kind: LinkDto['kind']
+	kind: InspectorLink['kind']
 }
 
 type ProjectPatchQueuePayload = {
 	spaceId: string
-	patch: UpdateProjectPatch
+	patch: InspectorProjectPatch
 }
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
@@ -46,7 +46,7 @@ export function useProjectInspectorDrawer() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 
-	const currentProject = computed<ProjectDto | null>(() => store.project ?? null)
+	const currentProject = computed<InspectorProject | null>(() => store.project ?? null)
 	const isOpen = computed({
 		get: () => store.isOpen,
 		set: (value) => {
@@ -66,7 +66,7 @@ export function useProjectInspectorDrawer() {
 	const linksLocal = ref<ProjectLinkFormItem[]>([])
 	const linkDraftTitle = ref('')
 	const linkDraftUrl = ref('')
-	const linkDraftKind = ref<LinkDto['kind']>('web')
+	const linkDraftKind = ref<InspectorLink['kind']>('web')
 	const linkDraftVisible = ref(false)
 	const linkValidationErrorIndex = ref<number | null>(null)
 
@@ -104,7 +104,7 @@ export function useProjectInspectorDrawer() {
 		return currentProject.value?.id ?? null
 	}
 
-	function hasPatchValue(patch: UpdateProjectPatch): boolean {
+	function hasPatchValue(patch: InspectorProjectPatch): boolean {
 		return Object.keys(patch).length > 0
 	}
 
@@ -183,7 +183,7 @@ export function useProjectInspectorDrawer() {
 		return result
 	}
 
-	function normalizeLinks(values: ProjectLinkFormItem[]): LinkInput[] {
+	function normalizeLinks(values: ProjectLinkFormItem[]): InspectorLinkInput[] {
 		return values
 			.map((item, index) => ({
 				id: item.id,
@@ -199,7 +199,7 @@ export function useProjectInspectorDrawer() {
 		return linksLocal.value.findIndex((item) => item.url.trim().length === 0)
 	}
 
-	function toLinkFormItems(links: LinkDto[]): ProjectLinkFormItem[] {
+	function toLinkFormItems(links: InspectorLink[]): ProjectLinkFormItem[] {
 		return links.map((item) => ({
 			id: item.id,
 			title: item.title,
@@ -217,11 +217,11 @@ export function useProjectInspectorDrawer() {
 		}
 	}
 
-	function shouldForceRefreshAfterCommit(patch: UpdateProjectPatch): boolean {
+	function shouldForceRefreshAfterCommit(patch: InspectorProjectPatch): boolean {
 		return patch.title !== undefined || patch.parentId !== undefined || patch.spaceId !== undefined
 	}
 
-	function stageUpdateForCurrentProject(patch: UpdateProjectPatch): boolean {
+	function stageUpdateForCurrentProject(patch: InspectorProjectPatch): boolean {
 		const project = currentProject.value
 		if (!project || !hasPatchValue(patch)) return false
 		patchQueue.setActiveContext(project.id)
@@ -232,16 +232,16 @@ export function useProjectInspectorDrawer() {
 		return true
 	}
 
-	function queueImmediateUpdate(patch: UpdateProjectPatch) {
+	function queueImmediateUpdate(patch: InspectorProjectPatch) {
 		stageUpdateForCurrentProject(patch)
 	}
 
-	function queueDebouncedUpdate(patch: UpdateProjectPatch) {
+	function queueDebouncedUpdate(patch: InspectorProjectPatch) {
 		stageUpdateForCurrentProject(patch)
 	}
 
-	function patchStoreProject(projectId: string, spaceId: string, patch: UpdateProjectPatch) {
-		const draftPatch: Partial<ProjectDto> = {}
+	function patchStoreProject(projectId: string, spaceId: string, patch: InspectorProjectPatch) {
+		const draftPatch: Partial<InspectorProject> = {}
 		if (patch.title !== undefined) draftPatch.title = patch.title
 		if (patch.note !== undefined) draftPatch.note = patch.note
 		if (patch.priority !== undefined) draftPatch.priority = patch.priority
@@ -298,7 +298,7 @@ export function useProjectInspectorDrawer() {
 		}
 	}
 
-	function collectDescendantIds(projects: ProjectDto[], rootId: string): Set<string> {
+	function collectDescendantIds(projects: InspectorProject[], rootId: string): Set<string> {
 		const childrenMap = new Map<string, string[]>()
 		for (const project of projects) {
 			if (!project.parentId) continue
@@ -318,13 +318,13 @@ export function useProjectInspectorDrawer() {
 		return descendants
 	}
 
-	function buildParentOptions(project: ProjectDto, targetSpaceId: string): ParentProjectOption[] {
+	function buildParentOptions(project: InspectorProject, targetSpaceId: string): ParentProjectOption[] {
 		const projects = projectsStore.getProjectsOfSpace(targetSpaceId).filter((item) => !isDefaultProjectId(item.id))
 		const descendants =
 			targetSpaceId === project.spaceId ? collectDescendantIds(projects, project.id) : new Set<string>()
 		const disallowedIds = new Set<string>([project.id, ...descendants])
 
-		const grouped = new Map<string | null, ProjectDto[]>()
+		const grouped = new Map<string | null, InspectorProject[]>()
 		for (const item of projects) {
 			const bucket = grouped.get(item.parentId) ?? []
 			bucket.push(item)
@@ -364,7 +364,7 @@ export function useProjectInspectorDrawer() {
 		linkValidationErrorIndex.value = null
 	}
 
-	function syncFromProjectSnapshot(project: ProjectDto, mode: 'reset' | 'incremental') {
+	function syncFromProjectSnapshot(project: InspectorProject, mode: 'reset' | 'incremental') {
 		withAutosaveSuppressed(() => {
 			if (mode === 'reset' || (!textInteraction.titleEditing && !textInteraction.titleComposing)) {
 				titleLocal.value = project.title
@@ -388,7 +388,7 @@ export function useProjectInspectorDrawer() {
 		parentOptions.value = buildParentOptions(project, spaceIdLocal.value)
 	}
 
-	async function syncFromProject(project: ProjectDto, mode: 'reset' | 'incremental') {
+	async function syncFromProject(project: InspectorProject, mode: 'reset' | 'incremental') {
 		const ticket = ++syncTicket
 		await projectsStore.load(project.spaceId)
 		if (ticket !== syncTicket) return

@@ -4,12 +4,12 @@ import { computed, type Ref } from 'vue'
 import { SPACE_OPTIONS } from '@/config/space'
 import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS_SEGMENT_OPTIONS } from '@/config/task'
-import type { LinkDto } from '../../model'
+import type { InspectorLink } from '../../model'
 import type { useProjectsStore } from '@/stores/projects'
 import { buildDrawerLinkKindOptions } from '../../ui/InspectorDrawer/shared/constants'
 
 export type LinkKindOption = {
-	value: LinkDto['kind']
+	value: InspectorLink['kind']
 	label: string
 }
 
