@@ -97,7 +97,7 @@
 	import { computed, ref, watch } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import type { TaskDto } from '@/services/api/tasks'
+	import type { TaskDto } from '@/features/workspace/model'
 
 	const props = defineProps<{
 		task: TaskDto

@@ -1,7 +1,7 @@
 import { createGlobalState, useStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/workspace/model'
 
 type SpaceTaskSnapshot = {
 	todo: TaskDto[]

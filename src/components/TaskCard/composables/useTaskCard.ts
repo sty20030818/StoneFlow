@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 
 import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/config/task'
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/workspace/model'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { getDisplayStatus } from '@/utils/task'
 import { formatDate, formatDateTime, formatTimeOfDay } from '@/utils/time'

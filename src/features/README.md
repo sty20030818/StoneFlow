@@ -42,17 +42,8 @@
 
 ## ESLint 架构防线
 
-- `no-restricted-imports`：页面层禁止直接导入 `@/services/api/*`
+- `no-restricted-imports`：`src` 下非 `features/services` 层禁止直接导入 `@/services/api/*`
 - `no-restricted-imports`（regex）：feature 禁止跨域导入内部实现路径
-
-临时迁移白名单：
-
-- `src/pages/assets/**`
-- `src/pages/review/**`
-- `src/pages/Trash/**`
-- `src/pages/ProjectView/**`
-
-白名单用于迁移过渡，后续按板块逐步收敛。
 
 ## 迁移执行规则
 

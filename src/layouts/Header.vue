@@ -207,7 +207,7 @@
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useSettingsNav } from '@/pages/Settings/composables/useSettingsNav'
 	import { getPageNavByPath } from '@/config/page-nav'
-	import type { ProjectDto } from '@/services/api/projects'
+	import type { ProjectDto } from '@/features/workspace/model'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectsStore } from '@/stores/projects'
