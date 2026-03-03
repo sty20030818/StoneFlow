@@ -174,7 +174,7 @@
 						color="neutral"
 						variant="ghost"
 						size="sm"
-						@click="editOpen = false">
+						@click="closeEditor">
 						{{ t('common.actions.cancel') }}
 					</UButton>
 					<UButton
@@ -190,10 +190,7 @@
 </template>
 
 <script setup lang="ts">
-	import { useI18n } from 'vue-i18n'
-	import { useAsyncState } from '@vueuse/core'
-	import { computed, ref } from 'vue'
-	import { useRouter } from 'vue-router'
+	import { computed } from 'vue'
 
 	import {
 		DEFAULT_STAGGER_MOTION_LIMIT,
@@ -204,194 +201,41 @@
 		useMotionPreset,
 		useMotionPresetWithDelay,
 	} from '@/composables/base/motion'
-	import { validateWithZod } from '@/composables/base/zod'
-	import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 	import { createModalLayerUi } from '@/config/ui-layer'
+	import { useAssetsDiaryPage } from '@/features/assets-diary'
 	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
-	import { listTasks, type TaskDto } from '@/services/api/tasks'
-	import type { DiaryEntryDto } from '@/services/api/diary'
-	import { createDiaryEntry, deleteDiaryEntry, listDiaryEntries, updateDiaryEntry } from '@/services/api/diary'
-	import { resolveErrorMessage } from '@/utils/error-message'
-	import { formatDate } from '@/utils/time'
 
-	const toast = useToast()
-	const { t, locale } = useI18n({ useScope: 'global' })
-	const router = useRouter()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const timelineMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const diaryItemPreset = useMotionPreset('card')
 	const diaryItemStaticMotion = computed(() => toStaticMotionVariants(diaryItemPreset.value))
 	const modalBodyMotion = useMotionPreset('modalSection')
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const {
+		t,
+		loading,
+		selectedEntry,
+		editOpen,
+		editForm,
+		groupedEntries,
+		selectEntry,
+		onCreateNew,
+		closeEditor,
+		onSave,
+		onDelete,
+		goToFinishList,
+	} = useAssetsDiaryPage()
+
 	const diaryModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
 		rounded: 'rounded-2xl',
 	})
 
-	const entries = ref<DiaryEntryDto[]>([])
-	const tasks = ref<TaskDto[]>([])
-	const selectedEntry = ref<DiaryEntryDto | null>(null)
-	const editOpen = ref(false)
-	const { isLoading: loading, execute: executeRefresh } = useAsyncState(
-		async () => {
-			const [diaryEntries, doneTasks] = await Promise.all([listDiaryEntries(), listTasks({ status: 'done' })])
-			return {
-				entries: diaryEntries,
-				tasks: doneTasks.filter((t) => t.doneReason !== 'cancelled'),
-			}
-		},
-		{
-			entries: [] as DiaryEntryDto[],
-			tasks: [] as TaskDto[],
-		},
-		{
-			immediate: true,
-			resetOnExecute: false,
-			onSuccess: ({ entries: nextEntries, tasks: nextTasks }) => {
-				entries.value = nextEntries
-				tasks.value = nextTasks
-			},
-			onError: (e) => {
-				toast.add({
-					title: t('assets.diary.toast.loadFailedTitle'),
-					description: resolveErrorMessage(e, t),
-					color: 'error',
-				})
-			},
-		},
-	)
-
-	const editForm = ref({
-		date: new Date().toISOString().split('T')[0],
-		title: '',
-		content: '',
-		linkedTaskIds: [] as string[],
-		linkedProjectId: '',
-	})
-
-	type GroupedEntry = {
-		date: string
-		dateLabel: string
-		entries: DiaryEntryDto[]
-		tasks: TaskDto[]
-	}
-
-	const groupedEntries = computed<GroupedEntry[]>(() => {
-		const byDate = new Map<string, DiaryEntryDto[]>()
-
-		for (const e of entries.value) {
-			const arr = byDate.get(e.date) ?? []
-			arr.push(e)
-			byDate.set(e.date, arr)
-		}
-
-		const result: GroupedEntry[] = []
-		for (const [date, entriesList] of byDate.entries()) {
-			const dateLabel = formatDate(date, {
-				locale: locale.value,
-				year: 'numeric',
-				month: 'long',
-				day: 'numeric',
-				weekday: 'long',
-			})
-
-			const dayTasks = tasks.value.filter((t) => {
-				if (!t.completedAt) return false
-				const taskDate = new Date(t.completedAt).toISOString().split('T')[0]
-				return taskDate === date
-			})
-
-			result.push({
-				date,
-				dateLabel,
-				entries: entriesList.sort((a, b) => b.createdAt - a.createdAt),
-				tasks: dayTasks,
-			})
-		}
-
-		return result.sort((a, b) => b.date.localeCompare(a.date))
-	})
 	function getDiaryItemMotion(index: number) {
 		// Diary 可能单日出现较多卡片，超过阈值后改静态，优先保证滚动流畅。
 		return resolveStaggeredEnterMotion(index, diaryItemPreset.value, getAppStaggerDelay, {
 			limit: DEFAULT_STAGGER_MOTION_LIMIT,
 			fallback: diaryItemStaticMotion.value,
 		})
-	}
-
-	function selectEntry(e: DiaryEntryDto) {
-		selectedEntry.value = e
-		editForm.value = {
-			date: e.date,
-			title: e.title,
-			content: e.content,
-			linkedTaskIds: [...e.linkedTaskIds],
-			linkedProjectId: e.linkedProjectId ?? '',
-		}
-		editOpen.value = true
-	}
-
-	function onCreateNew() {
-		selectedEntry.value = null
-		editForm.value = {
-			date: new Date().toISOString().split('T')[0],
-			title: '',
-			content: '',
-			linkedTaskIds: [],
-			linkedProjectId: '',
-		}
-		editOpen.value = true
-	}
-
-	async function onSave() {
-		const validation = validateWithZod(diarySubmitSchema, { title: editForm.value.title })
-		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
-			return
-		}
-
-		try {
-			const payload = {
-				...editForm.value,
-				linkedProjectId: editForm.value.linkedProjectId.trim() || null,
-			}
-			if (selectedEntry.value) {
-				await updateDiaryEntry(selectedEntry.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
-			} else {
-				await createDiaryEntry(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
-			}
-			await refresh()
-			editOpen.value = false
-		} catch (e) {
-			toast.add({
-				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	async function onDelete(id: string) {
-		try {
-			await deleteDiaryEntry(id)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
-			await refresh()
-		} catch (e) {
-			toast.add({
-				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	function goToFinishList() {
-		router.push({ path: '/finish-list' })
-	}
-
-	async function refresh() {
-		await executeRefresh(0)
 	}
 </script>
