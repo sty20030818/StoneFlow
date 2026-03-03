@@ -90,7 +90,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { watchDebounced, watchThrottled } from '@vueuse/core'
 	import { computed, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-	import { useRoute } from 'vue-router'
+	import { onBeforeRouteLeave, useRoute } from 'vue-router'
 
 	import TaskColumn from '@/components/TaskColumn.vue'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
@@ -106,7 +106,7 @@
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
 	import { useSettingsStore } from '@/stores/settings'
-	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
+	import { useWorkspaceEditStore, type WorkspaceEditCommand } from '@/stores/workspace-edit'
 	import { resolveErrorMessage } from '@/utils/error-message'
 
 	const route = useRoute()
@@ -123,6 +123,14 @@
 	})
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'headerBreadcrumb')
 	const workspaceColumnsMotion = useProjectMotionPreset('drawerSection', 'headerActions')
+	const workspaceEditContextId = createWorkspaceEditContextId()
+
+	function createWorkspaceEditContextId() {
+		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+			return crypto.randomUUID()
+		}
+		return `workspace-edit-${Date.now()}-${Math.random().toString(16).slice(2)}`
+	}
 
 	// 从路由参数获取 spaceId 和 projectId
 	// All Tasks 模式：spaceId=undefined, projectId=undefined
@@ -296,15 +304,13 @@
 	watchThrottled(
 		[isEditMode, selectedCount],
 		() => {
-			workspaceEditStore.setState({
+			workspaceEditStore.syncState(workspaceEditContextId, {
 				isEditMode: isEditMode.value,
 				selectedCount: selectedCount.value,
 			})
 		},
 		{ throttle: 120, trailing: true },
 	)
-
-	const viewMode = ref<'list' | 'board'>('list')
 
 	// 使用 composable 生成 breadcrumb
 	const projectsList = computed(() => {
@@ -316,27 +322,51 @@
 
 	const inspectorStore = useTaskInspectorStore()
 
-	// 通过 provide 传递 viewMode 和 breadcrumbItems 给 Header（如果需要）
-	provide('workspaceViewMode', viewMode)
 	provide('workspaceBreadcrumbItems', breadcrumbItems)
-	provide('headerViewModeUpdate', (mode: 'list' | 'board') => {
-		viewMode.value = mode
-	})
+
+	function applyWorkspaceEditCommand(command: WorkspaceEditCommand) {
+		switch (command.type) {
+			case 'enter-edit-mode':
+				enterEditMode()
+				return
+			case 'exit-edit-mode':
+				exitEditMode()
+				return
+			case 'open-delete-confirm':
+				openDeleteConfirm()
+				return
+			default: {
+				const unreachable: never = command.type
+				void unreachable
+			}
+		}
+	}
+
+	watch(
+		() => workspaceEditStore.pendingCommand,
+		(command) => {
+			if (!command) return
+			if (command.contextId !== workspaceEditContextId) return
+			applyWorkspaceEditCommand(command)
+			workspaceEditStore.acknowledgeCommand(workspaceEditContextId, command.id)
+		},
+		{ flush: 'sync' },
+	)
 
 	onMounted(() => {
-		workspaceEditStore.registerHandlers({
-			enterEditMode,
-			exitEditMode,
-			openDeleteConfirm,
-		})
-		workspaceEditStore.setState({
+		workspaceEditStore.attachContext(workspaceEditContextId)
+		workspaceEditStore.syncState(workspaceEditContextId, {
 			isEditMode: isEditMode.value,
 			selectedCount: selectedCount.value,
 		})
 	})
 
+	onBeforeRouteLeave(() => {
+		workspaceEditStore.detachContext(workspaceEditContextId)
+	})
+
 	onUnmounted(() => {
-		workspaceEditStore.clearHandlers()
+		workspaceEditStore.detachContext(workspaceEditContextId)
 	})
 
 	function onTaskClick(task: TaskDto) {

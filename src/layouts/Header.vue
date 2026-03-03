@@ -309,9 +309,9 @@
 		void router.push(value)
 	}
 
-	const hasEditBridge = computed(() => isWorkspacePage.value && workspaceEditStore.hasHandlers)
-	const isEditMode = computed(() => workspaceEditStore.isEditMode)
-	const editSelectedCount = computed(() => workspaceEditStore.selectedCount)
+	const hasEditBridge = computed(() => isWorkspacePage.value && workspaceEditStore.hasActiveContext)
+	const isEditMode = computed(() => (isWorkspacePage.value ? workspaceEditStore.isEditMode : false))
+	const editSelectedCount = computed(() => (isWorkspacePage.value ? workspaceEditStore.selectedCount : 0))
 	const editButtonLabel = computed(() => (isEditMode.value ? t('header.cancelEdit') : t('header.edit')))
 	const editButtonIcon = computed(() => (isEditMode.value ? 'i-lucide-x' : 'i-lucide-pencil'))
 	const editButtonClass = computed(() => {
@@ -324,15 +324,15 @@
 	const deleteGlowClass = computed(() => 'shadow-[0_18px_36px_-20px_rgba(239,68,68,0.85)]')
 
 	function onEnterEditMode() {
-		workspaceEditStore.triggerEnterEditMode()
+		workspaceEditStore.dispatchCommand('enter-edit-mode')
 	}
 
 	function onExitEditMode() {
-		workspaceEditStore.triggerExitEditMode()
+		workspaceEditStore.dispatchCommand('exit-edit-mode')
 	}
 
 	function onOpenDeleteConfirm() {
-		workspaceEditStore.triggerOpenDeleteConfirm()
+		workspaceEditStore.dispatchCommand('open-delete-confirm')
 	}
 
 	function onToggleEditMode() {

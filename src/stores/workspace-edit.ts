@@ -1,59 +1,90 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-type WorkspaceEditHandlers = {
-	enterEditMode: () => void
-	exitEditMode: () => void
-	openDeleteConfirm: () => void
+export type WorkspaceEditCommandType = 'enter-edit-mode' | 'exit-edit-mode' | 'open-delete-confirm'
+
+export type WorkspaceEditCommand = {
+	id: number
+	contextId: string
+	type: WorkspaceEditCommandType
+	issuedAt: number
 }
 
 /**
- * Workspace 编辑模式桥接：
- * - Header 通过 store 触发页面行为
- * - 页面通过 store 同步当前状态（是否编辑/已选数量）
+ * Workspace 编辑模式通道：
+ * - Header 通过命令通道派发类型化编辑动作
+ * - Workspace 页面作为唯一消费者执行动作并 ACK
+ * - 页面同步当前编辑状态（是否编辑/已选数量）供 Header 展示
  */
 export const useWorkspaceEditStore = defineStore('workspaceEdit', () => {
 	const isEditMode = ref(false)
 	const selectedCount = ref(0)
-	const handlers = ref<WorkspaceEditHandlers | null>(null)
-	const hasHandlers = computed(() => handlers.value !== null)
+	const activeContextId = ref<string | null>(null)
+	const commandSeq = ref(0)
+	const pendingCommand = ref<WorkspaceEditCommand | null>(null)
+	const hasActiveContext = computed(() => activeContextId.value !== null)
 
-	function registerHandlers(next: WorkspaceEditHandlers) {
-		handlers.value = next
-	}
-
-	function clearHandlers() {
-		handlers.value = null
+	function resetState() {
 		isEditMode.value = false
 		selectedCount.value = 0
 	}
 
-	function setState(next: { isEditMode: boolean; selectedCount: number }) {
+	function attachContext(contextId: string) {
+		activeContextId.value = contextId
+		pendingCommand.value = null
+		resetState()
+	}
+
+	function detachContext(contextId: string) {
+		if (activeContextId.value !== contextId) return
+		activeContextId.value = null
+		pendingCommand.value = null
+		resetState()
+	}
+
+	function syncState(contextId: string, next: { isEditMode: boolean; selectedCount: number }) {
+		if (activeContextId.value !== contextId) return
 		isEditMode.value = next.isEditMode
 		selectedCount.value = next.selectedCount
 	}
 
-	function triggerEnterEditMode() {
-		handlers.value?.enterEditMode()
+	function dispatchCommand(type: WorkspaceEditCommandType) {
+		if (!activeContextId.value) return null
+		const command: WorkspaceEditCommand = {
+			id: commandSeq.value + 1,
+			contextId: activeContextId.value,
+			type,
+			issuedAt: Date.now(),
+		}
+		commandSeq.value = command.id
+		pendingCommand.value = command
+		return command
 	}
 
-	function triggerExitEditMode() {
-		handlers.value?.exitEditMode()
+	function acknowledgeCommand(contextId: string, commandId: number) {
+		const command = pendingCommand.value
+		if (!command) return
+		if (command.contextId !== contextId || command.id !== commandId) return
+		pendingCommand.value = null
 	}
 
-	function triggerOpenDeleteConfirm() {
-		handlers.value?.openDeleteConfirm()
+	function clearChannel() {
+		activeContextId.value = null
+		pendingCommand.value = null
+		resetState()
 	}
 
 	return {
 		isEditMode,
 		selectedCount,
-		hasHandlers,
-		registerHandlers,
-		clearHandlers,
-		setState,
-		triggerEnterEditMode,
-		triggerExitEditMode,
-		triggerOpenDeleteConfirm,
+		hasActiveContext,
+		pendingCommand,
+		activeContextId,
+		attachContext,
+		detachContext,
+		syncState,
+		dispatchCommand,
+		acknowledgeCommand,
+		clearChannel,
 	}
 })
