@@ -3,7 +3,7 @@ import { MutationCache, QueryCache, QueryClient } from '@tanstack/vue-query'
 export const DEFAULT_QUERY_STALE_TIME = 30 * 1000
 export const DEFAULT_QUERY_GC_TIME = 5 * 60 * 1000
 
-export function createStoneFlowQueryClient() {
+function buildStoneFlowQueryClient() {
 	return new QueryClient({
 		queryCache: new QueryCache(),
 		mutationCache: new MutationCache(),
@@ -19,4 +19,10 @@ export function createStoneFlowQueryClient() {
 			},
 		},
 	})
+}
+
+export const stoneFlowQueryClient = buildStoneFlowQueryClient()
+
+export function createStoneFlowQueryClient() {
+	return stoneFlowQueryClient
 }

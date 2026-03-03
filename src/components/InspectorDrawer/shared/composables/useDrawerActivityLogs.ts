@@ -5,7 +5,7 @@ import type { ActivityLogEntry } from '@/services/api/logs'
 
 export function useDrawerActivityLogs(params: {
 	entityId: Ref<string | null>
-	tick: Ref<number>
+	tick?: Ref<number> | null
 	loadLogs: (id: string) => Promise<ActivityLogEntry[]>
 	errorFallbackText: string
 }) {
@@ -53,13 +53,15 @@ export function useDrawerActivityLogs(params: {
 		{ immediate: true },
 	)
 
-	watch(
-		() => params.tick.value,
-		() => {
-			if (!params.entityId.value) return
-			void reloadTimeline()
-		},
-	)
+	if (params.tick) {
+		watch(
+			() => params.tick?.value,
+			() => {
+				if (!params.entityId.value) return
+				void reloadTimeline()
+			},
+		)
+	}
 
 	return {
 		timelineLogs,

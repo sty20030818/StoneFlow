@@ -4,13 +4,13 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { PROJECT_PRIORITY_OPTIONS, type ProjectPriorityValue, isDefaultProjectId } from '@/config/project'
 import { usePatchQueue } from '@/components/InspectorDrawer/shared/composables'
+import { invalidateWorkspaceTaskAndProjectQueries, invalidateWorkspaceProjectQueries } from '@/features/workspace/model'
 import { SPACE_OPTIONS } from '@/config/space'
 import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
 import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
-import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { buildDrawerLinkKindOptions } from '../../shared/constants'
 
@@ -38,7 +38,6 @@ const TEXT_AUTOSAVE_MAX_WAIT = 2000
 export function useProjectInspectorDrawer() {
 	const store = useProjectInspectorStore()
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 
@@ -283,10 +282,10 @@ export function useProjectInspectorDrawer() {
 			} else if (shouldForceRefreshAfterCommit(patch)) {
 				void refreshStoreProject(spaceId, projectId, { force: true })
 			}
+			await invalidateWorkspaceProjectQueries()
 			if (patch.spaceId !== undefined) {
-				refreshSignals.bumpTask()
+				await invalidateWorkspaceTaskAndProjectQueries()
 			}
-			refreshSignals.bumpProject()
 			return true
 		} catch (error) {
 			console.error('Failed to update project:', error)
@@ -659,8 +658,7 @@ export function useProjectInspectorDrawer() {
 		try {
 			if (action === 'delete') {
 				await deleteProject(project.id)
-				refreshSignals.bumpTask()
-				refreshSignals.bumpProject()
+				await invalidateWorkspaceTaskAndProjectQueries()
 				toast.add({
 					title: t('inspector.project.toast.deletedTitle'),
 					description: project.title,
@@ -672,7 +670,7 @@ export function useProjectInspectorDrawer() {
 
 			if (action === 'restore') {
 				await restoreProject(project.id)
-				refreshSignals.bumpProject()
+				await invalidateWorkspaceProjectQueries()
 				await refreshStoreProject(project.spaceId, project.id, { force: true })
 				toast.add({
 					title: t('inspector.project.toast.restoredTitle'),
@@ -684,7 +682,7 @@ export function useProjectInspectorDrawer() {
 
 			if (action === 'archive') {
 				await archiveProject(project.id)
-				refreshSignals.bumpProject()
+				await invalidateWorkspaceProjectQueries()
 				await refreshStoreProject(project.spaceId, project.id, { force: true })
 				toast.add({
 					title: t('inspector.project.toast.archivedTitle'),
@@ -695,7 +693,7 @@ export function useProjectInspectorDrawer() {
 			}
 
 			await unarchiveProject(project.id)
-			refreshSignals.bumpProject()
+			await invalidateWorkspaceProjectQueries()
 			await refreshStoreProject(project.spaceId, project.id, { force: true })
 			toast.add({
 				title: t('inspector.project.toast.unarchivedTitle'),

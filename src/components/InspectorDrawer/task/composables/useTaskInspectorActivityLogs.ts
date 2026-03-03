@@ -5,12 +5,11 @@ import { listActivityLogs } from '@/services/api/logs'
 import { useDrawerActivityLogs } from '@/components/InspectorDrawer/shared/composables'
 import type { TaskDto } from '@/services/api/tasks'
 
-export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto | null>; taskTick: Ref<number> }) {
+export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto | null> }) {
 	const taskId = computed(() => params.currentTask.value?.id ?? null)
 	const { t } = useI18n({ useScope: 'global' })
 	return useDrawerActivityLogs({
 		entityId: taskId,
-		tick: params.taskTick,
 		loadLogs: async (id) => {
 			return await listActivityLogs({
 				entityType: 'task',

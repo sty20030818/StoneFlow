@@ -125,7 +125,6 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
-	import { storeToRefs } from 'pinia'
 
 	import DrawerShell from '@/components/InspectorDrawer/shared/DrawerShell.vue'
 	import {
@@ -138,7 +137,6 @@
 		DrawerTitleInputSection,
 	} from '@/components/InspectorDrawer/shared/sections'
 	import { DRAWER_CONTENT_CLASS } from '@/components/InspectorDrawer/shared/constants'
-	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { ProjectAttributesSection, ProjectLifecycleModals, ProjectSummarySection } from './sections'
 	import {
 		useProjectDrawerAttributes,
@@ -211,13 +209,9 @@
 		flushPendingUpdates,
 	} = useProjectInspectorDrawer()
 
-	const refreshSignals = useRefreshSignalsStore()
-	const { projectTick } = storeToRefs(refreshSignals)
-
 	const { timelineLogs, timelineLoading, timelineErrorMessage, timelineEmpty, reloadTimeline } =
 		useProjectInspectorActivityLogs({
 			currentProject,
-			projectTick,
 		})
 
 	const { noteInteraction, linksInteraction } = useProjectDrawerInteractions({

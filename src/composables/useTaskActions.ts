@@ -1,5 +1,6 @@
 import { completeTask, updateTask } from '@/services/api/tasks'
 import type { UpdateTaskPatch } from '@/services/api/tasks'
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 
 /**
  * 统一的任务操作逻辑（complete, update 等，统一错误处理）
@@ -10,6 +11,7 @@ export function useTaskActions() {
 	async function complete(taskId: string): Promise<boolean> {
 		try {
 			await completeTask(taskId)
+			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({ title: '已完成', color: 'success' })
 			return true
 		} catch (e) {
@@ -25,6 +27,7 @@ export function useTaskActions() {
 	async function update(taskId: string, patch: Pick<UpdateTaskPatch, 'title' | 'status'>): Promise<boolean> {
 		try {
 			await updateTask(taskId, patch)
+			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({ title: '更新成功', color: 'success' })
 			return true
 		} catch (e) {

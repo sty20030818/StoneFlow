@@ -132,11 +132,11 @@
 	import { useI18n } from 'vue-i18n'
 	import { VueDraggable } from 'vue-draggable-plus'
 
+	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
-	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { resolveErrorMessage } from '@/utils/error-message'
 	import { calculateInsertRank } from '@/utils/rank'
 
@@ -183,7 +183,6 @@
 	const { t } = useI18n({ useScope: 'global' })
 	const projectInspectorStore = useProjectInspectorStore()
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
 	const popoverUi = createPopoverLayerUi()
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
@@ -294,7 +293,7 @@
 		deleting.value = true
 		try {
 			await deleteProject(deleteTarget.value.id)
-			refreshSignals.bumpProject()
+			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({
 				title: t('toast.projectTree.deletedTitle'),
 				description: deleteTarget.value.label,

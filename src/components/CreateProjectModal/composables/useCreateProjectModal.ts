@@ -2,6 +2,7 @@ import { useVModel, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { invalidateWorkspaceProjectQueries } from '@/features/workspace/model'
 import type { ProjectDto } from '@/services/api/projects'
 import { createProject } from '@/services/api/projects'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
@@ -16,7 +17,6 @@ import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { validateWithZod } from '@/composables/base/zod'
 import { projectSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
-import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { resolveErrorMessage } from '@/utils/error-message'
 
 export type CreateProjectModalProps = {
@@ -73,7 +73,6 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
 
 	const loading = ref(false)
 	const tagInput = ref('')
@@ -276,7 +275,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 			})
 
 			await projectsStore.load(form.spaceId, { force: true })
-			refreshSignals.bumpProject()
+			await invalidateWorkspaceProjectQueries()
 			emit('created', project)
 			close()
 		} catch (error) {
