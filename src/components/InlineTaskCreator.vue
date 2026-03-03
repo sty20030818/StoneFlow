@@ -45,10 +45,9 @@
 
 	import { MOTION_TOKENS } from '@/config/motion'
 	import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
-	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+	import { useTaskCreateWorkflow } from '@/features/create-flow'
 	import type { TaskPriorityValue } from '@/config/task'
-	import { getDefaultProject } from '@/services/api/projects'
-	import { createTask, updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
+	import type { TaskDto } from '@/services/api/tasks'
 	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
 	import { getPriorityClass } from '@/utils/priority'
 
@@ -82,6 +81,7 @@
 	const priority = ref<TaskPriorityValue | null>(null)
 	const expanded = ref(false)
 	const submitting = ref(false)
+	const { createInlineTask } = useTaskCreateWorkflow()
 
 	const inlineFocusStore = useInlineCreateFocusStore()
 	const creatorCardMotion = computed(() =>
@@ -208,17 +208,6 @@
 	useEventListener(inputRef, 'keydown', (event) => handleKeydown('title', event))
 	useEventListener(noteRef, 'keydown', (event) => handleKeydown('note', event))
 
-	async function resolveProjectId(spaceId: string): Promise<string | null> {
-		if (props.projectId) return props.projectId
-		try {
-			const defaultProject = await getDefaultProject(spaceId)
-			return defaultProject.id
-		} catch (error) {
-			console.error('Failed to load default project:', error)
-			return null
-		}
-	}
-
 	async function handleSubmit() {
 		const nextTitle = (debouncedTitle.value || title.value).trim()
 		if (!nextTitle || submitting.value || props.disabled) return
@@ -229,26 +218,13 @@
 
 		submitting.value = true
 		try {
-			const projectId = await resolveProjectId(props.spaceId)
-
-			const task = await createTask({
+			const task = await createInlineTask({
 				spaceId: props.spaceId,
 				title: nextTitle,
-				autoStart: false,
-				projectId,
+				projectId: props.projectId,
+				note: nextNote || null,
+				priority: nextPriority,
 			})
-
-			// 兜底保证 priority/status 符合约定（默认 P1 / todo）
-			const patch: UpdateTaskPatch = {}
-			if (task.priority !== nextPriority) patch.priority = nextPriority
-			if (nextNote) patch.note = nextNote
-			if (task.status !== 'todo') patch.status = 'todo'
-			if (Object.keys(patch).length > 0) {
-				await updateTask(task.id, patch)
-				Object.assign(task, patch)
-			}
-
-			await invalidateWorkspaceTaskAndProjectQueries()
 			emit('created', task)
 
 			title.value = ''
