@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/inspector/model'
 import type { useProjectsStore } from '@/stores/projects'
 import { getDisplayStatus } from '@/utils/task'
 

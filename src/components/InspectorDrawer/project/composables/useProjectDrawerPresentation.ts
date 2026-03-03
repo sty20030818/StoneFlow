@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { PROJECT_STATUS_DISPLAY, type ProjectComputedStatusValue } from '@/config/project'
-import type { ProjectDto } from '@/services/api/projects'
+import type { ProjectDto } from '@/features/inspector/model'
 import {
 	formatDrawerDateTime,
 	resolveDrawerSpaceDisplay,

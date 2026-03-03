@@ -1,7 +1,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/inspector/model'
 import {
 	formatDrawerDateTime,
 	useDrawerSaveStatePresentation,

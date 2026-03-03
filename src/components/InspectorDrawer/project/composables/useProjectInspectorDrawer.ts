@@ -4,11 +4,16 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { PROJECT_PRIORITY_OPTIONS, type ProjectPriorityValue, isDefaultProjectId } from '@/config/project'
 import { usePatchQueue } from '@/components/InspectorDrawer/shared/composables'
+import {
+	archiveInspectorProject,
+	deleteInspectorProject,
+	restoreInspectorProject,
+	unarchiveInspectorProject,
+	updateInspectorProject,
+} from '@/features/inspector'
+import type { LinkDto, LinkInput, ProjectDto, UpdateProjectPatch } from '@/features/inspector/model'
 import { invalidateWorkspaceTaskAndProjectQueries, invalidateWorkspaceProjectQueries } from '@/features/workspace/model'
 import { SPACE_OPTIONS } from '@/config/space'
-import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
-import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'
-import type { LinkDto, LinkInput } from '@/services/api/tasks'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -274,7 +279,7 @@ export function useProjectInspectorDrawer() {
 		const spaceId = payload.spaceId
 		const patch = payload.patch
 		try {
-			await updateProject(projectId, patch)
+			await updateInspectorProject(projectId, patch)
 			patchStoreProject(projectId, spaceId, patch)
 			const targetSpaceId = patch.spaceId ?? spaceId
 			if (patch.spaceId && patch.spaceId !== spaceId) {
@@ -657,7 +662,7 @@ export function useProjectInspectorDrawer() {
 
 		try {
 			if (action === 'delete') {
-				await deleteProject(project.id)
+				await deleteInspectorProject(project.id)
 				await invalidateWorkspaceTaskAndProjectQueries()
 				toast.add({
 					title: t('inspector.project.toast.deletedTitle'),
@@ -669,7 +674,7 @@ export function useProjectInspectorDrawer() {
 			}
 
 			if (action === 'restore') {
-				await restoreProject(project.id)
+				await restoreInspectorProject(project.id)
 				await invalidateWorkspaceProjectQueries()
 				await refreshStoreProject(project.spaceId, project.id, { force: true })
 				toast.add({
@@ -681,7 +686,7 @@ export function useProjectInspectorDrawer() {
 			}
 
 			if (action === 'archive') {
-				await archiveProject(project.id)
+				await archiveInspectorProject(project.id)
 				await invalidateWorkspaceProjectQueries()
 				await refreshStoreProject(project.spaceId, project.id, { force: true })
 				toast.add({
@@ -692,7 +697,7 @@ export function useProjectInspectorDrawer() {
 				return true
 			}
 
-			await unarchiveProject(project.id)
+			await unarchiveInspectorProject(project.id)
 			await invalidateWorkspaceProjectQueries()
 			await refreshStoreProject(project.spaceId, project.id, { force: true })
 			toast.add({

@@ -1,10 +1,10 @@
 import type { Ref } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 
-import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/services/api/tasks'
-import { updateTask } from '@/services/api/tasks'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
 import { usePatchQueue } from '@/components/InspectorDrawer/shared/composables'
+import { updateInspectorTask } from '@/features/inspector'
+import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/features/inspector/model'
 import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 import type { useProjectsStore } from '@/stores/projects'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
@@ -55,7 +55,7 @@ export function useTaskInspectorActions(params: {
 		let lastError: unknown = null
 		for (let attempt = 0; attempt < 2; attempt += 1) {
 			try {
-				await updateTask(taskId, payload.patch)
+				await updateInspectorTask(taskId, payload.patch)
 				ok = true
 				break
 			} catch (error) {

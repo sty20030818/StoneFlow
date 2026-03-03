@@ -1,4 +1,4 @@
-import type { CustomFieldItem, CustomFields, LinkDto, LinkInput } from '@/services/api/tasks'
+import type { CustomFieldItem, CustomFields, LinkDto, LinkInput } from '@/features/inspector/model'
 
 export type TaskLinkFormItem = {
 	id?: string

@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/inspector/model'
 import { useProjectsStore } from '@/stores/projects'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 
