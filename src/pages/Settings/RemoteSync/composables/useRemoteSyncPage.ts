@@ -1,5 +1,1 @@
-import { useRemoteSyncPageFacade } from './useRemoteSyncPageFacade'
-
-export function useRemoteSyncPage() {
-	return useRemoteSyncPageFacade()
-}
+export { useRemoteSyncPage } from '@/features/remote-sync'
