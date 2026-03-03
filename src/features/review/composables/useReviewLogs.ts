@@ -5,7 +5,7 @@ import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { formatDate, formatTimeOfDay } from '@/utils/time'
 
-import type { ActivityLogEntry, ActivityLogEntityType } from '../model'
+import type { InspectorActivityLog, InspectorActivityLogEntityType } from '../model'
 import { listReviewActivityLogs } from '../queries'
 
 const PAGE_SIZE = 100
@@ -28,11 +28,11 @@ export function useReviewLogs() {
 	const loadingMore = ref(false)
 	const hasMore = ref(true)
 	const pageOffset = ref(0)
-	const rawLogs = ref<ActivityLogEntry[]>([])
+	const rawLogs = ref<InspectorActivityLog[]>([])
 
 	const viewMode = ref<'raw' | 'aggregate'>('raw')
 
-	const entityType = ref<ActivityLogEntityType | 'all'>('all')
+	const entityType = ref<InspectorActivityLogEntityType | 'all'>('all')
 	const spaceFilter = ref<string>('all')
 	const dateRange = ref<string>('this-week')
 
@@ -93,7 +93,7 @@ export function useReviewLogs() {
 		return `${date} ${time}`
 	}
 
-	function formatVariableInfo(item: ActivityLogEntry): string {
+	function formatVariableInfo(item: InspectorActivityLog): string {
 		const parts = [`action=${item.action}`]
 		if (item.fieldKey) {
 			parts.push(`fieldKey=${item.fieldKey}`)
@@ -104,12 +104,12 @@ export function useReviewLogs() {
 		return parts.join(' · ')
 	}
 
-	function formatChangeSummary(item: ActivityLogEntry): string | null {
+	function formatChangeSummary(item: InspectorActivityLog): string | null {
 		if (item.beforeValue === null && item.afterValue === null) return null
 		return `${item.beforeValue ?? t('review.logs.emptyValue')} → ${item.afterValue ?? t('review.logs.emptyValue')}`
 	}
 
-	function formatAggregateAction(item: ActivityLogEntry): string {
+	function formatAggregateAction(item: InspectorActivityLog): string {
 		if (!item.fieldKey) return item.actionLabel
 		return `${item.actionLabel}(${item.fieldKey})`
 	}

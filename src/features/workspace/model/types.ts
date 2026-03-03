@@ -19,18 +19,6 @@ export type WorkspaceProject = WorkspaceProjectDto
 export type WorkspaceTaskListArgs = WorkspaceTaskListArgsDto
 export type WorkspaceTaskPatch = WorkspaceTaskPatchDto
 
-/**
- * 历史兼容别名：仅用于过渡，外层代码应优先使用 Workspace* 命名。
- */
-export type TaskDto = WorkspaceTask
-export type ProjectDto = WorkspaceProject
-export type ListTasksArgs = WorkspaceTaskListArgs
-export type UpdateTaskPatch = WorkspaceTaskPatch
-export type LinkDto = WorkspaceLink
-export type LinkInput = WorkspaceLinkInput
-export type CustomFieldItem = WorkspaceCustomField
-export type CustomFields = WorkspaceCustomFields
-
 function mapWorkspaceLinkDtoToDomain(link: WorkspaceLinkDto): WorkspaceLink {
 	return {
 		...link,

@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 
-import type { TaskDto } from '../../model'
+import type { InspectorTask } from '../../model'
 import type { useProjectsStore } from '@/stores/projects'
 import { getDisplayStatus } from '@/utils/task'
 
@@ -14,7 +14,7 @@ import {
 } from './taskFieldNormalization'
 
 export function useTaskInspectorSync(params: {
-	currentTask: Ref<TaskDto | null>
+	currentTask: Ref<InspectorTask | null>
 	projectsStore: ReturnType<typeof useProjectsStore>
 	state: TaskInspectorState
 	onTaskContextChange?: (previousTaskId: string | null, nextTaskId: string | null) => void
@@ -22,7 +22,7 @@ export function useTaskInspectorSync(params: {
 	const { currentTask, projectsStore, state, onTaskContextChange } = params
 	const syncedTaskId = ref<string | null>(null)
 
-	function syncTaskToLocal(task: TaskDto, forceEditable: boolean) {
+	function syncTaskToLocal(task: InspectorTask, forceEditable: boolean) {
 		state.withAutosaveSuppressed(() => {
 			if (forceEditable || !state.isTextInteracting('title')) {
 				state.titleLocal.value = task.title

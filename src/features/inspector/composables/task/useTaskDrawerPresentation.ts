@@ -1,7 +1,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
-import type { TaskDto } from '../../model'
+import type { InspectorTask } from '../../model'
 import {
 	formatDrawerDateTime,
 	useDrawerSaveStatePresentation,
@@ -9,7 +9,7 @@ import {
 } from '../shared'
 
 export function useTaskDrawerPresentation(params: {
-	currentTask: Ref<TaskDto | null>
+	currentTask: Ref<InspectorTask | null>
 	saveState: Ref<DrawerSaveState>
 }) {
 	const { t } = useI18n({ useScope: 'global' })

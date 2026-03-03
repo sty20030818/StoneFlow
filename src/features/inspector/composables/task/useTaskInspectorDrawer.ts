@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { TaskDto } from '../../model'
+import type { InspectorTask } from '../../model'
 import { useProjectsStore } from '@/stores/projects'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 
@@ -16,7 +16,7 @@ export function useTaskInspectorDrawer() {
 	const store = useTaskInspectorStore()
 	const projectsStore = useProjectsStore()
 
-	const currentTask = computed<TaskDto | null>(() => store.task ?? null)
+	const currentTask = computed<InspectorTask | null>(() => store.task ?? null)
 
 	const state = useTaskInspectorState()
 	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, projectsStore })

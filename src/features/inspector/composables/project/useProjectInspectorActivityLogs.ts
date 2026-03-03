@@ -3,10 +3,10 @@ import { computed, type Ref } from 'vue'
 
 import { useDrawerActivityLogs } from '../shared'
 import { listInspectorActivityLogs } from '../../queries'
-import type { ProjectDto } from '../../model'
+import type { InspectorProject } from '../../model'
 
 export function useProjectInspectorActivityLogs(params: {
-	currentProject: Ref<ProjectDto | null>
+	currentProject: Ref<InspectorProject | null>
 }) {
 	const projectId = computed(() => params.currentProject.value?.id ?? null)
 	const { t } = useI18n({ useScope: 'global' })
