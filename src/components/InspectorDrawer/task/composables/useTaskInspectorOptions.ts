@@ -4,11 +4,12 @@ import { computed, type Ref } from 'vue'
 import { SPACE_OPTIONS } from '@/config/space'
 import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS_SEGMENT_OPTIONS } from '@/config/task'
+import type { LinkDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
-import { DRAWER_LINK_KIND_VALUES, buildDrawerLinkKindOptions } from '../../shared/constants'
+import { buildDrawerLinkKindOptions } from '../../shared/constants'
 
 export type LinkKindOption = {
-	value: (typeof DRAWER_LINK_KIND_VALUES)[number]
+	value: LinkDto['kind']
 	label: string
 }
 

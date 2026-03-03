@@ -97,11 +97,11 @@
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useProjectBreadcrumb } from '@/composables/useProjectBreadcrumb'
+	import { deleteWorkspaceTasks, type TaskDto } from '@/features/workspace'
+	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
 	import WorkspaceLayout from './components/WorkspaceLayout.vue'
 	import { useProjectTasks } from './composables/useProjectTasks'
-	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
-	import { deleteTasks, type TaskDto } from '@/services/api/tasks'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
@@ -221,7 +221,7 @@
 		deleting.value = true
 		try {
 			const ids = deleteTargetIds.value ?? Array.from(selectedTaskIds.value)
-			const deletedCount = await deleteTasks(ids)
+			const deletedCount = await deleteWorkspaceTasks(ids)
 			await invalidateWorkspaceTaskAndProjectQueries()
 			await refresh()
 			toast.add({

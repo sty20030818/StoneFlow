@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
-import { listTasks, type ListTasksArgs, type TaskDto } from '@/services/api/tasks'
+import { listWorkspaceTasks, type ListWorkspaceTasksArgs } from '../queries'
+import type { TaskDto } from './types'
 
 import { workspaceQueryKeys, type WorkspaceTaskListScope } from './query-keys'
 
@@ -15,8 +16,8 @@ function normalizeScope(
 	}
 }
 
-function toTaskListArgs(scope: WorkspaceTaskListScope): ListTasksArgs {
-	const args: ListTasksArgs = {
+function toTaskListArgs(scope: WorkspaceTaskListScope): ListWorkspaceTasksArgs {
+	const args: ListWorkspaceTasksArgs = {
 		status: scope.status,
 	}
 	if (scope.spaceId) args.spaceId = scope.spaceId
@@ -41,7 +42,7 @@ export function useWorkspaceTaskBoardQuery(
 	const todoQuery = useQuery<TaskDto[]>({
 		queryKey: computed(() => workspaceQueryKeys.tasks.list(todoScope.value)),
 		queryFn: async () => {
-			return await listTasks(toTaskListArgs(todoScope.value))
+			return await listWorkspaceTasks(toTaskListArgs(todoScope.value))
 		},
 		placeholderData: keepPreviousData,
 	})
@@ -49,7 +50,7 @@ export function useWorkspaceTaskBoardQuery(
 	const doneQuery = useQuery<TaskDto[]>({
 		queryKey: computed(() => workspaceQueryKeys.tasks.list(doneScope.value)),
 		queryFn: async () => {
-			return await listTasks(toTaskListArgs(doneScope.value))
+			return await listWorkspaceTasks(toTaskListArgs(doneScope.value))
 		},
 		placeholderData: keepPreviousData,
 	})

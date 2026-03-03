@@ -46,9 +46,13 @@
 		toStaticMotionVariants,
 		useMotionPreset,
 	} from '@/composables/base/motion'
+	import {
+		rebalanceWorkspaceTaskRanks,
+		reorderWorkspaceTask,
+		type TaskDto,
+	} from '@/features/workspace'
 	import { invalidateWorkspaceTaskQueries } from '@/features/workspace/model'
 	import TaskCard from '@/components/TaskCard'
-	import { rebalanceRanks, reorderTask, type TaskDto } from '@/services/api/tasks'
 	import { calculateInsertRank } from '@/utils/rank'
 
 	const props = defineProps<{
@@ -191,13 +195,13 @@
 
 		try {
 			// 立即更新被拖拽任务的 rank
-			await reorderTask(movedTask.id, newRank)
+			await reorderWorkspaceTask(movedTask.id, newRank)
 
 			// 如果需要重排，后台异步执行
 			if (needsRebalance) {
 				const taskIds = tasks.map((t) => t.id)
 				// 不 await，让重排在后台执行
-				rebalanceRanks(taskIds).catch(console.error)
+				rebalanceWorkspaceTaskRanks(taskIds).catch(console.error)
 			}
 			await invalidateWorkspaceTaskQueries()
 		} catch (error) {
