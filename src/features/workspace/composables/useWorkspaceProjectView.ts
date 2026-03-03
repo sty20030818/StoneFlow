@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { useWorkspaceEditStore, type WorkspaceEditCommand } from '@/stores/workspace-edit'
 import { resolveErrorMessage } from '@/utils/error-message'
-import { invalidateWorkspaceTaskAndProjectQueries, type TaskDto } from '../model'
+import { invalidateWorkspaceTaskAndProjectQueries, type WorkspaceTask } from '../model'
 import { deleteWorkspaceTasks } from '../mutations'
 import { useWorkspaceProjectBreadcrumb } from './useWorkspaceProjectBreadcrumb'
 import { useWorkspaceProjectTasks } from './useWorkspaceProjectTasks'
@@ -94,7 +94,7 @@ export function useWorkspaceProjectView() {
 		})
 	}
 
-	function toggleColumnSelect(tasks: TaskDto[]) {
+	function toggleColumnSelect(tasks: WorkspaceTask[]) {
 		if (!isEditMode.value || tasks.length === 0) return
 		const allSelectedInColumn = tasks.every((task) => selectedTaskIds.value.has(task.id))
 		updateSelected((set) => {
@@ -257,7 +257,7 @@ export function useWorkspaceProjectView() {
 		workspaceEditStore.detachContext(workspaceEditContextId)
 	})
 
-	function onTaskClick(task: TaskDto) {
+	function onTaskClick(task: WorkspaceTask) {
 		if (isEditMode.value) return
 		taskInspectorStore.open(task)
 	}

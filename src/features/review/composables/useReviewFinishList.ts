@@ -8,7 +8,7 @@ import { useProjectsStore } from '@/stores/projects'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { formatDate as formatDateByLocale, formatTimeOfDay } from '@/utils/time'
 
-import type { TaskDto } from '../model'
+import type { WorkspaceTask } from '../model'
 import { listReviewDoneTasks } from '../queries'
 
 type ProjectGroup = {
@@ -17,7 +17,7 @@ type ProjectGroup = {
 	projectName: string
 	spaceId: string
 	spaceLabel: string
-	tasks: TaskDto[]
+	tasks: WorkspaceTask[]
 	medianLead: string
 }
 
@@ -26,7 +26,7 @@ export function useReviewFinishList() {
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
 
-	const { state: tasks, isLoading: loading } = useAsyncState(() => listReviewDoneTasks(), [] as TaskDto[], {
+	const { state: tasks, isLoading: loading } = useAsyncState(() => listReviewDoneTasks(), [] as WorkspaceTask[], {
 		immediate: true,
 		resetOnExecute: false,
 		onError: (error) => {
@@ -45,7 +45,7 @@ export function useReviewFinishList() {
 	const debouncedTagKeyword = refDebounced(tagKeyword, 180)
 
 	const reflectionOpen = ref(false)
-	const reflectionTask = ref<TaskDto | null>(null)
+	const reflectionTask = ref<WorkspaceTask | null>(null)
 	const reflectionText = ref('')
 
 	const spaceOptions = computed(() => [
@@ -138,7 +138,7 @@ export function useReviewFinishList() {
 	})
 
 	const projectGroups = computed<ProjectGroup[]>(() => {
-		const byProject = new Map<string, TaskDto[]>()
+		const byProject = new Map<string, WorkspaceTask[]>()
 
 		for (const task of filteredTasks.value) {
 			const key = `${task.spaceId}::${task.projectId ?? 'default'}`
@@ -205,7 +205,7 @@ export function useReviewFinishList() {
 		{ immediate: true },
 	)
 
-	function onOpenReflection(task: TaskDto) {
+	function onOpenReflection(task: WorkspaceTask) {
 		reflectionTask.value = task
 		reflectionText.value = ''
 		reflectionOpen.value = true

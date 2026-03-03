@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import type { DrawerEditInteractionHandlers } from '../types'
+import type { DrawerEditInteractionHandlers } from '../../ui/InspectorDrawer/shared/types'
 
 export function useDrawerEditableListController(params: {
 	interaction: DrawerEditInteractionHandlers

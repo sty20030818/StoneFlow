@@ -4,13 +4,12 @@ import {
 	restoreProject,
 	unarchiveProject,
 	updateProject,
-	type UpdateProjectPatch,
 } from '@/services/api/projects'
 
-export type InspectorProjectPatch = UpdateProjectPatch
+import { mapInspectorProjectPatchToDto, type InspectorProjectPatch } from '../model'
 
 export async function updateInspectorProject(projectId: string, patch: InspectorProjectPatch): Promise<void> {
-	await updateProject(projectId, patch)
+	await updateProject(projectId, mapInspectorProjectPatchToDto(patch))
 }
 
 export async function deleteInspectorProject(projectId: string): Promise<void> {

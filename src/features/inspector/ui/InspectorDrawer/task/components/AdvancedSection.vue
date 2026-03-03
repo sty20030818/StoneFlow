@@ -126,7 +126,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useDrawerEditableListController } from '../../shared/composables'
+	import { useDrawerEditableListController } from '../../../../composables/shared/useDrawerEditableListController'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
 	import type { TaskCustomFieldFormItem } from '../../../../composables/task/taskFieldNormalization'

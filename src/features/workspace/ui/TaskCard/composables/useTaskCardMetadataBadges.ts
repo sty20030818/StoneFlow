@@ -1,5 +1,5 @@
 import { useI18n } from 'vue-i18n'
-import type { TaskDto } from '@/features/workspace/model'
+import type { WorkspaceTask } from '@/features/workspace/model'
 import { computed } from 'vue'
 
 export type TaskCardMetaItem = {
@@ -17,7 +17,7 @@ export type TaskCardMetaBadge = {
 	items: TaskCardMetaItem[]
 }
 
-type TaskCardMetadataSource = Pick<TaskDto, 'links' | 'customFields'>
+type TaskCardMetadataSource = Pick<WorkspaceTask, 'links' | 'customFields'>
 
 function normalizeText(value: string | null | undefined, fallback: string) {
 	const normalized = value?.trim()

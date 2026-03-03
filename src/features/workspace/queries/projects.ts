@@ -1,5 +1,8 @@
-import { listProjects, type ProjectDto } from '@/services/api/projects'
+import { listProjects } from '@/services/api/projects'
 
-export async function listWorkspaceProjects(spaceId: string): Promise<ProjectDto[]> {
-	return await listProjects({ spaceId })
+import { mapWorkspaceProjectsDtoToDomain, type WorkspaceProject } from '../model'
+
+export async function listWorkspaceProjects(spaceId: string): Promise<WorkspaceProject[]> {
+	const projects = await listProjects({ spaceId })
+	return mapWorkspaceProjectsDtoToDomain(projects)
 }

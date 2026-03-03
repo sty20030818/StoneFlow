@@ -7,7 +7,7 @@ import { TASK_DONE_REASON_COLORS, TASK_STATUS_CHART_COLORS } from '@/config/task
 import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 import { resolveErrorMessage } from '@/utils/error-message'
 
-import type { TaskDto } from '../model'
+import type { WorkspaceTask } from '../model'
 import { listReviewTasksByStatus } from '../queries'
 
 type ReviewStatusSlice = {
@@ -28,7 +28,7 @@ export function useReviewStats() {
 			const [todo, done] = await Promise.all([listReviewTasksByStatus('todo'), listReviewTasksByStatus('done')])
 			return [...todo, ...done]
 		},
-		[] as TaskDto[],
+		[] as WorkspaceTask[],
 		{
 			immediate: true,
 			resetOnExecute: false,
@@ -95,7 +95,7 @@ export function useReviewStats() {
 	const statusTotal = computed(() => tasks.value.length)
 
 	const statusSlices = computed<ReviewStatusSlice[]>(() => {
-		const buckets: { key: string; label: string; color: string; match: (task: TaskDto) => boolean }[] = [
+		const buckets: { key: string; label: string; color: string; match: (task: WorkspaceTask) => boolean }[] = [
 			{
 				key: 'done',
 				label: t('task.doneReason.completed'),

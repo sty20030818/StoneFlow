@@ -47,12 +47,12 @@
 		useMotionPreset,
 	} from '@/composables/base/motion'
 	import { calculateInsertRank } from '@/utils/rank'
-	import { invalidateWorkspaceTaskQueries, type TaskDto } from '../model'
+	import { invalidateWorkspaceTaskQueries, type WorkspaceTask } from '../model'
 	import { rebalanceWorkspaceTaskRanks, reorderWorkspaceTask } from '../mutations'
 	import TaskCard from './TaskCard'
 
 	const props = defineProps<{
-		tasks: TaskDto[]
+		tasks: WorkspaceTask[]
 		priority: string
 		disabled?: boolean
 		isEditMode?: boolean
@@ -65,11 +65,11 @@
 
 	const emit = defineEmits<{
 		complete: [taskId: string]
-		'task-click': [task: TaskDto]
+		'task-click': [task: WorkspaceTask]
 		'toggle-task-select': [taskId: string]
 		'request-task-delete': [taskId: string]
 		/** 拖拽结束后触发，传递更新后的任务列表用于同步状态 */
-		reorder: [tasks: TaskDto[]]
+		reorder: [tasks: WorkspaceTask[]]
 	}>()
 	const listItemMotion = useMotionPreset('listItem')
 	const listItemStaticMotion = computed(() => toStaticMotionVariants(listItemMotion.value))
@@ -80,7 +80,7 @@
 	const listStaggerBaseDelay = computed(() => props.motionBaseDelay ?? getProjectMotionPhaseDelay('listTodoBase'))
 
 	// 本地任务列表副本，用于拖拽
-	const localTasks = ref<TaskDto[]>([])
+	const localTasks = ref<WorkspaceTask[]>([])
 	const listItemMotionById = ref<Record<string, MotionVariants<string>>>({})
 	const taskSyncKey = computed(() => props.tasks.map((task) => `${task.id}:${task.updatedAt}:${task.rank}`).join('|'))
 

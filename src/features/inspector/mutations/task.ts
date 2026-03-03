@@ -1,7 +1,7 @@
-import { updateTask, type UpdateTaskPatch } from '@/services/api/tasks'
+import { updateTask } from '@/services/api/tasks'
 
-export type InspectorTaskPatch = UpdateTaskPatch
+import { mapInspectorTaskPatchToDto, type InspectorTaskPatch } from '../model'
 
 export async function updateInspectorTask(taskId: string, patch: InspectorTaskPatch): Promise<void> {
-	await updateTask(taskId, patch)
+	await updateTask(taskId, mapInspectorTaskPatchToDto(patch))
 }

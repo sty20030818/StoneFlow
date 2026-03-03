@@ -1,23 +1,23 @@
 import { createGlobalState, useStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import type { TaskDto } from '../model'
+import type { WorkspaceTask } from '../model'
 
 type SpaceTaskSnapshot = {
-	todo: TaskDto[]
-	doneToday: TaskDto[]
+	todo: WorkspaceTask[]
+	doneToday: WorkspaceTask[]
 }
 
 type ProjectTaskSnapshot = {
-	todo: TaskDto[]
-	doneAll: TaskDto[]
+	todo: WorkspaceTask[]
+	doneAll: WorkspaceTask[]
 }
 
 const SNAPSHOT_TTL_MS = 3 * 24 * 60 * 60 * 1000
 const MAX_SCOPE_COUNT = 24
 const MAX_TASKS_PER_SCOPE = 120
 
-function trimTasks(tasks: TaskDto[]): TaskDto[] {
+function trimTasks(tasks: WorkspaceTask[]): WorkspaceTask[] {
 	return tasks.slice(0, MAX_TASKS_PER_SCOPE).map((task) => ({
 		...task,
 		note: null,
@@ -26,7 +26,7 @@ function trimTasks(tasks: TaskDto[]): TaskDto[] {
 	}))
 }
 
-function getSnapshotUpdatedAt(tasks: TaskDto[]): number {
+function getSnapshotUpdatedAt(tasks: WorkspaceTask[]): number {
 	return tasks.reduce((latest, task) => Math.max(latest, task.updatedAt || task.createdAt || 0), 0)
 }
 

@@ -13,13 +13,13 @@
 </template>
 
 <script setup lang="ts">
-	import type { TaskDto } from '@/features/workspace/model'
+	import type { WorkspaceTask } from '@/features/workspace/model'
 
 	import TaskCardMetaBadgePopover from './TaskCardMetaBadgePopover.vue'
 	import { useTaskCardMetadataBadges } from '../composables/useTaskCardMetadataBadges'
 
 	type Props = {
-		task: Pick<TaskDto, 'links' | 'customFields'>
+		task: Pick<WorkspaceTask, 'links' | 'customFields'>
 	}
 
 	const props = defineProps<Props>()

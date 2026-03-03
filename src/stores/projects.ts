@@ -6,12 +6,12 @@ import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import { stoneFlowQueryClient } from '@/features/shared'
 import { listWorkspaceProjects } from '@/features/workspace'
 import { workspaceQueryKeys } from '@/features/workspace/model/query-keys'
-import type { ProjectDto } from '@/features/workspace/model'
+import type { WorkspaceProject } from '@/features/workspace/model'
 
 export const useProjectsStore = defineStore('projects', () => {
-	const snapshotBySpace = useStorage<Record<string, ProjectDto[]>>('projects_snapshot_v1', {})
+	const snapshotBySpace = useStorage<Record<string, WorkspaceProject[]>>('projects_snapshot_v1', {})
 
-	function normalizeProject(project: ProjectDto): ProjectDto {
+	function normalizeProject(project: WorkspaceProject): WorkspaceProject {
 		if (!isDefaultProjectId(project.id)) return project
 		const defaultProjectLabel = getDefaultProjectLabel()
 		return {
@@ -21,8 +21,11 @@ export const useProjectsStore = defineStore('projects', () => {
 		}
 	}
 
-	const normalizedSnapshotBySpace = Object.fromEntries(
-		Object.entries(snapshotBySpace.value).map(([spaceId, list]) => [spaceId, list.map(normalizeProject)]),
+	const normalizedSnapshotBySpace: Record<string, WorkspaceProject[]> = Object.fromEntries(
+		Object.entries(snapshotBySpace.value).map(([spaceId, list]: [string, WorkspaceProject[]]) => [
+			spaceId,
+			list.map(normalizeProject),
+		]),
 	)
 	snapshotBySpace.value = normalizedSnapshotBySpace
 	for (const [spaceId, list] of Object.entries(normalizedSnapshotBySpace)) {
@@ -31,13 +34,13 @@ export const useProjectsStore = defineStore('projects', () => {
 	const initialProjects = Object.values(normalizedSnapshotBySpace).flat()
 	const loadedSpaceIds = ref<Set<string>>(new Set())
 	const loadingSpaceIds = ref<Set<string>>(new Set())
-	const projects = ref<ProjectDto[]>(initialProjects)
+	const projects = ref<WorkspaceProject[]>(initialProjects)
 	const loadingBySpace = new Map<string, Promise<void>>()
 	const loadingCounters = new Map<string, number>()
 
 	function syncSpaceProjects(
 		spaceId: string,
-		nextList: ProjectDto[],
+		nextList: WorkspaceProject[],
 		options: { markLoaded?: boolean; syncQueryCache?: boolean } = {},
 	) {
 		const normalizedList = nextList.map(normalizeProject)
@@ -123,7 +126,7 @@ export const useProjectsStore = defineStore('projects', () => {
 	}
 
 	const bySpace = computed(() => {
-		const map = new Map<string, ProjectDto[]>()
+		const map = new Map<string, WorkspaceProject[]>()
 		for (const p of projects.value) {
 			const arr = map.get(p.spaceId) ?? []
 			arr.push(p)
@@ -132,7 +135,7 @@ export const useProjectsStore = defineStore('projects', () => {
 		return map
 	})
 
-	function getProjectsOfSpace(spaceId: string): ProjectDto[] {
+	function getProjectsOfSpace(spaceId: string): WorkspaceProject[] {
 		return bySpace.value.get(spaceId) ?? []
 	}
 
@@ -144,8 +147,8 @@ export const useProjectsStore = defineStore('projects', () => {
 		return loadingSpaceIds.value.has(spaceId)
 	}
 
-	function patchProject(spaceId: string, projectId: string, patch: Partial<ProjectDto>) {
-		let nextProject: ProjectDto | null = null
+	function patchProject(spaceId: string, projectId: string, patch: Partial<WorkspaceProject>) {
+		let nextProject: WorkspaceProject | null = null
 		projects.value = projects.value.map((project) => {
 			if (project.spaceId !== spaceId || project.id !== projectId) return project
 			nextProject = normalizeProject({
@@ -159,7 +162,7 @@ export const useProjectsStore = defineStore('projects', () => {
 		const currentSpaceSnapshot = snapshotBySpace.value[spaceId] ?? []
 		const nextSpaceSnapshot = currentSpaceSnapshot.map((project) => {
 			if (project.id !== projectId) return project
-			return nextProject as ProjectDto
+			return nextProject as WorkspaceProject
 		})
 		snapshotBySpace.value = {
 			...snapshotBySpace.value,
@@ -168,7 +171,7 @@ export const useProjectsStore = defineStore('projects', () => {
 		stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), nextSpaceSnapshot)
 	}
 
-	function getProjectById(spaceId: string, projectId: string): ProjectDto | null {
+	function getProjectById(spaceId: string, projectId: string): WorkspaceProject | null {
 		return getProjectsOfSpace(spaceId).find((project) => project.id === projectId) ?? null
 	}
 
@@ -178,7 +181,7 @@ export const useProjectsStore = defineStore('projects', () => {
 		const data = query.state.data
 		if (!Array.isArray(data)) return
 		const scope = query.queryKey[3]
-		syncSpaceProjects(scope.spaceId, data as ProjectDto[], { syncQueryCache: false })
+		syncSpaceProjects(scope.spaceId, data as WorkspaceProject[], { syncQueryCache: false })
 	})
 
 	return {

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { DrawerLinkKindOption, DrawerTimelineLogEntry } from '../types'
+import type { DrawerLinkKindOption, DrawerTimelineLogEntry } from '../../ui/InspectorDrawer/shared/types'
 import { i18n } from '@/i18n'
 import { formatDateTime } from '@/utils/time'
 
