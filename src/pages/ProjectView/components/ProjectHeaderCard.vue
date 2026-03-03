@@ -101,7 +101,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
-	import type { ProjectDto } from '@/features/workspace/model'
+	import type { ProjectDto } from '@/features/workspace'
 	import {
 		PROJECT_PRIORITY_DISPLAY,
 		PROJECT_STATUS_DISPLAY,

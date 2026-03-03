@@ -88,294 +88,41 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { watchDebounced, watchThrottled } from '@vueuse/core'
-	import { computed, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-	import { onBeforeRouteLeave, useRoute } from 'vue-router'
-
-	import TaskColumn from '@/components/TaskColumn.vue'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
-	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { createModalLayerUi } from '@/config/ui-layer'
-	import { useProjectBreadcrumb } from '@/composables/useProjectBreadcrumb'
-	import { deleteWorkspaceTasks, type TaskDto } from '@/features/workspace'
-	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+	import { TaskColumn, useWorkspaceProjectView } from '@/features/workspace'
 	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
 	import WorkspaceLayout from './components/WorkspaceLayout.vue'
-	import { useProjectTasks } from './composables/useProjectTasks'
-	import { useTaskInspectorStore } from '@/stores/taskInspector'
-	import { useProjectInspectorStore } from '@/stores/projectInspector'
-	import { useProjectsStore } from '@/stores/projects'
-	import { useSettingsStore } from '@/stores/settings'
-	import { useWorkspaceEditStore, type WorkspaceEditCommand } from '@/stores/workspace-edit'
-	import { resolveErrorMessage } from '@/utils/error-message'
 
-	const route = useRoute()
 	const { t } = useI18n({ useScope: 'global' })
-	const routeProjectId = useNullableStringRouteQuery('project')
-	const projectsStore = useProjectsStore()
-	const settingsStore = useSettingsStore()
-	const workspaceEditStore = useWorkspaceEditStore()
-	const projectInspectorStore = useProjectInspectorStore()
-	const openCreateTaskModal = inject<(spaceId?: string) => void>('openCreateTaskModal')
-	const toast = useToast()
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
 	})
 	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'headerBreadcrumb')
 	const workspaceColumnsMotion = useProjectMotionPreset('drawerSection', 'headerActions')
-	const workspaceEditContextId = createWorkspaceEditContextId()
-
-	function createWorkspaceEditContextId() {
-		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-			return crypto.randomUUID()
-		}
-		return `workspace-edit-${Date.now()}-${Math.random().toString(16).slice(2)}`
-	}
-
-	// 从路由参数获取 spaceId 和 projectId
-	// All Tasks 模式：spaceId=undefined, projectId=undefined
-	// Project 模式：spaceId 有值, projectId 有值
-	const spaceId = computed(() => {
-		const sid = route.params.spaceId
-		return typeof sid === 'string' ? sid : undefined
-	})
-
-	const projectId = computed(() => {
-		return routeProjectId.value
-	})
-
-	const taskSpaceId = computed(() => {
-		if (route.path === '/all-tasks') {
-			return settingsStore.settings.activeSpaceId
-		}
-		return spaceId.value
-	})
-	const collapseResetKey = computed(() => `${route.path}|${spaceId.value ?? 'all'}|${projectId.value ?? 'none'}`)
-
-	// 统一使用 useProjectTasks composable
-	const { loading, todo, doneAll, refresh, onComplete } = useProjectTasks(taskSpaceId, projectId)
-
-	const isEditMode = ref(false)
-	const confirmDeleteOpen = ref(false)
-	const deleting = ref(false)
-	const selectedTaskIds = ref<Set<string>>(new Set())
-	const deleteTargetIds = ref<string[] | null>(null)
-	const columnStickyOffset = computed(() => (isEditMode.value ? 48 : 0))
-
-	const selectedCount = computed(() => selectedTaskIds.value.size)
-	const deleteCount = computed(() => deleteTargetIds.value?.length ?? selectedCount.value)
-
-	function updateSelected(mutator: (next: Set<string>) => void) {
-		const next = new Set(selectedTaskIds.value)
-		mutator(next)
-		selectedTaskIds.value = next
-	}
-
-	function enterEditMode() {
-		isEditMode.value = true
-	}
-
-	function exitEditMode() {
-		isEditMode.value = false
-		confirmDeleteOpen.value = false
-		deleteTargetIds.value = null
-		selectedTaskIds.value = new Set()
-	}
-
-	function toggleTaskSelect(taskId: string) {
-		if (!isEditMode.value) return
-		updateSelected((set) => {
-			if (set.has(taskId)) {
-				set.delete(taskId)
-				return
-			}
-			set.add(taskId)
-		})
-	}
-
-	function toggleColumnSelect(tasks: TaskDto[]) {
-		if (!isEditMode.value || tasks.length === 0) return
-		const allSelectedInColumn = tasks.every((task) => selectedTaskIds.value.has(task.id))
-		updateSelected((set) => {
-			if (allSelectedInColumn) {
-				tasks.forEach((task) => set.delete(task.id))
-				return
-			}
-			tasks.forEach((task) => set.add(task.id))
-		})
-	}
-
-	function openDeleteConfirm() {
-		if (!isEditMode.value || selectedCount.value === 0) return
-		deleteTargetIds.value = Array.from(selectedTaskIds.value)
-		confirmDeleteOpen.value = true
-	}
-
-	function closeDeleteConfirm() {
-		confirmDeleteOpen.value = false
-		deleteTargetIds.value = null
-	}
-
-	async function confirmDelete() {
-		if (deleteCount.value === 0 || deleting.value) return
-		deleting.value = true
-		try {
-			const ids = deleteTargetIds.value ?? Array.from(selectedTaskIds.value)
-			const deletedCount = await deleteWorkspaceTasks(ids)
-			await invalidateWorkspaceTaskAndProjectQueries()
-			await refresh()
-			toast.add({
-				title: t('projectView.toast.deletedTitle'),
-				description: t('projectView.toast.deletedDescription', { count: deletedCount }),
-				color: 'success',
-			})
-			exitEditMode()
-		} catch (e) {
-			toast.add({
-				title: t('projectView.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		} finally {
-			deleting.value = false
-		}
-	}
-
-	function requestDeleteTask(taskId: string) {
-		deleteTargetIds.value = [taskId]
-		confirmDeleteOpen.value = true
-	}
-
-	function onCreateTaskRequest() {
-		openCreateTaskModal?.(taskSpaceId.value)
-	}
-
-	// 当前项目数据（仅在 project 模式下有值）
-	const currentProject = computed(() => {
-		const pid = projectId.value
-		if (!pid || !spaceId.value) return null
-		const list = projectsStore.getProjectsOfSpace(spaceId.value)
-		return list.find((p) => p.id === pid) ?? null
-	})
-
-	// 是否显示 Space 标签（All Tasks 模式显示）
-	const showSpaceLabel = computed(() => !spaceId.value)
-
-	// 监听路由变化，加载项目列表
-	watchDebounced(
-		() => [route.params.spaceId, routeProjectId.value],
-		() => {
-			exitEditMode()
-			if (spaceId.value) {
-				void projectsStore.load(spaceId.value)
-			}
-		},
-		{
-			immediate: true,
-			debounce: 80,
-			maxWait: 240,
-		},
-	)
-
-	function pruneSelection() {
-		if (selectedTaskIds.value.size === 0) return
-		const existingIds = new Set([...todo.value, ...doneAll.value].map((task) => task.id))
-		updateSelected((set) => {
-			Array.from(set).forEach((id) => {
-				if (!existingIds.has(id)) set.delete(id)
-			})
-		})
-	}
-
-	watchThrottled(
-		[todo, doneAll],
-		() => {
-			pruneSelection()
-		},
-		{ throttle: 120, trailing: true },
-	)
-
-	watch(confirmDeleteOpen, (open) => {
-		if (!open) {
-			deleteTargetIds.value = null
-		}
-	})
-
-	watchThrottled(
-		[isEditMode, selectedCount],
-		() => {
-			workspaceEditStore.syncState(workspaceEditContextId, {
-				isEditMode: isEditMode.value,
-				selectedCount: selectedCount.value,
-			})
-		},
-		{ throttle: 120, trailing: true },
-	)
-
-	// 使用 composable 生成 breadcrumb
-	const projectsList = computed(() => {
-		if (!spaceId.value) return []
-		return projectsStore.getProjectsOfSpace(spaceId.value)
-	})
-
-	const breadcrumbItems = useProjectBreadcrumb(spaceId, projectId, projectsList)
-
-	const inspectorStore = useTaskInspectorStore()
-
-	provide('workspaceBreadcrumbItems', breadcrumbItems)
-
-	function applyWorkspaceEditCommand(command: WorkspaceEditCommand) {
-		switch (command.type) {
-			case 'enter-edit-mode':
-				enterEditMode()
-				return
-			case 'exit-edit-mode':
-				exitEditMode()
-				return
-			case 'open-delete-confirm':
-				openDeleteConfirm()
-				return
-			default: {
-				const unreachable: never = command.type
-				void unreachable
-			}
-		}
-	}
-
-	watch(
-		() => workspaceEditStore.pendingCommand,
-		(command) => {
-			if (!command) return
-			if (command.contextId !== workspaceEditContextId) return
-			applyWorkspaceEditCommand(command)
-			workspaceEditStore.acknowledgeCommand(workspaceEditContextId, command.id)
-		},
-		{ flush: 'sync' },
-	)
-
-	onMounted(() => {
-		workspaceEditStore.attachContext(workspaceEditContextId)
-		workspaceEditStore.syncState(workspaceEditContextId, {
-			isEditMode: isEditMode.value,
-			selectedCount: selectedCount.value,
-		})
-	})
-
-	onBeforeRouteLeave(() => {
-		workspaceEditStore.detachContext(workspaceEditContextId)
-	})
-
-	onUnmounted(() => {
-		workspaceEditStore.detachContext(workspaceEditContextId)
-	})
-
-	function onTaskClick(task: TaskDto) {
-		if (isEditMode.value) return
-		inspectorStore.open(task)
-	}
-
-	function openProjectSettings() {
-		if (!currentProject.value) return
-		projectInspectorStore.open(currentProject.value)
-	}
+	const {
+		columnStickyOffset,
+		collapseResetKey,
+		confirmDelete,
+		confirmDeleteOpen,
+		closeDeleteConfirm,
+		currentProject,
+		deleteCount,
+		doneAll,
+		deleting,
+		isEditMode,
+		loading,
+		onComplete,
+		onCreateTaskRequest,
+		onTaskClick,
+		openProjectSettings,
+		projectId,
+		requestDeleteTask,
+		selectedTaskIds,
+		showSpaceLabel,
+		taskSpaceId,
+		todo,
+		toggleColumnSelect,
+		toggleTaskSelect,
+	} = useWorkspaceProjectView()
 </script>

@@ -46,14 +46,10 @@
 		toStaticMotionVariants,
 		useMotionPreset,
 	} from '@/composables/base/motion'
-	import {
-		rebalanceWorkspaceTaskRanks,
-		reorderWorkspaceTask,
-		type TaskDto,
-	} from '@/features/workspace'
-	import { invalidateWorkspaceTaskQueries } from '@/features/workspace/model'
-	import TaskCard from '@/components/TaskCard'
 	import { calculateInsertRank } from '@/utils/rank'
+	import { invalidateWorkspaceTaskQueries, type TaskDto } from '../model'
+	import { rebalanceWorkspaceTaskRanks, reorderWorkspaceTask } from '../mutations'
+	import TaskCard from './TaskCard'
 
 	const props = defineProps<{
 		tasks: TaskDto[]

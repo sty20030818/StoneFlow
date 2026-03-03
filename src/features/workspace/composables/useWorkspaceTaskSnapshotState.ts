@@ -1,7 +1,7 @@
 import { createGlobalState, useStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import type { TaskDto } from '@/features/workspace/model'
+import type { TaskDto } from '../model'
 
 type SpaceTaskSnapshot = {
 	todo: TaskDto[]
@@ -72,7 +72,7 @@ function compactProjectSnapshots(source: Record<string, ProjectTaskSnapshot>): R
 	return Object.fromEntries(entries.map((entry) => [entry.scopeKey, entry.snapshot]))
 }
 
-export const useTaskSnapshotState = createGlobalState(() => {
+export const useWorkspaceTaskSnapshotState = createGlobalState(() => {
 	const spaceSnapshots = useStorage<Record<string, SpaceTaskSnapshot>>('space_tasks_snapshot_v1', {})
 	const projectSnapshots = useStorage<Record<string, ProjectTaskSnapshot>>('project_tasks_snapshot_v1', {})
 	spaceSnapshots.value = compactSpaceSnapshots(spaceSnapshots.value)
