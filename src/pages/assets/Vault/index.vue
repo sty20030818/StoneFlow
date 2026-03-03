@@ -243,9 +243,7 @@
 </template>
 
 <script setup lang="ts">
-	import { useI18n } from 'vue-i18n'
-	import { refDebounced, useAsyncState, useClipboard, useTimeoutFn } from '@vueuse/core'
-	import { computed, ref } from 'vue'
+	import { computed } from 'vue'
 
 	import {
 		DEFAULT_STAGGER_MOTION_LIMIT,
@@ -255,16 +253,10 @@
 		useMotionPreset,
 		useMotionPresetWithDelay,
 	} from '@/composables/base/motion'
-	import { validateWithZod } from '@/composables/base/zod'
 	import { createModalLayerUi } from '@/config/ui-layer'
-	import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
+	import { useAssetsVaultPage } from '@/features/assets-vault'
 	import { assetModalInputUi, assetModalSelectMenuUi, assetModalTextareaUi } from '../shared/modal-form-ui'
-	import type { VaultEntryDto, VaultEntryType } from '@/services/api/vault'
-	import { createVaultEntry, deleteVaultEntry, listVaultEntries, updateVaultEntry } from '@/services/api/vault'
-	import { resolveErrorMessage } from '@/utils/error-message'
 
-	const toast = useToast()
-	const { t } = useI18n({ useScope: 'global' })
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
@@ -272,87 +264,30 @@
 	const entryItemPreset = useMotionPreset('listItem')
 	const modalBodyMotion = useMotionPreset('modalSection')
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const {
+		t,
+		loading,
+		selectedEntry,
+		editOpen,
+		selectedFolder,
+		searchKeyword,
+		showValue,
+		editForm,
+		typeOptions,
+		folders,
+		filteredEntries,
+		typeLabel,
+		openEditor,
+		onCreateNew,
+		closeEditor,
+		onCopy,
+		onSave,
+		onDelete,
+	} = useAssetsVaultPage()
+
 	const vaultModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
 		rounded: 'rounded-2xl',
-	})
-
-	const selectedEntry = ref<VaultEntryDto | null>(null)
-	const editOpen = ref(false)
-	const selectedFolder = ref<string | null>(null)
-	const searchKeyword = ref('')
-	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
-	const {
-		state: entries,
-		isLoading: loading,
-		execute: executeRefresh,
-	} = useAsyncState(() => listVaultEntries(), [] as VaultEntryDto[], {
-		immediate: true,
-		resetOnExecute: false,
-		onError: (e) => {
-			toast.add({
-				title: t('assets.vault.toast.loadFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		},
-	})
-
-	const showValue = ref(false)
-	const { copy } = useClipboard()
-	const { start: hideValueLater, stop: stopHideValueTimer } = useTimeoutFn(
-		() => {
-			showValue.value = false
-		},
-		2000,
-		{ immediate: false },
-	)
-
-	const editForm = ref({
-		name: '',
-		type: 'api_key' as VaultEntryType,
-		value: '',
-		folder: '',
-		note: '',
-	})
-
-	const typeOptions = computed(() => [
-		{ label: t('assets.vault.types.apiKey'), value: 'api_key' },
-		{ label: t('assets.vault.types.token'), value: 'token' },
-		{ label: t('assets.vault.types.password'), value: 'password' },
-		{ label: t('assets.vault.types.config'), value: 'config' },
-	])
-
-	function typeLabel(type: VaultEntryType): string {
-		const found = typeOptions.value.find((option) => option.value === type)
-		return found?.label ?? type
-	}
-
-	const folders = computed(() => {
-		const set = new Set<string>()
-		for (const entry of entries.value) {
-			if (entry.folder) set.add(entry.folder)
-		}
-		return Array.from(set).sort()
-	})
-
-	const filteredEntries = computed(() => {
-		let result = entries.value
-
-		if (selectedFolder.value !== null) {
-			result = result.filter((entry) => entry.folder === selectedFolder.value)
-		}
-
-		if (debouncedSearchKeyword.value.trim()) {
-			const keyword = debouncedSearchKeyword.value.trim().toLowerCase()
-			result = result.filter((entry) => {
-				if (entry.name.toLowerCase().includes(keyword)) return true
-				if (entry.folder && entry.folder.toLowerCase().includes(keyword)) return true
-				return false
-			})
-		}
-
-		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
 	const entryItemMotions = computed(() =>
@@ -360,112 +295,4 @@
 			limit: DEFAULT_STAGGER_MOTION_LIMIT,
 		}),
 	)
-
-	function openEditor(entry: VaultEntryDto) {
-		selectedEntry.value = entry
-		editForm.value = {
-			name: entry.name,
-			type: entry.type,
-			value: entry.value,
-			folder: entry.folder ?? '',
-			note: entry.note ?? '',
-		}
-		showValue.value = false
-		editOpen.value = true
-	}
-
-	function onCreateNew() {
-		openEditor({
-			id: '',
-			name: '',
-			type: 'api_key',
-			value: '',
-			folder: null,
-			note: null,
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
-		})
-	}
-
-	function closeEditor() {
-		editOpen.value = false
-		selectedEntry.value = null
-		showValue.value = false
-		stopHideValueTimer()
-	}
-
-	async function onCopy() {
-		if (!editForm.value.value) {
-			toast.add({ title: t('assets.vault.toast.noCopyValueTitle'), color: 'neutral' })
-			return
-		}
-		try {
-			await copy(editForm.value.value)
-			toast.add({ title: t('assets.vault.toast.copiedTitle'), color: 'success' })
-			stopHideValueTimer()
-			hideValueLater()
-		} catch (e) {
-			toast.add({
-				title: t('assets.vault.toast.copyFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	async function onSave() {
-		if (!selectedEntry.value) return
-		const validation = validateWithZod(vaultSubmitSchema, {
-			name: editForm.value.name,
-			value: editForm.value.value,
-		})
-		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
-			return
-		}
-
-		try {
-			const payload = {
-				...editForm.value,
-				folder: editForm.value.folder.trim() || null,
-				note: editForm.value.note.trim() || null,
-			}
-			if (selectedEntry.value.id) {
-				await updateVaultEntry(selectedEntry.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
-			} else {
-				await createVaultEntry(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
-			}
-			await refresh()
-			closeEditor()
-		} catch (e) {
-			toast.add({
-				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	async function onDelete(id: string) {
-		try {
-			await deleteVaultEntry(id)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
-			if (selectedEntry.value?.id === id) {
-				closeEditor()
-			}
-			await refresh()
-		} catch (e) {
-			toast.add({
-				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	async function refresh() {
-		await executeRefresh(0)
-	}
 </script>
