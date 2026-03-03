@@ -17,8 +17,9 @@
 	},
 	"dependencies": {
 		"@iconify-json/lucide": "^1.2.95",
-		"@nuxt/ui": "^4.5.0",
+		"@nuxt/ui": "^4.5.1",
 		"@tailwindcss/vite": "^4.2.1",
+		"@tanstack/vue-query": "^5.92.9",
 		"@tauri-apps/api": "^2.10.1",
 		"@tauri-apps/plugin-opener": "^2.5.3",
 		"@tauri-apps/plugin-process": "^2.3.1",
