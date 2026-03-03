@@ -100,11 +100,11 @@
 	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
 	import WorkspaceLayout from './components/WorkspaceLayout.vue'
 	import { useProjectTasks } from './composables/useProjectTasks'
+	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 	import { deleteTasks, type TaskDto } from '@/services/api/tasks'
 	import { useTaskInspectorStore } from '@/stores/taskInspector'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
-	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useSettingsStore } from '@/stores/settings'
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 	import { resolveErrorMessage } from '@/utils/error-message'
@@ -114,7 +114,6 @@
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const projectsStore = useProjectsStore()
 	const settingsStore = useSettingsStore()
-	const refreshSignals = useRefreshSignalsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
 	const projectInspectorStore = useProjectInspectorStore()
 	const openCreateTaskModal = inject<(spaceId?: string) => void>('openCreateTaskModal')
@@ -215,8 +214,8 @@
 		try {
 			const ids = deleteTargetIds.value ?? Array.from(selectedTaskIds.value)
 			const deletedCount = await deleteTasks(ids)
-			refreshSignals.bumpTask()
-			await refresh(true)
+			await invalidateWorkspaceTaskAndProjectQueries()
+			await refresh()
 			toast.add({
 				title: t('projectView.toast.deletedTitle'),
 				description: t('projectView.toast.deletedDescription', { count: deletedCount }),

@@ -3,6 +3,8 @@ import { useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
+import { stoneFlowQueryClient } from '@/features/shared'
+import { workspaceQueryKeys } from '@/features/workspace/model/query-keys'
 import type { ProjectDto } from '@/services/api/projects'
 import { listProjects } from '@/services/api/projects'
 
@@ -23,12 +25,35 @@ export const useProjectsStore = defineStore('projects', () => {
 		Object.entries(snapshotBySpace.value).map(([spaceId, list]) => [spaceId, list.map(normalizeProject)]),
 	)
 	snapshotBySpace.value = normalizedSnapshotBySpace
+	for (const [spaceId, list] of Object.entries(normalizedSnapshotBySpace)) {
+		stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), list)
+	}
 	const initialProjects = Object.values(normalizedSnapshotBySpace).flat()
 	const loadedSpaceIds = ref<Set<string>>(new Set())
 	const loadingSpaceIds = ref<Set<string>>(new Set())
 	const projects = ref<ProjectDto[]>(initialProjects)
 	const loadingBySpace = new Map<string, Promise<void>>()
 	const loadingCounters = new Map<string, number>()
+
+	function syncSpaceProjects(
+		spaceId: string,
+		nextList: ProjectDto[],
+		options: { markLoaded?: boolean; syncQueryCache?: boolean } = {},
+	) {
+		const normalizedList = nextList.map(normalizeProject)
+		projects.value = projects.value.filter((project) => project.spaceId !== spaceId).concat(normalizedList)
+		snapshotBySpace.value = {
+			...snapshotBySpace.value,
+			[spaceId]: normalizedList,
+		}
+		if (options.syncQueryCache ?? true) {
+			stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), normalizedList)
+		}
+		if (!options.markLoaded) return
+		const nextLoaded = new Set(loadedSpaceIds.value)
+		nextLoaded.add(spaceId)
+		loadedSpaceIds.value = nextLoaded
+	}
 
 	function markSpaceLoading(spaceId: string) {
 		const nextCount = (loadingCounters.get(spaceId) ?? 0) + 1
@@ -53,13 +78,14 @@ export const useProjectsStore = defineStore('projects', () => {
 	}
 
 	async function loadForSpaceInternal(spaceId: string) {
-		const data = await listProjects({ spaceId })
-		const normalizedData = data.map(normalizeProject)
-		projects.value = projects.value.filter((p) => p.spaceId !== spaceId).concat(normalizedData)
-		snapshotBySpace.value = { ...snapshotBySpace.value, [spaceId]: normalizedData }
-		const nextLoaded = new Set(loadedSpaceIds.value)
-		nextLoaded.add(spaceId)
-		loadedSpaceIds.value = nextLoaded
+		const queryKey = workspaceQueryKeys.projects.list({ spaceId })
+		const data = await stoneFlowQueryClient.fetchQuery({
+			queryKey,
+			queryFn: async () => {
+				return await listProjects({ spaceId })
+			},
+		})
+		syncSpaceProjects(spaceId, data, { markLoaded: true })
 	}
 
 	async function load(spaceId: string, options: { force?: boolean } = {}) {
@@ -73,6 +99,12 @@ export const useProjectsStore = defineStore('projects', () => {
 		const promise = (async () => {
 			markSpaceLoading(spaceId)
 			try {
+				if (force) {
+					await stoneFlowQueryClient.invalidateQueries({
+						queryKey: workspaceQueryKeys.projects.list({ spaceId }),
+						exact: true,
+					})
+				}
 				await loadForSpaceInternal(spaceId)
 			} finally {
 				clearSpaceLoading(spaceId)
@@ -133,11 +165,21 @@ export const useProjectsStore = defineStore('projects', () => {
 			...snapshotBySpace.value,
 			[spaceId]: nextSpaceSnapshot,
 		}
+		stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), nextSpaceSnapshot)
 	}
 
 	function getProjectById(spaceId: string, projectId: string): ProjectDto | null {
 		return getProjectsOfSpace(spaceId).find((project) => project.id === projectId) ?? null
 	}
+
+	stoneFlowQueryClient.getQueryCache().subscribe((event) => {
+		const query = event?.query
+		if (!query || !workspaceQueryKeys.projects.isListKey(query.queryKey)) return
+		const data = query.state.data
+		if (!Array.isArray(data)) return
+		const scope = query.queryKey[3]
+		syncSpaceProjects(scope.spaceId, data as ProjectDto[], { syncQueryCache: false })
+	})
 
 	return {
 		projects,

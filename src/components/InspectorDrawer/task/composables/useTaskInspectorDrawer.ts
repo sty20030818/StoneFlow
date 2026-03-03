@@ -3,7 +3,6 @@ import { computed } from 'vue'
 
 import type { TaskDto } from '@/services/api/tasks'
 import { useProjectsStore } from '@/stores/projects'
-import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 
 import { useTaskInspectorActions } from './useTaskInspectorActions'
@@ -16,13 +15,12 @@ import { useTaskInspectorSync } from './useTaskInspectorSync'
 export function useTaskInspectorDrawer() {
 	const store = useTaskInspectorStore()
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
 
 	const currentTask = computed<TaskDto | null>(() => store.task ?? null)
 
 	const state = useTaskInspectorState()
 	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, projectsStore })
-	const actions = useTaskInspectorActions({ currentTask, state, store, projectsStore, refreshSignals })
+	const actions = useTaskInspectorActions({ currentTask, state, store, projectsStore })
 	const derived = useTaskInspectorDerived({
 		currentTask,
 		state,
@@ -31,7 +29,6 @@ export function useTaskInspectorDrawer() {
 	})
 	const activityLogs = useTaskInspectorActivityLogs({
 		currentTask,
-		taskTick: computed(() => refreshSignals.taskTick),
 	})
 
 	useTaskInspectorSync({

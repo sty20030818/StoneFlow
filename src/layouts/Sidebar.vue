@@ -166,14 +166,13 @@
 </template>
 
 <script setup lang="ts">
-	import { watchDebounced, watchPausable, watchThrottled } from '@vueuse/core'
-	import { computed, inject, onMounted, ref, watch } from 'vue'
+	import { watchDebounced, watchThrottled } from '@vueuse/core'
+	import { computed, inject, onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useRoute } from 'vue-router'
 
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
-	import { useRuntimeGate } from '@/composables/base/runtime-gate'
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import DraggableProjectTree, { type ProjectTreeItem } from '@/components/DraggableProjectTree.vue'
 	import UserCard from '@/components/UserCard.vue'
@@ -182,7 +181,6 @@
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectTreeStore } from '@/stores/project-tree'
 	import { useProjectsStore } from '@/stores/projects'
-	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { useViewStateStore } from '@/stores/view-state'
 	const props = defineProps<{
 		space?: string | null
@@ -261,8 +259,6 @@
 	const trashNav = PAGE_NAV_CONFIG.trash
 
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
-	const { canBackgroundRefresh } = useRuntimeGate()
 
 	// 通过 inject 获取全局的创建项目弹窗控制函数
 	const openCreateProjectModal = inject<(spaceId?: string) => void>('openCreateProjectModal')
@@ -413,27 +409,6 @@
 			debounce: 40,
 			maxWait: 160,
 		},
-	)
-
-	// 项目刷新信号使用可暂停监听，窗口不可见或离线时不触发后台刷新。
-	const { pause: pauseProjectRefreshWatch, resume: resumeProjectRefreshWatch } = watchPausable(
-		() => refreshSignals.projectTick,
-		() => {
-			if (!canBackgroundRefresh.value) return
-			void loadProjects(true)
-		},
-	)
-
-	watch(
-		canBackgroundRefresh,
-		(canRefresh) => {
-			if (canRefresh) {
-				resumeProjectRefreshWatch()
-				return
-			}
-			pauseProjectRefreshWatch()
-		},
-		{ immediate: true },
 	)
 
 	onMounted(() => {

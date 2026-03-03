@@ -5,8 +5,8 @@ import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/services/ap
 import { updateTask } from '@/services/api/tasks'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
 import { usePatchQueue } from '@/components/InspectorDrawer/shared/composables'
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 import type { useProjectsStore } from '@/stores/projects'
-import type { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
 
 import type { TaskInspectorState, TextInteractionField } from './useTaskInspectorState'
@@ -38,9 +38,8 @@ export function useTaskInspectorActions(params: {
 	state: TaskInspectorState
 	store: ReturnType<typeof useTaskInspectorStore>
 	projectsStore: ReturnType<typeof useProjectsStore>
-	refreshSignals: ReturnType<typeof useRefreshSignalsStore>
 }) {
-	const { currentTask, state, store, projectsStore, refreshSignals } = params
+	const { currentTask, state, store, projectsStore } = params
 
 	function getCurrentTaskId(): string | null {
 		return currentTask.value?.id ?? null
@@ -68,7 +67,7 @@ export function useTaskInspectorActions(params: {
 			if (Object.keys(payload.storePatch).length > 0 && getCurrentTaskId() === taskId) {
 				store.patchTask(payload.storePatch)
 			}
-			refreshSignals.bumpTask()
+			await invalidateWorkspaceTaskAndProjectQueries()
 			return true
 		}
 

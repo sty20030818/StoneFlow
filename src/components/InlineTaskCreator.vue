@@ -45,11 +45,11 @@
 
 	import { MOTION_TOKENS } from '@/config/motion'
 	import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 	import type { TaskPriorityValue } from '@/config/task'
 	import { getDefaultProject } from '@/services/api/projects'
 	import { createTask, updateTask, type TaskDto, type UpdateTaskPatch } from '@/services/api/tasks'
 	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
-	import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 	import { getPriorityClass } from '@/utils/priority'
 
 	const props = withDefaults(
@@ -84,7 +84,6 @@
 	const submitting = ref(false)
 
 	const inlineFocusStore = useInlineCreateFocusStore()
-	const refreshSignals = useRefreshSignalsStore()
 	const creatorCardMotion = computed(() =>
 		withMotionDelay(
 			{
@@ -249,7 +248,7 @@
 				Object.assign(task, patch)
 			}
 
-			refreshSignals.bumpTask()
+			await invalidateWorkspaceTaskAndProjectQueries()
 			emit('created', task)
 
 			title.value = ''

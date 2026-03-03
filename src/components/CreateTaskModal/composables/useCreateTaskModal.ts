@@ -2,6 +2,7 @@ import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 import type { ProjectDto } from '@/services/api/projects'
 import { getDefaultProject } from '@/services/api/projects'
 import type { CustomFieldItem, LinkDto, LinkInput, TaskDoneReason, TaskDto, TaskStatus } from '@/services/api/tasks'
@@ -17,7 +18,6 @@ import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue
 import { validateWithZod } from '@/composables/base/zod'
 import { taskSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
-import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { statusOptions } from '@/utils/task'
 
@@ -79,7 +79,6 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
 
 	const loading = ref(false)
 	const defaultProjectId = ref<string | null>(null)
@@ -348,7 +347,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				customFields: customFields.length > 0 ? { fields: customFields } : null,
 			})
 
-			refreshSignals.bumpTask()
+			await invalidateWorkspaceTaskAndProjectQueries()
 			emit('created', task)
 			close()
 		} catch (error) {

@@ -7,14 +7,12 @@ import type { ProjectDto } from '@/services/api/projects'
 
 export function useProjectInspectorActivityLogs(params: {
 	currentProject: Ref<ProjectDto | null>
-	projectTick: Ref<number>
 }) {
 	const projectId = computed(() => params.currentProject.value?.id ?? null)
 	const { t } = useI18n({ useScope: 'global' })
 
 	return useDrawerActivityLogs({
 		entityId: projectId,
-		tick: params.projectTick,
 		loadLogs: async (id) => {
 			return await listActivityLogs({
 				entityType: 'project',

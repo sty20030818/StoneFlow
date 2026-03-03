@@ -46,6 +46,7 @@
 		toStaticMotionVariants,
 		useMotionPreset,
 	} from '@/composables/base/motion'
+	import { invalidateWorkspaceTaskQueries } from '@/features/workspace/model'
 	import TaskCard from '@/components/TaskCard'
 	import { rebalanceRanks, reorderTask, type TaskDto } from '@/services/api/tasks'
 	import { calculateInsertRank } from '@/utils/rank'
@@ -198,6 +199,7 @@
 				// 不 await，让重排在后台执行
 				rebalanceRanks(taskIds).catch(console.error)
 			}
+			await invalidateWorkspaceTaskQueries()
 		} catch (error) {
 			console.error('Failed to reorder task:', error)
 		}
