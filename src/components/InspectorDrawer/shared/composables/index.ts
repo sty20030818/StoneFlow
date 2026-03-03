@@ -9,3 +9,4 @@ export { useDrawerEditableListController } from './useDrawerEditableListControll
 export { normalizeDrawerSpaceKey, resolveDrawerSpaceDisplay } from './useDrawerSpaceDisplay'
 export { useDrawerSaveStatePresentation, type DrawerSaveState } from './useDrawerSaveStatePresentation'
 export { useDrawerActivityLogs } from './useDrawerActivityLogs'
+export { usePatchQueue } from './usePatchQueue'

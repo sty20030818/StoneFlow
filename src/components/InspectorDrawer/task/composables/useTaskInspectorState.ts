@@ -15,9 +15,6 @@ export function useTaskInspectorState() {
 	const tagsLocal = ref<string[]>([])
 	const tagInput = ref('')
 	const timelineCollapsed = ref(true)
-	const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
-	const pendingSaves = ref(0)
-	const retrySaveAvailable = ref(false)
 	const spaceIdLocal = ref('')
 	const projectIdLocal = ref<string | null>(null)
 	const linksLocal = ref<TaskLinkFormItem[]>([])
@@ -87,9 +84,6 @@ export function useTaskInspectorState() {
 		tagsLocal,
 		tagInput,
 		timelineCollapsed,
-		saveState,
-		pendingSaves,
-		retrySaveAvailable,
 		spaceIdLocal,
 		projectIdLocal,
 		linksLocal,
