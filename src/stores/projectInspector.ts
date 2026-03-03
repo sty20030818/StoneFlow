@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import type { InspectorProject } from '@/features/inspector/model'
+import type { InspectorProject } from '@/features/inspector'
 
 export const useProjectInspectorStore = defineStore('projectInspector', () => {
 	const isOpen = ref(false)

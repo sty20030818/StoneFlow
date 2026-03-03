@@ -132,13 +132,13 @@
 	import { useI18n } from 'vue-i18n'
 	import { VueDraggable } from 'vue-draggable-plus'
 
-	import {
-		deleteWorkspaceProject,
-		rebalanceWorkspaceProjectRanks,
-		reorderWorkspaceProject,
-	} from '@/features/workspace'
-	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
-	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
+		import {
+			deleteWorkspaceProject,
+			invalidateWorkspaceTaskAndProjectQueries,
+			rebalanceWorkspaceProjectRanks,
+			reorderWorkspaceProject,
+		} from '@/features/workspace'
+		import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
 	import { resolveErrorMessage } from '@/utils/error-message'

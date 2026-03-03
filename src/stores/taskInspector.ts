@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import type { InspectorTask } from '@/features/inspector/model'
+import type { InspectorTask } from '@/features/inspector'
 
 export const useTaskInspectorStore = defineStore('taskInspector', () => {
 	const isOpen = ref(false)

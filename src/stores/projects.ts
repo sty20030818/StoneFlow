@@ -4,9 +4,7 @@ import { computed, ref } from 'vue'
 
 import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import { stoneFlowQueryClient } from '@/features/shared'
-import { listWorkspaceProjects } from '@/features/workspace'
-import { workspaceQueryKeys } from '@/features/workspace/model/query-keys'
-import type { WorkspaceProject } from '@/features/workspace/model'
+import { listWorkspaceProjects, workspaceQueryKeys, type WorkspaceProject } from '@/features/workspace'
 
 export const useProjectsStore = defineStore('projects', () => {
 	const snapshotBySpace = useStorage<Record<string, WorkspaceProject[]>>('projects_snapshot_v1', {})

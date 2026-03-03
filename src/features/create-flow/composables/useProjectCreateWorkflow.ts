@@ -1,4 +1,4 @@
-import { invalidateWorkspaceProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceProjectQueries } from '@/features/workspace'
 
 import type { CreateProjectArgs, ProjectDto } from '../model'
 import { createFlowProject } from '../mutations'

@@ -1,7 +1,7 @@
 import { computed, ref, type Ref } from 'vue'
 
 import type { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
 import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 import type { RemoteSyncCommandReport } from '@/types/shared/remote-sync'

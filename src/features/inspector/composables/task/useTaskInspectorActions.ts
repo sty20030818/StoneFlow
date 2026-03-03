@@ -5,7 +5,7 @@ import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/
 import { usePatchQueue } from '../shared'
 import { updateInspectorTask } from '../../mutations'
 import type { InspectorLink, InspectorLinkInput, InspectorTask, InspectorTaskPatch } from '../../model'
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
 import type { useProjectsStore } from '@/stores/projects'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
 

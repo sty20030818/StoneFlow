@@ -1,4 +1,4 @@
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
 
 import type {
 	CreateTaskWithPatchArgs,

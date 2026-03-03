@@ -12,7 +12,7 @@ import {
 	updateInspectorProject,
 } from '../../mutations'
 import type { InspectorLink, InspectorLinkInput, InspectorProject, InspectorProjectPatch } from '../../model'
-import { invalidateWorkspaceTaskAndProjectQueries, invalidateWorkspaceProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceTaskAndProjectQueries, invalidateWorkspaceProjectQueries } from '@/features/workspace'
 import { SPACE_OPTIONS } from '@/config/space'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
