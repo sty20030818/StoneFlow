@@ -1,9 +1,9 @@
 import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
-import { listActivityLogs } from '@/services/api/logs'
 import { useDrawerActivityLogs } from '@/components/InspectorDrawer/shared/composables'
-import type { TaskDto } from '@/services/api/tasks'
+import { listInspectorActivityLogs } from '@/features/inspector'
+import type { TaskDto } from '@/features/inspector/model'
 
 export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto | null> }) {
 	const taskId = computed(() => params.currentTask.value?.id ?? null)
@@ -11,7 +11,7 @@ export function useTaskInspectorActivityLogs(params: { currentTask: Ref<TaskDto 
 	return useDrawerActivityLogs({
 		entityId: taskId,
 		loadLogs: async (id) => {
-			return await listActivityLogs({
+			return await listInspectorActivityLogs({
 				entityType: 'task',
 				taskId: id,
 			})

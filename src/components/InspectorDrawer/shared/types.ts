@@ -1,4 +1,4 @@
-import type { ActivityLogEntry } from '@/services/api/logs'
+import type { ActivityLogEntry } from '@/features/inspector/model'
 
 export type DrawerTextInteractionHandlers = {
 	onFocus: () => void

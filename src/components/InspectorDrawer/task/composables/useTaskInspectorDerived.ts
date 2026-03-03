@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/inspector/model'
 import type { useProjectsStore } from '@/stores/projects'
 import { formatDate } from '@/utils/time'
 import {

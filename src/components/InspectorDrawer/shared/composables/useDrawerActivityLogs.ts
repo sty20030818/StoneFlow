@@ -1,7 +1,7 @@
 import { useAsyncState } from '@vueuse/core'
 import { computed, watch, type Ref } from 'vue'
 
-import type { ActivityLogEntry } from '@/services/api/logs'
+import type { ActivityLogEntry } from '@/features/inspector/model'
 
 export function useDrawerActivityLogs(params: {
 	entityId: Ref<string | null>
