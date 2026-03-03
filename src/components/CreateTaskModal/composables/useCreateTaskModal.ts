@@ -2,10 +2,16 @@ import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useTaskCreateWorkflow } from '@/features/create-flow'
-import type { ProjectDto } from '@/services/api/projects'
-import { getDefaultProject } from '@/services/api/projects'
-import type { CustomFieldItem, LinkDto, LinkInput, TaskDoneReason, TaskDto, TaskStatus } from '@/services/api/tasks'
+import { getCreateFlowDefaultProject, useTaskCreateWorkflow } from '@/features/create-flow'
+import type {
+	CustomFieldItem,
+	LinkDto,
+	LinkInput,
+	ProjectDto,
+	TaskDoneReason,
+	TaskDto,
+	TaskStatus,
+} from '@/features/create-flow/model'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
@@ -262,7 +268,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			}
 			await projectsStore.load(newSpaceId)
 			try {
-				const defaultProject = await getDefaultProject(newSpaceId)
+				const defaultProject = await getCreateFlowDefaultProject(newSpaceId)
 				defaultProjectId.value = defaultProject.id
 				form.value.projectId = defaultProject.id
 			} catch (error) {
@@ -298,7 +304,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 
 		await projectsStore.load(form.value.spaceId)
 		try {
-			const defaultProject = await getDefaultProject(form.value.spaceId)
+			const defaultProject = await getCreateFlowDefaultProject(form.value.spaceId)
 			defaultProjectId.value = defaultProject.id
 
 			const candidateProjectId = props.projectId ?? null

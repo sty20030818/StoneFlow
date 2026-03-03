@@ -1,5 +1,5 @@
 import { useI18n } from 'vue-i18n'
-import type { TaskDto } from '@/services/api/tasks'
+import type { TaskDto } from '@/features/workspace/model'
 import { computed } from 'vue'
 
 export type TaskCardMetaItem = {

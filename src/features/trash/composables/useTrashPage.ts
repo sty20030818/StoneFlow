@@ -1,9 +1,9 @@
-import { refDebounced, useStorage, watchDebounced } from '@vueuse/core'
+import { refDebounced, useStorage } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 import { useProjectsStore } from '@/stores/projects'
-import { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import { useSettingsStore } from '@/stores/settings'
 import { resolveErrorMessage } from '@/utils/error-message'
 
@@ -21,7 +21,6 @@ export function useTrashPage() {
 	const { t } = useI18n({ useScope: 'global' })
 	const settingsStore = useSettingsStore()
 	const projectsStore = useProjectsStore()
-	const refreshSignals = useRefreshSignalsStore()
 
 	const viewMode = ref<'projects' | 'tasks'>('projects')
 	const loading = ref(true)
@@ -128,8 +127,8 @@ export function useTrashPage() {
 		try {
 			await restoreTrashProject(project.id)
 			deletedProjects.value = deletedProjects.value.filter((item) => item.id !== project.id)
+			await invalidateWorkspaceTaskAndProjectQueries()
 			refreshCurrentSnapshot()
-			refreshSignals.bumpProject()
 			toast.add({
 				title: t('trash.toast.projectRestoredTitle'),
 				description: project.title,
@@ -156,8 +155,8 @@ export function useTrashPage() {
 		try {
 			await restoreTrashTasks([task.id])
 			deletedTasks.value = deletedTasks.value.filter((item) => item.id !== task.id)
+			await invalidateWorkspaceTaskAndProjectQueries()
 			refreshCurrentSnapshot()
-			refreshSignals.bumpTask()
 			toast.add({
 				title: t('trash.toast.taskRestoredTitle'),
 				description: task.title,
@@ -189,17 +188,6 @@ export function useTrashPage() {
 			void refreshTrash(false)
 		},
 		{ immediate: true },
-	)
-
-	watchDebounced(
-		() => [refreshSignals.projectTick, refreshSignals.taskTick] as const,
-		() => {
-			void refreshTrash(true)
-		},
-		{
-			debounce: 80,
-			maxWait: 200,
-		},
 	)
 
 	return {

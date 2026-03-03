@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-	import type { TaskDto } from '@/services/api/tasks'
+	import type { TaskDto } from '@/features/workspace/model'
 
 	import TaskCardMetaBadgePopover from './TaskCardMetaBadgePopover.vue'
 	import { useTaskCardMetadataBadges } from '../composables/useTaskCardMetadataBadges'

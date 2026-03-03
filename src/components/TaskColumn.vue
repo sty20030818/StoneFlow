@@ -159,7 +159,7 @@
 	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
 	import TaskCard from '@/components/TaskCard'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
-	import type { TaskDto } from '@/services/api/tasks'
+	import type { TaskDto } from '@/features/workspace/model'
 	const { t } = useI18n({ useScope: 'global' })
 
 	const props = defineProps<{

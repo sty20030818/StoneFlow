@@ -115,14 +115,12 @@ export default [
 		},
 	},
 
-	// 页面层边界：禁止页面直接访问底层 API（迁移白名单除外）
+	// 非 feature 层边界：禁止直接访问底层 API
 	{
-		files: ['src/pages/**/*.{ts,tsx,vue}'],
+		files: ['src/**/*.{ts,tsx,vue}'],
 		ignores: [
-			'src/pages/assets/**',
-			'src/pages/review/**',
-			'src/pages/Trash/**',
-			'src/pages/ProjectView/**',
+			'src/features/**',
+			'src/services/**',
 		],
 		rules: {
 			'no-restricted-imports': [

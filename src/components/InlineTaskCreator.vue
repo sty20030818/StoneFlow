@@ -46,8 +46,8 @@
 	import { MOTION_TOKENS } from '@/config/motion'
 	import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import { useTaskCreateWorkflow } from '@/features/create-flow'
+	import type { TaskDto } from '@/features/create-flow/model'
 	import type { TaskPriorityValue } from '@/config/task'
-	import type { TaskDto } from '@/services/api/tasks'
 	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
 	import { getPriorityClass } from '@/utils/priority'
 

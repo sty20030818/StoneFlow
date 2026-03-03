@@ -3,8 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useProjectCreateWorkflow } from '@/features/create-flow'
-import type { ProjectDto } from '@/services/api/projects'
-import type { LinkDto, LinkInput } from '@/services/api/tasks'
+import type { LinkDto, LinkInput, ProjectDto } from '@/features/create-flow/model'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
