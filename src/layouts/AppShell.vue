@@ -43,7 +43,7 @@
 	import Sidebar from './Sidebar.vue'
 	import Header from './Header.vue'
 
-	import { ProjectInspectorDrawer, TaskInspectorDrawer } from '@/components/InspectorDrawer'
+	import { ProjectInspectorDrawer, TaskInspectorDrawer } from '@/features/inspector'
 
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useSettingsStore } from '@/stores/settings'
