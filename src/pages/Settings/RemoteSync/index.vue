@@ -234,7 +234,7 @@
 	import RemoteSyncEditForm from './components/RemoteSyncEditForm.vue'
 	import RemoteSyncImportForm from './components/RemoteSyncImportForm.vue'
 	import RemoteSyncProfilesCard from './components/RemoteSyncProfilesCard.vue'
-	import { useRemoteSyncPage } from './composables/useRemoteSyncPage'
+	import { useRemoteSyncPageFacade } from './composables/useRemoteSyncPageFacade'
 	const { t } = useI18n({ useScope: 'global' })
 
 	const {
@@ -300,7 +300,7 @@
 		deleteTarget,
 		deleting,
 		confirmDelete,
-	} = useRemoteSyncPage()
+	} = useRemoteSyncPageFacade()
 
 	const remoteSyncModalUi = createModalLayerUi()
 	const actionsCardMotion = useAppMotionPreset('drawerSection', 'sectionBase')
