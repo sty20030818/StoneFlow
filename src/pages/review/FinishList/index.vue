@@ -199,9 +199,7 @@
 </template>
 
 <script setup lang="ts">
-	import { useI18n } from 'vue-i18n'
-	import { refDebounced, useAsyncState } from '@vueuse/core'
-	import { computed, ref, watch } from 'vue'
+	import { computed } from 'vue'
 
 	import {
 		DEFAULT_STAGGER_MOTION_LIMIT,
@@ -211,22 +209,35 @@
 		useCardHoverMotionPreset,
 		useMotionPresetWithDelay,
 	} from '@/composables/base/motion'
-	import { getDefaultProjectLabel } from '@/config/project'
 	import { createModalLayerUi } from '@/config/ui-layer'
-	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-	import { listTasks, type TaskDto } from '@/services/api/tasks'
-	import { useProjectsStore } from '@/stores/projects'
-	import { resolveErrorMessage } from '@/utils/error-message'
-	import { formatDate as formatDateByLocale, formatTimeOfDay } from '@/utils/time'
+	import { useReviewFinishList } from '@/features/review'
 
-	const toast = useToast()
-	const { t, locale } = useI18n({ useScope: 'global' })
-	const projectsStore = useProjectsStore()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const groupItemMotionPreset = useCardHoverMotionPreset()
 	const reflectionBodyMotion = useMotionPresetWithDelay('modalSection', 24)
 	const reflectionFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
+	const {
+		t,
+		loading,
+		spaceFilter,
+		projectFilter,
+		dateRange,
+		tagKeyword,
+		reflectionOpen,
+		reflectionTask,
+		reflectionText,
+		spaceOptions,
+		projectOptions,
+		dateRangeOptions,
+		projectGroups,
+		stats,
+		formatDateTime,
+		formatDuration,
+		onOpenReflection,
+		onReflectionSave,
+	} = useReviewFinishList()
+
 	const groupMotions = computed(() =>
 		createStaggeredEnterMotions(projectGroups.value.length, groupItemMotionPreset.value, getAppStaggerDelay, {
 			limit: DEFAULT_STAGGER_MOTION_LIMIT,
@@ -235,212 +246,4 @@
 	const reflectionModalUi = createModalLayerUi({
 		width: 'sm:max-w-md',
 	})
-
-	const { state: tasks, isLoading: loading } = useAsyncState(() => listTasks({ status: 'done' }), [] as TaskDto[], {
-		immediate: true,
-		resetOnExecute: false,
-		onError: (e) => {
-			toast.add({
-				title: t('review.finishList.toast.loadFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		},
-	})
-
-	const spaceFilter = ref<string>('all')
-	const projectFilter = ref<string>('all')
-	const dateRange = ref<string>('this-week')
-	const tagKeyword = ref('')
-	const debouncedTagKeyword = refDebounced(tagKeyword, 180)
-
-	const reflectionOpen = ref(false)
-	const reflectionTask = ref<TaskDto | null>(null)
-	const reflectionText = ref('')
-
-	const spaceOptions = computed(() => [
-		{ label: t('review.filters.allSpaces'), value: 'all' },
-		...SPACE_IDS.map((id) => ({ label: SPACE_DISPLAY[id].label, value: id })),
-	])
-
-	const dateRangeOptions = computed(() => [
-		{ label: t('review.filters.thisWeek'), value: 'this-week' },
-		{ label: t('review.filters.thisMonth'), value: 'this-month' },
-		{ label: t('review.filters.allTime'), value: 'all' },
-	])
-
-	function formatDate(ts: number): string {
-		return formatDateByLocale(ts, {
-			locale: locale.value,
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-		})
-	}
-
-	function formatDateTime(ts: number): string {
-		const date = formatDate(ts)
-		const time = formatTimeOfDay(ts, { locale: locale.value })
-		return `${date} ${time}`
-	}
-
-	function formatDuration(ms: number): string {
-		if (!Number.isFinite(ms) || ms <= 0) return '-'
-		const totalMinutes = Math.floor(ms / 60000)
-		const h = Math.floor(totalMinutes / 60)
-		const m = totalMinutes % 60
-		if (h <= 0) return `${m}m`
-		if (m <= 0) return `${h}h`
-		return `${h}h ${m}m`
-	}
-
-	function spaceLabel(spaceId: string): string {
-		return SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY]?.label ?? spaceId
-	}
-
-	const projectOptions = computed(() => {
-		const all = [{ label: t('review.filters.allProjects'), value: 'all' }]
-		const ids = new Set<string>()
-		for (const t of tasks.value) {
-			if (!t.completedAt || t.doneReason === 'cancelled') continue
-			ids.add(t.spaceId)
-		}
-		const spaceIds = Array.from(ids)
-		const options = []
-		for (const sid of spaceIds) {
-			const list = projectsStore.getProjectsOfSpace(sid)
-			for (const p of list) {
-				options.push({
-					label: `${spaceLabel(sid)} / ${p.title}`,
-					value: p.id,
-				})
-			}
-		}
-		return all.concat(options)
-	})
-
-	function isInDateRange(ts: number | null): boolean {
-		if (!ts) return false
-		const d = new Date(ts)
-		const now = new Date()
-		if (dateRange.value === 'all') return true
-		if (dateRange.value === 'this-week') {
-			const diffMs = now.getTime() - d.getTime()
-			return diffMs <= 7 * 24 * 60 * 60 * 1000
-		}
-		if (dateRange.value === 'this-month') {
-			return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-		}
-		return true
-	}
-
-	const filteredTasks = computed(() => {
-		return tasks.value.filter((t) => {
-			if (!t.completedAt || t.doneReason === 'cancelled') return false
-			if (!isInDateRange(t.completedAt)) return false
-			if (spaceFilter.value !== 'all' && t.spaceId !== spaceFilter.value) return false
-			if (projectFilter.value !== 'all' && t.projectId !== projectFilter.value) return false
-			if (debouncedTagKeyword.value.trim()) {
-				const kw = debouncedTagKeyword.value.trim().toLowerCase()
-				if (!t.title.toLowerCase().includes(kw)) return false
-			}
-			return true
-		})
-	})
-
-	type ProjectGroup = {
-		groupKey: string
-		projectId: string
-		projectName: string
-		spaceId: string
-		spaceLabel: string
-		tasks: TaskDto[]
-		medianLead: string
-	}
-
-	const projectGroups = computed<ProjectGroup[]>(() => {
-		const byProject = new Map<string, TaskDto[]>()
-
-		for (const t of filteredTasks.value) {
-			const key = `${t.spaceId}::${t.projectId ?? 'default'}`
-			const arr = byProject.get(key) ?? []
-			arr.push(t)
-			byProject.set(key, arr)
-		}
-
-		const result: ProjectGroup[] = []
-
-		for (const [groupKey, list] of byProject.entries()) {
-			const sample = list[0]
-			const spaceId = sample.spaceId
-			const spaceLabelText = spaceLabel(spaceId)
-			const projects = projectsStore.getProjectsOfSpace(spaceId)
-			const project = sample.projectId ? projects.find((p) => p.id === sample.projectId) : null
-
-			const leads: number[] = []
-			for (const t of list) {
-				if (t.completedAt && t.createdAt) {
-					leads.push(t.completedAt - t.createdAt)
-				}
-			}
-			leads.sort((a, b) => a - b)
-			const medianMs = leads.length ? leads[Math.floor(leads.length / 2)] : 0
-
-			result.push({
-				groupKey,
-				projectId: sample.projectId ?? 'default',
-				projectName: project?.title ?? getDefaultProjectLabel(),
-				spaceId,
-				spaceLabel: spaceLabelText,
-				tasks: list,
-				medianLead: formatDuration(medianMs),
-			})
-		}
-
-		return result
-	})
-
-	watch(
-		tasks,
-		(rows) => {
-			const spaceIds = Array.from(new Set(rows.map((t) => t.spaceId)))
-			for (const sid of spaceIds) {
-				void projectsStore.load(sid)
-			}
-		},
-		{ immediate: true },
-	)
-
-	const stats = computed(() => {
-		const thisWeekTasks = tasks.value.filter(
-			(t) => t.completedAt && isInDateRange(t.completedAt) && t.doneReason !== 'cancelled',
-		)
-		const thisWeekCount = thisWeekTasks.length
-		const activeProjectIds = new Set<string>()
-		for (const t of thisWeekTasks) {
-			const projects = projectsStore.getProjectsOfSpace(t.spaceId)
-			if (projects[0]) activeProjectIds.add(projects[0].id)
-		}
-		const spaceIds = new Set(thisWeekTasks.map((t) => t.spaceId))
-		return {
-			thisWeekCount,
-			activeProjectCount: activeProjectIds.size,
-			spaceCount: spaceIds.size,
-		}
-	})
-
-	function onOpenReflection(t: TaskDto) {
-		reflectionTask.value = t
-		reflectionText.value = ''
-		reflectionOpen.value = true
-	}
-
-	function onReflectionSave() {
-		toast.add({
-			title: t('review.finishList.toast.savedPlaceholderTitle'),
-			description: t('review.finishList.toast.savedPlaceholderDescription'),
-			color: 'neutral',
-		})
-		reflectionOpen.value = false
-	}
 </script>

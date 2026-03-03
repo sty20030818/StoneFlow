@@ -156,7 +156,6 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useAsyncState } from '@vueuse/core'
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 
@@ -166,149 +165,19 @@
 		useAppMotionPreset,
 		useMotionPreset,
 	} from '@/composables/base/motion'
-	import { toBoundedPercent } from '@/composables/base/percent'
-	import { TASK_DONE_REASON_COLORS, TASK_STATUS_CHART_COLORS } from '@/config/task'
-	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-	import { listTasks, type TaskDto } from '@/services/api/tasks'
-	import { resolveErrorMessage } from '@/utils/error-message'
+	import { useReviewStats } from '@/features/review'
 
-	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const router = useRouter()
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const cardMotionPreset = useMotionPreset('card')
 	const trendCardMotion = useAppMotionPreset('card', 'sectionBase', 46)
 	const statusCardMotion = useAppMotionPreset('card', 'sectionBase', 60)
+	const { loading, spaceCards, last7d, statusTotal, statusSlices } = useReviewStats()
+
 	const spaceCardMotions = computed(() =>
 		createStaggeredEnterMotions(spaceCards.value.length, cardMotionPreset.value, getAppStaggerDelay),
 	)
-
-	const { state: tasks, isLoading: loading } = useAsyncState(
-		async () => {
-			const [todo, done] = await Promise.all([listTasks({ status: 'todo' }), listTasks({ status: 'done' })])
-			return [...todo, ...done]
-		},
-		[] as TaskDto[],
-		{
-			immediate: true,
-			resetOnExecute: false,
-			onError: (e) => {
-				toast.add({
-					title: t('review.stats.toast.loadFailedTitle'),
-					description: resolveErrorMessage(e, t),
-					color: 'error',
-				})
-			},
-		},
-	)
-
-	const spaceCards = computed(() => {
-		const ids = SPACE_IDS
-
-		const now = new Date()
-		const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime()
-
-		return ids.map((id) => {
-			const info = SPACE_DISPLAY[id]
-			const scoped = tasks.value.filter((t) => t.spaceId === id)
-
-			const thisWeekDone = scoped.filter(
-				(t) => t.completedAt && t.completedAt >= startOfWeek && t.doneReason !== 'cancelled',
-			).length
-
-			const activeProjectIds = new Set<string>()
-			for (const t of scoped) {
-				if (t.status === 'todo') {
-					activeProjectIds.add('default')
-				}
-			}
-
-			return {
-				...info,
-				thisWeekDone,
-				activeProjects: activeProjectIds.size,
-			}
-		})
-	})
-
-	const last7d = computed(() => {
-		const days: { date: string; count: number; percent: number }[] = []
-		const now = new Date()
-
-		for (let i = 6; i >= 0; i--) {
-			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
-			const key = `${d.getMonth() + 1}/${d.getDate()}`
-			const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-			const end = start + 24 * 60 * 60 * 1000
-
-			const count = tasks.value.filter(
-				(t) => t.completedAt && t.completedAt >= start && t.completedAt < end && t.doneReason !== 'cancelled',
-			).length
-			days.push({ date: key, count, percent: 0 })
-		}
-
-		const max = days.reduce((m, d) => (d.count > m ? d.count : m), 0)
-		for (const d of days) {
-			d.percent = max > 0 ? toBoundedPercent((d.count / max) * 100, 6, 100) : 0
-		}
-		return days
-	})
-
-	const statusTotal = computed(() => tasks.value.length)
-
-	type Slice = {
-		key: string
-		label: string
-		color: string
-		count: number
-		percent: number
-		offset: number
-	}
-
-	const statusSlices = computed<Slice[]>(() => {
-		const buckets: { key: string; label: string; color: string; match: (t: TaskDto) => boolean }[] = [
-			{
-				key: 'done',
-				label: t('task.doneReason.completed'),
-				color: TASK_DONE_REASON_COLORS.completed,
-				match: (t) => t.status === 'done' && t.doneReason !== 'cancelled',
-			},
-			{
-				key: 'cancelled',
-				label: t('task.doneReason.cancelled'),
-				color: TASK_DONE_REASON_COLORS.cancelled,
-				match: (t) => t.status === 'done' && t.doneReason === 'cancelled',
-			},
-			{
-				key: 'todo',
-				label: t('task.status.todo'),
-				color: TASK_STATUS_CHART_COLORS.todo,
-				match: (t) => t.status === 'todo',
-			},
-		]
-
-		const total = tasks.value.length || 1
-		let offset = 25
-		const slices: Slice[] = []
-
-		for (const b of buckets) {
-			const count = tasks.value.filter(b.match).length
-			const percent = toBoundedPercent((count / total) * 100)
-			if (percent <= 0) continue
-			const slice: Slice = {
-				key: b.key,
-				label: b.label,
-				color: b.color,
-				count,
-				percent,
-				offset,
-			}
-			offset -= (percent / 100) * 100
-			slices.push(slice)
-		}
-
-		return slices
-	})
 
 	function goToFinishList(_spaceId: string) {
 		router.push({ path: '/finish-list' })

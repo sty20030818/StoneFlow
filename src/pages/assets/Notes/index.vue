@@ -165,9 +165,7 @@
 </template>
 
 <script setup lang="ts">
-	import { useI18n } from 'vue-i18n'
-	import { refDebounced, useAsyncState } from '@vueuse/core'
-	import { computed, ref } from 'vue'
+	import { computed } from 'vue'
 
 	import {
 		DEFAULT_STAGGER_MOTION_LIMIT,
@@ -177,66 +175,33 @@
 		useMotionPreset,
 		useMotionPresetWithDelay,
 	} from '@/composables/base/motion'
-	import { validateWithZod } from '@/composables/base/zod'
 	import { createModalLayerUi } from '@/config/ui-layer'
-	import { noteSubmitSchema } from '@/composables/domain/validation/forms'
+	import { useAssetsNotesPage } from '@/features/assets-notes'
 	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
-	import type { NoteDto } from '@/services/api/notes'
-	import { createNote, deleteNote, listNotes, updateNote } from '@/services/api/notes'
-	import { resolveErrorMessage } from '@/utils/error-message'
 
-	const toast = useToast()
-	const { t } = useI18n({ useScope: 'global' })
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const noteItemPreset = useMotionPreset('listItem')
 	const modalBodyMotion = useMotionPreset('modalSection')
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const {
+		t,
+		loading,
+		selectedNote,
+		editOpen,
+		searchKeyword,
+		editForm,
+		filteredNotes,
+		openEditor,
+		onCreateNew,
+		closeEditor,
+		onSave,
+		onDelete,
+	} = useAssetsNotesPage()
+
 	const noteModalUi = createModalLayerUi({
 		width: 'sm:max-w-3xl',
 		rounded: 'rounded-2xl',
-	})
-
-	const selectedNote = ref<NoteDto | null>(null)
-	const editOpen = ref(false)
-	const searchKeyword = ref('')
-	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
-	const {
-		state: notes,
-		isLoading: loading,
-		execute: executeRefresh,
-	} = useAsyncState(() => listNotes(), [] as NoteDto[], {
-		immediate: true,
-		resetOnExecute: false,
-		onError: (e) => {
-			toast.add({
-				title: t('assets.notes.toast.loadFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		},
-	})
-
-	const editForm = ref({
-		title: '',
-		content: '',
-		linkedProjectId: '',
-		linkedTaskId: '',
-	})
-
-	const filteredNotes = computed(() => {
-		let result = notes.value
-
-		if (debouncedSearchKeyword.value.trim()) {
-			const keyword = debouncedSearchKeyword.value.trim().toLowerCase()
-			result = result.filter((note) => {
-				if (note.title.toLowerCase().includes(keyword)) return true
-				if (note.content.toLowerCase().includes(keyword)) return true
-				return false
-			})
-		}
-
-		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
 	const noteItemMotions = computed(() =>
@@ -244,85 +209,4 @@
 			limit: DEFAULT_STAGGER_MOTION_LIMIT,
 		}),
 	)
-
-	function openEditor(note: NoteDto) {
-		selectedNote.value = note
-		editForm.value = {
-			title: note.title,
-			content: note.content,
-			linkedProjectId: note.linkedProjectId ?? '',
-			linkedTaskId: note.linkedTaskId ?? '',
-		}
-		editOpen.value = true
-	}
-
-	function onCreateNew() {
-		openEditor({
-			id: '',
-			title: '',
-			content: '',
-			linkedProjectId: null,
-			linkedTaskId: null,
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
-		})
-	}
-
-	function closeEditor() {
-		editOpen.value = false
-		selectedNote.value = null
-	}
-
-	async function onSave() {
-		if (!selectedNote.value) return
-		const validation = validateWithZod(noteSubmitSchema, { title: editForm.value.title })
-		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
-			return
-		}
-
-		try {
-			const payload = {
-				...editForm.value,
-				linkedProjectId: editForm.value.linkedProjectId.trim() || null,
-				linkedTaskId: editForm.value.linkedTaskId.trim() || null,
-			}
-			if (selectedNote.value.id) {
-				await updateNote(selectedNote.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
-			} else {
-				await createNote(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
-			}
-			await refresh()
-			closeEditor()
-		} catch (e) {
-			toast.add({
-				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	async function onDelete(id: string) {
-		try {
-			await deleteNote(id)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
-			if (selectedNote.value?.id === id) {
-				closeEditor()
-			}
-			await refresh()
-		} catch (e) {
-			toast.add({
-				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(e, t),
-				color: 'error',
-			})
-		}
-	}
-
-	async function refresh() {
-		await executeRefresh(0)
-	}
 </script>
