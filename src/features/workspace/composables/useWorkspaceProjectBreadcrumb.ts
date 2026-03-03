@@ -1,14 +1,14 @@
 import { computed, type ComputedRef } from 'vue'
 
-import type { ProjectDto } from '@/features/workspace/model'
+import type { WorkspaceProject } from '@/features/workspace/model'
 
 /**
  * 从项目列表中按 parentId 回溯，得到 root -> ... -> current 的层级路径。
  */
-function projectPath(list: ProjectDto[], targetId: string): ProjectDto[] {
+function projectPath(list: WorkspaceProject[], targetId: string): WorkspaceProject[] {
 	const byId = new Map(list.map((project) => [project.id, project]))
-	const path: ProjectDto[] = []
-	let current: ProjectDto | undefined = byId.get(targetId)
+	const path: WorkspaceProject[] = []
+	let current: WorkspaceProject | undefined = byId.get(targetId)
 	while (current) {
 		path.unshift(current)
 		current = current.parentId ? byId.get(current.parentId) : undefined
@@ -22,7 +22,7 @@ function projectPath(list: ProjectDto[], targetId: string): ProjectDto[] {
 export function useWorkspaceProjectBreadcrumb(
 	spaceId: ComputedRef<string | undefined>,
 	projectId: ComputedRef<string | null>,
-	projectsList: ComputedRef<ProjectDto[]>,
+	projectsList: ComputedRef<WorkspaceProject[]>,
 ): ComputedRef<Array<{ label: string; to?: string }>> {
 	return computed(() => {
 		const breadcrumbItems: Array<{ label: string; to?: string }> = []

@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
 import { listWorkspaceTasks, type ListWorkspaceTasksArgs } from '../queries'
-import type { TaskDto } from './types'
+import type { WorkspaceTask } from './types'
 
 import { workspaceQueryKeys, type WorkspaceTaskListScope } from './query-keys'
 
@@ -39,7 +39,7 @@ export function useWorkspaceTaskBoardQuery(
 		status: 'done',
 	}))
 
-	const todoQuery = useQuery<TaskDto[]>({
+	const todoQuery = useQuery<WorkspaceTask[]>({
 		queryKey: computed(() => workspaceQueryKeys.tasks.list(todoScope.value)),
 		queryFn: async () => {
 			return await listWorkspaceTasks(toTaskListArgs(todoScope.value))
@@ -47,7 +47,7 @@ export function useWorkspaceTaskBoardQuery(
 		placeholderData: keepPreviousData,
 	})
 
-	const doneQuery = useQuery<TaskDto[]>({
+	const doneQuery = useQuery<WorkspaceTask[]>({
 		queryKey: computed(() => workspaceQueryKeys.tasks.list(doneScope.value)),
 		queryFn: async () => {
 			return await listWorkspaceTasks(toTaskListArgs(doneScope.value))

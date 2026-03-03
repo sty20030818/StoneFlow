@@ -97,10 +97,10 @@
 	import { computed, ref, watch } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import type { TaskDto } from '@/features/workspace/model'
+	import type { WorkspaceTask } from '@/features/workspace/model'
 
 	const props = defineProps<{
-		task: TaskDto
+		task: WorkspaceTask
 		isEditMode?: boolean
 		selected?: boolean
 		isCancelled: boolean

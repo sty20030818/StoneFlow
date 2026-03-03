@@ -43,13 +43,13 @@
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { refDebounced, useEventListener } from '@vueuse/core'
 
-	import { MOTION_TOKENS } from '@/config/motion'
-	import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
-	import { useTaskCreateWorkflow } from '@/features/create-flow'
-	import type { TaskDto } from '@/features/create-flow/model'
-	import type { TaskPriorityValue } from '@/config/task'
-	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
-	import { getPriorityClass } from '@/utils/priority'
+		import { MOTION_TOKENS } from '@/config/motion'
+		import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+		import { useTaskCreateWorkflow } from '@/features/create-flow'
+		import type { WorkspaceTask } from '@/features/workspace/model'
+		import type { TaskPriorityValue } from '@/config/task'
+		import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
+		import { getPriorityClass } from '@/utils/priority'
 
 	const props = withDefaults(
 		defineProps<{
@@ -70,7 +70,7 @@
 	const { t } = useI18n({ useScope: 'global' })
 
 	const emit = defineEmits<{
-		created: [task: TaskDto]
+		created: [task: WorkspaceTask]
 	}>()
 
 	const inputRef = ref<HTMLInputElement | null>(null)

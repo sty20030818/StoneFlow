@@ -1,7 +1,10 @@
-import { listTasks, type ListTasksArgs, type TaskDto } from '@/services/api/tasks'
+import { listTasks, type ListTasksArgs } from '@/services/api/tasks'
 
-export type ListWorkspaceTasksArgs = ListTasksArgs
+import { mapWorkspaceTasksDtoToDomain, type WorkspaceTask, type WorkspaceTaskListArgs } from '../model'
 
-export async function listWorkspaceTasks(args: ListWorkspaceTasksArgs): Promise<TaskDto[]> {
-	return await listTasks(args)
+export type ListWorkspaceTasksArgs = WorkspaceTaskListArgs
+
+export async function listWorkspaceTasks(args: ListWorkspaceTasksArgs): Promise<WorkspaceTask[]> {
+	const tasks = await listTasks(args as ListTasksArgs)
+	return mapWorkspaceTasksDtoToDomain(tasks)
 }

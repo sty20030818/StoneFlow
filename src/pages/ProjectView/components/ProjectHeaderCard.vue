@@ -101,7 +101,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
-	import type { ProjectDto } from '@/features/workspace'
+	import type { WorkspaceProject } from '@/features/workspace'
 	import {
 		PROJECT_PRIORITY_DISPLAY,
 		PROJECT_STATUS_DISPLAY,
@@ -110,7 +110,7 @@
 	} from '@/config/project'
 
 	const props = defineProps<{
-		project: ProjectDto | null
+		project: WorkspaceProject | null
 	}>()
 	const { t } = useI18n({ useScope: 'global' })
 	const emit = defineEmits<{

@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import type { ProjectDto } from '@/features/inspector/model'
+import type { InspectorProject } from '@/features/inspector/model'
 
 export const useProjectInspectorStore = defineStore('projectInspector', () => {
 	const isOpen = ref(false)
-	const project = ref<ProjectDto | null>(null)
+	const project = ref<InspectorProject | null>(null)
 
-	function open(target: ProjectDto) {
+	function open(target: InspectorProject) {
 		project.value = target
 		isOpen.value = true
 	}
@@ -16,11 +16,11 @@ export const useProjectInspectorStore = defineStore('projectInspector', () => {
 		isOpen.value = false
 	}
 
-	function setProject(next: ProjectDto | null) {
+	function setProject(next: InspectorProject | null) {
 		project.value = next
 	}
 
-	function patchProject(patch: Partial<ProjectDto>) {
+	function patchProject(patch: Partial<InspectorProject>) {
 		if (!project.value) return
 		project.value = {
 			...project.value,

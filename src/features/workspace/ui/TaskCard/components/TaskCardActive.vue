@@ -137,11 +137,11 @@
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import SpaceLabel from '@/components/SpaceLabel.vue'
 	import { TASK_PRIORITY_STYLES } from '@/config/task'
-	import type { TaskDto } from '@/features/workspace/model'
+	import type { WorkspaceTask } from '@/features/workspace/model'
 	import TaskCardMetaBadges from './TaskCardMetaBadges.vue'
 
 	const props = defineProps<{
-		task: TaskDto
+		task: WorkspaceTask
 		showSpaceLabel?: boolean
 		isEditMode?: boolean
 		selected?: boolean

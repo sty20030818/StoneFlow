@@ -156,7 +156,7 @@
 	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 	import EmptyState from '@/components/EmptyState.vue'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
-	import type { TaskDto } from '@/features/workspace/model'
+	import type { WorkspaceTask } from '@/features/workspace/model'
 	import DraggableTaskList from './DraggableTaskList.vue'
 	import InlineTaskCreator from './InlineTaskCreator.vue'
 	import TaskCard from './TaskCard'
@@ -165,7 +165,7 @@
 	const props = defineProps<{
 		title: string
 		columnStatus?: 'todo' | 'done'
-		tasks: TaskDto[]
+		tasks: WorkspaceTask[]
 		loading: boolean
 		emptyText: string
 		/** 优先级标识，用于限制拖拽范围。如果不传则允许组内任意拖拽 */
@@ -185,11 +185,11 @@
 
 	const emit = defineEmits<{
 		complete: [taskId: string]
-		'task-click': [task: TaskDto]
+		'task-click': [task: WorkspaceTask]
 		'toggle-task-select': [taskId: string]
 		'toggle-column-select': []
 		'request-task-delete': [taskId: string]
-		reorder: [tasks: TaskDto[]]
+		reorder: [tasks: WorkspaceTask[]]
 		'create-task': []
 	}>()
 	const doneTaskItemMotion = useMotionPreset('listItem')
@@ -272,7 +272,7 @@
 	})
 
 	const tasksByPriority = computed(() => {
-		const groups: Record<string, TaskDto[]> = { P0: [], P1: [], P2: [], P3: [] }
+		const groups: Record<string, WorkspaceTask[]> = { P0: [], P1: [], P2: [], P3: [] }
 		props.tasks.forEach((task) => {
 			// 如果任务的 priority 不在预期范围内，默认归类到 P3 或保持原样
 			// 这里假设后端返回的 priority 总是合法的 'P0'-'P3'

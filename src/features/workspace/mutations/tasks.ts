@@ -4,17 +4,18 @@ import {
 	rebalanceRanks,
 	reorderTask,
 	updateTask,
-	type UpdateTaskPatch,
 } from '@/services/api/tasks'
 
-export type WorkspaceTaskUpdatePatch = UpdateTaskPatch
+import { mapWorkspaceTaskPatchToDto, type WorkspaceTaskPatch } from '../model'
+
+export type WorkspaceTaskUpdatePatch = WorkspaceTaskPatch
 
 export async function completeWorkspaceTask(taskId: string): Promise<void> {
 	await completeTask(taskId)
 }
 
 export async function updateWorkspaceTask(taskId: string, patch: WorkspaceTaskUpdatePatch): Promise<void> {
-	await updateTask(taskId, patch)
+	await updateTask(taskId, mapWorkspaceTaskPatchToDto(patch))
 }
 
 export async function deleteWorkspaceTasks(taskIds: string[]): Promise<number> {

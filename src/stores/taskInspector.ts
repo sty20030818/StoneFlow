@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import type { TaskDto } from '@/features/inspector/model'
+import type { InspectorTask } from '@/features/inspector/model'
 
 export const useTaskInspectorStore = defineStore('taskInspector', () => {
 	const isOpen = ref(false)
-	const task = ref<TaskDto | null>(null)
+	const task = ref<InspectorTask | null>(null)
 
-	function open(target: TaskDto) {
+	function open(target: InspectorTask) {
 		task.value = target
 		isOpen.value = true
 	}
@@ -16,7 +16,7 @@ export const useTaskInspectorStore = defineStore('taskInspector', () => {
 		isOpen.value = false
 	}
 
-	function patchTask(patch: Partial<TaskDto>) {
+	function patchTask(patch: Partial<InspectorTask>) {
 		if (!task.value) return
 		task.value = {
 			...task.value,

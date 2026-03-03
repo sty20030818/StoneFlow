@@ -2,14 +2,14 @@ import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 
 import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/config/task'
-import type { TaskDto } from '@/features/workspace/model'
+import type { WorkspaceTask } from '@/features/workspace/model'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { getDisplayStatus } from '@/utils/task'
 import { formatDate, formatDateTime, formatTimeOfDay } from '@/utils/time'
 import { Menu } from '@tauri-apps/api/menu'
 
 export type TaskCardProps = {
-	task: TaskDto
+	task: WorkspaceTask
 	showCompleteButton?: boolean
 	showTime?: boolean
 	showSpaceLabel?: boolean
@@ -18,7 +18,7 @@ export type TaskCardProps = {
 }
 
 export type TaskCardEmits = {
-	(e: 'click', task: TaskDto): void
+	(e: 'click', task: WorkspaceTask): void
 	(e: 'complete', taskId: string): void
 	(e: 'toggle-select', taskId: string): void
 	(e: 'request-delete', taskId: string): void
