@@ -204,7 +204,7 @@
 		PriorityOption,
 		SelectOption,
 		SpaceOption,
-	} from '../composables/useCreateProjectModal'
+	} from '../../../composables/useCreateProjectModal'
 
 	const form = defineModel<CreateProjectFormState>('form', { required: true })
 	const tagInput = defineModel<string>('tagInput', { required: true })

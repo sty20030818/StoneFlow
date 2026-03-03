@@ -2,7 +2,6 @@ import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { getCreateFlowDefaultProject, useTaskCreateWorkflow } from '@/features/create-flow'
 import type {
 	CustomFieldItem,
 	LinkDto,
@@ -25,6 +24,8 @@ import { taskSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { statusOptions } from '@/utils/task'
+import { getCreateFlowDefaultProject } from '../queries'
+import { useTaskCreateWorkflow } from './useTaskCreateWorkflow'
 
 export type CreateTaskModalProps = {
 	modelValue: boolean

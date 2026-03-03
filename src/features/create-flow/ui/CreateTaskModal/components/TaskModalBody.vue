@@ -321,7 +321,7 @@
 
 	import type { DoneReasonOption, PriorityOption, StatusOption } from '@/config/task'
 	import type { SpaceId } from '@/config/space'
-	import type { CreateTaskFormState, LinkKindOption, ProjectOption } from '../composables/useCreateTaskModal'
+	import type { CreateTaskFormState, LinkKindOption, ProjectOption } from '../../../composables/useCreateTaskModal'
 
 	type SpaceOption = {
 		value: SpaceId
