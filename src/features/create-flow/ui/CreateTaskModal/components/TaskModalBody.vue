@@ -317,7 +317,7 @@
 <script setup lang="ts">
 	// 复用边界约束：该组件只负责字段渲染与事件分发，业务流程统一留在 composable。
 	import { useI18n } from 'vue-i18n'
-	import DatePickerInput from '@/components/DatePickerInput.vue'
+	import DatePickerInput from '@/components/base/DatePickerInput.vue'
 
 	import type { DoneReasonOption, PriorityOption, StatusOption } from '@/config/task'
 	import type { SpaceId } from '@/config/space'

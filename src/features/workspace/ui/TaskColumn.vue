@@ -154,8 +154,8 @@
 	import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
-	import EmptyState from '@/components/EmptyState.vue'
-	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
+	import EmptyState from '@/components/base/EmptyState.vue'
+	import TaskStatusIcon from '@/components/shared/TaskStatusIcon.vue'
 	import type { WorkspaceTask } from '@/features/workspace/model'
 	import DraggableTaskList from './DraggableTaskList.vue'
 	import InlineTaskCreator from './InlineTaskCreator.vue'

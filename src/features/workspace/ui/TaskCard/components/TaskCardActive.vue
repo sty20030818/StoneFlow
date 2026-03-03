@@ -135,7 +135,7 @@
 	import { computed, ref, watch } from 'vue'
 
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import SpaceLabel from '@/components/SpaceLabel.vue'
+	import SpaceLabel from '@/components/shared/SpaceLabel.vue'
 	import { TASK_PRIORITY_STYLES } from '@/config/task'
 	import type { WorkspaceTask } from '@/features/workspace/model'
 	import TaskCardMetaBadges from './TaskCardMetaBadges.vue'

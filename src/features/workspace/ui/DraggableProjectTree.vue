@@ -131,29 +131,15 @@
 	import { computed, ref, toRefs, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { VueDraggable } from 'vue-draggable-plus'
+	import type { ProjectTreeItem } from './project-tree-types'
 
-		import {
-			deleteWorkspaceProject,
-			invalidateWorkspaceTaskAndProjectQueries,
-			rebalanceWorkspaceProjectRanks,
-			reorderWorkspaceProject,
-		} from '@/features/workspace'
-		import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
+	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
 	import { resolveErrorMessage } from '@/utils/error-message'
 	import { calculateInsertRank } from '@/utils/rank'
-
-	export type ProjectTreeItem = {
-		id: string
-		parentId: string | null
-		label: string
-		icon: string
-		iconClass: string
-		rank: number
-		createdAt: number
-		children?: ProjectTreeItem[]
-	}
+	import { invalidateWorkspaceTaskAndProjectQueries } from '../model'
+	import { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from '../mutations'
 
 	const props = withDefaults(
 		defineProps<{
