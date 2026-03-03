@@ -1,8 +1,9 @@
 import { useI18n } from 'vue-i18n'
-import { useEventListener, useTimeoutFn, watchDebounced } from '@vueuse/core'
+import { useEventListener, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
 import { PROJECT_PRIORITY_OPTIONS, type ProjectPriorityValue, isDefaultProjectId } from '@/config/project'
+import { usePatchQueue } from '@/components/InspectorDrawer/shared/composables'
 import { SPACE_OPTIONS } from '@/config/space'
 import type { ProjectDto, UpdateProjectPatch } from '@/services/api/projects'
 import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'
@@ -26,10 +27,9 @@ type ProjectLinkFormItem = {
 	kind: LinkDto['kind']
 }
 
-type SaveBucket = {
+type ProjectPatchQueuePayload = {
 	spaceId: string
-	stagedPatch: UpdateProjectPatch
-	queueRunning: boolean
+	patch: UpdateProjectPatch
 }
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
@@ -81,11 +81,8 @@ export function useProjectInspectorDrawer() {
 		unarchiving: false,
 	})
 	const suppressAutosave = ref(false)
-	const pendingSaves = ref(0)
 	const parentOptions = ref<ParentProjectOption[]>([{ value: null, label: t('common.labels.projectRoot'), depth: 0 }])
 
-	const saveBuckets = new Map<string, SaveBucket>()
-	const retryPatchByProjectId = new Map<string, UpdateProjectPatch>()
 	let syncTicket = 0
 
 	const priorityOptions = PROJECT_PRIORITY_OPTIONS
@@ -99,12 +96,43 @@ export function useProjectInspectorDrawer() {
 		return isDefaultProjectId(project.id)
 	})
 
-	const isSaveStateVisible = computed(() => store.saveState !== 'idle')
-	const canRetrySave = computed(() => {
-		const projectId = currentProject.value?.id
-		if (!projectId) return false
-		return retryPatchByProjectId.has(projectId)
+	function getCurrentProjectId(): string | null {
+		return currentProject.value?.id ?? null
+	}
+
+	function hasPatchValue(patch: UpdateProjectPatch): boolean {
+		return Object.keys(patch).length > 0
+	}
+
+	const patchQueue = usePatchQueue<string, ProjectPatchQueuePayload>({
+		createEmptyPatch: () => ({
+			spaceId: '',
+			patch: {},
+		}),
+		hasPatchValue: (payload) => payload.spaceId.length > 0 && hasPatchValue(payload.patch),
+		mergePatch: (current, next) => ({
+			spaceId: current.spaceId || next.spaceId,
+			patch: {
+				...current.patch,
+				...next.patch,
+			},
+		}),
+		clonePatch: (payload) => ({
+			spaceId: payload.spaceId,
+			patch: { ...payload.patch },
+		}),
+		commitPatch: (projectId, payload) => commitUpdateNow(projectId, payload),
+		isContextActive: (projectId) => getCurrentProjectId() === projectId,
+		onDiscardedPatch: (projectId) => {
+			console.warn('[ProjectInspector] Discarded patch due to context mismatch:', {
+				activeProjectId: getCurrentProjectId(),
+				bucketProjectId: projectId,
+			})
+		},
 	})
+
+	const isSaveStateVisible = computed(() => patchQueue.saveState.value !== 'idle')
+	const canRetrySave = computed(() => patchQueue.retrySaveAvailable.value)
 	const canDeleteProject = computed(() => {
 		const project = currentProject.value
 		if (!project) return false
@@ -133,53 +161,6 @@ export function useProjectInspectorDrawer() {
 	const isLifecycleBusy = computed(() => {
 		return lifecycleState.deleting || lifecycleState.restoring || lifecycleState.archiving || lifecycleState.unarchiving
 	})
-
-	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
-		() => {
-			store.setSaveState('idle')
-		},
-		1200,
-		{ immediate: false },
-	)
-	const { start: startErrorTimer, stop: stopErrorTimer } = useTimeoutFn(
-		() => {
-			store.setSaveState('idle')
-		},
-		3000,
-		{ immediate: false },
-	)
-
-	function syncRetrySaveAvailability() {
-		store.setRetrySaveAvailable(canRetrySave.value)
-	}
-
-	function clearSaveStateTimer() {
-		stopSavedTimer()
-		stopErrorTimer()
-	}
-
-	function beginSave() {
-		pendingSaves.value += 1
-		store.setSaveState('saving')
-		clearSaveStateTimer()
-	}
-
-	function endSave(ok: boolean) {
-		pendingSaves.value = Math.max(0, pendingSaves.value - 1)
-		if (pendingSaves.value > 0) return
-		clearSaveStateTimer()
-		if (ok) {
-			store.setSaveState('saved')
-			startSavedTimer()
-			return
-		}
-		store.setSaveState('error')
-		startErrorTimer()
-	}
-
-	function hasPatchValue(patch: UpdateProjectPatch): boolean {
-		return Object.keys(patch).length > 0
-	}
 
 	function normalizeOptionalText(value: string): string | null {
 		const normalized = value.trim()
@@ -236,69 +217,23 @@ export function useProjectInspectorDrawer() {
 		return patch.title !== undefined || patch.parentId !== undefined || patch.spaceId !== undefined
 	}
 
-	function getOrCreateSaveBucket(projectId: string, spaceId: string): SaveBucket {
-		const existing = saveBuckets.get(projectId)
-		if (existing) return existing
-		const created: SaveBucket = {
-			spaceId,
-			stagedPatch: {},
-			queueRunning: false,
-		}
-		saveBuckets.set(projectId, created)
-		return created
-	}
-
-	function clearProjectBucket(projectId: string) {
-		const bucket = saveBuckets.get(projectId)
-		if (!bucket) return
-		if (bucket.queueRunning) return
-		if (hasPatchValue(bucket.stagedPatch)) return
-		if (retryPatchByProjectId.has(projectId)) return
-		saveBuckets.delete(projectId)
-	}
-
-	function cleanupInactiveBuckets(activeProjectId: string | null) {
-		for (const [projectId, bucket] of saveBuckets.entries()) {
-			if (projectId === activeProjectId) continue
-			if (bucket.queueRunning) continue
-			if (hasPatchValue(bucket.stagedPatch)) {
-				console.warn('[ProjectInspector] Discarded queued patch for inactive project:', {
-					projectId,
-				})
-			}
-			saveBuckets.delete(projectId)
-		}
-
-		for (const projectId of retryPatchByProjectId.keys()) {
-			if (projectId === activeProjectId) continue
-			retryPatchByProjectId.delete(projectId)
-		}
-	}
-
-	function stageUpdateForCurrentProject(patch: UpdateProjectPatch): { projectId: string; spaceId: string } | null {
+	function stageUpdateForCurrentProject(patch: UpdateProjectPatch): boolean {
 		const project = currentProject.value
-		if (!project || !hasPatchValue(patch)) return null
-		const bucket = getOrCreateSaveBucket(project.id, project.spaceId)
-		bucket.stagedPatch = {
-			...bucket.stagedPatch,
-			...patch,
-		}
-		return {
-			projectId: project.id,
+		if (!project || !hasPatchValue(patch)) return false
+		patchQueue.setActiveContext(project.id)
+		patchQueue.queuePatch(project.id, {
 			spaceId: project.spaceId,
-		}
+			patch,
+		})
+		return true
 	}
 
 	function queueImmediateUpdate(patch: UpdateProjectPatch) {
-		const context = stageUpdateForCurrentProject(patch)
-		if (!context) return
-		void processQueuedUpdates(context.projectId, context.spaceId)
+		stageUpdateForCurrentProject(patch)
 	}
 
 	function queueDebouncedUpdate(patch: UpdateProjectPatch) {
-		const context = stageUpdateForCurrentProject(patch)
-		if (!context) return
-		void processQueuedUpdates(context.projectId, context.spaceId)
+		stageUpdateForCurrentProject(patch)
 	}
 
 	function patchStoreProject(projectId: string, spaceId: string, patch: UpdateProjectPatch) {
@@ -334,19 +269,11 @@ export function useProjectInspectorDrawer() {
 		store.setProject(latest)
 	}
 
-	async function commitUpdateNow(projectId: string, spaceId: string, patch: UpdateProjectPatch): Promise<boolean> {
-		if (!hasPatchValue(patch)) return true
+	async function commitUpdateNow(projectId: string, payload: ProjectPatchQueuePayload): Promise<boolean> {
+		if (!hasPatchValue(payload.patch)) return true
 
-		const activeProjectId = currentProject.value?.id ?? null
-		if (activeProjectId !== projectId) {
-			console.warn('[ProjectInspector] Discarded patch due to context mismatch:', {
-				activeProjectId,
-				bucketProjectId: projectId,
-			})
-			return true
-		}
-
-		beginSave()
+		const spaceId = payload.spaceId
+		const patch = payload.patch
 		try {
 			await updateProject(projectId, patch)
 			patchStoreProject(projectId, spaceId, patch)
@@ -360,44 +287,10 @@ export function useProjectInspectorDrawer() {
 				refreshSignals.bumpTask()
 			}
 			refreshSignals.bumpProject()
-			retryPatchByProjectId.delete(projectId)
-			syncRetrySaveAvailability()
-			endSave(true)
 			return true
 		} catch (error) {
 			console.error('Failed to update project:', error)
-			retryPatchByProjectId.set(projectId, { ...patch })
-			syncRetrySaveAvailability()
-			endSave(false)
 			return false
-		}
-	}
-
-	async function processQueuedUpdates(projectId: string, spaceId: string) {
-		const bucket = getOrCreateSaveBucket(projectId, spaceId)
-		if (bucket.queueRunning) return
-		bucket.queueRunning = true
-
-		try {
-			while (hasPatchValue(bucket.stagedPatch)) {
-				const currentPatch = bucket.stagedPatch
-				bucket.stagedPatch = {}
-				const ok = await commitUpdateNow(projectId, bucket.spaceId, currentPatch)
-				if (!ok) {
-					bucket.stagedPatch = {
-						...currentPatch,
-						...bucket.stagedPatch,
-					}
-					break
-				}
-			}
-		} finally {
-			bucket.queueRunning = false
-			if (hasPatchValue(bucket.stagedPatch) && currentProject.value?.id === projectId) {
-				void processQueuedUpdates(projectId, bucket.spaceId)
-				return
-			}
-			clearProjectBucket(projectId)
 		}
 	}
 
@@ -735,13 +628,12 @@ export function useProjectInspectorDrawer() {
 
 		const project = currentProject.value
 		if (!project) return
-		await processQueuedUpdates(project.id, project.spaceId)
+		await patchQueue.flushPendingPatches(project.id)
 	}
 
 	function closeImmediately() {
+		patchQueue.clearAll()
 		store.close()
-		cleanupInactiveBuckets(null)
-		syncRetrySaveAvailability()
 	}
 
 	async function runLifecycleAction(action: 'delete' | 'restore' | 'archive' | 'unarchive'): Promise<boolean> {
@@ -853,26 +745,18 @@ export function useProjectInspectorDrawer() {
 
 	async function close() {
 		await flushPendingUpdates()
+		patchQueue.clearAll()
 		store.close()
-		const activeProjectId = currentProject.value?.id ?? null
-		cleanupInactiveBuckets(activeProjectId)
-		syncRetrySaveAvailability()
 	}
 
 	async function onRetrySave() {
-		const project = currentProject.value
-		if (!project) return
-		const retryPatch = retryPatchByProjectId.get(project.id)
-		if (!retryPatch) return
-		queueImmediateUpdate(retryPatch)
-		await processQueuedUpdates(project.id, project.spaceId)
+		await patchQueue.retrySave(getCurrentProjectId())
 	}
 
 	watch(
 		() => currentProject.value?.id ?? null,
 		(projectId) => {
-			cleanupInactiveBuckets(projectId)
-			syncRetrySaveAvailability()
+			patchQueue.setActiveContext(projectId)
 		},
 		{ immediate: true },
 	)
@@ -976,7 +860,7 @@ export function useProjectInspectorDrawer() {
 		isRestoringProject: computed(() => lifecycleState.restoring),
 		isArchivingProject: computed(() => lifecycleState.archiving),
 		isUnarchivingProject: computed(() => lifecycleState.unarchiving),
-		saveState: computed(() => store.saveState),
+		saveState: patchQueue.saveState,
 		addTag,
 		removeTag,
 		onTagInputBlur,

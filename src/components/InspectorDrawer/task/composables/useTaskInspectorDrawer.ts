@@ -22,8 +22,13 @@ export function useTaskInspectorDrawer() {
 
 	const state = useTaskInspectorState()
 	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, projectsStore })
-	const derived = useTaskInspectorDerived({ currentTask, state, projectsStore })
 	const actions = useTaskInspectorActions({ currentTask, state, store, projectsStore, refreshSignals })
+	const derived = useTaskInspectorDerived({
+		currentTask,
+		state,
+		projectsStore,
+		saveState: actions.saveState,
+	})
 	const activityLogs = useTaskInspectorActivityLogs({
 		currentTask,
 		taskTick: computed(() => refreshSignals.taskTick),
@@ -48,6 +53,7 @@ export function useTaskInspectorDrawer() {
 	async function close() {
 		await actions.flushPendingUpdates()
 		actions.resetTextInteractionState()
+		actions.clearQueueState()
 		state.timelineCollapsed.value = true
 		store.close()
 	}

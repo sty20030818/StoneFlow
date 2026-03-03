@@ -44,7 +44,6 @@ export function useTaskInspectorSync(params: {
 			state.deadlineLocal.value = toDeadlineInputValue(task.deadlineAt)
 			state.spaceIdLocal.value = task.spaceId
 			state.projectIdLocal.value = normalizeProjectId(task.projectId)
-			state.retrySaveAvailable.value = false
 
 			if (!forceEditable) return
 

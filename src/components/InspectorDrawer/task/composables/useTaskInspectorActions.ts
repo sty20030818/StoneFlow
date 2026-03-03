@@ -1,9 +1,10 @@
 import type { Ref } from 'vue'
-import { useTimeoutFn, watchDebounced } from '@vueuse/core'
+import { watchDebounced } from '@vueuse/core'
 
 import type { LinkDto, LinkInput, TaskDto, UpdateTaskPatch } from '@/services/api/tasks'
 import { updateTask } from '@/services/api/tasks'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
+import { usePatchQueue } from '@/components/InspectorDrawer/shared/composables'
 import type { useProjectsStore } from '@/stores/projects'
 import type { useRefreshSignalsStore } from '@/stores/refresh-signals'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
@@ -27,6 +28,11 @@ function hasPatchValue(patch: UpdateTaskPatch): boolean {
 	return Object.keys(patch).length > 0
 }
 
+type TaskPatchQueuePayload = {
+	patch: UpdateTaskPatch
+	storePatch: Partial<TaskDto>
+}
+
 export function useTaskInspectorActions(params: {
 	currentTask: Ref<TaskDto | null>
 	state: TaskInspectorState
@@ -36,49 +42,6 @@ export function useTaskInspectorActions(params: {
 }) {
 	const { currentTask, state, store, projectsStore, refreshSignals } = params
 
-	let stagedByTask = new Map<string, { patch: UpdateTaskPatch; storePatch: Partial<TaskDto> }>()
-	let queueRunning = false
-	let retrySnapshot: { taskId: string; patch: UpdateTaskPatch; storePatch: Partial<TaskDto> } | null = null
-
-	const { start: startSavedTimer, stop: stopSavedTimer } = useTimeoutFn(
-		() => {
-			state.saveState.value = 'idle'
-		},
-		1200,
-		{ immediate: false },
-	)
-	const { start: startErrorTimer, stop: stopErrorTimer } = useTimeoutFn(
-		() => {
-			state.saveState.value = 'idle'
-		},
-		3000,
-		{ immediate: false },
-	)
-
-	function clearSaveStateTimer() {
-		stopSavedTimer()
-		stopErrorTimer()
-	}
-
-	function beginSave() {
-		state.pendingSaves.value += 1
-		state.saveState.value = 'saving'
-		clearSaveStateTimer()
-	}
-
-	function endSave(ok: boolean) {
-		state.pendingSaves.value = Math.max(0, state.pendingSaves.value - 1)
-		if (state.pendingSaves.value > 0) return
-		clearSaveStateTimer()
-		if (ok) {
-			state.saveState.value = 'saved'
-			startSavedTimer()
-			return
-		}
-		state.saveState.value = 'error'
-		startErrorTimer()
-	}
-
 	function getCurrentTaskId(): string | null {
 		return currentTask.value?.id ?? null
 	}
@@ -87,58 +50,13 @@ export function useTaskInspectorActions(params: {
 		console.warn('[TaskInspector] Discarded stale patch', { patchTaskId: taskId, activeTaskId })
 	}
 
-	function stageUpdate(taskId: string | null, patch: UpdateTaskPatch, storePatch: Partial<TaskDto> = {}): boolean {
-		if (!taskId || !hasPatchValue(patch)) return false
-		const current = stagedByTask.get(taskId)
-		stagedByTask.set(taskId, {
-			patch: {
-				...(current?.patch ?? {}),
-				...patch,
-			},
-			storePatch: {
-				...(current?.storePatch ?? {}),
-				...storePatch,
-			},
-		})
-		return true
-	}
-
-	function queueImmediateUpdate(
-		patch: UpdateTaskPatch,
-		storePatch: Partial<TaskDto> = {},
-		taskId = getCurrentTaskId(),
-	) {
-		if (!stageUpdate(taskId, patch, storePatch)) return
-		void processQueuedUpdates(taskId)
-	}
-
-	function queueDebouncedUpdate(
-		patch: UpdateTaskPatch,
-		storePatch: Partial<TaskDto> = {},
-		taskId = getCurrentTaskId(),
-	) {
-		if (!stageUpdate(taskId, patch, storePatch)) return
-		void processQueuedUpdates(taskId)
-	}
-
-	async function commitUpdateNow(
-		taskId: string,
-		patch: UpdateTaskPatch,
-		storePatch: Partial<TaskDto> = {},
-	): Promise<boolean> {
-		if (!hasPatchValue(patch)) return true
-		const activeTaskId = getCurrentTaskId()
-		if (activeTaskId && activeTaskId !== taskId) {
-			logDiscardedPatch(taskId, activeTaskId)
-			return true
-		}
-		beginSave()
-
+	async function commitUpdateNow(taskId: string, payload: TaskPatchQueuePayload): Promise<boolean> {
+		if (!hasPatchValue(payload.patch)) return true
 		let ok = false
 		let lastError: unknown = null
 		for (let attempt = 0; attempt < 2; attempt += 1) {
 			try {
-				await updateTask(taskId, patch)
+				await updateTask(taskId, payload.patch)
 				ok = true
 				break
 			} catch (error) {
@@ -147,74 +65,72 @@ export function useTaskInspectorActions(params: {
 		}
 
 		if (ok) {
-			if (Object.keys(storePatch).length > 0 && getCurrentTaskId() === taskId) {
-				store.patchTask(storePatch)
+			if (Object.keys(payload.storePatch).length > 0 && getCurrentTaskId() === taskId) {
+				store.patchTask(payload.storePatch)
 			}
 			refreshSignals.bumpTask()
-			endSave(true)
 			return true
 		}
 
 		console.error('Failed to update task:', lastError)
-		endSave(false)
 		return false
 	}
 
-	function clearQueuedUpdates(exceptTaskId: string | null = null) {
-		if (!exceptTaskId) {
-			stagedByTask.clear()
-			return
-		}
-		stagedByTask = new Map([...stagedByTask.entries()].filter(([taskId]) => taskId === exceptTaskId))
+	const patchQueue = usePatchQueue<string, TaskPatchQueuePayload>({
+		createEmptyPatch: () => ({
+			patch: {},
+			storePatch: {},
+		}),
+		hasPatchValue: (payload) => hasPatchValue(payload.patch),
+		mergePatch: (current, next) => ({
+			patch: {
+				...current.patch,
+				...next.patch,
+			},
+			storePatch: {
+				...current.storePatch,
+				...next.storePatch,
+			},
+		}),
+		clonePatch: (payload) => ({
+			patch: { ...payload.patch },
+			storePatch: { ...payload.storePatch },
+		}),
+		commitPatch: commitUpdateNow,
+		isContextActive: (taskId) => {
+			const activeTaskId = getCurrentTaskId()
+			return !activeTaskId || activeTaskId === taskId
+		},
+		onDiscardedPatch: (taskId) => {
+			logDiscardedPatch(taskId, getCurrentTaskId())
+		},
+	})
+
+	function queueImmediateUpdate(
+		patch: UpdateTaskPatch,
+		storePatch: Partial<TaskDto> = {},
+		taskId = getCurrentTaskId(),
+	) {
+		patchQueue.setActiveContext(taskId)
+		patchQueue.queuePatch(taskId, { patch, storePatch })
 	}
 
-	function hasQueuedPatch(taskId: string | null): boolean {
-		if (!taskId) return false
-		const staged = stagedByTask.get(taskId)
-		return Boolean(staged && hasPatchValue(staged.patch))
+	function queueDebouncedUpdate(
+		patch: UpdateTaskPatch,
+		storePatch: Partial<TaskDto> = {},
+		taskId = getCurrentTaskId(),
+	) {
+		patchQueue.setActiveContext(taskId)
+		patchQueue.queuePatch(taskId, { patch, storePatch })
 	}
 
 	async function processQueuedUpdates(targetTaskId = getCurrentTaskId()) {
-		if (queueRunning) return
-		queueRunning = true
-
-		try {
-			while (targetTaskId && hasQueuedPatch(targetTaskId)) {
-				const staged = stagedByTask.get(targetTaskId)
-				if (!staged) break
-				const nextPatch = staged.patch
-				const nextStorePatch = staged.storePatch
-				stagedByTask.delete(targetTaskId)
-
-				const ok = await commitUpdateNow(targetTaskId, nextPatch, nextStorePatch)
-				if (!ok) {
-					stageUpdate(targetTaskId, nextPatch, nextStorePatch)
-					retrySnapshot = {
-						taskId: targetTaskId,
-						patch: { ...nextPatch },
-						storePatch: { ...nextStorePatch },
-					}
-					state.retrySaveAvailable.value = getCurrentTaskId() === targetTaskId
-					break
-				}
-
-				retrySnapshot = null
-				state.retrySaveAvailable.value = false
-			}
-		} finally {
-			queueRunning = false
-			const activeTaskId = getCurrentTaskId()
-			if (activeTaskId && hasQueuedPatch(activeTaskId)) void processQueuedUpdates(activeTaskId)
-		}
+		await patchQueue.flushPendingPatches(targetTaskId)
 	}
 
 	function onTaskContextChange(previousTaskId: string | null, nextTaskId: string | null) {
-		if (!previousTaskId || previousTaskId === nextTaskId) return
-		clearQueuedUpdates(nextTaskId)
-		if (retrySnapshot && retrySnapshot.taskId !== nextTaskId) {
-			retrySnapshot = null
-			state.retrySaveAvailable.value = false
-		}
+		if (previousTaskId === nextTaskId) return
+		patchQueue.setActiveContext(nextTaskId)
 	}
 
 	function findInvalidLinkIndex(): number {
@@ -583,9 +499,7 @@ export function useTaskInspectorActions(params: {
 	}
 
 	async function onRetrySave() {
-		if (!retrySnapshot) return
-		queueImmediateUpdate(retrySnapshot.patch, retrySnapshot.storePatch, retrySnapshot.taskId)
-		await processQueuedUpdates(retrySnapshot.taskId)
+		await patchQueue.retrySave(getCurrentTaskId())
 	}
 
 	function toggleTimeline() {
@@ -594,6 +508,10 @@ export function useTaskInspectorActions(params: {
 
 	function resetTextInteractionState() {
 		state.resetTextInteractionState()
+	}
+
+	function clearQueueState() {
+		patchQueue.clearAll()
 	}
 
 	function buildStoreLinks(currentLinks: LinkDto[], nextLinks: LinkInput[]): LinkDto[] {
@@ -615,6 +533,8 @@ export function useTaskInspectorActions(params: {
 	}
 
 	return {
+		saveState: patchQueue.saveState,
+		retrySaveAvailable: patchQueue.retrySaveAvailable,
 		onTitleBlur,
 		onTitleFocus,
 		onTitleCompositionStart,
@@ -652,6 +572,7 @@ export function useTaskInspectorActions(params: {
 		onRetrySave,
 		flushPendingUpdates,
 		resetTextInteractionState,
+		clearQueueState,
 		toggleTimeline,
 		onTaskContextChange,
 	}

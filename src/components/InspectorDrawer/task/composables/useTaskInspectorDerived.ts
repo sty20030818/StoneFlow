@@ -6,6 +6,7 @@ import type { TaskDto } from '@/services/api/tasks'
 import type { useProjectsStore } from '@/stores/projects'
 import { formatDate } from '@/utils/time'
 import {
+	type DrawerSaveState,
 	normalizeDrawerSpaceKey,
 	resolveDrawerSpaceDisplay,
 	useDrawerSaveStatePresentation,
@@ -29,10 +30,11 @@ export function useTaskInspectorDerived(params: {
 	currentTask: Ref<TaskDto | null>
 	state: TaskInspectorState
 	projectsStore: ReturnType<typeof useProjectsStore>
+	saveState: Ref<DrawerSaveState>
 }) {
 	const { currentTask, state, projectsStore } = params
 	const { t, locale } = useI18n({ useScope: 'global' })
-	const { saveStateLabel, saveStateClass, saveStateDotClass } = useDrawerSaveStatePresentation(state.saveState)
+	const { saveStateLabel, saveStateClass, saveStateDotClass } = useDrawerSaveStatePresentation(params.saveState)
 
 	const priorityLabel = computed(() => {
 		const opt = TASK_PRIORITY_OPTIONS.find((item) => item.value === state.priorityLocal.value)
