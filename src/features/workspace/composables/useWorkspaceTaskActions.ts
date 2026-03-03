@@ -1,14 +1,10 @@
-import {
-	completeWorkspaceTask,
-	updateWorkspaceTask,
-	type WorkspaceTaskUpdatePatch,
-} from '@/features/workspace'
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceTaskAndProjectQueries } from '../model'
+import { completeWorkspaceTask, updateWorkspaceTask, type WorkspaceTaskUpdatePatch } from '../mutations'
 
 /**
- * 统一的任务操作逻辑（complete, update 等，统一错误处理）
+ * Workspace 任务写操作编排（complete/update + 一致性刷新 + 反馈）。
  */
-export function useTaskActions() {
+export function useWorkspaceTaskActions() {
 	const toast = useToast()
 
 	async function complete(taskId: string): Promise<boolean> {
@@ -17,10 +13,10 @@ export function useTaskActions() {
 			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({ title: '已完成', color: 'success' })
 			return true
-		} catch (e) {
+		} catch (error) {
 			toast.add({
 				title: '完成失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				description: error instanceof Error ? error.message : '未知错误',
 				color: 'error',
 			})
 			return false
@@ -33,10 +29,10 @@ export function useTaskActions() {
 			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({ title: '更新成功', color: 'success' })
 			return true
-		} catch (e) {
+		} catch (error) {
 			toast.add({
 				title: '更新失败',
-				description: e instanceof Error ? e.message : '未知错误',
+				description: error instanceof Error ? error.message : '未知错误',
 				color: 'error',
 			})
 			return false

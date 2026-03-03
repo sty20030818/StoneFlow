@@ -154,12 +154,12 @@
 	import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 	import { getProjectMotionPhaseDelay, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
-	import DraggableTaskList from '@/components/DraggableTaskList.vue'
 	import EmptyState from '@/components/EmptyState.vue'
-	import InlineTaskCreator from '@/components/InlineTaskCreator.vue'
-	import TaskCard from '@/components/TaskCard'
 	import TaskStatusIcon from '@/components/TaskStatusIcon.vue'
 	import type { TaskDto } from '@/features/workspace/model'
+	import DraggableTaskList from './DraggableTaskList.vue'
+	import InlineTaskCreator from './InlineTaskCreator.vue'
+	import TaskCard from './TaskCard'
 	const { t } = useI18n({ useScope: 'global' })
 
 	const props = defineProps<{
