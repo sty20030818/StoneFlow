@@ -4,9 +4,9 @@ import { computed, ref } from 'vue'
 
 import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import { stoneFlowQueryClient } from '@/features/shared'
+import { listWorkspaceProjects } from '@/features/workspace'
 import { workspaceQueryKeys } from '@/features/workspace/model/query-keys'
-import type { ProjectDto } from '@/services/api/projects'
-import { listProjects } from '@/services/api/projects'
+import type { ProjectDto } from '@/features/workspace/model'
 
 export const useProjectsStore = defineStore('projects', () => {
 	const snapshotBySpace = useStorage<Record<string, ProjectDto[]>>('projects_snapshot_v1', {})
@@ -82,7 +82,7 @@ export const useProjectsStore = defineStore('projects', () => {
 		const data = await stoneFlowQueryClient.fetchQuery({
 			queryKey,
 			queryFn: async () => {
-				return await listProjects({ spaceId })
+				return await listWorkspaceProjects(spaceId)
 			},
 		})
 		syncSpaceProjects(spaceId, data, { markLoaded: true })

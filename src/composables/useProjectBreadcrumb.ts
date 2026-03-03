@@ -1,6 +1,6 @@
 import { computed, type ComputedRef } from 'vue'
 
-import type { ProjectDto } from '@/services/api/projects'
+import type { ProjectDto } from '@/features/workspace/model'
 
 /**
  * 从 project 列表按 parentId 回溯，得到 root → … → current 的层级路径

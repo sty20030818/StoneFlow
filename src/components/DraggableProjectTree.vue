@@ -132,8 +132,12 @@
 	import { useI18n } from 'vue-i18n'
 	import { VueDraggable } from 'vue-draggable-plus'
 
+	import {
+		deleteWorkspaceProject,
+		rebalanceWorkspaceProjectRanks,
+		reorderWorkspaceProject,
+	} from '@/features/workspace'
 	import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
-	import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { useProjectsStore } from '@/stores/projects'
@@ -292,7 +296,7 @@
 		if (!deleteTarget.value || deleting.value) return
 		deleting.value = true
 		try {
-			await deleteProject(deleteTarget.value.id)
+			await deleteWorkspaceProject(deleteTarget.value.id)
 			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({
 				title: t('toast.projectTree.deletedTitle'),
@@ -333,12 +337,12 @@
 
 		try {
 			// 立即更新被拖拽项目的 rank
-			await reorderProject(movedProject.id, newRank)
+			await reorderWorkspaceProject(movedProject.id, newRank)
 
 			// 如果需要重排，后台异步执行
 			if (needsRebalance) {
 				const projectIds = projects.map((p) => p.id)
-				rebalanceProjectRanks(projectIds).catch(console.error)
+				rebalanceWorkspaceProjectRanks(projectIds).catch(console.error)
 			}
 		} catch (error) {
 			console.error('Failed to reorder project:', error)

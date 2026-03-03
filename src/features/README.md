@@ -59,3 +59,10 @@
 - 历史页面迁移到 feature 时，先补 `model` 公开接口，再替换页面导入路径
 - 旧的 `services/api/*` 直连路径逐步下沉到 feature 内部 `queries/mutations`
 - `refresh-signals` 仅保留 UI 瞬时事件，数据刷新统一走 query invalidation
+
+## 执行参考文档
+
+- `Documents/architecture/features-architecture-playbook.md`：架构规则与边界约束
+- `Documents/architecture/features-migration-roadmap.md`：分阶段迁移顺序与回滚策略
+- `Documents/architecture/features-inventory-and-governance.md`：空壳目录治理与首轮归类
+- `Documents/architecture/features-migration-templates.md`：迁移任务与变更记录模板

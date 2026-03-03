@@ -1,5 +1,8 @@
-import { completeTask, updateTask } from '@/services/api/tasks'
-import type { UpdateTaskPatch } from '@/services/api/tasks'
+import {
+	completeWorkspaceTask,
+	updateWorkspaceTask,
+	type WorkspaceTaskUpdatePatch,
+} from '@/features/workspace'
 import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
 
 /**
@@ -10,7 +13,7 @@ export function useTaskActions() {
 
 	async function complete(taskId: string): Promise<boolean> {
 		try {
-			await completeTask(taskId)
+			await completeWorkspaceTask(taskId)
 			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({ title: '已完成', color: 'success' })
 			return true
@@ -24,9 +27,9 @@ export function useTaskActions() {
 		}
 	}
 
-	async function update(taskId: string, patch: Pick<UpdateTaskPatch, 'title' | 'status'>): Promise<boolean> {
+	async function update(taskId: string, patch: Pick<WorkspaceTaskUpdatePatch, 'title' | 'status'>): Promise<boolean> {
 		try {
-			await updateTask(taskId, patch)
+			await updateWorkspaceTask(taskId, patch)
 			await invalidateWorkspaceTaskAndProjectQueries()
 			toast.add({ title: '更新成功', color: 'success' })
 			return true
