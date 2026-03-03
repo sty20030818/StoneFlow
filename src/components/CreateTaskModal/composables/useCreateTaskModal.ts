@@ -2,11 +2,10 @@ import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+import { useTaskCreateWorkflow } from '@/features/create-flow'
 import type { ProjectDto } from '@/services/api/projects'
 import { getDefaultProject } from '@/services/api/projects'
 import type { CustomFieldItem, LinkDto, LinkInput, TaskDoneReason, TaskDto, TaskStatus } from '@/services/api/tasks'
-import { createTaskWithPatch } from '@/services/api/tasks'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
@@ -79,6 +78,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const projectsStore = useProjectsStore()
+	const { createTaskFromModal } = useTaskCreateWorkflow()
 
 	const loading = ref(false)
 	const defaultProjectId = ref<string | null>(null)
@@ -332,13 +332,12 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 					})()
 				: null
 
-			const task = await createTaskWithPatch({
+			const task = await createTaskFromModal({
 				spaceId: form.value.spaceId,
 				title: form.value.title.trim(),
-				autoStart: false,
 				projectId,
 				status: form.value.status,
-				doneReason: form.value.status === 'done' ? form.value.doneReason : null,
+				doneReason: form.value.doneReason,
 				priority: form.value.priority,
 				note: form.value.note?.trim() ? form.value.note.trim() : null,
 				deadlineAt,
@@ -347,7 +346,6 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				customFields: customFields.length > 0 ? { fields: customFields } : null,
 			})
 
-			await invalidateWorkspaceTaskAndProjectQueries()
 			emit('created', task)
 			close()
 		} catch (error) {
