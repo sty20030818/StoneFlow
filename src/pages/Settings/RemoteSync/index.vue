@@ -234,7 +234,7 @@
 	import RemoteSyncEditForm from './components/RemoteSyncEditForm.vue'
 	import RemoteSyncImportForm from './components/RemoteSyncImportForm.vue'
 	import RemoteSyncProfilesCard from './components/RemoteSyncProfilesCard.vue'
-	import { useRemoteSyncPageFacade } from './composables/useRemoteSyncPageFacade'
+	import { useRemoteSyncPageFacade } from '@/features/remote-sync'
 	const { t } = useI18n({ useScope: 'global' })
 
 	const {
