@@ -115,6 +115,48 @@ export default [
 		},
 	},
 
+	// 页面层边界：禁止页面直接访问底层 API（迁移白名单除外）
+	{
+		files: ['src/pages/**/*.{ts,tsx,vue}'],
+		ignores: [
+			'src/pages/assets/**',
+			'src/pages/review/**',
+			'src/pages/Trash/**',
+			'src/pages/ProjectView/**',
+		],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@/services/api', '@/services/api/*', '@/services/api/**'],
+							message: '页面层禁止直接导入 services/api，请改为通过 features 公开入口访问数据能力。',
+						},
+					],
+				},
+			],
+		},
+	},
+
+	// 功能域边界：禁止跨 feature 导入内部实现，仅允许公开入口
+	{
+		files: ['src/features/**/*.{ts,tsx,vue}'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							regex: '^@/features/[^/]+/(?!index(?:\\.ts)?$|model(?:/index(?:\\.ts)?)?$).+',
+							message: '跨 feature 只能导入公开入口：@/features/<domain> 或 @/features/<domain>/model',
+						},
+					],
+				},
+			],
+		},
+	},
+
 	// 声明文件：允许 any/ts 注释（放在靠后位置，覆盖上面的 TS 规则）
 	{
 		files: ['**/*.d.ts'],

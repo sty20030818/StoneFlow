@@ -2,11 +2,13 @@ import { createApp } from 'vue'
 import App from './App.vue'
 
 import { createPinia } from 'pinia'
+import { VueQueryPlugin } from '@tanstack/vue-query'
 import ui from '@nuxt/ui/vue-plugin'
 import { MotionPlugin } from '@vueuse/motion'
 
 import { router } from './router'
 import './styles/main.css'
+import { createStoneFlowQueryClient } from '@/features/shared'
 import { i18n, initializeAppLocale } from '@/i18n'
 import { initializeAppStartup } from '@/startup/initialize'
 import { initializeIcons } from '@/startup/icons'
@@ -45,11 +47,12 @@ async function setupCloseFlushHook() {
 async function bootstrap() {
 	const app = createApp(App)
 	const pinia = createPinia()
+	const queryClient = createStoneFlowQueryClient()
 	const launchHashAtBoot = readLaunchHashAtBoot()
 
 	await initializeAppLocale()
 
-	app.use(pinia).use(router).use(i18n).use(ui).use(MotionPlugin)
+	app.use(pinia).use(VueQueryPlugin, { queryClient }).use(router).use(i18n).use(ui).use(MotionPlugin)
 
 	try {
 		await Promise.allSettled([initializeAppStartup(router, { launchHashAtBoot }), initializeIcons('critical')])
