@@ -2,7 +2,7 @@ import { refDebounced, useStorage } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace/model'
+import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
 import { useProjectsStore } from '@/stores/projects'
 import { useSettingsStore } from '@/stores/settings'
 import { resolveErrorMessage } from '@/utils/error-message'
