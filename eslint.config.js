@@ -131,6 +131,10 @@ export default [
 							group: ['@/services/api', '@/services/api/*', '@/services/api/**'],
 							message: '页面层禁止直接导入 services/api，请改为通过 features 公开入口访问数据能力。',
 						},
+						{
+							regex: '^(?:\\.{1,2}/)+(?:.*?/)?services/api(?:/.*)?$',
+							message: '页面层禁止通过相对路径导入 services/api，请改为通过 features 公开入口访问数据能力。',
+						},
 					],
 				},
 			],
