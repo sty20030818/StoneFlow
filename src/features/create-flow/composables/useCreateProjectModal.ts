@@ -2,7 +2,6 @@ import { useVModel, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useProjectCreateWorkflow } from '@/features/create-flow'
 import type { LinkDto, LinkInput, ProjectDto } from '@/features/create-flow/model'
 import {
 	PROJECT_ICON,
@@ -16,6 +15,7 @@ import { validateWithZod } from '@/composables/base/zod'
 import { projectSubmitSchema } from '@/composables/domain/validation/forms'
 import { useProjectsStore } from '@/stores/projects'
 import { resolveErrorMessage } from '@/utils/error-message'
+import { useProjectCreateWorkflow } from './useProjectCreateWorkflow'
 
 export type CreateProjectModalProps = {
 	modelValue: boolean

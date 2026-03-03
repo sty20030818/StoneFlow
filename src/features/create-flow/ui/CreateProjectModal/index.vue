@@ -44,7 +44,7 @@
 		useCreateProjectModal,
 		type CreateProjectModalEmits,
 		type CreateProjectModalProps,
-	} from './composables/useCreateProjectModal'
+	} from '../../composables/useCreateProjectModal'
 
 	const props = defineProps<CreateProjectModalProps>()
 	const emit = defineEmits<CreateProjectModalEmits>()

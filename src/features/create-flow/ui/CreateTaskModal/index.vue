@@ -50,7 +50,7 @@
 		useCreateTaskModal,
 		type CreateTaskModalEmits,
 		type CreateTaskModalProps,
-	} from './composables/useCreateTaskModal'
+	} from '../../composables/useCreateTaskModal'
 
 	const props = defineProps<CreateTaskModalProps>()
 	const emit = defineEmits<CreateTaskModalEmits>()
