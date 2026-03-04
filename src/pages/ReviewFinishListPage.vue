@@ -199,26 +199,14 @@
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { useReviewFinishListPageFacade } from '@/features/review'
 
-	import {
-		DEFAULT_STAGGER_MOTION_LIMIT,
-		createStaggeredEnterMotions,
-		getAppStaggerDelay,
-		useAppMotionPreset,
-		useCardHoverMotionPreset,
-		useMotionPresetWithDelay,
-	} from '@/composables/base/motion'
-	import { createModalLayerUi } from '@/config/ui-layer'
-	import { useReviewFinishList } from '@/features/review'
-
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
-	const groupItemMotionPreset = useCardHoverMotionPreset()
-	const reflectionBodyMotion = useMotionPresetWithDelay('modalSection', 24)
-	const reflectionFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
 	const {
 		t,
+		headerMotion,
+		filtersMotion,
+		reflectionBodyMotion,
+		reflectionFooterMotion,
 		loading,
 		spaceFilter,
 		projectFilter,
@@ -232,18 +220,11 @@
 		dateRangeOptions,
 		projectGroups,
 		stats,
+		groupMotions,
+		reflectionModalUi,
 		formatDateTime,
 		formatDuration,
 		onOpenReflection,
 		onReflectionSave,
-	} = useReviewFinishList()
-
-	const groupMotions = computed(() =>
-		createStaggeredEnterMotions(projectGroups.value.length, groupItemMotionPreset.value, getAppStaggerDelay, {
-			limit: DEFAULT_STAGGER_MOTION_LIMIT,
-		}),
-	)
-	const reflectionModalUi = createModalLayerUi({
-		width: 'sm:max-w-md',
-	})
+	} = useReviewFinishListPageFacade()
 </script>
