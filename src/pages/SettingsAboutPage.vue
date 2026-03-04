@@ -60,12 +60,14 @@
 	import { computed } from 'vue'
 
 	import { createStaggeredEnterMotions, getAppStaggerDelay, useMotionPreset } from '@/composables/base/motion'
-	import { useSettingsAboutPage } from '@/features/settings-about'
-	import AboutChangelogSection from './partials/AboutChangelogSection.vue'
-	// import AboutDownloadInstallSection from './partials/AboutDownloadInstallSection.vue'
-	import AboutHeaderCard from './partials/AboutHeaderCard.vue'
-	import AboutLegalSection from './partials/AboutLegalSection.vue'
-	import AboutLinksSection from './partials/AboutLinksSection.vue'
+	import {
+		AboutChangelogSection,
+		// AboutDownloadInstallSection,
+		AboutHeaderCard,
+		AboutLegalSection,
+		AboutLinksSection,
+		useSettingsAboutPage,
+	} from '@/features/settings-about'
 
 	const {
 		state,

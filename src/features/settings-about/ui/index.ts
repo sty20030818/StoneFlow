@@ -1,0 +1,5 @@
+export { default as AboutChangelogSection } from './partials/AboutChangelogSection.vue'
+export { default as AboutDownloadInstallSection } from './partials/AboutDownloadInstallSection.vue'
+export { default as AboutHeaderCard } from './partials/AboutHeaderCard.vue'
+export { default as AboutLegalSection } from './partials/AboutLegalSection.vue'
+export { default as AboutLinksSection } from './partials/AboutLinksSection.vue'

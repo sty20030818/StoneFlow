@@ -206,7 +206,7 @@
 	import { setAppLocale } from '@/i18n'
 	import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
-	import { useSettingsNav } from '@/pages/Settings/composables/useSettingsNav'
+	import { useSettingsNav } from '@/features/settings-core'
 	import { getPageNavByPath } from '@/config/page-nav'
 	import type { WorkspaceProject } from '@/features/workspace'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'

@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { SETTINGS_NAV_ITEMS } from '../config'
+import { SETTINGS_NAV_ITEMS } from '../config/settings-nav'
 
 export function useSettingsNav() {
 	const route = useRoute()

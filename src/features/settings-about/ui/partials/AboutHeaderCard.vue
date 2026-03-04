@@ -163,7 +163,7 @@
 	import { useI18n } from 'vue-i18n'
 	import type { UpdateState } from '@/composables/useUpdater'
 	import avatarUrl from '@/assets/avatar.png'
-	import SettingsSectionCard from '@/pages/Settings/partials/SettingsSectionCard.vue'
+	import { SettingsSectionCard } from '@/features/settings-core'
 
 	const { t } = useI18n({ useScope: 'global' })
 

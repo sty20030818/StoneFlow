@@ -33,7 +33,7 @@
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
 	import { useI18n } from 'vue-i18n'
 	import SettingsSectionCard from './SettingsSectionCard.vue'
-	import type { SettingsNavItem } from '../config'
+	import type { SettingsNavItem } from '../../config/settings-nav'
 
 	const navItemHoverMotion = useCardHoverMotionPreset()
 	const { t } = useI18n({ useScope: 'global' })

@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import SettingsSectionCard from '@/pages/Settings/partials/SettingsSectionCard.vue'
+	import { SettingsSectionCard } from '@/features/settings-core'
 
 	const { t } = useI18n({ useScope: 'global' })
 
