@@ -1,9 +1,9 @@
 import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS } from '@/config/priority'
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
-import { i18n } from '@/i18n'
+import { tGlobal } from '@/utils/i18n'
 
 function t(key: string) {
-	return i18n.global.t(key)
+	return tGlobal(key)
 }
 
 export const PROJECT_ICON = 'i-lucide-folder'

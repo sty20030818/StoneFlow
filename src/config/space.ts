@@ -1,5 +1,5 @@
 import type { SpaceId } from '@/types/domain/space'
-import { i18n } from '@/i18n'
+import { tGlobal } from '@/utils/i18n'
 
 export const SPACE_IDS = ['work', 'personal', 'study'] as const satisfies readonly SpaceId[]
 
@@ -17,7 +17,7 @@ export type SpaceDisplay = {
 }
 
 function t(key: string) {
-	return i18n.global.t(key)
+	return tGlobal(key)
 }
 
 export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {

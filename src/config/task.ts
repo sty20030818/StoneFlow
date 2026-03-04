@@ -1,6 +1,6 @@
 import { PRIORITY_OPTIONS, type PriorityOption } from '@/config/priority'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/types/domain/task'
-import { i18n } from '@/i18n'
+import { tGlobal } from '@/utils/i18n'
 
 export type StatusOption = {
 	value: TaskStatusValue
@@ -24,7 +24,7 @@ export type DoneReasonOption = {
 export type { PriorityOption }
 
 function t(key: string) {
-	return i18n.global.t(key)
+	return tGlobal(key)
 }
 
 export const TASK_STATUS_OPTIONS: StatusOption[] = [

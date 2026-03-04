@@ -1,27 +1,11 @@
-<template>
-	<SettingsSectionCard
-		:title="t('locale.label')"
-		:description="t('locale.description')">
-		<ULocaleSelect
-			v-model="selectedLocale"
-			:locales="appNuxtUiLocales"
-			:search-input="false"
-			class="w-full" />
-		<p class="mt-2 text-xs text-muted">
-			{{ t('locale.trayRestartNotice') }}
-		</p>
-	</SettingsSectionCard>
-</template>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-<script setup lang="ts">
-	import { computed } from 'vue'
-	import { useI18n } from 'vue-i18n'
+import { appNuxtUiLocales, setAppLocale } from '@/i18n'
+import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
+import { useSettingsStore } from '@/stores/settings'
 
-	import { appNuxtUiLocales, setAppLocale } from '@/i18n'
-	import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
-	import { useSettingsStore } from '@/stores/settings'
-	import SettingsSectionCard from './SettingsSectionCard.vue'
-
+export function useSettingsLocaleControl() {
 	const settingsStore = useSettingsStore()
 	const toast = useToast()
 	const { locale, t } = useI18n({ useScope: 'global' })
@@ -53,4 +37,10 @@
 			}
 		},
 	})
-</script>
+
+	return {
+		appNuxtUiLocales,
+		selectedLocale,
+		t,
+	}
+}

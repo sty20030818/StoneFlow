@@ -1,5 +1,5 @@
 import type { PriorityValue } from '@/types/shared/priority'
-import { i18n } from '@/i18n'
+import { tGlobal } from '@/utils/i18n'
 
 export const PRIORITY_VALUES = ['P0', 'P1', 'P2', 'P3'] as const satisfies readonly PriorityValue[]
 
@@ -11,7 +11,7 @@ export type PriorityOption = {
 }
 
 function t(key: string) {
-	return i18n.global.t(key)
+	return tGlobal(key)
 }
 
 export const PRIORITY_LABELS: Record<PriorityValue, string> = {
