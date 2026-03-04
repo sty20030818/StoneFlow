@@ -79,6 +79,6 @@ export async function listActivityLogs(args: ListActivityLogsArgs = {}): Promise
 		createdAt: item.createdAt,
 		spaceId: item.spaceId,
 		projectId: item.projectId,
-		projectName: item.projectName || '当前 Space 默认 Project',
+		projectName: item.projectName,
 	}))
 }

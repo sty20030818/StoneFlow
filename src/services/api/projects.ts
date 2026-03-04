@@ -1,6 +1,5 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
 import type { LinkDto, LinkInput } from '@/services/api/tasks'
-import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 
 export type ProjectDto = {
@@ -50,20 +49,6 @@ export type UpdateProjectPatch = {
 	links?: LinkInput[]
 }
 
-function normalizeProjectDto(project: ProjectDto): ProjectDto {
-	if (!isDefaultProjectId(project.id)) return project
-	const defaultProjectLabel = getDefaultProjectLabel()
-	return {
-		...project,
-		title: defaultProjectLabel,
-		path: `/${defaultProjectLabel}`,
-	}
-}
-
-function normalizeProjectDtos(projects: ProjectDto[]): ProjectDto[] {
-	return projects.map(normalizeProjectDto)
-}
-
 /**
  * Project API（封装 Tauri command 名，页面不直接写字符串）。
  */
@@ -75,7 +60,7 @@ export async function listProjects(args: ListProjectsArgs): Promise<ProjectDto[]
 			spaceId: args.spaceId,
 		},
 	})
-	return normalizeProjectDtos(projects)
+	return projects
 }
 
 export async function listDeletedProjects(args: ListProjectsArgs): Promise<ProjectDto[]> {
@@ -85,7 +70,7 @@ export async function listDeletedProjects(args: ListProjectsArgs): Promise<Proje
 			spaceId: args.spaceId,
 		},
 	})
-	return normalizeProjectDtos(projects)
+	return projects
 }
 
 export async function createProject(args: CreateProjectArgs): Promise<ProjectDto> {
@@ -103,7 +88,7 @@ export async function createProject(args: CreateProjectArgs): Promise<ProjectDto
 			links: args.links ?? null,
 		},
 	})
-	return normalizeProjectDto(project)
+	return project
 }
 
 export async function updateProject(projectId: string, patch: UpdateProjectPatch): Promise<void> {
@@ -130,7 +115,7 @@ export async function getDefaultProject(spaceId: string): Promise<ProjectDto> {
 	const project = await tauriInvoke<ProjectDto>('get_default_project', {
 		spaceId,
 	})
-	return normalizeProjectDto(project)
+	return project
 }
 
 export async function deleteProject(projectId: string): Promise<void> {

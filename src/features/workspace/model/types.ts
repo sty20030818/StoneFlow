@@ -8,6 +8,7 @@ import type {
 	UpdateTaskPatch as WorkspaceTaskPatchDto,
 } from '@/services/api/tasks'
 import type { ProjectDto as WorkspaceProjectDto } from '@/services/api/projects'
+import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 
 export type WorkspaceLink = WorkspaceLinkDto
 export type WorkspaceLinkInput = WorkspaceLinkInputDto
@@ -73,6 +74,17 @@ export function mapWorkspaceTasksDtoToDomain(tasks: WorkspaceTaskDto[]): Workspa
 }
 
 export function mapWorkspaceProjectDtoToDomain(project: WorkspaceProjectDto): WorkspaceProject {
+	if (isDefaultProjectId(project.id)) {
+		const defaultProjectLabel = getDefaultProjectLabel()
+		return {
+			...project,
+			title: defaultProjectLabel,
+			path: `/${defaultProjectLabel}`,
+			links: mapWorkspaceLinksDtoToDomain(project.links),
+			tags: [...project.tags],
+		}
+	}
+
 	return {
 		...project,
 		tags: [...project.tags],

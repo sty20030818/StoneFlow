@@ -2,34 +2,16 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
-import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
 import { stoneFlowQueryClient } from '@/features/shared'
 import { listWorkspaceProjects, workspaceQueryKeys, type WorkspaceProject } from '@/features/workspace'
 
 export const useProjectsStore = defineStore('projects', () => {
 	const snapshotBySpace = useStorage<Record<string, WorkspaceProject[]>>('projects_snapshot_v1', {})
 
-	function normalizeProject(project: WorkspaceProject): WorkspaceProject {
-		if (!isDefaultProjectId(project.id)) return project
-		const defaultProjectLabel = getDefaultProjectLabel()
-		return {
-			...project,
-			title: defaultProjectLabel,
-			path: `/${defaultProjectLabel}`,
-		}
-	}
-
-	const normalizedSnapshotBySpace: Record<string, WorkspaceProject[]> = Object.fromEntries(
-		Object.entries(snapshotBySpace.value).map(([spaceId, list]: [string, WorkspaceProject[]]) => [
-			spaceId,
-			list.map(normalizeProject),
-		]),
-	)
-	snapshotBySpace.value = normalizedSnapshotBySpace
-	for (const [spaceId, list] of Object.entries(normalizedSnapshotBySpace)) {
+	for (const [spaceId, list] of Object.entries(snapshotBySpace.value)) {
 		stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), list)
 	}
-	const initialProjects = Object.values(normalizedSnapshotBySpace).flat()
+	const initialProjects = Object.values(snapshotBySpace.value).flat()
 	const loadedSpaceIds = ref<Set<string>>(new Set())
 	const loadingSpaceIds = ref<Set<string>>(new Set())
 	const projects = ref<WorkspaceProject[]>(initialProjects)
@@ -41,14 +23,13 @@ export const useProjectsStore = defineStore('projects', () => {
 		nextList: WorkspaceProject[],
 		options: { markLoaded?: boolean; syncQueryCache?: boolean } = {},
 	) {
-		const normalizedList = nextList.map(normalizeProject)
-		projects.value = projects.value.filter((project) => project.spaceId !== spaceId).concat(normalizedList)
+		projects.value = projects.value.filter((project) => project.spaceId !== spaceId).concat(nextList)
 		snapshotBySpace.value = {
 			...snapshotBySpace.value,
-			[spaceId]: normalizedList,
+			[spaceId]: nextList,
 		}
 		if (options.syncQueryCache ?? true) {
-			stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), normalizedList)
+			stoneFlowQueryClient.setQueryData(workspaceQueryKeys.projects.list({ spaceId }), nextList)
 		}
 		if (!options.markLoaded) return
 		const nextLoaded = new Set(loadedSpaceIds.value)
@@ -149,10 +130,10 @@ export const useProjectsStore = defineStore('projects', () => {
 		let nextProject: WorkspaceProject | null = null
 		projects.value = projects.value.map((project) => {
 			if (project.spaceId !== spaceId || project.id !== projectId) return project
-			nextProject = normalizeProject({
+			nextProject = {
 				...project,
 				...patch,
-			})
+			}
 			return nextProject
 		})
 		if (!nextProject) return
