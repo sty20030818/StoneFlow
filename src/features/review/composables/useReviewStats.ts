@@ -80,7 +80,8 @@ export function useReviewStats() {
 			const end = start + 24 * 60 * 60 * 1000
 
 			const count = tasks.value.filter(
-				(task) => task.completedAt && task.completedAt >= start && task.completedAt < end && task.doneReason !== 'cancelled',
+				(task) =>
+					task.completedAt && task.completedAt >= start && task.completedAt < end && task.doneReason !== 'cancelled',
 			).length
 			days.push({ date: key, count, percent: 0 })
 		}

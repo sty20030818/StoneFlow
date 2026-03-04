@@ -96,7 +96,9 @@ export function areLinkPatchesEqual(left: InspectorLinkInput[], right: Inspector
 	return true
 }
 
-export function toCustomFieldsFormItems(customFields: InspectorCustomFields | null | undefined): TaskCustomFieldFormItem[] {
+export function toCustomFieldsFormItems(
+	customFields: InspectorCustomFields | null | undefined,
+): TaskCustomFieldFormItem[] {
 	if (!customFields?.fields?.length) return []
 
 	return customFields.fields

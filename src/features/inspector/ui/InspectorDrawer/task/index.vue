@@ -158,7 +158,11 @@
 	import LocationSection from './components/LocationSection.vue'
 	import PriorityDeadlineSection from './components/PriorityDeadlineSection.vue'
 	import StatusSection from './components/StatusSection.vue'
-	import { useTaskDrawerInteractions, useTaskDrawerPresentation, useTaskInspectorDrawer } from '../../../composables/task'
+	import {
+		useTaskDrawerInteractions,
+		useTaskDrawerPresentation,
+		useTaskInspectorDrawer,
+	} from '../../../composables/task'
 	const { t } = useI18n({ useScope: 'global' })
 
 	const {

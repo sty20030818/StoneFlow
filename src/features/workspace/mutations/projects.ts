@@ -1,14 +1,14 @@
-import {
-	deleteProject,
-	rebalanceProjectRanks,
-	reorderProject,
-} from '@/services/api/projects'
+import { deleteProject, rebalanceProjectRanks, reorderProject } from '@/services/api/projects'
 
 export async function deleteWorkspaceProject(projectId: string): Promise<void> {
 	await deleteProject(projectId)
 }
 
-export async function reorderWorkspaceProject(projectId: string, newRank: number, newParentId?: string | null): Promise<void> {
+export async function reorderWorkspaceProject(
+	projectId: string,
+	newRank: number,
+	newParentId?: string | null,
+): Promise<void> {
 	await reorderProject(projectId, newRank, newParentId)
 }
 

@@ -6,10 +6,7 @@ import type { WorkspaceTask } from './types'
 
 import { workspaceQueryKeys, type WorkspaceTaskListScope } from './query-keys'
 
-function normalizeScope(
-	spaceId?: string,
-	projectId?: string | null,
-): Omit<WorkspaceTaskListScope, 'status'> {
+function normalizeScope(spaceId?: string, projectId?: string | null): Omit<WorkspaceTaskListScope, 'status'> {
 	return {
 		spaceId: spaceId ?? null,
 		projectId: projectId ?? null,

@@ -13,11 +13,7 @@ function normalizeQueryParams(params?: QueryKeyParams): QueryKeyParams {
 	return Object.freeze({ ...params })
 }
 
-export function createQueryKey<
-	const D extends string,
-	const R extends string,
-	const S extends string,
->(
+export function createQueryKey<const D extends string, const R extends string, const S extends string>(
 	domain: D,
 	resource: R,
 	scope: S,

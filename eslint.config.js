@@ -118,10 +118,7 @@ export default [
 	// 非 feature 层边界：禁止直接访问底层 API
 	{
 		files: ['src/**/*.{ts,tsx,vue}'],
-		ignores: [
-			'src/features/**',
-			'src/services/**',
-		],
+		ignores: ['src/features/**', 'src/services/**'],
 		rules: {
 			'no-restricted-imports': [
 				'error',

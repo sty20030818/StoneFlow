@@ -58,12 +58,12 @@
 
 	import type { CommandPaletteItem } from '@nuxt/ui'
 
-		import { useAppShortcuts } from '@/composables/app/useAppShortcuts'
-		import { useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
-		import { useNullableStringRouteQuery } from '@/composables/base/route-query'
-		import { createModalLayerUi } from '@/config/ui-layer'
-		import { CreateProjectModal, CreateTaskModal } from '@/features/create-flow'
-		import type { ProjectDto, TaskDto } from '@/features/create-flow'
+	import { useAppShortcuts } from '@/composables/app/useAppShortcuts'
+	import { useMotionPreset, useProjectMotionPreset } from '@/composables/base/motion'
+	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
+	import { createModalLayerUi } from '@/config/ui-layer'
+	import { CreateProjectModal, CreateTaskModal } from '@/features/create-flow'
+	import type { ProjectDto, TaskDto } from '@/features/create-flow'
 	import { appNuxtUiLocale } from '@/i18n'
 	import UpdateNotification from './components/UpdateNotification.vue'
 	import { useInlineCreateFocusStore } from './stores/inline-create-focus'

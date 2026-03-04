@@ -38,7 +38,17 @@ export function useRemoteSyncHistoryPanel(options: {
 	onHistoryMutated: () => Promise<void>
 	logError: Logger
 }) {
-	const { t, locale, lastPushedAt, lastPulledAt, lastPushReport, lastPullReport, syncHistory, onHistoryMutated, logError } = options
+	const {
+		t,
+		locale,
+		lastPushedAt,
+		lastPulledAt,
+		lastPushReport,
+		lastPullReport,
+		syncHistory,
+		onHistoryMutated,
+		logError,
+	} = options
 	const remoteSyncStore = useRemoteSyncStore()
 	const toast = useToast()
 	const now = useNow({ interval: 60_000 })
@@ -61,9 +71,13 @@ export function useRemoteSyncHistoryPanel(options: {
 		filteredSyncHistory.value.slice(0, 6).map((item) => toHistoryViewItem(item)),
 	)
 
-	const lastPushedText = computed(() => formatRelativeTime(lastPushedAt.value, t('settings.remoteSync.history.neverPushed')))
+	const lastPushedText = computed(() =>
+		formatRelativeTime(lastPushedAt.value, t('settings.remoteSync.history.neverPushed')),
+	)
 
-	const lastPulledText = computed(() => formatRelativeTime(lastPulledAt.value, t('settings.remoteSync.history.neverPulled')))
+	const lastPulledText = computed(() =>
+		formatRelativeTime(lastPulledAt.value, t('settings.remoteSync.history.neverPulled')),
+	)
 
 	const lastSyncedText = computed(() => {
 		const latestSyncedAt = Math.max(lastPushedAt.value, lastPulledAt.value)

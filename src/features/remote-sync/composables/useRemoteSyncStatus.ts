@@ -8,10 +8,7 @@ type Translate = (key: string, params?: Record<string, unknown>) => string
 
 type Logger = (...args: unknown[]) => void
 
-export function useRemoteSyncStatus(options: {
-	t: Translate
-	logError: Logger
-}) {
+export function useRemoteSyncStatus(options: { t: Translate; logError: Logger }) {
 	const { t, logError } = options
 	const remoteSyncStore = useRemoteSyncStore()
 	const status = ref<RemoteSyncPageStatus>('missing')
@@ -69,7 +66,10 @@ export function useRemoteSyncStatus(options: {
 
 	function isMissingProfileError(message: string | null) {
 		if (!message) return false
-		return message === t('settings.remoteSync.errors.noActiveProfile') || message === t('settings.remoteSync.errors.noDatabaseUrl')
+		return (
+			message === t('settings.remoteSync.errors.noActiveProfile') ||
+			message === t('settings.remoteSync.errors.noDatabaseUrl')
+		)
 	}
 
 	function setStatusByErrorMessage(message: string | null) {

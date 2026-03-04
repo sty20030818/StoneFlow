@@ -2,11 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import type { InspectorTask } from '../../model'
-import {
-	formatDrawerDateTime,
-	useDrawerSaveStatePresentation,
-	type DrawerSaveState,
-} from '../shared'
+import { formatDrawerDateTime, useDrawerSaveStatePresentation, type DrawerSaveState } from '../shared'
 
 export function useTaskDrawerPresentation(params: {
 	currentTask: Ref<InspectorTask | null>

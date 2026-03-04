@@ -16,11 +16,11 @@
 		</template>
 		<template v-else>
 			<div class="flex items-center justify-center gap-3">
-			<UIcon
-				:name="icon"
-				class="size-8" />
-			<span class="text-base font-semibold">{{ text }}</span>
-		</div>
+				<UIcon
+					:name="icon"
+					class="size-8" />
+				<span class="text-base font-semibold">{{ text }}</span>
+			</div>
 			<div
 				v-if="$slots.default"
 				class="mt-2 px-1 text-center text-xs text-muted">

@@ -1,10 +1,10 @@
 <template>
 	<section>
-			<div
-				ref="stickyRef"
-				class="z-20 isolate -mx-4 bg-white px-4"
-				:class="[stickyContainerClass, stickyVisualClass, stickyDensityClass]"
-				:style="stickyContainerStyle">
+		<div
+			ref="stickyRef"
+			class="z-20 isolate -mx-4 bg-white px-4"
+			:class="[stickyContainerClass, stickyVisualClass, stickyDensityClass]"
+			:style="stickyContainerStyle">
 			<div
 				v-if="showStickyDivider"
 				class="pointer-events-none absolute -bottom-px -left-2 -right-2 h-px bg-slate-200/80"></div>
@@ -33,24 +33,24 @@
 						:class="columnStatusValue === 'todo' ? 'text-default' : 'text-muted'">
 						{{ title }}
 					</h3>
-						<UButton
-							size="sm"
-							color="neutral"
-							variant="ghost"
-							:ui="{ base: 'size-7 rounded-full p-0 inline-flex items-center justify-center' }"
-							class="shrink-0 text-muted transition-colors hover:bg-elevated/70 hover:text-default active:bg-elevated/80"
-							:aria-expanded="!isCollapsed"
-							:aria-controls="contentId"
-							:aria-label="collapseToggleAria"
-							:title="collapseToggleTitle"
-							@click="toggleCollapse">
-							<span class="inline-flex size-4 items-center justify-center">
-								<UIcon
-									name="i-lucide-chevron-down"
-									class="size-4 transition-transform"
-									:class="isCollapsed ? '-rotate-90' : 'rotate-0'" />
-							</span>
-						</UButton>
+					<UButton
+						size="sm"
+						color="neutral"
+						variant="ghost"
+						:ui="{ base: 'size-7 rounded-full p-0 inline-flex items-center justify-center' }"
+						class="shrink-0 text-muted transition-colors hover:bg-elevated/70 hover:text-default active:bg-elevated/80"
+						:aria-expanded="!isCollapsed"
+						:aria-controls="contentId"
+						:aria-label="collapseToggleAria"
+						:title="collapseToggleTitle"
+						@click="toggleCollapse">
+						<span class="inline-flex size-4 items-center justify-center">
+							<UIcon
+								name="i-lucide-chevron-down"
+								class="size-4 transition-transform"
+								:class="isCollapsed ? '-rotate-90' : 'rotate-0'" />
+						</span>
+					</UButton>
 				</div>
 
 				<UButton
