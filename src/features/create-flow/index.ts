@@ -4,4 +4,4 @@
 export { CreateProjectModal, CreateTaskModal } from './ui'
 export { useProjectCreateWorkflow } from './composables/useProjectCreateWorkflow'
 export { useTaskCreateWorkflow } from './composables/useTaskCreateWorkflow'
-export type { ProjectDto, TaskDto } from './model'
+export type { CreateFlowProject, CreateFlowTask } from './model'

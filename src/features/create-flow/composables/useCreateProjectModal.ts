@@ -2,7 +2,7 @@ import { useVModel, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import type { LinkDto, LinkInput, ProjectDto } from '@/features/create-flow/model'
+import type { CreateFlowLink, CreateFlowLinkInput, CreateFlowProject } from '@/features/create-flow/model'
 import {
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
@@ -20,19 +20,19 @@ import { useProjectCreateWorkflow } from './useProjectCreateWorkflow'
 export type CreateProjectModalProps = {
 	modelValue: boolean
 	spaceId?: string
-	projects?: ProjectDto[]
+	projects?: CreateFlowProject[]
 }
 
 export type CreateProjectModalEmits = {
 	(e: 'update:modelValue', value: boolean): void
-	(e: 'created', project: ProjectDto): void
+	(e: 'created', project: CreateFlowProject): void
 }
 
 export type ProjectLinkFormItem = {
 	id?: string
 	title: string
 	url: string
-	kind: LinkDto['kind']
+	kind: CreateFlowLink['kind']
 }
 
 export type CreateProjectFormState = {
@@ -61,11 +61,11 @@ export type ParentProjectOption = SelectOption<string | null> & {
 }
 
 export type LinkKindOption = {
-	value: LinkDto['kind']
+	value: CreateFlowLink['kind']
 	label: string
 }
 
-const PROJECT_LINK_KIND_VALUES: LinkDto['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
+const PROJECT_LINK_KIND_VALUES: CreateFlowLink['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
 
 export function useCreateProjectModal(props: CreateProjectModalProps, emit: CreateProjectModalEmits) {
 	const toast = useToast()
@@ -176,8 +176,8 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		return result
 	}
 
-	function normalizeLinks(values: ProjectLinkFormItem[]): LinkInput[] {
-		const result: LinkInput[] = []
+	function normalizeLinks(values: ProjectLinkFormItem[]): CreateFlowLinkInput[] {
+		const result: CreateFlowLinkInput[] = []
 		for (const link of values) {
 			const url = link.url.trim()
 			if (!url) continue

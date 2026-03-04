@@ -3,12 +3,12 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type {
-	CustomFieldItem,
-	LinkDto,
-	LinkInput,
-	ProjectDto,
+	CreateFlowCustomField,
+	CreateFlowLink,
+	CreateFlowLinkInput,
+	CreateFlowProject,
+	CreateFlowTask,
 	TaskDoneReason,
-	TaskDto,
 	TaskStatus,
 } from '@/features/create-flow/model'
 import {
@@ -31,19 +31,19 @@ export type CreateTaskModalProps = {
 	modelValue: boolean
 	spaceId?: string
 	projectId?: string
-	projects?: ProjectDto[]
+	projects?: CreateFlowProject[]
 }
 
 export type CreateTaskModalEmits = {
 	(e: 'update:modelValue', value: boolean): void
-	(e: 'created', task: TaskDto): void
+	(e: 'created', task: CreateFlowTask): void
 }
 
 export type TaskLinkFormItem = {
 	id?: string
 	title: string
 	url: string
-	kind: LinkDto['kind']
+	kind: CreateFlowLink['kind']
 }
 
 export type TaskCustomFieldFormItem = {
@@ -75,11 +75,11 @@ export type ProjectOption = {
 }
 
 export type LinkKindOption = {
-	value: LinkDto['kind']
+	value: CreateFlowLink['kind']
 	label: string
 }
 
-const TASK_LINK_KIND_VALUES: LinkDto['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
+const TASK_LINK_KIND_VALUES: CreateFlowLink['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
 
 export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTaskModalEmits) {
 	const toast = useToast()
@@ -149,8 +149,8 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		return result
 	}
 
-	function normalizeLinks(values: TaskLinkFormItem[]): LinkInput[] {
-		const result: LinkInput[] = []
+	function normalizeLinks(values: TaskLinkFormItem[]): CreateFlowLinkInput[] {
+		const result: CreateFlowLinkInput[] = []
 		for (const link of values) {
 			const url = link.url.trim()
 			if (!url) continue
@@ -165,7 +165,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		return result
 	}
 
-	function normalizeCustomFields(values: TaskCustomFieldFormItem[]): CustomFieldItem[] {
+	function normalizeCustomFields(values: TaskCustomFieldFormItem[]): CreateFlowCustomField[] {
 		return values
 			.map((item, index) => ({ item, index }))
 			.sort((left, right) => {

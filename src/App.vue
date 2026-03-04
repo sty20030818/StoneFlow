@@ -63,7 +63,7 @@
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { CreateProjectModal, CreateTaskModal } from '@/features/create-flow'
-	import type { ProjectDto, TaskDto } from '@/features/create-flow'
+	import type { CreateFlowProject, CreateFlowTask } from '@/features/create-flow'
 	import { appNuxtUiLocale } from '@/i18n'
 	import UpdateNotification from './components/UpdateNotification.vue'
 	import { useInlineCreateFocusStore } from './stores/inline-create-focus'
@@ -98,7 +98,7 @@
 		return settingsStore.settings.activeSpaceId ?? 'work'
 	})
 
-	const currentProjects = computed<ProjectDto[]>(() => {
+	const currentProjects = computed<CreateFlowProject[]>(() => {
 		return projectsStore.getProjectsOfSpace(currentSpaceId.value)
 	})
 
@@ -168,7 +168,7 @@
 		}
 	}
 
-	function onTaskCreated(task: TaskDto) {
+	function onTaskCreated(task: CreateFlowTask) {
 		// 任务创建成功，可以在这里添加后续处理（如刷新列表、显示提示等）
 		console.log('任务创建成功:', task)
 	}
@@ -180,7 +180,7 @@
 		return settingsStore.settings.activeSpaceId
 	}
 
-	async function onProjectCreated(project: ProjectDto) {
+	async function onProjectCreated(project: CreateFlowProject) {
 		const targetSpaceId = resolveTargetSpaceId(project.spaceId)
 		if (settingsStore.settings.activeSpaceId !== targetSpaceId) {
 			await settingsStore.update({ activeSpaceId: targetSpaceId })

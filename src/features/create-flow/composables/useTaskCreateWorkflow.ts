@@ -2,10 +2,10 @@ import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
 
 import type {
 	CreateTaskWithPatchArgs,
-	CustomFields,
-	LinkInput,
+	CreateFlowCustomFields,
+	CreateFlowLinkInput,
+	CreateFlowTask,
 	TaskDoneReason,
-	TaskDto,
 	TaskPriorityValue,
 	TaskStatus,
 	UpdateTaskPatch,
@@ -23,8 +23,8 @@ type CreateTaskFromModalInput = {
 	note: string | null
 	deadlineAt: number | null
 	tags?: string[]
-	links?: LinkInput[]
-	customFields?: CustomFields | null
+	links?: CreateFlowLinkInput[]
+	customFields?: CreateFlowCustomFields | null
 }
 
 type CreateInlineTaskInput = {
@@ -46,7 +46,7 @@ async function resolveTaskProjectId(spaceId: string, projectId?: string | null):
 }
 
 export function useTaskCreateWorkflow() {
-	async function createTaskFromModal(input: CreateTaskFromModalInput): Promise<TaskDto> {
+	async function createTaskFromModal(input: CreateTaskFromModalInput): Promise<CreateFlowTask> {
 		const args: CreateTaskWithPatchArgs = {
 			spaceId: input.spaceId,
 			title: input.title,
@@ -67,7 +67,7 @@ export function useTaskCreateWorkflow() {
 		return task
 	}
 
-	async function createInlineTask(input: CreateInlineTaskInput): Promise<TaskDto> {
+	async function createInlineTask(input: CreateInlineTaskInput): Promise<CreateFlowTask> {
 		const resolvedProjectId = await resolveTaskProjectId(input.spaceId, input.projectId)
 		const nextPriority = input.priority ?? 'P1'
 
