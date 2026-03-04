@@ -117,7 +117,9 @@ export function useRemoteSyncSyncPanel(options: {
 			log('test:current:done')
 		} catch (error) {
 			const currentProfileId = remoteSyncStore.activeProfileId
-			const currentProfileUrl = currentProfileId ? await remoteSyncStore.getProfileUrl(currentProfileId).catch(() => null) : null
+			const currentProfileUrl = currentProfileId
+				? await remoteSyncStore.getProfileUrl(currentProfileId).catch(() => null)
+				: null
 			if (currentProfileId && currentProfileUrl) {
 				await persistConnectionHealthSafely(
 					{

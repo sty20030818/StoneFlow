@@ -147,12 +147,9 @@
 		isEditHovering.value = false
 	}
 
-	watch(
-		isEditModeActive,
-		(enabled) => {
-			if (!enabled) isEditHovering.value = false
-		},
-	)
+	watch(isEditModeActive, (enabled) => {
+		if (!enabled) isEditHovering.value = false
+	})
 </script>
 
 <style scoped>

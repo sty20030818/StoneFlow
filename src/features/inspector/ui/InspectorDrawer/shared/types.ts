@@ -26,4 +26,7 @@ export type DrawerLinkKindOption = {
 	label: string
 }
 
-export type DrawerTimelineLogEntry = Pick<InspectorActivityLog, 'id' | 'action' | 'actionLabel' | 'detail' | 'createdAt'>
+export type DrawerTimelineLogEntry = Pick<
+	InspectorActivityLog,
+	'id' | 'action' | 'actionLabel' | 'detail' | 'createdAt'
+>

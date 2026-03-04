@@ -11,7 +11,9 @@ export const DRAWER_LINK_SELECT_MENU_UI = {
 
 export const DRAWER_LINK_KIND_VALUES = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other'] as const
 
-export function buildDrawerLinkKindOptions(t: (key: string) => string): { value: InspectorLink['kind']; label: string }[] {
+export function buildDrawerLinkKindOptions(
+	t: (key: string) => string,
+): { value: InspectorLink['kind']; label: string }[] {
 	return DRAWER_LINK_KIND_VALUES.map((value) => ({
 		value,
 		label: t(`linkKind.${value}`),

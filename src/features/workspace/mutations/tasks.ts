@@ -1,10 +1,4 @@
-import {
-	completeTask,
-	deleteTasks,
-	rebalanceRanks,
-	reorderTask,
-	updateTask,
-} from '@/services/api/tasks'
+import { completeTask, deleteTasks, rebalanceRanks, reorderTask, updateTask } from '@/services/api/tasks'
 
 import { mapWorkspaceTaskPatchToDto, type WorkspaceTaskPatch } from '../model'
 

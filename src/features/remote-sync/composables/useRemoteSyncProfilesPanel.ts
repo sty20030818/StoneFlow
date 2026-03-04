@@ -70,7 +70,9 @@ export function useRemoteSyncProfilesPanel(options: {
 
 	const canSaveNew = computed(() => validateWithZod(remoteProfileSchema, { name: newName.value, url: newUrl.value }).ok)
 	const canTestNew = computed(() => validateWithZod(postgresUrlSchema, newUrl.value).ok)
-	const canSaveEdit = computed(() => validateWithZod(remoteProfileSchema, { name: editName.value, url: editUrl.value }).ok)
+	const canSaveEdit = computed(
+		() => validateWithZod(remoteProfileSchema, { name: editName.value, url: editUrl.value }).ok,
+	)
 	const canTestEdit = computed(() => validateWithZod(postgresUrlSchema, editUrl.value).ok)
 	const canImport = computed(() => importText.value.trim().length > 0)
 

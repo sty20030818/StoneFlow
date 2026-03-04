@@ -11,7 +11,10 @@ import type {
 	TaskDto as InspectorTaskDto,
 	UpdateTaskPatch as InspectorTaskPatchDto,
 } from '@/services/api/tasks'
-import type { ProjectDto as InspectorProjectDto, UpdateProjectPatch as InspectorProjectPatchDto } from '@/services/api/projects'
+import type {
+	ProjectDto as InspectorProjectDto,
+	UpdateProjectPatch as InspectorProjectPatchDto,
+} from '@/services/api/projects'
 
 export type InspectorActivityLogEntityType = InspectorActivityLogEntityTypeDto
 export type InspectorActivityLog = InspectorActivityLogDto

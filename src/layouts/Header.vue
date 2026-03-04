@@ -202,12 +202,12 @@
 	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 
-		import { setAppLocale } from '@/i18n'
-		import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
-		import { useProjectMotionPreset } from '@/composables/base/motion'
-		import { useSettingsNav } from '@/pages/Settings/composables/useSettingsNav'
-		import { getPageNavByPath } from '@/config/page-nav'
-		import type { WorkspaceProject } from '@/features/workspace'
+	import { setAppLocale } from '@/i18n'
+	import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
+	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import { useSettingsNav } from '@/pages/Settings/composables/useSettingsNav'
+	import { getPageNavByPath } from '@/config/page-nav'
+	import type { WorkspaceProject } from '@/features/workspace'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectsStore } from '@/stores/projects'
@@ -491,14 +491,14 @@
 	const projectPillClass = (index: number) => levelPalette[index % levelPalette.length]
 
 	/** 从 project 列表按 parentId 回溯，得到 root → … → current 的层级路径 */
-		function projectPath(list: WorkspaceProject[], targetId: string): WorkspaceProject[] {
-			const byId = new Map(list.map((p) => [p.id, p]))
-			const out: WorkspaceProject[] = []
-			let curr: WorkspaceProject | undefined = byId.get(targetId)
-			while (curr) {
-				out.unshift(curr)
-				curr = curr.parentId ? byId.get(curr.parentId) : undefined
-			}
+	function projectPath(list: WorkspaceProject[], targetId: string): WorkspaceProject[] {
+		const byId = new Map(list.map((p) => [p.id, p]))
+		const out: WorkspaceProject[] = []
+		let curr: WorkspaceProject | undefined = byId.get(targetId)
+		while (curr) {
+			out.unshift(curr)
+			curr = curr.parentId ? byId.get(curr.parentId) : undefined
+		}
 		return out
 	}
 </script>

@@ -35,12 +35,9 @@ function isWorkspaceProjectQueryKey(queryKey: QueryKey): boolean {
 	return queryKey[0] === 'workspace' && queryKey[1] === 'projects'
 }
 
-function isWorkspaceProjectListQueryKey(queryKey: QueryKey): queryKey is readonly [
-	'workspace',
-	'projects',
-	'list',
-	WorkspaceProjectListScope,
-] {
+function isWorkspaceProjectListQueryKey(
+	queryKey: QueryKey,
+): queryKey is readonly ['workspace', 'projects', 'list', WorkspaceProjectListScope] {
 	if (queryKey.length !== 4) return false
 	if (queryKey[0] !== 'workspace' || queryKey[1] !== 'projects' || queryKey[2] !== 'list') return false
 	const scope = queryKey[3]
@@ -50,7 +47,8 @@ function isWorkspaceProjectListQueryKey(queryKey: QueryKey): queryKey is readonl
 
 export const workspaceQueryKeys = {
 	tasks: {
-		list: (scope: WorkspaceTaskListScope) => createQueryKey('workspace', 'tasks', 'list', normalizeWorkspaceTaskScope(scope)),
+		list: (scope: WorkspaceTaskListScope) =>
+			createQueryKey('workspace', 'tasks', 'list', normalizeWorkspaceTaskScope(scope)),
 		isMatch: isWorkspaceTaskQueryKey,
 	},
 	projects: {
