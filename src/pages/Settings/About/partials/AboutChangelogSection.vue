@@ -36,7 +36,7 @@
 	import DOMPurify from 'dompurify'
 	import { createMarkdownExit } from 'markdown-exit'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import SettingsSectionCard from '@/pages/Settings/components/SettingsSectionCard.vue'
+	import SettingsSectionCard from '@/pages/Settings/partials/SettingsSectionCard.vue'
 
 	type ChangelogEntry = {
 		version: string

@@ -228,12 +228,12 @@
 	import { useI18n } from 'vue-i18n'
 	import { useAppMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
-	import RemoteSyncActionsCard from './components/RemoteSyncActionsCard.vue'
-	import RemoteSyncCreateForm from './components/RemoteSyncCreateForm.vue'
-	import RemoteSyncDeleteBody from './components/RemoteSyncDeleteBody.vue'
-	import RemoteSyncEditForm from './components/RemoteSyncEditForm.vue'
-	import RemoteSyncImportForm from './components/RemoteSyncImportForm.vue'
-	import RemoteSyncProfilesCard from './components/RemoteSyncProfilesCard.vue'
+	import RemoteSyncActionsCard from './partials/RemoteSyncActionsCard.vue'
+	import RemoteSyncCreateForm from './partials/RemoteSyncCreateForm.vue'
+	import RemoteSyncDeleteBody from './partials/RemoteSyncDeleteBody.vue'
+	import RemoteSyncEditForm from './partials/RemoteSyncEditForm.vue'
+	import RemoteSyncImportForm from './partials/RemoteSyncImportForm.vue'
+	import RemoteSyncProfilesCard from './partials/RemoteSyncProfilesCard.vue'
 	import { useRemoteSyncPageFacade } from '@/features/remote-sync'
 	const { t } = useI18n({ useScope: 'global' })
 

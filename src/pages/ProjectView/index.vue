@@ -91,8 +91,8 @@
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { TaskColumn, useWorkspaceProjectView } from '@/features/workspace'
-	import ProjectHeaderCard from './components/ProjectHeaderCard.vue'
-	import WorkspaceLayout from './components/WorkspaceLayout.vue'
+	import ProjectHeaderCard from './partials/ProjectHeaderCard.vue'
+	import WorkspaceLayout from './partials/WorkspaceLayout.vue'
 
 	const { t } = useI18n({ useScope: 'global' })
 	const deleteModalUi = createModalLayerUi({

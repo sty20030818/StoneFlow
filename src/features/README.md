@@ -8,8 +8,11 @@
 - 功能域层：`src/features/<domain>/**`
 - 数据访问层：`src/services/api/**`
 - 基础共享层：`src/composables/base/**`、`src/utils/**`、`src/config/**`
+- 装配插件层：`src/plugins/**`（仅初始化第三方与应用生命周期能力）
 
 页面层仅负责路由与组合，不直接访问 `services/api`。
+
+页面私有组件统一放在 `src/pages/**/partials/**`，不再使用 `components` 作为页面私有目录名。
 
 ## 目录骨架
 
