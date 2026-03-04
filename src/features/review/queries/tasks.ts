@@ -1,11 +1,13 @@
 import { listTasks } from '@/services/api/tasks'
 
-import type { WorkspaceTask } from '../model'
+import { mapWorkspaceTasksDtoToDomain, type WorkspaceTask } from '../model'
 
 export async function listReviewDoneTasks(): Promise<WorkspaceTask[]> {
-	return await listTasks({ status: 'done' })
+	const tasks = await listTasks({ status: 'done' })
+	return mapWorkspaceTasksDtoToDomain(tasks)
 }
 
 export async function listReviewTasksByStatus(status: 'todo' | 'done'): Promise<WorkspaceTask[]> {
-	return await listTasks({ status })
+	const tasks = await listTasks({ status })
+	return mapWorkspaceTasksDtoToDomain(tasks)
 }

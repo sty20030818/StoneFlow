@@ -7,13 +7,13 @@ import { useProjectsStore } from '@/stores/projects'
 import { useSettingsStore } from '@/stores/settings'
 import { resolveErrorMessage } from '@/utils/error-message'
 
-import type { TrashProjectDto, TrashTaskDto } from '../model'
+import type { TrashProject, TrashTask } from '../model'
 import { restoreTrashProject, restoreTrashTasks } from '../mutations'
 import { listTrashDeletedProjects, listTrashDeletedTasks } from '../queries'
 
 type TrashSnapshot = {
-	projects: TrashProjectDto[]
-	tasks: TrashTaskDto[]
+	projects: TrashProject[]
+	tasks: TrashTask[]
 }
 
 export function useTrashPage() {
@@ -24,8 +24,8 @@ export function useTrashPage() {
 
 	const viewMode = ref<'projects' | 'tasks'>('projects')
 	const loading = ref(true)
-	const deletedProjects = ref<TrashProjectDto[]>([])
-	const deletedTasks = ref<TrashTaskDto[]>([])
+	const deletedProjects = ref<TrashProject[]>([])
+	const deletedTasks = ref<TrashTask[]>([])
 	const restoringProjectIds = ref<Set<string>>(new Set())
 	const restoringTaskIds = ref<Set<string>>(new Set())
 	const trashSnapshots = useStorage<Record<string, TrashSnapshot>>('trash_snapshot_v1', {})
@@ -55,7 +55,7 @@ export function useTrashPage() {
 		return projectNameMap.value.get(projectId) ?? t('trash.labels.deletedProject')
 	}
 
-	function writeSnapshot(spaceId: string, projects: TrashProjectDto[], tasks: TrashTaskDto[]) {
+	function writeSnapshot(spaceId: string, projects: TrashProject[], tasks: TrashTask[]) {
 		trashSnapshots.value = {
 			...trashSnapshots.value,
 			[spaceId]: {
@@ -119,7 +119,7 @@ export function useTrashPage() {
 		}
 	}
 
-	async function restoreProjectItem(project: TrashProjectDto) {
+	async function restoreProjectItem(project: TrashProject) {
 		if (restoringProjectIds.value.has(project.id)) return
 		const next = new Set(restoringProjectIds.value)
 		next.add(project.id)
@@ -147,7 +147,7 @@ export function useTrashPage() {
 		}
 	}
 
-	async function restoreTaskItem(task: TrashTaskDto) {
+	async function restoreTaskItem(task: TrashTask) {
 		if (restoringTaskIds.value.has(task.id)) return
 		const next = new Set(restoringTaskIds.value)
 		next.add(task.id)
