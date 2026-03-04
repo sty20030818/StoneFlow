@@ -60,12 +60,12 @@
 	import { computed } from 'vue'
 
 	import { createStaggeredEnterMotions, getAppStaggerDelay, useMotionPreset } from '@/composables/base/motion'
+	import { useSettingsAboutPage } from '@/features/settings-about'
 	import AboutChangelogSection from './components/AboutChangelogSection.vue'
 	// import AboutDownloadInstallSection from './components/AboutDownloadInstallSection.vue'
 	import AboutHeaderCard from './components/AboutHeaderCard.vue'
 	import AboutLegalSection from './components/AboutLegalSection.vue'
 	import AboutLinksSection from './components/AboutLinksSection.vue'
-	import { useAboutPage } from './composables/useAboutPage'
 
 	const {
 		state,
@@ -98,7 +98,7 @@
 		toggleAdvanced,
 		openUrl,
 		copy,
-	} = useAboutPage()
+	} = useSettingsAboutPage()
 	const aboutCardPreset = useMotionPreset('drawerSection')
 	const aboutCardMotions = computed(() => createStaggeredEnterMotions(4, aboutCardPreset.value, getAppStaggerDelay))
 </script>
