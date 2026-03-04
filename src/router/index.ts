@@ -1,21 +1,21 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { PAGE_NAV_CONFIG, toRouteMeta } from '@/config/page-nav'
 
-const ProjectView = () => import('@/pages/ProjectView/index.vue')
+const ProjectView = () => import('@/pages/ProjectViewPage.vue')
 
-const FinishList = () => import('@/pages/review/FinishList/index.vue')
-const Stats = () => import('@/pages/review/Stats/index.vue')
-const Logs = () => import('@/pages/review/Logs/index.vue')
+const FinishList = () => import('@/pages/ReviewFinishListPage.vue')
+const Stats = () => import('@/pages/ReviewStatsPage.vue')
+const Logs = () => import('@/pages/ReviewLogsPage.vue')
 
-const Snippets = () => import('@/pages/assets/Snippets/index.vue')
-const Vault = () => import('@/pages/assets/Vault/index.vue')
-const Notes = () => import('@/pages/assets/Notes/index.vue')
-const Diary = () => import('@/pages/assets/Diary/index.vue')
-const Trash = () => import('@/pages/Trash/index.vue')
+const Snippets = () => import('@/pages/AssetsSnippetsPage.vue')
+const Vault = () => import('@/pages/AssetsVaultPage.vue')
+const Notes = () => import('@/pages/AssetsNotesPage.vue')
+const Diary = () => import('@/pages/AssetsDiaryPage.vue')
+const Trash = () => import('@/pages/TrashPage.vue')
 
-const Settings = () => import('@/pages/Settings/index.vue')
-const SettingsAbout = () => import('@/pages/Settings/About/index.vue')
-const SettingsRemoteSync = () => import('@/pages/Settings/RemoteSync/index.vue')
+const Settings = () => import('@/pages/SettingsPage.vue')
+const SettingsAbout = () => import('@/pages/SettingsAboutPage.vue')
+const SettingsRemoteSync = () => import('@/pages/SettingsRemoteSyncPage.vue')
 const StartupGate = () => import('@/startup/StartupGate.vue')
 
 export const routes = [

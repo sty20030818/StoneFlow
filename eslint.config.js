@@ -143,7 +143,7 @@ export default [
 		files: ['src/pages/**/*.{ts,tsx,vue}'],
 		rules: {
 			'no-restricted-imports': [
-				'warn',
+				'error',
 				{
 					patterns: [
 						{
@@ -157,6 +157,38 @@ export default [
 						{
 							group: ['@/stores', '@/stores/*', '@/stores/**'],
 							message: '页面层应优先通过 features 编排能力访问状态，避免直接耦合 store。',
+						},
+					],
+				},
+			],
+		},
+	},
+
+	// 大页面 index 迁移后：禁止回流到页面 partials
+	{
+		files: [
+			'src/pages/ReviewLogsPage.vue',
+			'src/pages/ReviewStatsPage.vue',
+			'src/pages/ReviewFinishListPage.vue',
+			'src/pages/SettingsRemoteSyncPage.vue',
+			'src/pages/AssetsDiaryPage.vue',
+			'src/pages/AssetsNotesPage.vue',
+			'src/pages/AssetsSnippetsPage.vue',
+			'src/pages/AssetsVaultPage.vue',
+			'src/pages/TrashPage.vue',
+		],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							regex: '^(?:\\.{1,2}/)+(?:.*?/)?partials(?:/.*)?$',
+							message: '页面 index 迁移后禁止直接依赖 partials，请改为使用 feature 页面内容组件。',
+						},
+						{
+							regex: '^@/pages/.+/partials(?:/.*)?$',
+							message: '页面 index 迁移后禁止直接依赖 partials，请改为使用 feature 页面内容组件。',
 						},
 					],
 				},

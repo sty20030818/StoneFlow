@@ -3,7 +3,7 @@
  * 仅暴露外层调用需要的用例能力与稳定类型契约。
  */
 export { useWorkspaceProjectView } from './composables'
-export { DraggableProjectTree, TaskColumn } from './ui'
+export { DraggableProjectTree, ProjectHeaderCard, TaskColumn, WorkspaceLayout } from './ui'
 export { listWorkspaceProjects } from './queries'
 export { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from './mutations'
 export {
