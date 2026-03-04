@@ -171,6 +171,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { useRoute } from 'vue-router'
 
+	import { OPEN_CREATE_PROJECT_MODAL_KEY } from '@/app/injection-keys'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import BrandLogo from '@/components/BrandLogo.vue'
@@ -261,7 +262,7 @@
 	const projectsStore = useProjectsStore()
 
 	// 通过 inject 获取全局的创建项目弹窗控制函数
-	const openCreateProjectModal = inject<(spaceId?: string) => void>('openCreateProjectModal')
+	const openCreateProjectModal = inject(OPEN_CREATE_PROJECT_MODAL_KEY)
 
 	const currentProjects = computed(() => projectsStore.getProjectsOfSpace(spaceValue.value))
 	const defaultProject = computed(() => currentProjects.value.find((p) => isDefaultProjectId(p.id)) ?? null)

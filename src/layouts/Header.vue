@@ -202,6 +202,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 
+	import { WORKSPACE_BREADCRUMB_ITEMS_KEY, type WorkspaceBreadcrumbItem } from '@/app/injection-keys'
 	import { setAppLocale } from '@/i18n'
 	import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
@@ -436,10 +437,8 @@
 	})
 
 	// 从 inject 获取 workspace 页面的 breadcrumbItems
-	const workspaceBreadcrumbItems = inject<
-		ComputedRef<{ label: string; to?: string; icon?: string; description?: string }[]>
-	>(
-		'workspaceBreadcrumbItems',
+	const workspaceBreadcrumbItems = inject<ComputedRef<WorkspaceBreadcrumbItem[]>>(
+		WORKSPACE_BREADCRUMB_ITEMS_KEY,
 		computed(() => []),
 	)
 

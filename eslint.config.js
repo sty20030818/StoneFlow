@@ -138,6 +138,54 @@ export default [
 		},
 	},
 
+	// 页面层边界：禁止直接访问 services/api 与 stores
+	{
+		files: ['src/pages/**/*.{ts,tsx,vue}'],
+		rules: {
+			'no-restricted-imports': [
+				'warn',
+				{
+					patterns: [
+						{
+							group: ['@/services/api', '@/services/api/*', '@/services/api/**'],
+							message: '页面层禁止直接导入 services/api，请改为通过 features 公开入口访问数据能力。',
+						},
+						{
+							regex: '^(?:\\.{1,2}/)+(?:.*?/)?services/api(?:/.*)?$',
+							message: '页面层禁止通过相对路径导入 services/api，请改为通过 features 公开入口访问数据能力。',
+						},
+						{
+							group: ['@/stores', '@/stores/*', '@/stores/**'],
+							message: '页面层应优先通过 features 编排能力访问状态，避免直接耦合 store。',
+						},
+					],
+				},
+			],
+		},
+	},
+
+	// 配置层边界：禁止直接依赖 i18n 插件实例
+	{
+		files: ['src/config/**/*.{ts,tsx,vue}'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@/i18n', '@/i18n/*', '@/i18n/**'],
+							message: 'config 层禁止直接导入 i18n 实例，请改用 key 或中立翻译桥接函数。',
+						},
+						{
+							group: ['@/plugins/i18n', '@/plugins/i18n/*', '@/plugins/i18n/**'],
+							message: 'config 层禁止直接导入 i18n 插件实例，请改用 key 或中立翻译桥接函数。',
+						},
+					],
+				},
+			],
+		},
+	},
+
 	// 功能域边界：禁止跨 feature 导入内部实现，仅允许公开入口
 	{
 		files: ['src/features/**/*.{ts,tsx,vue}'],

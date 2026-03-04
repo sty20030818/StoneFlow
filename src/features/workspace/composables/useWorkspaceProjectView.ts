@@ -3,6 +3,7 @@ import { watchDebounced, watchThrottled } from '@vueuse/core'
 import { computed, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 
+import { OPEN_CREATE_TASK_MODAL_KEY, WORKSPACE_BREADCRUMB_ITEMS_KEY } from '@/app/injection-keys'
 import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useProjectsStore } from '@/stores/projects'
@@ -38,7 +39,7 @@ export function useWorkspaceProjectView() {
 	const workspaceEditStore = useWorkspaceEditStore()
 	const projectInspectorStore = useProjectInspectorStore()
 	const taskInspectorStore = useTaskInspectorStore()
-	const openCreateTaskModal = inject<(spaceId?: string) => void>('openCreateTaskModal')
+	const openCreateTaskModal = inject(OPEN_CREATE_TASK_MODAL_KEY)
 	const toast = useToast()
 	const workspaceEditContextId = createWorkspaceEditContextId()
 
@@ -210,7 +211,7 @@ export function useWorkspaceProjectView() {
 		return projectsStore.getProjectsOfSpace(spaceId.value)
 	})
 	const breadcrumbItems = useWorkspaceProjectBreadcrumb(spaceId, projectId, projectsList)
-	provide('workspaceBreadcrumbItems', breadcrumbItems)
+	provide(WORKSPACE_BREADCRUMB_ITEMS_KEY, breadcrumbItems)
 
 	function applyWorkspaceEditCommand(command: WorkspaceEditCommand) {
 		switch (command.type) {

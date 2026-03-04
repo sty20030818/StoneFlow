@@ -37,6 +37,7 @@
 	import { computed, inject } from 'vue'
 	import { useRoute } from 'vue-router'
 
+	import { COMMAND_PALETTE_KEY } from '@/app/injection-keys'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 
 	const route = useRoute()
@@ -73,7 +74,7 @@
 		return String(route.meta.description ?? '')
 	})
 
-	const commandPalette = inject<{ open: () => void }>('commandPalette')
+	const commandPalette = inject(COMMAND_PALETTE_KEY)
 
 	function openCommandPalette() {
 		commandPalette?.open()
