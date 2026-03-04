@@ -7,18 +7,18 @@
 			<div class="space-y-1">
 				<div class="flex items-center gap-2 text-sm font-semibold">
 					<UIcon
-						name="i-lucide-code"
-						class="text-cyan-500" />
-					<span>{{ t('assets.snippets.title') }}</span>
+						name="i-lucide-lock"
+						class="text-yellow-500" />
+					<span>{{ t('assets.vault.title') }}</span>
 				</div>
-				<div class="text-xs text-muted">{{ t('assets.snippets.subtitle') }}</div>
+				<div class="text-xs text-muted">{{ t('assets.vault.subtitle') }}</div>
 			</div>
 
 			<div class="flex items-center gap-2">
 				<UInput
 					v-model="searchKeyword"
 					icon="i-lucide-search"
-					:placeholder="t('assets.snippets.searchPlaceholder')"
+					:placeholder="t('assets.vault.searchPlaceholder')"
 					size="sm"
 					class="w-64" />
 
@@ -49,7 +49,7 @@
 							<UIcon
 								name="i-lucide-folder"
 								class="size-4" />
-							<span>{{ t('assets.snippets.allItems') }}</span>
+							<span>{{ t('assets.vault.allItems') }}</span>
 						</div>
 					</button>
 
@@ -77,56 +77,46 @@
 				v-motion="listMotion"
 				class="flex-1 min-w-0 overflow-y-auto">
 				<div
-					v-if="filteredSnippets.length === 0 && !loading"
+					v-if="filteredEntries.length === 0 && !loading"
 					class="py-8 text-center text-sm text-muted">
-					{{ t('assets.snippets.empty') }}
+					{{ t('assets.vault.empty') }}
 				</div>
 
 				<div
 					v-else
 					class="space-y-2">
 					<div
-						v-for="(snippet, index) in filteredSnippets"
-						:key="snippet.id"
-						v-motion="snippetItemMotions[index]"
+						v-for="(entry, index) in filteredEntries"
+						:key="entry.id"
+						v-motion="entryItemMotions[index]"
 						class="cursor-pointer rounded-lg border border-default bg-elevated/80 p-3 transition hover:bg-default"
-						:class="selectedSnippet?.id === snippet.id && editOpen ? 'ring-2 ring-primary' : ''"
-						@click="openEditor(snippet)">
+						:class="selectedEntry?.id === entry.id && editOpen ? 'ring-2 ring-primary' : ''"
+						@click="openEditor(entry)">
 						<div class="flex items-start justify-between gap-2">
 							<div class="min-w-0 flex-1">
 								<div class="mb-1 flex items-center gap-2">
-									<span class="truncate text-sm font-medium">{{ snippet.title }}</span>
+									<span class="truncate text-sm font-medium">{{ entry.name }}</span>
 									<UBadge
 										color="neutral"
 										variant="soft"
 										size="2xs">
-										{{ snippet.language }}
+										{{ typeLabel(entry.type) }}
 									</UBadge>
 									<UBadge
-										v-if="snippet.folder"
+										v-if="entry.folder"
 										color="primary"
 										variant="soft"
 										size="2xs">
-										{{ snippet.folder }}
+										{{ entry.folder }}
 									</UBadge>
 								</div>
-								<div class="mb-1.5 line-clamp-2 text-xs text-muted">
-									{{ snippet.content.substring(0, 100) }}{{ snippet.content.length > 100 ? '...' : '' }}
+								<div class="line-clamp-1 text-xs text-muted">
+									{{ entry.value.substring(0, 30) }}{{ entry.value.length > 30 ? '...' : '' }}
 								</div>
-								<div class="flex flex-wrap items-center gap-2">
-									<UBadge
-										v-for="tag in snippet.tags.slice(0, 3)"
-										:key="tag"
-										color="neutral"
-										variant="subtle"
-										size="2xs">
-										{{ tag }}
-									</UBadge>
-									<span
-										v-if="snippet.tags.length > 3"
-										class="text-[10px] text-muted">
-										+{{ snippet.tags.length - 3 }}
-									</span>
+								<div
+									v-if="entry.note"
+									class="mt-1 line-clamp-1 text-xs text-muted">
+									{{ entry.note }}
 								</div>
 							</div>
 							<UButton
@@ -134,7 +124,7 @@
 								variant="ghost"
 								size="2xs"
 								icon="i-lucide-trash-2"
-								@click.stop="onDelete(snippet.id)">
+								@click.stop="onDelete(entry.id)">
 								<span class="sr-only">{{ t('common.actions.delete') }}</span>
 							</UButton>
 						</div>
@@ -145,64 +135,78 @@
 
 		<UModal
 			v-model:open="editOpen"
-			:title="selectedSnippet?.id ? t('assets.snippets.modal.editTitle') : t('assets.snippets.modal.newTitle')"
-			:description="t('assets.snippets.modal.description')"
-			:ui="snippetModalUi">
+			:title="selectedEntry?.id ? t('assets.vault.modal.editTitle') : t('assets.vault.modal.newTitle')"
+			:description="t('assets.vault.modal.description')"
+			:ui="vaultModalUi">
 			<template #body>
 				<div
 					v-motion="modalBodyMotion"
 					class="space-y-4">
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<UFormField
-							:label="t('assets.snippets.fields.title')"
+							:label="t('assets.vault.fields.name')"
 							required>
 							<UInput
-								v-model="editForm.title"
-								:placeholder="t('assets.snippets.placeholders.title')"
+								v-model="editForm.name"
+								:placeholder="t('assets.vault.placeholders.name')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
 						</UFormField>
-						<UFormField :label="t('assets.snippets.fields.language')">
-							<UInput
-								v-model="editForm.language"
-								:placeholder="t('assets.snippets.placeholders.language')"
+						<UFormField :label="t('assets.vault.fields.type')">
+							<USelectMenu
+								v-model="editForm.type"
+								:items="typeOptions"
+								value-key="value"
+								label-key="label"
 								size="md"
 								class="w-full"
-								:ui="assetModalInputUi" />
+								:search-input="false"
+								:ui="assetModalSelectMenuUi" />
 						</UFormField>
 					</div>
 
-					<UFormField :label="t('assets.snippets.fields.folderOptional')">
+					<UFormField :label="t('assets.vault.fields.folderOptional')">
 						<UInput
 							v-model="editForm.folder"
-							:placeholder="t('assets.snippets.placeholders.folderOptional')"
+							:placeholder="t('assets.vault.placeholders.folderOptional')"
 							size="md"
 							class="w-full"
 							:ui="assetModalInputUi" />
 					</UFormField>
 
 					<UFormField
-						:label="t('assets.snippets.fields.content')"
+						:label="t('assets.vault.fields.value')"
 						required>
+						<div class="relative">
+							<UInput
+								v-model="editForm.value"
+								:type="showValue ? 'text' : 'password'"
+								:placeholder="t('assets.vault.placeholders.value')"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="2xs"
+								:icon="showValue ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+								class="absolute top-1/2 right-1 -translate-y-1/2"
+								@click="showValue = !showValue">
+								<span class="sr-only">{{ t('assets.vault.toggleSensitive') }}</span>
+							</UButton>
+						</div>
+					</UFormField>
+
+					<UFormField :label="t('assets.vault.fields.noteOptional')">
 						<UTextarea
-							v-model="editForm.content"
-							:placeholder="t('assets.snippets.placeholders.content')"
-							:rows="12"
+							v-model="editForm.note"
+							:placeholder="t('assets.vault.placeholders.noteOptional')"
+							:rows="3"
 							size="md"
 							class="w-full"
 							autoresize
 							:ui="assetModalTextareaUi" />
-					</UFormField>
-
-					<UFormField :label="t('assets.snippets.fields.tagsOptional')">
-						<UInput
-							v-model="tagsInput"
-							:placeholder="t('assets.snippets.placeholders.tags')"
-							size="md"
-							class="w-full"
-							:ui="assetModalInputUi"
-							@blur="onTagsBlur" />
 					</UFormField>
 				</div>
 			</template>
@@ -220,6 +224,14 @@
 					</UButton>
 					<UButton
 						color="primary"
+						variant="soft"
+						size="sm"
+						icon="i-lucide-copy"
+						@click="onCopy">
+						{{ t('assets.vault.copyValueAction') }}
+					</UButton>
+					<UButton
+						color="primary"
 						size="sm"
 						@click="onSave">
 						{{ t('common.actions.save') }}
@@ -231,54 +243,35 @@
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { assetModalInputUi, assetModalSelectMenuUi, assetModalTextareaUi } from '@/features/assets-shared'
+	import { useAssetsVaultPageFacade } from '@/features/assets-vault'
 
-	import {
-		DEFAULT_STAGGER_MOTION_LIMIT,
-		createStaggeredEnterMotions,
-		getAppStaggerDelay,
-		useAppMotionPreset,
-		useMotionPreset,
-		useMotionPresetWithDelay,
-	} from '@/composables/base/motion'
-	import { createModalLayerUi } from '@/config/ui-layer'
-	import { useAssetsSnippetsPage } from '@/features/assets-snippets'
-	import { assetModalInputUi, assetModalTextareaUi } from '../shared/modal-form-ui'
-
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
-	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
-	const listMotion = useAppMotionPreset('drawerSection', 'sectionBase', 42)
-	const snippetItemPreset = useMotionPreset('listItem')
-	const modalBodyMotion = useMotionPreset('modalSection')
-	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
 	const {
 		t,
+		headerMotion,
+		layoutMotion,
+		folderMotion,
+		listMotion,
+		modalBodyMotion,
+		modalFooterMotion,
 		loading,
-		selectedSnippet,
+		selectedEntry,
 		editOpen,
 		selectedFolder,
 		searchKeyword,
+		showValue,
 		editForm,
-		tagsInput,
+		typeOptions,
 		folders,
-		filteredSnippets,
+		filteredEntries,
+		typeLabel,
+		vaultModalUi,
+		entryItemMotions,
 		openEditor,
 		onCreateNew,
 		closeEditor,
-		onTagsBlur,
+		onCopy,
 		onSave,
 		onDelete,
-	} = useAssetsSnippetsPage()
-
-	const snippetModalUi = createModalLayerUi({
-		width: 'sm:max-w-3xl',
-		rounded: 'rounded-2xl',
-	})
-
-	const snippetItemMotions = computed(() =>
-		createStaggeredEnterMotions(filteredSnippets.value.length, snippetItemPreset.value, getAppStaggerDelay, {
-			limit: DEFAULT_STAGGER_MOTION_LIMIT,
-		}),
-	)
+	} = useAssetsVaultPageFacade()
 </script>
