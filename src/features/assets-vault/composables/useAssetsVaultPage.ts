@@ -6,7 +6,7 @@ import { validateWithZod } from '@/composables/base/zod'
 import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
 import { resolveErrorMessage } from '@/utils/error-message'
 
-import type { VaultEntryDto, VaultEntryType } from '../model'
+import type { AssetVaultEntry, AssetVaultEntryType } from '../model'
 import { createAssetVaultEntry, deleteAssetVaultEntry, updateAssetVaultEntry } from '../mutations'
 import { listAssetVaultEntries } from '../queries'
 
@@ -14,7 +14,7 @@ export function useAssetsVaultPage() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 
-	const selectedEntry = ref<VaultEntryDto | null>(null)
+	const selectedEntry = ref<AssetVaultEntry | null>(null)
 	const editOpen = ref(false)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
@@ -23,7 +23,7 @@ export function useAssetsVaultPage() {
 		state: entries,
 		isLoading: loading,
 		execute: executeRefresh,
-	} = useAsyncState(() => listAssetVaultEntries(), [] as VaultEntryDto[], {
+	} = useAsyncState(() => listAssetVaultEntries(), [] as AssetVaultEntry[], {
 		immediate: true,
 		resetOnExecute: false,
 		onError: (error) => {
@@ -47,7 +47,7 @@ export function useAssetsVaultPage() {
 
 	const editForm = ref({
 		name: '',
-		type: 'api_key' as VaultEntryType,
+		type: 'api_key' as AssetVaultEntryType,
 		value: '',
 		folder: '',
 		note: '',
@@ -60,7 +60,7 @@ export function useAssetsVaultPage() {
 		{ label: t('assets.vault.types.config'), value: 'config' },
 	])
 
-	function typeLabel(type: VaultEntryType): string {
+	function typeLabel(type: AssetVaultEntryType): string {
 		const found = typeOptions.value.find((option) => option.value === type)
 		return found?.label ?? type
 	}
@@ -92,7 +92,7 @@ export function useAssetsVaultPage() {
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
-	function openEditor(entry: VaultEntryDto) {
+	function openEditor(entry: AssetVaultEntry) {
 		selectedEntry.value = entry
 		editForm.value = {
 			name: entry.name,

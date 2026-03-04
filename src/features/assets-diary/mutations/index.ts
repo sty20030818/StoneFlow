@@ -1,6 +1,11 @@
 import { createDiaryEntry, deleteDiaryEntry, updateDiaryEntry } from '@/services/api/diary'
 
-import type { DiaryEntryDto } from '../model'
+import {
+	mapAssetDiaryEntryDtoToDomain,
+	mapAssetDiaryEntryPatchToDto,
+	type AssetDiaryEntry,
+	type AssetDiaryEntryPatch,
+} from '../model'
 
 type SaveDiaryPayload = {
 	date: string
@@ -10,12 +15,13 @@ type SaveDiaryPayload = {
 	linkedProjectId?: string | null
 }
 
-export async function createAssetDiaryEntry(payload: SaveDiaryPayload): Promise<DiaryEntryDto> {
-	return await createDiaryEntry(payload)
+export async function createAssetDiaryEntry(payload: SaveDiaryPayload): Promise<AssetDiaryEntry> {
+	const entry = await createDiaryEntry(payload)
+	return mapAssetDiaryEntryDtoToDomain(entry)
 }
 
-export async function updateAssetDiaryEntry(entryId: string, payload: Partial<DiaryEntryDto>): Promise<void> {
-	await updateDiaryEntry(entryId, payload)
+export async function updateAssetDiaryEntry(entryId: string, payload: AssetDiaryEntryPatch): Promise<void> {
+	await updateDiaryEntry(entryId, mapAssetDiaryEntryPatchToDto(payload))
 }
 
 export async function deleteAssetDiaryEntry(entryId: string): Promise<void> {

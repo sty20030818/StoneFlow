@@ -6,7 +6,7 @@ import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
 import { validateWithZod } from '@/composables/base/zod'
 import { resolveErrorMessage } from '@/utils/error-message'
 
-import type { SnippetDto } from '../model'
+import type { AssetSnippet } from '../model'
 import { createAssetSnippet, deleteAssetSnippet, updateAssetSnippet } from '../mutations'
 import { listAssetSnippets } from '../queries'
 
@@ -14,7 +14,7 @@ export function useAssetsSnippetsPage() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 
-	const selectedSnippet = ref<SnippetDto | null>(null)
+	const selectedSnippet = ref<AssetSnippet | null>(null)
 	const editOpen = ref(false)
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
@@ -24,7 +24,7 @@ export function useAssetsSnippetsPage() {
 		state: snippets,
 		isLoading: loading,
 		execute: executeRefresh,
-	} = useAsyncState(() => listAssetSnippets(), [] as SnippetDto[], {
+	} = useAsyncState(() => listAssetSnippets(), [] as AssetSnippet[], {
 		immediate: true,
 		resetOnExecute: false,
 		onError: (error) => {
@@ -73,7 +73,7 @@ export function useAssetsSnippetsPage() {
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
-	function openEditor(snippet: SnippetDto) {
+	function openEditor(snippet: AssetSnippet) {
 		selectedSnippet.value = snippet
 		editForm.value = {
 			title: snippet.title,

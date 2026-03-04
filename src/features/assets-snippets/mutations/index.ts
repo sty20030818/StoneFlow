@@ -1,6 +1,11 @@
 import { createSnippet, deleteSnippet, updateSnippet } from '@/services/api/snippets'
 
-import type { SnippetDto } from '../model'
+import {
+	mapAssetSnippetDtoToDomain,
+	mapAssetSnippetPatchToDto,
+	type AssetSnippet,
+	type AssetSnippetPatch,
+} from '../model'
 
 type SaveSnippetPayload = {
 	title: string
@@ -12,12 +17,13 @@ type SaveSnippetPayload = {
 	linkedProjectId?: string | null
 }
 
-export async function createAssetSnippet(payload: SaveSnippetPayload): Promise<SnippetDto> {
-	return await createSnippet(payload)
+export async function createAssetSnippet(payload: SaveSnippetPayload): Promise<AssetSnippet> {
+	const snippet = await createSnippet(payload)
+	return mapAssetSnippetDtoToDomain(snippet)
 }
 
-export async function updateAssetSnippet(snippetId: string, payload: Partial<SnippetDto>): Promise<void> {
-	await updateSnippet(snippetId, payload)
+export async function updateAssetSnippet(snippetId: string, payload: AssetSnippetPatch): Promise<void> {
+	await updateSnippet(snippetId, mapAssetSnippetPatchToDto(payload))
 }
 
 export async function deleteAssetSnippet(snippetId: string): Promise<void> {

@@ -8,7 +8,7 @@ import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { formatDate } from '@/utils/time'
 
-import type { DiaryEntryDto, DiaryGroupedEntry, TaskDto } from '../model'
+import type { AssetDiaryEntry, AssetDiaryTask, DiaryGroupedEntry } from '../model'
 import { createAssetDiaryEntry, deleteAssetDiaryEntry, updateAssetDiaryEntry } from '../mutations'
 import { listAssetDiaryDoneTasks, listAssetDiaryEntries } from '../queries'
 
@@ -17,9 +17,9 @@ export function useAssetsDiaryPage() {
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const router = useRouter()
 
-	const entries = ref<DiaryEntryDto[]>([])
-	const tasks = ref<TaskDto[]>([])
-	const selectedEntry = ref<DiaryEntryDto | null>(null)
+	const entries = ref<AssetDiaryEntry[]>([])
+	const tasks = ref<AssetDiaryTask[]>([])
+	const selectedEntry = ref<AssetDiaryEntry | null>(null)
 	const editOpen = ref(false)
 	const { isLoading: loading, execute: executeRefresh } = useAsyncState(
 		async () => {
@@ -30,8 +30,8 @@ export function useAssetsDiaryPage() {
 			}
 		},
 		{
-			entries: [] as DiaryEntryDto[],
-			tasks: [] as TaskDto[],
+			entries: [] as AssetDiaryEntry[],
+			tasks: [] as AssetDiaryTask[],
 		},
 		{
 			immediate: true,
@@ -59,7 +59,7 @@ export function useAssetsDiaryPage() {
 	})
 
 	const groupedEntries = computed<DiaryGroupedEntry[]>(() => {
-		const byDate = new Map<string, DiaryEntryDto[]>()
+		const byDate = new Map<string, AssetDiaryEntry[]>()
 
 		for (const entry of entries.value) {
 			const entryList = byDate.get(entry.date) ?? []
@@ -94,7 +94,7 @@ export function useAssetsDiaryPage() {
 		return result.sort((a, b) => b.date.localeCompare(a.date))
 	})
 
-	function selectEntry(entry: DiaryEntryDto) {
+	function selectEntry(entry: AssetDiaryEntry) {
 		selectedEntry.value = entry
 		editForm.value = {
 			date: entry.date,

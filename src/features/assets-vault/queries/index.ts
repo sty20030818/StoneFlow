@@ -1,7 +1,8 @@
 import { listVaultEntries } from '@/services/api/vault'
 
-import type { VaultEntryDto } from '../model'
+import { mapAssetVaultEntriesDtoToDomain, type AssetVaultEntry } from '../model'
 
-export async function listAssetVaultEntries(): Promise<VaultEntryDto[]> {
-	return await listVaultEntries()
+export async function listAssetVaultEntries(): Promise<AssetVaultEntry[]> {
+	const entries = await listVaultEntries()
+	return mapAssetVaultEntriesDtoToDomain(entries)
 }

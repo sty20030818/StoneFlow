@@ -1,21 +1,28 @@
 import { createVaultEntry, deleteVaultEntry, updateVaultEntry } from '@/services/api/vault'
 
-import type { VaultEntryDto, VaultEntryType } from '../model'
+import {
+	mapAssetVaultEntryDtoToDomain,
+	mapAssetVaultEntryPatchToDto,
+	type AssetVaultEntry,
+	type AssetVaultEntryPatch,
+	type AssetVaultEntryType,
+} from '../model'
 
 type SaveVaultEntryPayload = {
 	name: string
-	type: VaultEntryType
+	type: AssetVaultEntryType
 	value: string
 	folder?: string | null
 	note?: string | null
 }
 
-export async function createAssetVaultEntry(payload: SaveVaultEntryPayload): Promise<VaultEntryDto> {
-	return await createVaultEntry(payload)
+export async function createAssetVaultEntry(payload: SaveVaultEntryPayload): Promise<AssetVaultEntry> {
+	const entry = await createVaultEntry(payload)
+	return mapAssetVaultEntryDtoToDomain(entry)
 }
 
-export async function updateAssetVaultEntry(entryId: string, payload: Partial<VaultEntryDto>): Promise<void> {
-	await updateVaultEntry(entryId, payload)
+export async function updateAssetVaultEntry(entryId: string, payload: AssetVaultEntryPatch): Promise<void> {
+	await updateVaultEntry(entryId, mapAssetVaultEntryPatchToDto(payload))
 }
 
 export async function deleteAssetVaultEntry(entryId: string): Promise<void> {

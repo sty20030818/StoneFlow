@@ -6,7 +6,7 @@ import { noteSubmitSchema } from '@/composables/domain/validation/forms'
 import { validateWithZod } from '@/composables/base/zod'
 import { resolveErrorMessage } from '@/utils/error-message'
 
-import type { NoteDto } from '../model'
+import type { AssetNote } from '../model'
 import { createAssetNote, deleteAssetNote, updateAssetNote } from '../mutations'
 import { listAssetNotes } from '../queries'
 
@@ -14,7 +14,7 @@ export function useAssetsNotesPage() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 
-	const selectedNote = ref<NoteDto | null>(null)
+	const selectedNote = ref<AssetNote | null>(null)
 	const editOpen = ref(false)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
@@ -23,7 +23,7 @@ export function useAssetsNotesPage() {
 		state: notes,
 		isLoading: loading,
 		execute: executeRefresh,
-	} = useAsyncState(() => listAssetNotes(), [] as NoteDto[], {
+	} = useAsyncState(() => listAssetNotes(), [] as AssetNote[], {
 		immediate: true,
 		resetOnExecute: false,
 		onError: (error) => {
@@ -55,7 +55,7 @@ export function useAssetsNotesPage() {
 		return result.sort((a, b) => b.updatedAt - a.updatedAt)
 	})
 
-	function openEditor(note: NoteDto) {
+	function openEditor(note: AssetNote) {
 		selectedNote.value = note
 		editForm.value = {
 			title: note.title,
