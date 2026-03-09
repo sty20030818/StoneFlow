@@ -3,7 +3,7 @@
 
 use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
-use crate::db::entities::projects;
+use crate::db::entities::{projects, sea_orm_active_enums::Priority};
 use crate::repos::{
     link_repo::{self, LinkEntity},
     tag_repo::{self, TagEntity},
@@ -30,6 +30,44 @@ pub fn compute_status(
         return "done".to_string();
     }
     "inProgress".to_string()
+}
+
+pub fn project_model_to_dto(m: projects::Model) -> ProjectDto {
+    let computed_status = compute_status(
+        m.deleted_at,
+        m.archived_at,
+        m.todo_task_count,
+        m.done_task_count,
+    );
+    let priority = match m.priority {
+        Priority::P0 => "P0",
+        Priority::P1 => "P1",
+        Priority::P2 => "P2",
+        Priority::P3 => "P3",
+    }
+    .to_string();
+
+    ProjectDto {
+        id: m.id,
+        space_id: m.space_id,
+        parent_id: m.parent_id,
+        path: m.path,
+        title: m.title,
+        note: m.note,
+        priority,
+        tags: Vec::new(),
+        links: Vec::new(),
+        rank: m.rank,
+        created_at: m.created_at,
+        updated_at: m.updated_at,
+        archived_at: m.archived_at,
+        deleted_at: m.deleted_at,
+        create_by: m.create_by,
+        computed_status,
+        todo_task_count: m.todo_task_count,
+        done_task_count: m.done_task_count,
+        last_task_updated_at: m.last_task_updated_at,
+    }
 }
 
 pub async fn attach_links(

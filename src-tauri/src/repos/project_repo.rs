@@ -26,6 +26,8 @@ use crate::types::{
 
 pub mod activity_logs;
 pub mod helpers;
+pub mod mutation;
+pub mod query;
 
 pub struct ProjectRepo;
 

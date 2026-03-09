@@ -5,21 +5,18 @@
 //! - `Option<Option<T>>` 在“清空字段 vs 不修改字段”场景的语义
 //! - 纯查询可直达 `ProjectRepo`，写命令应逐步迁入 `ProjectService`
 
-use sea_orm::TransactionTrait;
 use serde::Deserialize;
 use tauri::State;
 
-use crate::db::{now_ms, DbState};
-use crate::repos::{
-    project_repo::{
-        ProjectCreateInput, ProjectRepo, ProjectUpdateInput,
-        ProjectUpdatePatch as RepoProjectUpdatePatch,
-    },
-    task_repo::TaskRepo,
+use crate::db::DbState;
+use crate::repos::project_repo::ProjectRepo;
+use crate::services::{
+    ProjectCreateInput, ProjectService, ProjectUpdateInput,
+    ProjectUpdatePatch as ServiceProjectUpdatePatch,
 };
 use crate::types::{
     dto::{LinkInputDto, ProjectDto},
-    error::{ApiError, AppError},
+    error::ApiError,
 };
 
 #[derive(Debug, Deserialize)]
@@ -88,7 +85,7 @@ pub struct UpdateProjectPatch {
     pub links: Option<Vec<LinkInputDto>>,
 }
 
-impl From<UpdateProjectPatch> for RepoProjectUpdatePatch {
+impl From<UpdateProjectPatch> for ServiceProjectUpdatePatch {
     fn from(value: UpdateProjectPatch) -> Self {
         Self {
             title: value.title,
@@ -109,18 +106,19 @@ pub async fn create_project(
     state: State<'_, DbState>,
     args: CreateProjectArgs,
 ) -> Result<ProjectDto, ApiError> {
-    let input = ProjectCreateInput {
-        space_id: args.space_id,
-        title: args.title,
-        parent_id: args.parent_id,
-        note: args.note,
-        priority: args.priority,
-        rank: args.rank,
-        tags: args.tags,
-        links: args.links,
-    };
-
-    ProjectRepo::create(&state.conn, input)
+    ProjectService::create(
+        &state.conn,
+        ProjectCreateInput {
+            space_id: args.space_id,
+            title: args.title,
+            parent_id: args.parent_id,
+            note: args.note,
+            priority: args.priority,
+            rank: args.rank,
+            tags: args.tags,
+            links: args.links,
+        },
+    )
         .await
         .map_err(ApiError::from)
 }
@@ -130,11 +128,13 @@ pub async fn update_project(
     state: State<'_, DbState>,
     args: UpdateProjectArgs,
 ) -> Result<(), ApiError> {
-    let input = ProjectUpdateInput {
-        project_id: args.project_id,
-        patch: args.patch.into(),
-    };
-    ProjectRepo::update(&state.conn, input)
+    ProjectService::update(
+        &state.conn,
+        ProjectUpdateInput {
+            project_id: args.project_id,
+            patch: args.patch.into(),
+        },
+    )
         .await
         .map_err(ApiError::from)
 }
@@ -169,11 +169,11 @@ pub async fn reorder_project(
     state: State<'_, DbState>,
     args: ReorderProjectArgs,
 ) -> Result<(), ApiError> {
-    ProjectRepo::reorder(
+    ProjectService::reorder(
         &state.conn,
         &args.project_id,
         args.new_rank,
-        args.new_parent_id.as_ref().map(|v| v.as_deref()),
+        args.new_parent_id,
     )
     .await
     .map_err(ApiError::from)
@@ -194,9 +194,7 @@ pub async fn rebalance_project_ranks(
     state: State<'_, DbState>,
     args: RebalanceProjectRanksArgs,
 ) -> Result<(), ApiError> {
-    // 重点：`step` 用于拉开 rank 间隔，减少频繁全量重排。
-    let step = args.step.unwrap_or(1024);
-    ProjectRepo::rebalance_ranks(&state.conn, &args.project_ids, step)
+    ProjectService::rebalance(&state.conn, &args.project_ids, args.step.unwrap_or(1024))
         .await
         .map_err(ApiError::from)
 }
@@ -213,32 +211,9 @@ pub async fn delete_project(
     state: State<'_, DbState>,
     args: DeleteProjectArgs,
 ) -> Result<(), ApiError> {
-    // 重点：单事务内完成“收集子树 -> 删除任务 -> 删除项目”，避免半成功。
-    let txn = state
-        .conn
-        .begin()
+    ProjectService::delete_subtree(&state.conn, &args.project_id)
         .await
-        .map_err(AppError::from)
-        .map_err(ApiError::from)?;
-
-    let subtree_project_ids = ProjectRepo::collect_subtree_ids(&txn, &args.project_id)
-        .await
-        .map_err(ApiError::from)?;
-
-    let now = now_ms();
-    TaskRepo::soft_delete_by_project_ids(&txn, &subtree_project_ids, now)
-        .await
-        .map_err(ApiError::from)?;
-    ProjectRepo::soft_delete_by_ids(&txn, &subtree_project_ids, now)
-        .await
-        .map_err(ApiError::from)?;
-
-    txn.commit()
-        .await
-        .map_err(AppError::from)
-        .map_err(ApiError::from)?;
-
-    Ok(())
+        .map_err(ApiError::from)
 }
 
 /// 恢复软删除项目。
@@ -247,7 +222,7 @@ pub async fn restore_project(
     state: State<'_, DbState>,
     args: DeleteProjectArgs,
 ) -> Result<(), ApiError> {
-    ProjectRepo::restore(&state.conn, &args.project_id)
+    ProjectService::restore(&state.conn, &args.project_id)
         .await
         .map_err(ApiError::from)
 }
@@ -258,7 +233,7 @@ pub async fn archive_project(
     state: State<'_, DbState>,
     args: DeleteProjectArgs,
 ) -> Result<(), ApiError> {
-    ProjectRepo::archive(&state.conn, &args.project_id)
+    ProjectService::archive(&state.conn, &args.project_id)
         .await
         .map_err(ApiError::from)
 }
@@ -269,7 +244,7 @@ pub async fn unarchive_project(
     state: State<'_, DbState>,
     args: DeleteProjectArgs,
 ) -> Result<(), ApiError> {
-    ProjectRepo::unarchive(&state.conn, &args.project_id)
+    ProjectService::unarchive(&state.conn, &args.project_id)
         .await
         .map_err(ApiError::from)
 }
