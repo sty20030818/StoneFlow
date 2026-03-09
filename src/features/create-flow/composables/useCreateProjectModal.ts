@@ -13,7 +13,7 @@ import {
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { validateWithZod } from '@/composables/base/zod'
 import { projectSubmitSchema } from '@/composables/domain/validation/forms'
-import { useProjectsStore } from '@/stores/projects'
+import { refreshWorkspaceProjectsQuery, useSpaceProjectsState } from '@/features/workspace'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { useProjectCreateWorkflow } from './useProjectCreateWorkflow'
 
@@ -70,7 +70,6 @@ const PROJECT_LINK_KIND_VALUES: CreateFlowLink['kind'][] = ['web', 'doc', 'desig
 export function useCreateProjectModal(props: CreateProjectModalProps, emit: CreateProjectModalEmits) {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
-	const projectsStore = useProjectsStore()
 	const { createProjectFromModal } = useProjectCreateWorkflow()
 
 	const loading = ref(false)
@@ -92,6 +91,9 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		tags: [],
 		links: [],
 	})
+	const projectsState = useSpaceProjectsState(computed(() => form.spaceId), {
+		enabled: isOpen,
+	})
 
 	const canSubmit = computed(() => form.title.trim().length > 0)
 
@@ -112,18 +114,8 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
 	const projectRootLabel = computed(() => t('common.labels.projectRoot'))
 
-	const currentParentProjectOptions = ref<ParentProjectOption[]>([
-		{
-			value: null,
-			label: projectRootLabel.value,
-			icon: PROJECT_ICON,
-			iconClass: PROJECT_ROOT_ICON_CLASS,
-			depth: 0,
-		},
-	])
-
-	function buildParentProjectOptions(spaceId: string) {
-		const storeProjects = projectsStore.getProjectsOfSpace(spaceId)
+	function buildParentProjectOptions(spaceId: string): ParentProjectOption[] {
+		const storeProjects = projectsState.projects.value
 		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === spaceId)
 		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
 
@@ -163,6 +155,8 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		buildTree(null, 0)
 		return options
 	}
+
+	const currentParentProjectOptions = computed<ParentProjectOption[]>(() => buildParentProjectOptions(form.spaceId))
 
 	function normalizeTags(values: string[]): string[] {
 		const seen = new Set<string>()
@@ -216,18 +210,13 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		form.links.splice(index, 1)
 	}
 
-	async function refreshParentProjectOptions() {
-		await projectsStore.load(form.spaceId)
-		currentParentProjectOptions.value = buildParentProjectOptions(form.spaceId)
-	}
-
 	watchDebounced(
 		() => form.spaceId,
 		async (newSpaceId, oldSpaceId) => {
 			if (oldSpaceId && newSpaceId !== oldSpaceId) {
 				form.parentId = null
 			}
-			await refreshParentProjectOptions()
+			await refreshWorkspaceProjectsQuery(newSpaceId)
 		},
 		{ debounce: 80, maxWait: 240 },
 	)
@@ -250,7 +239,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		form.links = []
 		tagInput.value = ''
 		form.spaceId = normalizeSpaceId(props.spaceId)
-		await refreshParentProjectOptions()
+		await refreshWorkspaceProjectsQuery(form.spaceId)
 	})
 
 	async function handleSubmit() {
@@ -273,7 +262,7 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 				links: normalizeLinks(form.links),
 			})
 
-			await projectsStore.load(form.spaceId, { force: true })
+			await refreshWorkspaceProjectsQuery(form.spaceId, { force: true })
 			emit('created', project)
 			close()
 		} catch (error) {

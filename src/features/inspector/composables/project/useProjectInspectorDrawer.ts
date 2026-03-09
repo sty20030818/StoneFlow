@@ -12,10 +12,18 @@ import {
 	updateInspectorProject,
 } from '../../mutations'
 import type { InspectorLink, InspectorLinkInput, InspectorProject, InspectorProjectPatch } from '../../model'
-import { invalidateWorkspaceTaskAndProjectQueries, invalidateWorkspaceProjectQueries } from '@/features/workspace'
+import {
+	getWorkspaceProjectById,
+	getWorkspaceProjectsSnapshot,
+	invalidateWorkspaceTaskAndProjectQueries,
+	invalidateWorkspaceProjectQueries,
+	patchWorkspaceProjectSnapshot,
+	refreshWorkspaceProjectsQuery,
+	useSpaceProjectsState,
+	type WorkspaceProject,
+} from '@/features/workspace'
 import { SPACE_OPTIONS } from '@/config/space'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
-import { useProjectsStore } from '@/stores/projects'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { buildDrawerLinkKindOptions } from '../../ui/InspectorDrawer/shared/constants'
 
@@ -42,7 +50,6 @@ const TEXT_AUTOSAVE_MAX_WAIT = 2000
 
 export function useProjectInspectorDrawer() {
 	const store = useProjectInspectorStore()
-	const projectsStore = useProjectsStore()
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 
@@ -86,6 +93,9 @@ export function useProjectInspectorDrawer() {
 	})
 	const suppressAutosave = ref(false)
 	const parentOptions = ref<ParentProjectOption[]>([{ value: null, label: t('common.labels.projectRoot'), depth: 0 }])
+	const spaceProjectsState = useSpaceProjectsState(spaceIdLocal, {
+		enabled: computed(() => Boolean(currentProject.value) && Boolean(spaceIdLocal.value)),
+	})
 
 	let syncTicket = 0
 
@@ -157,10 +167,18 @@ export function useProjectInspectorDrawer() {
 		if (!project || project.deletedAt !== null) return false
 		return project.archivedAt !== null
 	})
+
+	function getProjectsOfSpace(spaceId: string): WorkspaceProject[] {
+		if (spaceId === spaceIdLocal.value) {
+			return spaceProjectsState.projects.value
+		}
+		return getWorkspaceProjectsSnapshot(spaceId)
+	}
+
 	const hasChildProjects = computed(() => {
 		const project = currentProject.value
 		if (!project) return false
-		return projectsStore.getProjectsOfSpace(project.spaceId).some((item) => item.parentId === project.id)
+		return getProjectsOfSpace(project.spaceId).some((item) => item.parentId === project.id)
 	})
 	const isLifecycleBusy = computed(() => {
 		return lifecycleState.deleting || lifecycleState.restoring || lifecycleState.archiving || lifecycleState.unarchiving
@@ -250,27 +268,27 @@ export function useProjectInspectorDrawer() {
 		if (patch.tags !== undefined) draftPatch.tags = patch.tags
 		if (!hasPatchValue(draftPatch)) return
 
-		projectsStore.patchProject(spaceId, projectId, draftPatch)
+		patchWorkspaceProjectSnapshot(spaceId, projectId, draftPatch as Partial<WorkspaceProject>)
 		if (currentProject.value?.id === projectId) {
 			store.patchProject(draftPatch)
 		}
 	}
 
 	async function refreshStoreProject(spaceId: string, projectId: string, options: { force?: boolean } = {}) {
-		await projectsStore.load(spaceId, { force: options.force ?? false })
-		const latest = projectsStore.getProjectById(spaceId, projectId)
+		await refreshWorkspaceProjectsQuery(spaceId, { force: options.force ?? false })
+		const latest = getWorkspaceProjectById(spaceId, projectId)
 		if (currentProject.value?.id !== projectId) return
-		store.setProject(latest)
+		store.setProject(latest as InspectorProject | null)
 	}
 
 	async function refreshStoreProjectAfterSpaceChange(oldSpaceId: string, newSpaceId: string, projectId: string) {
 		await Promise.all([
-			projectsStore.load(oldSpaceId, { force: true }),
-			projectsStore.load(newSpaceId, { force: true }),
+			refreshWorkspaceProjectsQuery(oldSpaceId, { force: true }),
+			refreshWorkspaceProjectsQuery(newSpaceId, { force: true }),
 		])
 		if (currentProject.value?.id !== projectId) return
-		const latest = projectsStore.getProjectById(newSpaceId, projectId)
-		store.setProject(latest)
+		const latest = getWorkspaceProjectById(newSpaceId, projectId)
+		store.setProject(latest as InspectorProject | null)
 	}
 
 	async function commitUpdateNow(projectId: string, payload: ProjectPatchQueuePayload): Promise<boolean> {
@@ -319,7 +337,7 @@ export function useProjectInspectorDrawer() {
 	}
 
 	function buildParentOptions(project: InspectorProject, targetSpaceId: string): ParentProjectOption[] {
-		const projects = projectsStore.getProjectsOfSpace(targetSpaceId).filter((item) => !isDefaultProjectId(item.id))
+		const projects = getProjectsOfSpace(targetSpaceId).filter((item) => !isDefaultProjectId(item.id))
 		const descendants =
 			targetSpaceId === project.spaceId ? collectDescendantIds(projects, project.id) : new Set<string>()
 		const disallowedIds = new Set<string>([project.id, ...descendants])
@@ -390,11 +408,11 @@ export function useProjectInspectorDrawer() {
 
 	async function syncFromProject(project: InspectorProject, mode: 'reset' | 'incremental') {
 		const ticket = ++syncTicket
-		await projectsStore.load(project.spaceId)
+		await refreshWorkspaceProjectsQuery(project.spaceId)
 		if (ticket !== syncTicket) return
 
-		const latest = projectsStore.getProjectById(project.spaceId, project.id)
-		const resolved = latest ?? project
+		const latest = getWorkspaceProjectById(project.spaceId, project.id)
+		const resolved = (latest as InspectorProject | null) ?? project
 		if (currentProject.value?.id !== resolved.id) return
 		syncFromProjectSnapshot(resolved, mode)
 	}
@@ -613,7 +631,7 @@ export function useProjectInspectorDrawer() {
 			parentIdLocal.value = null
 		}
 
-		await projectsStore.load(value)
+		await refreshWorkspaceProjectsQuery(value)
 		parentOptions.value = buildParentOptions(project, value)
 
 		if (sameSpace) {

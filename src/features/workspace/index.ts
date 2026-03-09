@@ -7,10 +7,12 @@ export { DraggableProjectTree, ProjectHeaderCard, TaskColumn, WorkspaceLayout } 
 export { listWorkspaceProjects } from './queries'
 export { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from './mutations'
 export {
+	getWorkspaceProjectById,
 	getWorkspaceProjectsSnapshot,
 	invalidateWorkspaceProjectQueries,
 	invalidateWorkspaceTaskAndProjectQueries,
 	invalidateWorkspaceTaskQueries,
+	patchWorkspaceProjectSnapshot,
 	refreshWorkspaceProjectsQuery,
 	warmupWorkspaceProjectsQuery,
 	workspaceQueryKeys,

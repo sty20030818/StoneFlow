@@ -1,7 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 
 import type { InspectorTask } from '../../model'
-import type { useProjectsStore } from '@/stores/projects'
 import { getDisplayStatus } from '@/utils/task'
 
 import type { TaskInspectorState } from './useTaskInspectorState'
@@ -15,11 +14,10 @@ import {
 
 export function useTaskInspectorSync(params: {
 	currentTask: Ref<InspectorTask | null>
-	projectsStore: ReturnType<typeof useProjectsStore>
 	state: TaskInspectorState
 	onTaskContextChange?: (previousTaskId: string | null, nextTaskId: string | null) => void
 }) {
-	const { currentTask, projectsStore, state, onTaskContextChange } = params
+	const { currentTask, state, onTaskContextChange } = params
 	const syncedTaskId = ref<string | null>(null)
 
 	function syncTaskToLocal(task: InspectorTask, forceEditable: boolean) {
@@ -77,7 +75,6 @@ export function useTaskInspectorSync(params: {
 					state.resetTextInteractionState()
 					syncedTaskId.value = task.id
 				}
-				await projectsStore.load(task.spaceId)
 				syncTaskToLocal(task, switchedTask)
 			}
 		},

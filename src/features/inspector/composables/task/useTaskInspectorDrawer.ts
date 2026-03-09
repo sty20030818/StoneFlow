@@ -1,8 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 import { computed } from 'vue'
 
+import { getWorkspaceProjectsSnapshot, useSpaceProjectsState } from '@/features/workspace'
 import type { InspectorTask } from '../../model'
-import { useProjectsStore } from '@/stores/projects'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 
 import { useTaskInspectorActions } from './useTaskInspectorActions'
@@ -14,17 +14,25 @@ import { useTaskInspectorSync } from './useTaskInspectorSync'
 
 export function useTaskInspectorDrawer() {
 	const store = useTaskInspectorStore()
-	const projectsStore = useProjectsStore()
 
 	const currentTask = computed<InspectorTask | null>(() => store.task ?? null)
 
 	const state = useTaskInspectorState()
-	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, projectsStore })
-	const actions = useTaskInspectorActions({ currentTask, state, store, projectsStore })
+	const projectsState = useSpaceProjectsState(state.spaceIdLocal, {
+		enabled: computed(() => store.isOpen && Boolean(state.spaceIdLocal.value)),
+	})
+	const getProjectsOfSpace = (spaceId: string) => {
+		if (spaceId === state.spaceIdLocal.value) {
+			return projectsState.projects.value
+		}
+		return getWorkspaceProjectsSnapshot(spaceId)
+	}
+	const options = useTaskInspectorOptions({ spaceIdLocal: state.spaceIdLocal, getProjectsOfSpace })
+	const actions = useTaskInspectorActions({ currentTask, state, store })
 	const derived = useTaskInspectorDerived({
 		currentTask,
 		state,
-		projectsStore,
+		getProjectsOfSpace,
 		saveState: actions.saveState,
 	})
 	const activityLogs = useTaskInspectorActivityLogs({
@@ -33,7 +41,6 @@ export function useTaskInspectorDrawer() {
 
 	useTaskInspectorSync({
 		currentTask,
-		projectsStore,
 		state,
 		onTaskContextChange: actions.onTaskContextChange,
 	})

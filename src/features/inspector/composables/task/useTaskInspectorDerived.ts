@@ -2,8 +2,8 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { TASK_PRIORITY_OPTIONS, TASK_PRIORITY_STYLES } from '@/config/task'
+import type { WorkspaceProject } from '@/features/workspace'
 import type { InspectorTask } from '../../model'
-import type { useProjectsStore } from '@/stores/projects'
 import { formatDate } from '@/utils/time'
 import {
 	type DrawerSaveState,
@@ -29,10 +29,10 @@ function normalizePriorityKey(priority: string | null | undefined): keyof typeof
 export function useTaskInspectorDerived(params: {
 	currentTask: Ref<InspectorTask | null>
 	state: TaskInspectorState
-	projectsStore: ReturnType<typeof useProjectsStore>
+	getProjectsOfSpace: (spaceId: string) => WorkspaceProject[]
 	saveState: Ref<DrawerSaveState>
 }) {
-	const { currentTask, state, projectsStore } = params
+	const { currentTask, state, getProjectsOfSpace } = params
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const { saveStateLabel, saveStateClass, saveStateDotClass } = useDrawerSaveStatePresentation(params.saveState)
 
@@ -76,7 +76,7 @@ export function useTaskInspectorDerived(params: {
 	})
 
 	const currentProjectLabel = computed(() => {
-		const projects = projectsStore.getProjectsOfSpace(state.spaceIdLocal.value)
+		const projects = getProjectsOfSpace(state.spaceIdLocal.value)
 		const defaultProject = getDefaultProject(projects)
 		if (!state.projectIdLocal.value) return defaultProject?.title ?? t('common.labels.unknownProject')
 		const proj = projects.find((p) => p.id === state.projectIdLocal.value)
@@ -110,7 +110,7 @@ export function useTaskInspectorDerived(params: {
 	const projectPath = computed(() => {
 		const task = currentTask.value
 		if (!task) return t('common.labels.unknownProject')
-		const projects = projectsStore.getProjectsOfSpace(task.spaceId)
+		const projects = getProjectsOfSpace(task.spaceId)
 		const defaultProject = getDefaultProject(projects)
 		const project = task.projectId ? projects.find((p) => p.id === task.projectId) : defaultProject
 		if (!project) return t('common.labels.unknownProject')

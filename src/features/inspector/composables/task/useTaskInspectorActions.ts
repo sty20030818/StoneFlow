@@ -2,11 +2,11 @@ import type { Ref } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
+import { refreshWorkspaceProjectsQuery } from '@/features/workspace'
 import { usePatchQueue } from '../shared'
 import { updateInspectorTask } from '../../mutations'
 import type { InspectorLink, InspectorLinkInput, InspectorTask, InspectorTaskPatch } from '../../model'
 import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
-import type { useProjectsStore } from '@/stores/projects'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
 
 import type { TaskInspectorState, TextInteractionField } from './useTaskInspectorState'
@@ -37,9 +37,8 @@ export function useTaskInspectorActions(params: {
 	currentTask: Ref<InspectorTask | null>
 	state: TaskInspectorState
 	store: ReturnType<typeof useTaskInspectorStore>
-	projectsStore: ReturnType<typeof useProjectsStore>
 }) {
-	const { currentTask, state, store, projectsStore } = params
+	const { currentTask, state, store } = params
 
 	function getCurrentTaskId(): string | null {
 		return currentTask.value?.id ?? null
@@ -355,7 +354,7 @@ export function useTaskInspectorActions(params: {
 		if (!currentTask.value || value === currentTask.value.spaceId) return
 		state.spaceIdLocal.value = value
 		state.projectIdLocal.value = null
-		await projectsStore.load(value)
+		await refreshWorkspaceProjectsQuery(value)
 
 		queueImmediateUpdate({ spaceId: value, projectId: null }, { spaceId: value, projectId: null })
 		await processQueuedUpdates()

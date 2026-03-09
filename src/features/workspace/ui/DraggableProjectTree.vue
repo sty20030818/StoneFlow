@@ -134,8 +134,8 @@
 	import type { ProjectTreeItem } from './project-tree-types'
 
 	import { createModalLayerUi, createPopoverLayerUi } from '@/config/ui-layer'
+	import { getWorkspaceProjectById } from '@/features/workspace'
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
-	import { useProjectsStore } from '@/stores/projects'
 	import { resolveErrorMessage } from '@/utils/error-message'
 	import { calculateInsertRank } from '@/utils/rank'
 	import { invalidateWorkspaceTaskAndProjectQueries } from '../model'
@@ -172,7 +172,6 @@
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const projectInspectorStore = useProjectInspectorStore()
-	const projectsStore = useProjectsStore()
 	const popoverUi = createPopoverLayerUi()
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
@@ -256,7 +255,7 @@
 	// }
 
 	function openProjectInspector(item: ProjectTreeItem) {
-		const project = projectsStore.getProjectsOfSpace(spaceId.value).find((candidate) => candidate.id === item.id)
+		const project = getWorkspaceProjectById(spaceId.value, item.id)
 		if (!project) {
 			toast.add({
 				title: t('toast.projectTree.cannotEditTitle'),

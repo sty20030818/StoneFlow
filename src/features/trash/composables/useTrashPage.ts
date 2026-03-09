@@ -2,8 +2,7 @@ import { refDebounced, useStorage } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
-import { useProjectsStore } from '@/stores/projects'
+import { invalidateWorkspaceTaskAndProjectQueries, useSpaceProjectsState } from '@/features/workspace'
 import { useSettingsStore } from '@/stores/settings'
 import { resolveErrorMessage } from '@/utils/error-message'
 
@@ -20,7 +19,6 @@ export function useTrashPage() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const settingsStore = useSettingsStore()
-	const projectsStore = useProjectsStore()
 
 	const viewMode = ref<'projects' | 'tasks'>('projects')
 	const loading = ref(true)
@@ -34,10 +32,11 @@ export function useTrashPage() {
 	const activeSpaceId = computed(() => settingsStore.settings.activeSpaceId ?? 'work')
 	const scopeKey = computed(() => activeSpaceId.value)
 	const debouncedScopeKey = refDebounced(scopeKey, 80)
+	const projectsState = useSpaceProjectsState(activeSpaceId)
 
 	const projectNameMap = computed(() => {
 		const map = new Map<string, string>()
-		for (const project of projectsStore.getProjectsOfSpace(activeSpaceId.value)) {
+		for (const project of projectsState.projects.value) {
 			map.set(project.id, project.title)
 		}
 		for (const project of deletedProjects.value) {

@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import { getDefaultProjectLabel } from '@/config/project'
 import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-import { useProjectsStore } from '@/stores/projects'
+import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, type WorkspaceProject } from '@/features/workspace'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { formatDate as formatDateByLocale, formatTimeOfDay } from '@/utils/time'
 
@@ -24,7 +24,18 @@ type ProjectGroup = {
 export function useReviewFinishList() {
 	const toast = useToast()
 	const { t, locale } = useI18n({ useScope: 'global' })
-	const projectsStore = useProjectsStore()
+	const projectsBySpace = ref<Record<string, WorkspaceProject[]>>({})
+
+	function syncProjectsSnapshot(spaceId: string) {
+		projectsBySpace.value = {
+			...projectsBySpace.value,
+			[spaceId]: getWorkspaceProjectsSnapshot(spaceId),
+		}
+	}
+
+	function getProjectsOfSpace(spaceId: string) {
+		return projectsBySpace.value[spaceId] ?? []
+	}
 
 	const { state: tasks, isLoading: loading } = useAsyncState(() => listReviewDoneTasks(), [] as WorkspaceTask[], {
 		immediate: true,
@@ -97,7 +108,7 @@ export function useReviewFinishList() {
 		}
 		const options: Array<{ label: string; value: string }> = []
 		for (const sid of Array.from(ids)) {
-			const list = projectsStore.getProjectsOfSpace(sid)
+			const list = getProjectsOfSpace(sid)
 			for (const project of list) {
 				options.push({
 					label: `${resolveSpaceLabel(sid)} / ${project.title}`,
@@ -151,7 +162,7 @@ export function useReviewFinishList() {
 
 		for (const [groupKey, list] of byProject.entries()) {
 			const sample = list[0]
-			const projects = projectsStore.getProjectsOfSpace(sample.spaceId)
+			const projects = getProjectsOfSpace(sample.spaceId)
 			const project = sample.projectId ? projects.find((item) => item.id === sample.projectId) : null
 
 			const leads: number[] = []
@@ -183,7 +194,7 @@ export function useReviewFinishList() {
 		)
 		const activeProjectIds = new Set<string>()
 		for (const task of thisWeekTasks) {
-			const projects = projectsStore.getProjectsOfSpace(task.spaceId)
+			const projects = getProjectsOfSpace(task.spaceId)
 			if (projects[0]) activeProjectIds.add(projects[0].id)
 		}
 		const spaceIds = new Set(thisWeekTasks.map((task) => task.spaceId))
@@ -199,7 +210,10 @@ export function useReviewFinishList() {
 		(rows) => {
 			const spaceIds = Array.from(new Set(rows.map((task) => task.spaceId)))
 			for (const sid of spaceIds) {
-				void projectsStore.load(sid)
+				syncProjectsSnapshot(sid)
+				void refreshWorkspaceProjectsQuery(sid).then(() => {
+					syncProjectsSnapshot(sid)
+				})
 			}
 		},
 		{ immediate: true },

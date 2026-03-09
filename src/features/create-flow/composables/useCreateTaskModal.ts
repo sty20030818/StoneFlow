@@ -21,7 +21,7 @@ import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/config/task'
 import { validateWithZod } from '@/composables/base/zod'
 import { taskSubmitSchema } from '@/composables/domain/validation/forms'
-import { useProjectsStore } from '@/stores/projects'
+import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, useSpaceProjectsState } from '@/features/workspace'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { statusOptions } from '@/utils/task'
 import { getCreateFlowDefaultProject } from '../queries'
@@ -84,7 +84,6 @@ const TASK_LINK_KIND_VALUES: CreateFlowLink['kind'][] = ['web', 'doc', 'design',
 export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTaskModalEmits) {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
-	const projectsStore = useProjectsStore()
 	const { createTaskFromModal } = useTaskCreateWorkflow()
 
 	const loading = ref(false)
@@ -111,6 +110,9 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		links: [],
 		note: '',
 		customFields: [],
+	})
+	const projectsState = useSpaceProjectsState(computed(() => form.value.spaceId), {
+		enabled: isOpen,
 	})
 
 	const tagInput = ref('')
@@ -238,7 +240,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			},
 		]
 
-		const storeProjects = projectsStore.getProjectsOfSpace(form.value.spaceId)
+		const storeProjects = projectsState.projects.value
 		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === form.value.spaceId)
 		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
 		if (!projectsList.length) return options
@@ -267,7 +269,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			if (oldSpaceId && newSpaceId !== oldSpaceId) {
 				form.value.projectId = null
 			}
-			await projectsStore.load(newSpaceId)
+			await refreshWorkspaceProjectsQuery(newSpaceId)
 			try {
 				const defaultProject = await getCreateFlowDefaultProject(newSpaceId)
 				defaultProjectId.value = defaultProject.id
@@ -303,13 +305,13 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		advancedOpen.value = false
 		form.value.spaceId = normalizeSpaceId(props.spaceId)
 
-		await projectsStore.load(form.value.spaceId)
+		await refreshWorkspaceProjectsQuery(form.value.spaceId)
 		try {
 			const defaultProject = await getCreateFlowDefaultProject(form.value.spaceId)
 			defaultProjectId.value = defaultProject.id
 
 			const candidateProjectId = props.projectId ?? null
-			const projectsOfSpace = projectsStore.getProjectsOfSpace(form.value.spaceId)
+			const projectsOfSpace = getWorkspaceProjectsSnapshot(form.value.spaceId)
 			const hasCandidate = !!candidateProjectId && projectsOfSpace.some((p) => p.id === candidateProjectId)
 			form.value.projectId = hasCandidate ? candidateProjectId : defaultProjectId.value
 		} catch (error) {

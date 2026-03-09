@@ -41,7 +41,30 @@ export function useProjectsQuery(options: UseProjectsQueryOptions) {
 
 export function getWorkspaceProjectsSnapshot(spaceId: string): WorkspaceProject[] {
 	const queryCache = useStoneFlowQueryCache()
-	return queryCache.getQueryData<WorkspaceProject[]>(workspaceQueryKeys.projects.list(createProjectsScope(spaceId))) ?? []
+	return (
+		queryCache.getQueryData<WorkspaceProject[]>(workspaceQueryKeys.projects.list(createProjectsScope(spaceId))) ?? []
+	)
+}
+
+export function getWorkspaceProjectById(spaceId: string, projectId: string): WorkspaceProject | null {
+	return getWorkspaceProjectsSnapshot(spaceId).find((project) => project.id === projectId) ?? null
+}
+
+export function patchWorkspaceProjectSnapshot(spaceId: string, projectId: string, patch: Partial<WorkspaceProject>) {
+	const queryCache = useStoneFlowQueryCache()
+	queryCache.setQueryData<WorkspaceProject[]>(
+		workspaceQueryKeys.projects.list(createProjectsScope(spaceId)),
+		(oldData: WorkspaceProject[] | undefined) => {
+			if (!oldData?.length) return oldData ?? []
+			return oldData.map((project: WorkspaceProject) => {
+				if (project.id !== projectId) return project
+				return {
+					...project,
+					...patch,
+				}
+			})
+		},
+	)
 }
 
 export async function refreshWorkspaceProjectsQuery(spaceId: string, options: { force?: boolean } = {}) {
@@ -64,10 +87,13 @@ export function useProjectsMutations() {
 	const queryCache = useStoneFlowQueryCache()
 
 	const invalidateProjects = async (scope: WorkspaceProjectListScope) => {
-		await queryCache.invalidateQueries({
-			key: workspaceQueryKeys.projects.list(createProjectsScope(scope.spaceId)),
-			exact: true,
-		}, 'all')
+		await queryCache.invalidateQueries(
+			{
+				key: workspaceQueryKeys.projects.list(createProjectsScope(scope.spaceId)),
+				exact: true,
+			},
+			'all',
+		)
 	}
 
 	const setProjectsData = (
