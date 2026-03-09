@@ -1,8 +1,6 @@
 import { useI18n } from 'vue-i18n'
 
-import { useToast } from '#imports'
-
-export interface ApiError {
+export type ApiError = {
 	code: string
 	message: string
 	status?: number
@@ -42,19 +40,19 @@ export function useErrorHandler() {
 			toast.add({
 				title: message,
 				color: 'error',
-				timeout: 5000,
+				duration: 5000,
 			})
 		} else if (error instanceof Error) {
 			toast.add({
 				title: error.message || fallbackMessage || t('errors.unknown'),
 				color: 'error',
-				timeout: 5000,
+				duration: 5000,
 			})
 		} else {
 			toast.add({
 				title: fallbackMessage || t('errors.unknown'),
 				color: 'error',
-				timeout: 5000,
+				duration: 5000,
 			})
 		}
 	}
@@ -63,7 +61,7 @@ export function useErrorHandler() {
 		toast.add({
 			title: message,
 			color: 'success',
-			timeout: 3000,
+			duration: 3000,
 		})
 	}
 

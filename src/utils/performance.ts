@@ -1,10 +1,19 @@
-import type { Ref } from 'vue'
 import { ref } from 'vue'
 
-export interface PerformanceMetric {
+type PerformanceMetric = {
 	name: string
 	duration: number
 	timestamp: number
+}
+
+type BrowserMemory = {
+	usedJSHeapSize: number
+	totalJSHeapSize: number
+	jsHeapSizeLimit: number
+}
+
+type PerformanceWithMemory = Performance & {
+	memory?: BrowserMemory
 }
 
 export class PerformanceMonitor {
@@ -62,8 +71,9 @@ export class PerformanceMonitor {
 	}
 
 	getMemoryUsage(): { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } | null {
-		if ('memory' in performance) {
-			const memory = (performance as any).memory
+		const perf = performance as PerformanceWithMemory
+		if (perf.memory) {
+			const memory = perf.memory
 			return {
 				usedJSHeapSize: memory.usedJSHeapSize / 1024 / 1024,
 				totalJSHeapSize: memory.totalJSHeapSize / 1024 / 1024,

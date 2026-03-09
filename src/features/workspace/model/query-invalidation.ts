@@ -1,30 +1,17 @@
-import { stoneFlowLegacyQueryClient, useStoneFlowQueryCache } from '@/features/shared'
-
-import { workspaceQueryKeys } from './query-keys'
+import { useStoneFlowQueryCache } from '@/features/shared'
 
 export async function invalidateWorkspaceTaskQueries() {
 	const queryCache = useStoneFlowQueryCache()
-	await Promise.all([
-		queryCache.invalidateQueries({
-			key: ['workspace', 'tasks'],
-		}, 'all'),
-		stoneFlowLegacyQueryClient.invalidateQueries({
-			predicate: (query) => workspaceQueryKeys.tasks.isMatch(query.queryKey),
-		}),
-	])
+	await queryCache.invalidateQueries({
+		key: ['workspace', 'tasks'],
+	}, 'all')
 }
 
 export async function invalidateWorkspaceProjectQueries() {
 	const queryCache = useStoneFlowQueryCache()
-	await Promise.all([
-		queryCache.invalidateQueries({
-			key: ['workspace', 'projects'],
-		}, 'all'),
-		stoneFlowLegacyQueryClient.invalidateQueries({
-			predicate: (query) => workspaceQueryKeys.projects.isMatch(query.queryKey),
-			refetchType: 'all',
-		}),
-	])
+	await queryCache.invalidateQueries({
+		key: ['workspace', 'projects'],
+	}, 'all')
 }
 
 export async function invalidateWorkspaceTaskAndProjectQueries() {
