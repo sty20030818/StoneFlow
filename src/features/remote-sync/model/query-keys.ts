@@ -1,12 +1,12 @@
-import type { QueryKey } from '@tanstack/vue-query'
-
 import { createQueryKey } from '@/features/shared'
 
-function isRemoteSyncProfilesQueryKey(queryKey: QueryKey): boolean {
+type QueryKeyLike = readonly unknown[]
+
+function isRemoteSyncProfilesQueryKey(queryKey: QueryKeyLike): boolean {
 	return queryKey[0] === 'remote-sync' && queryKey[1] === 'profiles'
 }
 
-function isRemoteSyncHistoryQueryKey(queryKey: QueryKey): boolean {
+function isRemoteSyncHistoryQueryKey(queryKey: QueryKeyLike): boolean {
 	return queryKey[0] === 'remote-sync' && queryKey[1] === 'history'
 }
 

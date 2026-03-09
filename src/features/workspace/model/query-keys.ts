@@ -1,7 +1,7 @@
-import type { QueryKey } from '@tanstack/vue-query'
-
 import { createQueryKey } from '@/features/shared'
 import type { TaskStatus } from '@/types/domain/task'
+
+type QueryKeyLike = readonly unknown[]
 
 export type WorkspaceTaskListScope = {
 	spaceId: string | null
@@ -27,16 +27,16 @@ function normalizeWorkspaceProjectScope(scope: WorkspaceProjectListScope): Works
 	}
 }
 
-function isWorkspaceTaskQueryKey(queryKey: QueryKey): boolean {
+function isWorkspaceTaskQueryKey(queryKey: QueryKeyLike): boolean {
 	return queryKey[0] === 'workspace' && queryKey[1] === 'tasks'
 }
 
-function isWorkspaceProjectQueryKey(queryKey: QueryKey): boolean {
+function isWorkspaceProjectQueryKey(queryKey: QueryKeyLike): boolean {
 	return queryKey[0] === 'workspace' && queryKey[1] === 'projects'
 }
 
 function isWorkspaceProjectListQueryKey(
-	queryKey: QueryKey,
+	queryKey: QueryKeyLike,
 ): queryKey is readonly ['workspace', 'projects', 'list', WorkspaceProjectListScope] {
 	if (queryKey.length !== 4) return false
 	if (queryKey[0] !== 'workspace' || queryKey[1] !== 'projects' || queryKey[2] !== 'list') return false

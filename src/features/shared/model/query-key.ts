@@ -1,10 +1,13 @@
-export type QueryKeyParams = Readonly<Record<string, unknown>>
+import type { EntryKey } from '@pinia/colada'
+
+export type QueryKeyParamValue = string | number | boolean | null
+export type QueryKeyParams = Readonly<Record<string, QueryKeyParamValue>>
 
 export type StoneFlowQueryKey<
 	D extends string = string,
 	R extends string = string,
 	S extends string = string,
-> = readonly [domain: D, resource: R, scope: S, params: QueryKeyParams]
+> = (readonly [domain: D, resource: R, scope: S, params: QueryKeyParams]) & EntryKey
 
 const EMPTY_QUERY_PARAMS: QueryKeyParams = Object.freeze({})
 
@@ -19,7 +22,7 @@ export function createQueryKey<const D extends string, const R extends string, c
 	scope: S,
 	params?: QueryKeyParams,
 ): StoneFlowQueryKey<D, R, S> {
-	return [domain, resource, scope, normalizeQueryParams(params)]
+	return [domain, resource, scope, normalizeQueryParams(params)] as StoneFlowQueryKey<D, R, S>
 }
 
 export function createDomainQueryKeys<const D extends string>(domain: D) {
