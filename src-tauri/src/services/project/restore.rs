@@ -1,3 +1,5 @@
+//! 项目恢复用例。
+
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set, TransactionTrait};
 
 use crate::db::{entities::projects, now_ms};
@@ -7,6 +9,7 @@ use crate::types::error::AppError;
 use super::ProjectService;
 
 impl ProjectService {
+    /// 恢复已软删除项目。
     pub async fn restore(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let model = query::find_by_id(&txn, project_id).await?;

@@ -27,6 +27,9 @@ pub struct ListTasksArgs {
     pub project_id: Option<String>,
 }
 
+/// 列出任务。
+///
+/// 这是纯查询命令，因此直接走 `TaskRepo`，不经过 service。
 #[tauri::command]
 pub async fn list_tasks(
     state: State<'_, DbState>,
@@ -50,6 +53,7 @@ pub struct ListDeletedTasksArgs {
     pub project_id: Option<String>,
 }
 
+/// 列出已软删除任务。
 #[tauri::command]
 pub async fn list_deleted_tasks(
     state: State<'_, DbState>,
@@ -76,6 +80,10 @@ pub struct CreateTaskArgs {
     pub project_id: Option<String>,
 }
 
+/// 创建“最小输入”任务。
+///
+/// 这个命令适合快速收件箱场景，只传标题和最基础上下文，
+/// 其余字段在 service 内走默认值。
 #[tauri::command]
 pub async fn create_task(
     state: State<'_, DbState>,
@@ -112,6 +120,10 @@ pub struct CreateTaskWithPatchArgs {
     pub custom_fields: Option<CustomFieldsDto>,
 }
 
+/// 创建带 patch 的任务。
+///
+/// 与 `create_task` 相比，这个入口允许一次性写入状态、优先级、
+/// 截止时间、标签、链接和自定义字段。
 #[tauri::command]
 pub async fn create_task_with_patch(
     state: State<'_, DbState>,
@@ -185,7 +197,9 @@ pub struct UpdateTaskPatch {
 }
 
 impl From<UpdateTaskPatch> for ServiceTaskUpdatePatch {
-    // 把命令层 DTO 转为 service 层输入，避免底层感知 tauri 参数结构。
+    /// 把命令层 DTO 转成 service 层 patch。
+    ///
+    /// 这样 service 不需要知道 Tauri 具体如何反序列化参数。
     fn from(value: UpdateTaskPatch) -> Self {
         Self {
             title: value.title,
@@ -206,6 +220,7 @@ impl From<UpdateTaskPatch> for ServiceTaskUpdatePatch {
     }
 }
 
+/// 更新任务。
 #[tauri::command]
 pub async fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
     TaskService::update(
@@ -225,6 +240,7 @@ pub struct CompleteTaskArgs {
     pub id: String,
 }
 
+/// 直接完成任务。
 #[tauri::command]
 pub async fn complete_task(
     state: State<'_, DbState>,
@@ -241,6 +257,7 @@ pub struct DeleteTasksArgs {
     pub ids: Vec<String>,
 }
 
+/// 批量软删除任务。
 #[tauri::command]
 pub async fn delete_tasks(
     state: State<'_, DbState>,
@@ -257,6 +274,7 @@ pub struct RestoreTasksArgs {
     pub ids: Vec<String>,
 }
 
+/// 批量恢复任务。
 #[tauri::command]
 pub async fn restore_tasks(
     state: State<'_, DbState>,
@@ -274,7 +292,7 @@ pub struct ReorderTaskArgs {
     pub new_rank: i64,
 }
 
-/// 更新单个任务的 rank
+/// 调整单个任务排序。
 #[tauri::command]
 pub async fn reorder_task(
     state: State<'_, DbState>,
@@ -294,7 +312,7 @@ pub struct RebalanceRanksArgs {
     pub step: Option<i64>,
 }
 
-/// 批量重排任务 rank（用于阈值触发的无感重排）
+/// 按顺序批量重排任务 rank。
 #[tauri::command]
 pub async fn rebalance_ranks(
     state: State<'_, DbState>,

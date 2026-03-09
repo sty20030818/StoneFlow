@@ -1,3 +1,8 @@
+//! 任务完成用例。
+//!
+//! 它是一个比 `update` 更窄的快捷写路径：
+//! 只负责把任务标记为完成并刷新必要副作用。
+
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set, TransactionTrait};
 
 use crate::db::{
@@ -10,11 +15,16 @@ use crate::types::error::AppError;
 use super::TaskService;
 
 impl TaskService {
+    /// 将任务标记为完成。
+    ///
+    /// 如果任务原本已经完成，这里仍会更新完成字段，
+    /// 但不会重复追加“完成”活动日志。
     pub async fn complete(conn: &DatabaseConnection, id: &str) -> Result<(), AppError> {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let now = now_ms();
         let task = query::find_by_id(&txn, id).await?;
 
+        // 完成动作统一收敛为 status + done_reason + completed_at 三个字段的同步更新。
         let mut active_model = task.clone().into_active_model();
         active_model.status = Set(TaskStatus::Done);
         active_model.done_reason = Set(Some(DoneReason::Completed));

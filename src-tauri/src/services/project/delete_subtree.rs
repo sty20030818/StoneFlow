@@ -1,3 +1,7 @@
+//! 项目子树删除用例。
+//!
+//! 删除项目不是只删单个节点，而是要把整棵子树和其下任务一起软删除。
+
 use sea_orm::{DatabaseConnection, TransactionTrait};
 
 use crate::db::now_ms;
@@ -8,6 +12,7 @@ use crate::types::error::AppError;
 use super::ProjectService;
 
 impl ProjectService {
+    /// 软删除项目及其全部子项目。
     pub async fn delete_subtree(
         conn: &DatabaseConnection,
         project_id: &str,
@@ -16,6 +21,7 @@ impl ProjectService {
         let subtree_project_ids = ProjectRepo::collect_subtree_ids(&txn, project_id).await?;
         let project_models = query::find_not_deleted_by_ids(&txn, &subtree_project_ids).await?;
         let now = now_ms();
+        // 先删任务，再删项目，保持引用关系从叶子向上收敛。
         TaskRepo::soft_delete_by_project_ids(&txn, &subtree_project_ids, now).await?;
         mutation::soft_delete_by_ids(&txn, &subtree_project_ids, now).await?;
 

@@ -86,6 +86,7 @@ pub struct UpdateProjectPatch {
 }
 
 impl From<UpdateProjectPatch> for ServiceProjectUpdatePatch {
+    /// 命令层 patch 到 service patch 的转换。
     fn from(value: UpdateProjectPatch) -> Self {
         Self {
             title: value.title,
@@ -123,6 +124,7 @@ pub async fn create_project(
     .map_err(ApiError::from)
 }
 
+/// 更新项目。
 #[tauri::command]
 pub async fn update_project(
     state: State<'_, DbState>,
@@ -139,7 +141,7 @@ pub async fn update_project(
     .map_err(ApiError::from)
 }
 
-/// 获取默认 Project。
+/// 获取某个 Space 的默认项目。
 #[tauri::command]
 pub async fn get_default_project(
     state: State<'_, DbState>,
@@ -163,7 +165,7 @@ pub struct ReorderProjectArgs {
     pub new_parent_id: Option<Option<String>>,
 }
 
-/// 更新项目的 rank（和可选的 parentId）用于拖拽排序。
+/// 调整项目排序。
 #[tauri::command]
 pub async fn reorder_project(
     state: State<'_, DbState>,
@@ -188,7 +190,7 @@ pub struct RebalanceProjectRanksArgs {
     pub step: Option<i64>,
 }
 
-/// 批量重排项目 rank（用于阈值触发的无感重排）。
+/// 批量重排项目 rank。
 #[tauri::command]
 pub async fn rebalance_project_ranks(
     state: State<'_, DbState>,
@@ -205,7 +207,7 @@ pub struct DeleteProjectArgs {
     pub project_id: String,
 }
 
-/// 软删除项目。
+/// 删除项目子树。
 #[tauri::command]
 pub async fn delete_project(
     state: State<'_, DbState>,
@@ -216,7 +218,7 @@ pub async fn delete_project(
         .map_err(ApiError::from)
 }
 
-/// 恢复软删除项目。
+/// 恢复项目。
 #[tauri::command]
 pub async fn restore_project(
     state: State<'_, DbState>,

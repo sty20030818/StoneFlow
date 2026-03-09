@@ -1,3 +1,8 @@
+//! 任务创建用例。
+//!
+//! 这个文件负责把“创建任务”涉及的默认值、输入归一化、
+//! 初始排序、标签/链接写入和活动日志放进同一个事务里完成。
+
 use sea_orm::{DatabaseConnection, TransactionTrait};
 use uuid::Uuid;
 
@@ -13,6 +18,13 @@ use crate::types::{dto::TaskDto, error::AppError};
 use super::{dto::TaskCreateInput, helpers::normalize_tags, TaskService};
 
 impl TaskService {
+    /// 创建任务并返回创建后的 DTO。
+    ///
+    /// 这里会在一个事务里完成：
+    /// - 标题与 patch 输入归一化
+    /// - 主表插入
+    /// - 标签 / 链接 / 自定义字段落库
+    /// - 活动日志与项目统计刷新
     pub async fn create(
         conn: &DatabaseConnection,
         input: TaskCreateInput,
@@ -24,6 +36,7 @@ impl TaskService {
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
         let _auto_start = input.auto_start;
+        // 创建时允许通过 patch 指定初始状态；未指定则默认 todo。
         let status = match patch.status.as_deref() {
             Some(status) => match validations::normalize_status(status)?.as_str() {
                 "done" => TaskStatus::Done,
@@ -41,6 +54,7 @@ impl TaskService {
         } else {
             None
         };
+        // 优先级同样在 service 内做最终归一化，避免 repo 感知前端字符串。
         let priority = match patch.priority.as_deref() {
             Some(priority) => match validations::normalize_priority(priority)?.as_str() {
                 "P0" => Priority::P0,
@@ -70,6 +84,7 @@ impl TaskService {
         let rank = query::next_rank_in_bucket(&txn, &input.space_id, &status, &priority).await?;
         let create_by = "stonefish".to_string();
 
+        // 主表先插入，后面标签、链接和日志都依赖新任务 id。
         let task = mutation::insert(
             &txn,
             mutation::NewTaskRecord {
@@ -120,6 +135,7 @@ impl TaskService {
 
         txn.commit().await.map_err(AppError::from)?;
 
+        // 返回前组装成前端可直接消费的 DTO，避免命令层二次拼装。
         Ok(TaskDto {
             id: task.id,
             space_id: task.space_id,

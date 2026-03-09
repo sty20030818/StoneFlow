@@ -1,3 +1,11 @@
+//! 任务更新用例。
+//!
+//! 这是任务写路径里最重的一个入口：
+//! - 负责 patch 语义解析
+//! - 处理状态/优先级/所属项目变化
+//! - 同步标签、链接和自定义字段
+//! - 追加字段级活动日志
+
 use std::collections::HashSet;
 
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set, TransactionTrait};
@@ -21,6 +29,10 @@ use super::{
 };
 
 impl TaskService {
+    /// 更新任务。
+    ///
+    /// 这个方法的核心价值不是“写字段”，而是把任务相关的业务规则、
+    /// 自动重排、日志记录和项目统计刷新统一收口在一个事务里。
     pub async fn update(conn: &DatabaseConnection, input: TaskUpdateInput) -> Result<(), AppError> {
         let TaskUpdateInput { id, patch } = input;
         let title = patch.title;
@@ -85,6 +97,7 @@ impl TaskService {
         let mut touch_updated_at = false;
         let mut changed_any = false;
 
+        // 标题更新是最简单的 patch：先校验，再写入。
         if let Some(title) = title.as_deref() {
             let title = validations::trim_and_validate_title(title)?;
             active_model.title = Set(title);
@@ -96,6 +109,8 @@ impl TaskService {
             let status_str = validations::normalize_status(status_str)?;
             let is_done = status_str == "done";
 
+            // 进入 done 时必须同步完成原因与完成时间；
+            // 回到 todo 时则要清掉这组字段。
             if is_done {
                 let reason_str =
                     validations::require_done_reason(done_reason.as_ref().map(|v| v.as_deref()))?;
@@ -192,6 +207,7 @@ impl TaskService {
         } else if effective_status == TaskStatus::Todo
             && (priority_changed || status_changed_to_todo || space_changed || project_changed)
         {
+            // 任务重新回到 todo 桶，或者桶维度发生变化时，自动分配一个新的尾部 rank。
             let new_rank = query::next_rank_in_bucket(
                 &txn,
                 &effective_space_id,
@@ -243,6 +259,7 @@ impl TaskService {
         let saved_model = mutation::update(&txn, active_model).await?;
         let new_project_id = saved_model.project_id.clone();
 
+        // 主表更新之后再同步标签/链接，确保日志里拿到的是最终状态。
         if links_changed {
             if let Some(links_input) = links_input.as_ref() {
                 links::sync_links(&txn, &id, links_input).await?;
@@ -255,6 +272,7 @@ impl TaskService {
             }
         }
 
+        // 下面开始做字段级活动日志，便于后续在前端还原变更历史。
         let log_ctx = activity_logs::TaskLogCtx {
             task_id: &saved_model.id,
             space_id: &saved_model.space_id,

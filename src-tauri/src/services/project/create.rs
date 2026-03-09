@@ -1,3 +1,11 @@
+//! 项目创建用例。
+//!
+//! 它负责在事务里完成：
+//! - 标题 / 备注 / 优先级归一化
+//! - 路径构建与排序计算
+//! - 标签 / 链接写入
+//! - 创建活动日志
+
 use sea_orm::{DatabaseConnection, TransactionTrait};
 use uuid::Uuid;
 
@@ -13,6 +21,7 @@ use crate::types::{dto::ProjectDto, error::AppError};
 use super::{dto::ProjectCreateInput, ProjectService};
 
 impl ProjectService {
+    /// 创建项目并返回完整 DTO。
     pub async fn create(
         conn: &DatabaseConnection,
         input: ProjectCreateInput,
@@ -32,6 +41,7 @@ impl ProjectService {
         });
         let tags = input.tags.unwrap_or_default();
         let links = input.links.unwrap_or_default();
+        // 路径在 service 层构建，因为它依赖父子关系这类业务语义。
         let priority = common_task_utils::parse_priority(input.priority.as_deref())?;
         let path = repo_helpers::build_project_path(
             &txn,
@@ -46,6 +56,7 @@ impl ProjectService {
             query::next_rank_in_scope(&txn, &input.space_id, input.parent_id.as_deref()).await?,
         );
 
+        // 项目主记录先插入，后面的标签和链接都依赖项目 id。
         let project = mutation::insert(
             &txn,
             mutation::NewProjectRecord {
@@ -84,6 +95,7 @@ impl ProjectService {
 
         txn.commit().await.map_err(AppError::from)?;
 
+        // 提交后再补 DTO 扩展字段，避免把查询型拼装塞进事务里。
         let mut dto = repo_helpers::project_model_to_dto(project);
         repo_helpers::attach_links(conn, std::slice::from_mut(&mut dto)).await?;
         repo_helpers::attach_tags(conn, std::slice::from_mut(&mut dto)).await?;

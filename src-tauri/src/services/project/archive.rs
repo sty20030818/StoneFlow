@@ -1,3 +1,8 @@
+//! 项目归档相关用例。
+//!
+//! 这里把归档和取消归档放在同一个文件里，
+//! 因为它们共享几乎完全相同的约束和副作用。
+
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set, TransactionTrait};
 
 use crate::db::{entities::projects, now_ms};
@@ -7,6 +12,7 @@ use crate::types::error::AppError;
 use super::{helpers::is_default_project_id, ProjectService};
 
 impl ProjectService {
+    /// 归档项目。
     pub async fn archive(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
         if is_default_project_id(project_id) {
             return Err(AppError::Validation("默认项目不允许归档".to_string()));
@@ -41,6 +47,7 @@ impl ProjectService {
         Ok(())
     }
 
+    /// 取消归档项目。
     pub async fn unarchive(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
         if is_default_project_id(project_id) {
             return Err(AppError::Validation("默认项目不允许取消归档".to_string()));

@@ -1,3 +1,8 @@
+//! 项目排序用例。
+//!
+//! 项目排序除了改 rank，还可能伴随父节点变化，
+//! 因此有时还要一起重建 path 并回刷子节点路径。
+
 use sea_orm::{DatabaseConnection, Set, TransactionTrait};
 
 use crate::db::{entities::projects, now_ms};
@@ -7,6 +12,7 @@ use crate::types::error::AppError;
 use super::ProjectService;
 
 impl ProjectService {
+    /// 调整单个项目的 rank，并在必要时同步父节点与路径。
     pub async fn reorder(
         conn: &DatabaseConnection,
         project_id: &str,
@@ -25,6 +31,7 @@ impl ProjectService {
         active_model.rank = Set(new_rank);
         active_model.updated_at = Set(now);
 
+        // 只有父节点真的变化时，才需要重建 path 并回刷后代路径。
         if let Some(parent_id) = new_parent_id {
             active_model.parent_id = Set(parent_id.clone());
             if old_parent_id != parent_id {
@@ -49,6 +56,7 @@ impl ProjectService {
         Ok(())
     }
 
+    /// 按给定顺序批量重排项目 rank。
     pub async fn rebalance(
         conn: &DatabaseConnection,
         project_ids: &[String],

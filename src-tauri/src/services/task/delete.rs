@@ -1,3 +1,8 @@
+//! 任务删除与恢复用例。
+//!
+//! 这里处理的是软删除语义，因此删除和恢复本质上都是更新状态，
+//! 同时要补日志并刷新受影响项目的统计。
+
 use sea_orm::{DatabaseConnection, TransactionTrait};
 
 use crate::db::now_ms;
@@ -7,6 +12,7 @@ use crate::types::error::AppError;
 use super::{helpers::dedup_project_ids, TaskService};
 
 impl TaskService {
+    /// 批量软删除任务。
     pub async fn delete_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
         if ids.is_empty() {
             return Err(AppError::Validation("请选择要删除的任务".to_string()));
@@ -19,6 +25,7 @@ impl TaskService {
             .iter()
             .filter_map(|task| task.project_id.clone())
             .collect();
+        // 先批量删，再补日志与统计，避免一条条更新拖慢事务。
         let count = mutation::soft_delete_many(&txn, ids, now).await?;
 
         for task in &task_models {
@@ -44,6 +51,7 @@ impl TaskService {
         Ok(count)
     }
 
+    /// 批量恢复已软删除任务。
     pub async fn restore_many(
         conn: &DatabaseConnection,
         ids: &[String],

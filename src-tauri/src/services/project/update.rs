@@ -1,3 +1,8 @@
+//! 项目更新用例。
+//!
+//! 和任务更新类似，这个入口负责把 patch 语义、路径重建、
+//! 跨 Space 规则、标签链接同步和活动日志统一收口。
+
 use sea_orm::{DatabaseConnection, Set, TransactionTrait};
 
 use crate::db::{entities::projects, now_ms};
@@ -16,6 +21,7 @@ use super::{
 };
 
 impl ProjectService {
+    /// 更新项目。
     pub async fn update(
         conn: &DatabaseConnection,
         input: ProjectUpdateInput,
@@ -24,6 +30,7 @@ impl ProjectService {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let model = query::find_by_id(&txn, project_id.as_str()).await?;
 
+        // 默认项目作为系统保留节点，不允许修改标题、所属空间和父级。
         if is_default_project_id(project_id.as_str())
             && (patch.title.is_some() || patch.space_id.is_some() || patch.parent_id.is_some())
         {
@@ -52,6 +59,7 @@ impl ProjectService {
 
         let mut active_model: projects::ActiveModel = model.clone().into();
 
+        // tags / links 作为独立表同步，只要传了就视为一次变更。
         if patch.tags.is_some() || patch.links.is_some() {
             changed_any = true;
         }
@@ -100,6 +108,7 @@ impl ProjectService {
             }
 
             if normalized != old_space_id {
+                // 当前实现不支持带子树项目跨 Space 迁移，避免路径和下游任务语义混乱。
                 let subtree_ids =
                     ProjectRepo::collect_subtree_ids(&txn, project_id.as_str()).await?;
                 if subtree_ids.len() > 1 {
@@ -123,6 +132,7 @@ impl ProjectService {
 
         if let Some(parent_input) = patch.parent_id {
             if let Some(parent_id) = parent_input.as_deref() {
+                // 父节点校验必须在 service 做，因为它涉及整棵树的业务规则。
                 if parent_id == project_id {
                     return Err(AppError::Validation("项目不能挂载到自身".to_string()));
                 }
@@ -140,6 +150,7 @@ impl ProjectService {
             }
         }
 
+        // 标题、父级或 space 变了，都可能导致路径重建。
         if next_title != old_title || next_parent_id != old_parent_id || space_changed {
             let rebuilt_path = repo_helpers::build_project_path(
                 &txn,
@@ -164,6 +175,7 @@ impl ProjectService {
         let saved_model = mutation::update(&txn, active_model).await?;
 
         if space_changed {
+            // 项目迁到新空间后，挂在这个项目下的任务也要同步跟过去。
             mutation::update_tasks_space_by_project(&txn, project_id.as_str(), &next_space_id, now)
                 .await?;
         }
@@ -180,6 +192,7 @@ impl ProjectService {
                 .await?;
         }
 
+        // 最后补字段级活动日志，便于前端展示项目变更历史。
         let log_ctx = activity_logs::ProjectLogCtx {
             project_id: project_id.as_str(),
             space_id: saved_model.space_id.as_str(),
