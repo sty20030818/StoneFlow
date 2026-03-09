@@ -21,28 +21,28 @@ pub struct ApiError {
 }
 
 impl ApiError {
-    pub fn validation(message: impl Into<String>) -> Self {
+    pub fn custom(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        details: Option<Value>,
+    ) -> Self {
         Self {
-            code: "VALIDATION_ERROR".to_string(),
+            code: code.into(),
             message: message.into(),
-            details: None,
+            details,
         }
+    }
+
+    pub fn validation(message: impl Into<String>) -> Self {
+        Self::custom("VALIDATION_ERROR", message, None)
     }
 
     pub fn db(message: impl Into<String>) -> Self {
-        Self {
-            code: "DB_ERROR".to_string(),
-            message: message.into(),
-            details: None,
-        }
+        Self::custom("DB_ERROR", message, None)
     }
 
     pub fn internal(message: impl Into<String>) -> Self {
-        Self {
-            code: "INTERNAL_ERROR".to_string(),
-            message: message.into(),
-            details: None,
-        }
+        Self::custom("INTERNAL_ERROR", message, None)
     }
 }
 

@@ -2,6 +2,8 @@ use sea_orm::{sea_query::OnConflict, EntityTrait, Set};
 
 use crate::db::entities::{app_settings, prelude::AppSettings};
 
+use super::error::SyncError;
+
 const KEY_LAST_PUSHED_AT: &str = "last_pushed_at";
 const KEY_LAST_PULLED_AT: &str = "last_pulled_at";
 
@@ -49,32 +51,36 @@ async fn write_sync_time(
     Ok(())
 }
 
-pub(super) async fn read_last_pulled_at(db: &sea_orm::DatabaseConnection) -> Result<i64, String> {
+pub(super) async fn read_last_pulled_at(
+    db: &sea_orm::DatabaseConnection,
+) -> Result<i64, SyncError> {
     read_sync_time(db, KEY_LAST_PULLED_AT)
         .await
-        .map_err(|error| format!("读取本地 last_pulled_at 失败: {}", error))
+        .map_err(|error| SyncError::watermark_read(KEY_LAST_PULLED_AT, error))
 }
 
 pub(super) async fn write_last_pulled_at(
     db: &sea_orm::DatabaseConnection,
     time: i64,
-) -> Result<(), String> {
+) -> Result<(), SyncError> {
     write_sync_time(db, KEY_LAST_PULLED_AT, time)
         .await
-        .map_err(|error| format!("更新 last_pulled_at 失败: {}", error))
+        .map_err(|error| SyncError::watermark_write(KEY_LAST_PULLED_AT, error))
 }
 
-pub(super) async fn read_last_pushed_at(db: &sea_orm::DatabaseConnection) -> Result<i64, String> {
+pub(super) async fn read_last_pushed_at(
+    db: &sea_orm::DatabaseConnection,
+) -> Result<i64, SyncError> {
     read_sync_time(db, KEY_LAST_PUSHED_AT)
         .await
-        .map_err(|error| format!("读取本地 last_pushed_at 失败: {}", error))
+        .map_err(|error| SyncError::watermark_read(KEY_LAST_PUSHED_AT, error))
 }
 
 pub(super) async fn write_last_pushed_at(
     db: &sea_orm::DatabaseConnection,
     time: i64,
-) -> Result<(), String> {
+) -> Result<(), SyncError> {
     write_sync_time(db, KEY_LAST_PUSHED_AT, time)
         .await
-        .map_err(|error| format!("更新 last_pushed_at 失败: {}", error))
+        .map_err(|error| SyncError::watermark_write(KEY_LAST_PUSHED_AT, error))
 }

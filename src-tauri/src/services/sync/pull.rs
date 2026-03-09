@@ -1,7 +1,9 @@
 use sea_orm::DatabaseConnection;
 
 use super::{
-    connection, helpers,
+    connection,
+    error::SyncError,
+    helpers,
     report::SyncRunStats,
     upsert::{self, SyncDirection},
     watermarks,
@@ -10,7 +12,7 @@ use super::{
 pub(super) async fn pull(
     local_db: &DatabaseConnection,
     database_url: &str,
-) -> Result<super::SyncCommandReport, String> {
+) -> Result<super::SyncCommandReport, SyncError> {
     let remote_db = connection::get_remote_db(database_url).await?;
     let current_sync_start = chrono::Utc::now().timestamp_millis();
     let last_pulled_at = watermarks::read_last_pulled_at(local_db).await?;

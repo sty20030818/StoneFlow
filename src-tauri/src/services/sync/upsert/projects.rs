@@ -6,6 +6,7 @@ use sea_orm::{
 
 use crate::db::entities::{prelude::Projects, projects};
 use crate::services::sync::{
+    error::SyncError,
     helpers::{decide_upsert, UpsertDecision},
     report::UpsertStats,
 };
@@ -18,12 +19,12 @@ pub(super) async fn sync(
     since_ms: i64,
     conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<UpsertStats, String> {
+) -> Result<UpsertStats, SyncError> {
     let source_items = Projects::find()
         .filter(projects::Column::UpdatedAt.gt(since_ms))
         .all(source_db)
         .await
-        .map_err(|error| format!("{}: {}", direction.read_source_error("Projects"), error))?;
+        .map_err(|error| SyncError::source_read(direction.as_str(), "Projects", error))?;
 
     let total = source_items.len();
     let existing_versions: HashMap<String, i64> = if source_items.is_empty() {
@@ -43,13 +44,7 @@ pub(super) async fn sync(
             .into_tuple::<(String, i64)>()
             .all(target_db)
             .await
-            .map_err(|error| {
-                format!(
-                    "{}: {}",
-                    direction.read_target_existing_error("Projects"),
-                    error
-                )
-            })?
+            .map_err(|error| SyncError::target_state_read(direction.as_str(), "Projects", error))?
             .into_iter()
             .collect()
     };
@@ -95,7 +90,7 @@ pub(super) async fn sync(
             )
             .exec(target_db)
             .await
-            .map_err(|error| format!("{}: {}", direction.write_target_error("Project"), error))?;
+            .map_err(|error| SyncError::write_target(direction.as_str(), "Project", error))?;
     }
 
     Ok(stats)

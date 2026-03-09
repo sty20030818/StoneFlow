@@ -3,11 +3,13 @@ use sea_orm_migration::MigratorTrait;
 
 use crate::db::migrator::Migrator;
 
+use super::error::SyncError;
+
 /// 建立远端数据库短连接，并在连接后确保 schema 已迁移完成。
-pub(super) async fn get_remote_db(database_url: &str) -> Result<DatabaseConnection, String> {
+pub(super) async fn get_remote_db(database_url: &str) -> Result<DatabaseConnection, SyncError> {
     let database_url = database_url.trim();
     if database_url.is_empty() {
-        return Err("数据库地址为空".to_string());
+        return Err(SyncError::validation("数据库地址为空"));
     }
 
     let mut opt = ConnectOptions::new(database_url.to_string());
@@ -20,16 +22,16 @@ pub(super) async fn get_remote_db(database_url: &str) -> Result<DatabaseConnecti
 
     let db = Database::connect(opt)
         .await
-        .map_err(|error| format!("连接远程数据库失败: {}", error))?;
+        .map_err(SyncError::connection)?;
 
     Migrator::up(&db, None)
         .await
-        .map_err(|error| format!("远程数据库迁移失败: {}", error))?;
+        .map_err(SyncError::migration)?;
 
     Ok(db)
 }
 
-pub(super) async fn test_connection(database_url: &str) -> Result<(), String> {
+pub(super) async fn test_connection(database_url: &str) -> Result<(), SyncError> {
     let _ = get_remote_db(database_url).await?;
     Ok(())
 }

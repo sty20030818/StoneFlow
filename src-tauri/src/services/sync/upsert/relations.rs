@@ -4,7 +4,7 @@ use crate::db::entities::{
     prelude::{ProjectLinks, ProjectTags, TaskLinks, TaskTags},
     project_links, project_tags, task_links, task_tags,
 };
-use crate::services::sync::report::DedupStats;
+use crate::services::sync::{error::SyncError, report::DedupStats};
 
 use super::{RelationSyncStats, SyncDirection};
 
@@ -12,7 +12,7 @@ pub(super) async fn sync(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
-) -> Result<RelationSyncStats, String> {
+) -> Result<RelationSyncStats, SyncError> {
     Ok(RelationSyncStats {
         task_tags: sync_task_tags(source_db, target_db, direction).await?,
         task_links: sync_task_links(source_db, target_db, direction).await?,
@@ -25,11 +25,11 @@ async fn sync_task_tags(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
-) -> Result<DedupStats, String> {
+) -> Result<DedupStats, SyncError> {
     let source_items = TaskTags::find()
         .all(source_db)
         .await
-        .map_err(|error| format!("{}: {}", direction.read_source_error("TaskTags"), error))?;
+        .map_err(|error| SyncError::source_read(direction.as_str(), "TaskTags", error))?;
 
     let mut stats = DedupStats {
         total: source_items.len(),
@@ -45,7 +45,7 @@ async fn sync_task_tags(
             )
             .exec_without_returning(target_db)
             .await
-            .map_err(|error| format!("{}: {}", direction.write_target_error("TaskTag"), error))?;
+            .map_err(|error| SyncError::write_target(direction.as_str(), "TaskTag", error))?;
         stats.inserted += inserted as usize;
     }
 
@@ -56,11 +56,11 @@ async fn sync_task_links(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
-) -> Result<DedupStats, String> {
+) -> Result<DedupStats, SyncError> {
     let source_items = TaskLinks::find()
         .all(source_db)
         .await
-        .map_err(|error| format!("{}: {}", direction.read_source_error("TaskLinks"), error))?;
+        .map_err(|error| SyncError::source_read(direction.as_str(), "TaskLinks", error))?;
 
     let mut stats = DedupStats {
         total: source_items.len(),
@@ -76,7 +76,7 @@ async fn sync_task_links(
             )
             .exec_without_returning(target_db)
             .await
-            .map_err(|error| format!("{}: {}", direction.write_target_error("TaskLink"), error))?;
+            .map_err(|error| SyncError::write_target(direction.as_str(), "TaskLink", error))?;
         stats.inserted += inserted as usize;
     }
 
@@ -87,11 +87,11 @@ async fn sync_project_tags(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
-) -> Result<DedupStats, String> {
+) -> Result<DedupStats, SyncError> {
     let source_items = ProjectTags::find()
         .all(source_db)
         .await
-        .map_err(|error| format!("{}: {}", direction.read_source_error("ProjectTags"), error))?;
+        .map_err(|error| SyncError::source_read(direction.as_str(), "ProjectTags", error))?;
 
     let mut stats = DedupStats {
         total: source_items.len(),
@@ -107,9 +107,7 @@ async fn sync_project_tags(
             )
             .exec_without_returning(target_db)
             .await
-            .map_err(|error| {
-                format!("{}: {}", direction.write_target_error("ProjectTag"), error)
-            })?;
+            .map_err(|error| SyncError::write_target(direction.as_str(), "ProjectTag", error))?;
         stats.inserted += inserted as usize;
     }
 
@@ -120,11 +118,11 @@ async fn sync_project_links(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
-) -> Result<DedupStats, String> {
+) -> Result<DedupStats, SyncError> {
     let source_items = ProjectLinks::find()
         .all(source_db)
         .await
-        .map_err(|error| format!("{}: {}", direction.read_source_error("ProjectLinks"), error))?;
+        .map_err(|error| SyncError::source_read(direction.as_str(), "ProjectLinks", error))?;
 
     let mut stats = DedupStats {
         total: source_items.len(),
@@ -143,9 +141,7 @@ async fn sync_project_links(
             )
             .exec_without_returning(target_db)
             .await
-            .map_err(|error| {
-                format!("{}: {}", direction.write_target_error("ProjectLink"), error)
-            })?;
+            .map_err(|error| SyncError::write_target(direction.as_str(), "ProjectLink", error))?;
         stats.inserted += inserted as usize;
     }
 

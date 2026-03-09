@@ -9,24 +9,31 @@ use tauri::State;
 
 use crate::db::DbState;
 use crate::services::{DatabaseUrlArgs, SyncCommandReport, SyncService};
+use crate::types::error::ApiError;
 
 #[tauri::command(rename_all = "camelCase")]
 pub async fn pull_from_neon(
     state: State<'_, DbState>,
     args: DatabaseUrlArgs,
-) -> Result<SyncCommandReport, String> {
-    SyncService::pull(&state.conn, &args.database_url).await
+) -> Result<SyncCommandReport, ApiError> {
+    SyncService::pull(&state.conn, &args.database_url)
+        .await
+        .map_err(ApiError::from)
 }
 
 #[tauri::command(rename_all = "camelCase")]
 pub async fn push_to_neon(
     state: State<'_, DbState>,
     args: DatabaseUrlArgs,
-) -> Result<SyncCommandReport, String> {
-    SyncService::push(&state.conn, &args.database_url).await
+) -> Result<SyncCommandReport, ApiError> {
+    SyncService::push(&state.conn, &args.database_url)
+        .await
+        .map_err(ApiError::from)
 }
 
 #[tauri::command(rename_all = "camelCase")]
-pub async fn test_neon_connection(args: DatabaseUrlArgs) -> Result<(), String> {
-    SyncService::test_connection(&args.database_url).await
+pub async fn test_neon_connection(args: DatabaseUrlArgs) -> Result<(), ApiError> {
+    SyncService::test_connection(&args.database_url)
+        .await
+        .map_err(ApiError::from)
 }

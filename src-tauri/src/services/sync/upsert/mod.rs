@@ -7,6 +7,7 @@ mod tasks;
 
 use sea_orm::DatabaseConnection;
 
+use super::error::SyncError;
 use super::report::{DedupStats, UpsertStats};
 
 #[derive(Debug, Clone, Copy)]
@@ -16,24 +17,10 @@ pub(super) enum SyncDirection {
 }
 
 impl SyncDirection {
-    fn read_source_error(self, table: &str) -> String {
+    pub(super) fn as_str(self) -> &'static str {
         match self {
-            Self::Pull => format!("拉取远程 {} 失败", table),
-            Self::Push => format!("读取本地 {} 失败", table),
-        }
-    }
-
-    fn read_target_existing_error(self, table: &str) -> String {
-        match self {
-            Self::Pull => format!("读取本地 {} 既有数据失败", table),
-            Self::Push => format!("读取远程 {} 既有数据失败", table),
-        }
-    }
-
-    fn write_target_error(self, record: &str) -> String {
-        match self {
-            Self::Pull => format!("同步 {} 到本地失败", record),
-            Self::Push => format!("推送 {} 到远程失败", record),
+            Self::Pull => "pull",
+            Self::Push => "push",
         }
     }
 }
@@ -58,7 +45,7 @@ pub(super) async fn sync_spaces(
     since_ms: i64,
     conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<UpsertStats, String> {
+) -> Result<UpsertStats, SyncError> {
     spaces::sync(
         source_db,
         target_db,
@@ -75,7 +62,7 @@ pub(super) async fn sync_projects(
     since_ms: i64,
     conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<UpsertStats, String> {
+) -> Result<UpsertStats, SyncError> {
     projects::sync(
         source_db,
         target_db,
@@ -92,7 +79,7 @@ pub(super) async fn sync_links(
     since_ms: i64,
     conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<UpsertStats, String> {
+) -> Result<UpsertStats, SyncError> {
     links::sync(
         source_db,
         target_db,
@@ -109,7 +96,7 @@ pub(super) async fn sync_tasks(
     since_ms: i64,
     conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<UpsertStats, String> {
+) -> Result<UpsertStats, SyncError> {
     tasks::sync(
         source_db,
         target_db,
@@ -125,7 +112,7 @@ pub(super) async fn sync_append_only(
     target_db: &DatabaseConnection,
     since_ms: i64,
     direction: SyncDirection,
-) -> Result<AppendOnlySyncStats, String> {
+) -> Result<AppendOnlySyncStats, SyncError> {
     append_only::sync(source_db, target_db, since_ms, direction).await
 }
 
@@ -133,6 +120,6 @@ pub(super) async fn sync_relations(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
-) -> Result<RelationSyncStats, String> {
+) -> Result<RelationSyncStats, SyncError> {
     relations::sync(source_db, target_db, direction).await
 }

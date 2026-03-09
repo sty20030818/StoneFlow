@@ -7,6 +7,7 @@
 
 mod connection;
 pub mod dto;
+mod error;
 mod helpers;
 mod pull;
 mod push;
@@ -17,6 +18,7 @@ mod watermarks;
 use sea_orm::DatabaseConnection;
 
 pub use dto::{DatabaseUrlArgs, SyncCommandReport};
+use error::SyncError;
 
 pub struct SyncService;
 
@@ -24,18 +26,18 @@ impl SyncService {
     pub async fn pull(
         local_db: &DatabaseConnection,
         database_url: &str,
-    ) -> Result<SyncCommandReport, String> {
+    ) -> Result<SyncCommandReport, SyncError> {
         pull::pull(local_db, database_url).await
     }
 
     pub async fn push(
         local_db: &DatabaseConnection,
         database_url: &str,
-    ) -> Result<SyncCommandReport, String> {
+    ) -> Result<SyncCommandReport, SyncError> {
         push::push(local_db, database_url).await
     }
 
-    pub async fn test_connection(database_url: &str) -> Result<(), String> {
+    pub async fn test_connection(database_url: &str) -> Result<(), SyncError> {
         connection::test_connection(database_url).await
     }
 }
