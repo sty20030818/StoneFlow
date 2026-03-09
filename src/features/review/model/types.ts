@@ -4,5 +4,5 @@ export type {
 	InspectorActivityLogsArgs,
 } from '@/features/inspector/model'
 export { mapInspectorActivityLogsDtoToDomain } from '@/features/inspector/model'
-export { mapWorkspaceTasksDtoToDomain } from '@/features/workspace/model'
-export type { WorkspaceTask } from '@/features/workspace/model'
+export { mapWorkspaceTasksDtoToDomain } from '@/features/workspace/shared/model'
+export type { WorkspaceTask } from '@/features/workspace/shared/model'

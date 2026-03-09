@@ -236,6 +236,46 @@ export default [
 		},
 	},
 
+	// 套件迁移边界：禁止继续依赖 workspace 旧根层目录，并阻断套件外穿透内部实现
+	{
+		files: ['src/**/*.{ts,tsx,vue}'],
+		ignores: ['src/features/workspace/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: [
+								'@/features/workspace/composables',
+								'@/features/workspace/composables/*',
+								'@/features/workspace/composables/**',
+								'@/features/workspace/model',
+								'@/features/workspace/model/*',
+								'@/features/workspace/model/**',
+								'@/features/workspace/queries',
+								'@/features/workspace/queries/*',
+								'@/features/workspace/queries/**',
+								'@/features/workspace/mutations',
+								'@/features/workspace/mutations/*',
+								'@/features/workspace/mutations/**',
+								'@/features/workspace/ui',
+								'@/features/workspace/ui/*',
+								'@/features/workspace/ui/**',
+							],
+							message: '旧 workspace 根层内部目录已废弃，请改用 @/features/workspace 或 @/features/workspace/shared/model。',
+						},
+						{
+							regex: '^@/features/workspace/(?!index(?:\\.ts)?$|shared/model(?:/index(?:\\.ts)?)?$).+',
+							message:
+								'套件外禁止直接导入 workspace 内部实现，请改用 @/features/workspace 或 @/features/workspace/shared/model。',
+						},
+					],
+				},
+			],
+		},
+	},
+
 	// 大页面 index 迁移后：禁止回流到页面 partials
 	{
 		files: [
@@ -299,8 +339,8 @@ export default [
 				{
 					patterns: [
 						{
-							regex: '^@/features/[^/]+/(?!index(?:\\.ts)?$|model(?:/index(?:\\.ts)?)?$).+',
-							message: '跨 feature 只能导入公开入口：@/features/<domain> 或 @/features/<domain>/model',
+							regex: '^@/features/[^/]+/(?!index(?:\\.ts)?$|(?:[^/]+/)?model(?:/index(?:\\.ts)?)?$).+',
+							message: '跨 feature 只能导入公开入口：@/features/<domain> 或 @/features/<domain>/<subdomain>/model',
 						},
 					],
 				},
