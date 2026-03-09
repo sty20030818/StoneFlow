@@ -1,308 +1,119 @@
-# Service 层架构设计
+# 后端分层架构
 
-## 分层架构
+## 目标
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Commands Layer                        │
-│  - 接收前端请求参数                                       │
-│  - 参数验证和转换                                        │
-│  - 调用 Service 层                                       │
-│  - 错误映射和响应                                        │
-└─────────────────────────────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Service Layer                         │
-│  - 业务编排：协调多个 Repository                         │
-│  - 事务管理：定义事务边界                                │
-│  - 业务规则：跨实体的业务逻辑                            │
-└─────────────────────────────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                  Repository Layer                        │
-│  - 数据访问：CRUD 操作                                   │
-│  - 查询构建：复杂查询逻辑                                │
-│  - 数据映射：实体与 DTO 转换                             │
-└─────────────────────────────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                   Database Layer                         │
-│  - ORM 实体定义                                          │
-│  - 数据库迁移                                            │
-│  - 连接管理                                              │
-└─────────────────────────────────────────────────────────┘
+这次重构采用破坏式调整，不保留向后兼容壳层。目标只有三个：
+
+- 写路径边界清晰
+- 仓储层只保留数据访问原语
+- 命令层、服务层、仓储层的职责和代码结构完全一致
+
+## 最终分层
+
+```text
+前端调用
+  -> commands
+  -> services（仅写路径）
+  -> repos
+  -> db / entities
 ```
 
-## 职责划分
+其中有一个明确例外：
 
-### Commands Layer（命令层）
+- 纯查询：`command -> repo`
+- 写路径：`command -> service -> repo`
 
-**职责**：
-- 接收前端 Tauri 命令调用
-- 参数反序列化和验证
-- 调用 Service 层方法
-- 错误类型转换（AppError → ApiError）
-- 返回响应给前端
+这样做的原因很直接：查询不需要额外的透传壳层，写路径才需要事务、跨实体编排和副作用管理。
 
-**示例**：
-```rust
-#[tauri::command]
-pub async fn complete_task(
-    state: State<'_, DbState>,
-    id: String,
-) -> Result<(), ApiError> {
-    TaskService::complete(&state.conn, &id)
-        .await
-        .map_err(ApiError::from)
-}
-```
+## 各层职责
 
-**禁止**：
-- ❌ 编写业务逻辑
-- ❌ 直接操作数据库
-- ❌ 管理事务
-- ❌ 跨实体操作
+### Commands
 
-### Service Layer（服务层）
+- 接收 Tauri 命令参数
+- 做输入 DTO 转换
+- 调用对应 service 或 query repo
+- 完成错误边界映射
 
-**职责**：
-- 业务编排：协调多个 Repository 完成复杂业务流程
-- 事务管理：定义事务边界，保证数据一致性
-- 业务规则：实现跨实体的业务逻辑
-- 活动日志：记录业务操作历史
+禁止事项：
 
-**示例**：
-```rust
-pub async fn complete(conn: &DatabaseConnection, id: &str) -> Result<(), AppError> {
-    let now = now_ms();
-    let txn = conn.begin().await?;
+- 不在 command 内开启事务
+- 不在 command 内编排多个 repo
+- 不在 command 内写业务规则
 
-    // 1. 查找任务
-    let task = TaskRepo::find_by_id(&txn, id).await?;
+### Services
 
-    // 2. 业务规则校验
-    if task.status == "done" {
-        return Err(AppError::Validation("任务已完成".to_string()));
-    }
+- 只承接会修改持久化状态的用例
+- 定义事务边界
+- 协调多个 repo 原语
+- 处理跨实体规则、活动日志、副作用刷新
 
-    // 3. 更新状态
-    TaskRepo::update_status(&txn, id, "done", now).await?;
+当前已收口的写服务：
 
-    // 4. 记录日志
-    TaskRepo::append_completed_log(&txn, &task, now).await?;
+- `TaskService`
+- `ProjectService`
+- `SyncService`
 
-    // 5. 更新项目统计
-    if let Some(project_id) = &task.project_id {
-        TaskRepo::refresh_project_stats(&txn, project_id, now).await?;
-    }
+### Repos
 
-    txn.commit().await?;
-    Ok(())
-}
-```
+- 提供查询原语和 mutation 原语
+- 屏蔽 SeaORM 细节
+- 负责实体与 DTO 的基础映射
 
-**允许**：
-- ✅ 管理事务边界
-- ✅ 协调多个 Repository
-- ✅ 实现业务规则
-- ✅ 调用其他 Service
+禁止事项：
 
-**禁止**：
-- ❌ 直接操作数据库实体
-- ❌ 构建复杂查询（应委托给 Repository）
+- 不承载完整业务用例
+- 不拥有事务边界
+- 不处理跨实体业务决策
 
-### Repository Layer（仓储层）
+## 当前模块组织
 
-**职责**：
-- 数据访问：CRUD 操作
-- 查询构建：复杂查询逻辑
-- 数据映射：实体与 DTO 转换
-- 简单的数据校验
+### Task
 
-**示例**：
-```rust
-pub async fn find_by_id(
-    conn: &DatabaseConnection,
-    id: &str,
-) -> Result<TaskDto, AppError> {
-    let task = tasks::Entity::find_by_id(id)
-        .one(conn)
-        .await?
-        .ok_or_else(|| AppError::Validation("任务不存在".to_string()))?;
+- `commands/tasks.rs`：命令边界
+- `services/task_service.rs`：任务写用例
+- `repos/task_repo/query.rs`：任务读取原语
+- `repos/task_repo/mutation.rs`：任务主表写入原语
+- `repos/task_repo/tags.rs` `links.rs` `custom_fields.rs`：关联数据同步原语
+- `repos/task_repo/stats.rs`：项目统计刷新原语
 
-    Ok(TaskDto::from(task))
-}
+`TaskRepo` 入口现在只保留查询聚合能力和少量 service 需要的辅助入口。
 
-pub async fn update_status(
-    conn: &DatabaseConnection,
-    id: &str,
-    status: &str,
-    now: i64,
-) -> Result<(), AppError> {
-    let task = tasks::Entity::find_by_id(id)
-        .one(conn)
-        .await?
-        .ok_or_else(|| AppError::Validation("任务不存在".to_string()))?;
+### Project
 
-    let mut active = task.into_active_model();
-    active.status = Set(match status {
-        "done" => TaskStatus::Done,
-        _ => TaskStatus::Todo,
-    });
-    active.updated_at = Set(now);
+- `commands/projects.rs`：命令边界
+- `services/project_service.rs`：项目写用例
+- `repos/project_repo/query.rs`：项目读取原语
+- `repos/project_repo/mutation.rs`：项目主表写入原语
+- `repos/project_repo/helpers.rs`：路径重建、DTO 填充等辅助逻辑
 
-    active.update(conn).await?;
-    Ok(())
-}
-```
+`ProjectRepo` 入口现在只保留列表查询、默认项目查询和项目树收集能力。
 
-**允许**：
-- ✅ 直接操作数据库实体
-- ✅ 构建查询
-- ✅ 简单的数据转换
-- ✅ 简单的数据校验（如必填、格式）
+### Sync
 
-**禁止**：
-- ❌ 管理事务边界（由 Service 管理）
-- ❌ 跨实体操作（应通过 Service 协调）
-- ❌ 业务规则判断
+- `commands/sync.rs`：参数和错误边界
+- `services/sync_service.rs`：拉取、推送、连接测试
 
-## 迁移步骤
+同步逻辑不再停留在 command 中。
 
-### 第1步：创建 Service 层骨架
+## 关键约束
 
-1. 创建 `src-tauri/src/services/` 目录
-2. 创建 `mod.rs` 和 `task_service.rs`
-3. 在 `lib.rs` 中引入 `services` 模块
+### 事务边界
 
-### 第2步：提取业务逻辑
+- 所有写路径事务由 service 开启和提交
+- repo 原语默认接受 `ConnectionTrait`，便于被事务和普通连接复用
 
-针对每个包含业务逻辑的 Repository 方法：
+### 输入模型
 
-1. 在 Service 层创建对应方法
-2. 将业务逻辑从 Repository 移到 Service
-3. 在 Repository 保留纯粹的数据访问方法
-4. 更新 Command 调用 Service 而非 Repository
+- 用例级输入模型定义在 service 层
+- command 负责把前端请求 DTO 转换成 service 输入
+- repo 不再承载完整用例输入结构
 
-### 第3步：重构 complete 方法（示例）
+### 文档与代码一致性
 
-**之前（Repository 包含业务逻辑）**：
-```rust
-// repos/task_repo/mod.rs
-pub async fn complete(conn: &DatabaseConnection, id: &str) -> Result<(), AppError> {
-    let txn = conn.begin().await?;
-    // ... 业务逻辑 ...
-    txn.commit().await?;
-    Ok(())
-}
-```
+这份文档描述的是当前代码的最终态，不再包含：
 
-**之后（分层）**：
-```rust
-// services/task_service.rs
-pub async fn complete(conn: &DatabaseConnection, id: &str) -> Result<(), AppError> {
-    let txn = conn.begin().await?;
-    let task = TaskRepo::find_by_id(&txn, id).await?;
-    // ... 业务逻辑 ...
-    TaskRepo::update_status(&txn, id, "done", now).await?;
-    // ... 更多业务操作 ...
-    txn.commit().await?;
-    Ok(())
-}
+- 渐进式迁移计划
+- 兼容旧 repo 入口的策略
+- 临时测试文件保留约定
 
-// repos/task_repo/mod.rs
-pub async fn update_status(conn: &DatabaseConnection, id: &str, status: &str, now: i64) -> Result<(), AppError> {
-    // 纯粹的数据访问
-}
-
-// commands/tasks.rs
-#[tauri::command]
-pub async fn complete_task(state: State<'_, DbState>, id: String) -> Result<(), ApiError> {
-    TaskService::complete(&state.conn, &id).await.map_err(ApiError::from)
-}
-```
-
-## 优势
-
-### 1. 单一职责
-
-- **Command**: 参数处理
-- **Service**: 业务编排
-- **Repository**: 数据访问
-
-### 2. 易于测试
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_complete_task() {
-        let conn = setup_test_db().await;
-        let task_id = create_test_task(&conn).await;
-
-        // 测试 Service 层业务逻辑
-        TaskService::complete(&conn, &task_id).await.unwrap();
-
-        let task = TaskRepo::find_by_id(&conn, &task_id).await.unwrap();
-        assert_eq!(task.status, "done");
-    }
-}
-```
-
-### 3. 易于维护
-
-- 业务逻辑集中在 Service 层
-- 数据访问集中在 Repository 层
-- 职责清晰，易于定位问题
-
-### 4. 易于扩展
-
-- 新增业务功能：添加 Service 方法
-- 新增数据访问：添加 Repository 方法
-- 互不干扰
-
-## 迁移优先级
-
-### P0（立即迁移）
-
-- [x] 创建 Service 层骨架
-- [ ] `TaskRepo::complete` - 包含复杂业务逻辑
-- [ ] `TaskRepo::create` - 包含日志记录和统计刷新
-
-### P1（近期迁移）
-
-- [ ] `ProjectRepo` 中的业务逻辑方法
-- [ ] 其他包含跨实体操作的方法
-
-### P2（长期优化）
-
-- [ ] 统一错误处理
-- [ ] 添加更多单元测试
-- [ ] 性能优化
-
-## 文件组织
-
-```
-src-tauri/src/
-├── commands/           # 命令层
-│   ├── tasks.rs       # 任务相关命令
-│   └── projects.rs    # 项目相关命令
-├── services/          # 服务层（新增）
-│   ├── mod.rs
-│   ├── task_service.rs
-│   └── project_service.rs
-├── repos/             # 仓储层
-│   ├── task_repo/
-│   └── project_repo/
-├── db/                # 数据库层
-└── types/             # 类型定义
-```
-
-## 注意事项
-
-1. **渐进式迁移**：不影响现有功能，逐步重构
-2. **保持向后兼容**：旧的 Repository 方法暂时保留
-3. **测试覆盖**：迁移后添加单元测试
-4. **文档同步**：更新代码注释和架构文档
+后续如果继续演进，应该直接修改最终态设计，而不是重新引入兼容层。
