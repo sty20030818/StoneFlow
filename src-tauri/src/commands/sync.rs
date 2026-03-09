@@ -3,7 +3,7 @@
 //! 重点：
 //! - 本文件采用“按更新时间增量同步 + upsert”策略
 //! - 使用 app_settings 记录 last_pushed_at / last_pulled_at 水位
-//! - 当前策略偏实用，后续可演进为更严格的冲突解决
+//! - 当前文件后续将收敛为参数/错误边界，核心流程迁入 `SyncService`
 
 use crate::db::entities::{prelude::*, *};
 use crate::db::{migrator::Migrator, DbState};

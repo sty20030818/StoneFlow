@@ -1,8 +1,8 @@
 //! Task 仓储入口。
 //!
 //! 重点：
-//! - 该模块把 task 的增删改查拆分为子模块，降低单文件复杂度
-//! - `TaskUpdateInput` 用 patch 模式表达“部分更新”
+//! - 该模块将逐步收敛为 task 查询原语与持久化原语集合
+//! - 完整写用例会迁移到 `TaskService`，repo 不再长期承载事务编排
 
 use sea_orm::PaginatorTrait;
 use sea_orm::{

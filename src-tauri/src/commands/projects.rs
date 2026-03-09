@@ -3,7 +3,7 @@
 //! 学习要点：
 //! - 参数 DTO 与 repo 输入结构体的映射
 //! - `Option<Option<T>>` 在“清空字段 vs 不修改字段”场景的语义
-//! - 错误统一映射到 `ApiError`
+//! - 纯查询可直达 `ProjectRepo`，写命令应逐步迁入 `ProjectService`
 
 use sea_orm::TransactionTrait;
 use serde::Deserialize;

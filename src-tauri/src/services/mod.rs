@@ -1,13 +1,16 @@
 //! 服务层模块。
 //!
-//! 服务层职责：
-//! - 业务编排：协调多个 Repository 完成复杂业务流程
-//! - 事务管理：定义事务边界，保证数据一致性
-//! - 业务规则：实现跨实体的业务逻辑
+//! 服务层只负责写用例编排：
+//! - 统一承接会修改持久化状态的命令入口
+//! - 管理事务边界与跨实体副作用
+//! - 协调多个 repo 完成完整业务流程
 //!
-//! 分层架构：
-//! Commands → Services → Repositories → Entities
+//! 纯查询命令不强制经过 service，避免制造空壳透传层。
 
+pub mod project_service;
+pub mod sync_service;
 pub mod task_service;
 
+pub use project_service::ProjectService;
+pub use sync_service::SyncService;
 pub use task_service::TaskService;

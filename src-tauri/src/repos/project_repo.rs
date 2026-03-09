@@ -3,7 +3,7 @@
 //! 学习要点：
 //! - DTO 聚合填充（links/tags）
 //! - 创建时默认 rank 计算
-//! - 读写逻辑与事务边界分离
+//! - 最终态仅保留项目数据访问原语，事务与业务规则会上移到 service
 
 use sea_orm::{
     prelude::Expr, ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,

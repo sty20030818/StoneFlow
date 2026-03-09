@@ -3,7 +3,7 @@
 //! 学习要点：
 //! - patch 模式更新：只传变化字段
 //! - tri-state（`Option<Option<T>>`）表达“保持/清空/设置”
-//! - 命令层不直接碰实体，统一通过 `TaskRepo`
+//! - 读命令可直达 `TaskRepo`，写命令后续统一切到 `TaskService`
 
 use serde::Deserialize;
 use tauri::State;
