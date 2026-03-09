@@ -1,4 +1,6 @@
 <template>
+	<slot />
+
 	<UModal
 		v-model:open="commandPaletteOpen"
 		:title="t('commandPalette.title')"

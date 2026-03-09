@@ -2,15 +2,15 @@
 	<UApp
 		:toaster="{ position: 'bottom-right', duration: 3000, max: 5 }"
 		:locale="appNuxtUiLocale">
-		<AppShell>
-			<RouterView v-slot="{ Component, route: viewRoute }">
-				<component
-					:is="Component"
-					:key="viewRoute.fullPath" />
-			</RouterView>
-		</AppShell>
-
-		<AppGlobalOverlays />
+		<AppGlobalOverlays>
+			<AppShell>
+				<RouterView v-slot="{ Component, route: viewRoute }">
+					<component
+						:is="Component"
+						:key="viewRoute.fullPath" />
+				</RouterView>
+			</AppShell>
+		</AppGlobalOverlays>
 	</UApp>
 </template>
 
