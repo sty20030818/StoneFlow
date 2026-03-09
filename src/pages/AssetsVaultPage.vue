@@ -243,8 +243,12 @@
 </template>
 
 <script setup lang="ts">
-	import { assetModalInputUi, assetModalSelectMenuUi, assetModalTextareaUi } from '@/features/assets-shared'
-	import { useAssetsVaultPageFacade } from '@/features/assets-vault'
+	import {
+		assetModalInputUi,
+		assetModalSelectMenuUi,
+		assetModalTextareaUi,
+		useAssetsVaultPageFacade,
+	} from '@/features/assets'
 
 	const {
 		t,

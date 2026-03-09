@@ -197,6 +197,45 @@ export default [
 		},
 	},
 
+	// 套件迁移边界：禁止继续依赖旧 assets 路径，并阻断套件外穿透内部实现
+	{
+		files: ['src/**/*.{ts,tsx,vue}'],
+		ignores: ['src/features/assets/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: [
+								'@/features/assets-diary',
+								'@/features/assets-diary/*',
+								'@/features/assets-diary/**',
+								'@/features/assets-notes',
+								'@/features/assets-notes/*',
+								'@/features/assets-notes/**',
+								'@/features/assets-snippets',
+								'@/features/assets-snippets/*',
+								'@/features/assets-snippets/**',
+								'@/features/assets-vault',
+								'@/features/assets-vault/*',
+								'@/features/assets-vault/**',
+								'@/features/assets-shared',
+								'@/features/assets-shared/*',
+								'@/features/assets-shared/**',
+							],
+							message: '旧 assets feature 已废弃，请改用 @/features/assets 公开入口。',
+						},
+						{
+							regex: '^@/features/assets/(?!index(?:\\.ts)?$).+',
+							message: '套件外禁止直接导入 assets 内部实现，请改用 @/features/assets 公开入口。',
+						},
+					],
+				},
+			],
+		},
+	},
+
 	// 大页面 index 迁移后：禁止回流到页面 partials
 	{
 		files: [

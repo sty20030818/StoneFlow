@@ -165,8 +165,7 @@
 </template>
 
 <script setup lang="ts">
-	import { assetModalInputUi, assetModalTextareaUi } from '@/features/assets-shared'
-	import { useAssetsNotesPageFacade } from '@/features/assets-notes'
+	import { assetModalInputUi, assetModalTextareaUi, useAssetsNotesPageFacade } from '@/features/assets'
 
 	const {
 		t,

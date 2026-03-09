@@ -190,8 +190,7 @@
 </template>
 
 <script setup lang="ts">
-	import { assetModalInputUi, assetModalTextareaUi } from '@/features/assets-shared'
-	import { useAssetsDiaryPageFacade } from '@/features/assets-diary'
+	import { assetModalInputUi, assetModalTextareaUi, useAssetsDiaryPageFacade } from '@/features/assets'
 
 	const {
 		t,

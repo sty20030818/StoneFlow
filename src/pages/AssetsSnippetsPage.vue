@@ -231,8 +231,7 @@
 </template>
 
 <script setup lang="ts">
-	import { assetModalInputUi, assetModalTextareaUi } from '@/features/assets-shared'
-	import { useAssetsSnippetsPageFacade } from '@/features/assets-snippets'
+	import { assetModalInputUi, assetModalTextareaUi, useAssetsSnippetsPageFacade } from '@/features/assets'
 
 	const {
 		t,
