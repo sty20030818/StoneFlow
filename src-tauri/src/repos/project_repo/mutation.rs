@@ -48,7 +48,10 @@ where
     .map_err(AppError::from)
 }
 
-pub async fn update<C>(conn: &C, active_model: projects::ActiveModel) -> Result<projects::Model, AppError>
+pub async fn update<C>(
+    conn: &C,
+    active_model: projects::ActiveModel,
+) -> Result<projects::Model, AppError>
 where
     C: ConnectionTrait,
 {

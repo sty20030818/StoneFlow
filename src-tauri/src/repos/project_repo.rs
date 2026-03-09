@@ -6,7 +6,9 @@
 //! - 通过子模块提供主表 mutation / query / helper 原语
 //! - 不再承载完整写用例与事务编排
 
-use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{
+    ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::db::entities::projects;

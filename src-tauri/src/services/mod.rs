@@ -7,14 +7,12 @@
 //!
 //! 纯查询命令不强制经过 service，避免制造空壳透传层。
 
-pub mod project_service;
-pub mod sync_service;
-pub mod task_service;
+pub mod project;
+pub mod sync;
+pub mod task;
 
 #[allow(unused_imports)]
-pub use project_service::ProjectService;
-pub use project_service::{ProjectCreateInput, ProjectUpdateInput, ProjectUpdatePatch};
-pub use sync_service::{DatabaseUrlArgs, SyncCommandReport, SyncService};
-pub use task_service::{
-    TaskCreateInput, TaskCreatePatch, TaskService, TaskUpdateInput, TaskUpdatePatch,
-};
+pub use project::ProjectService;
+pub use project::{ProjectCreateInput, ProjectUpdateInput, ProjectUpdatePatch};
+pub use sync::{DatabaseUrlArgs, SyncCommandReport, SyncService};
+pub use task::{TaskCreateInput, TaskCreatePatch, TaskService, TaskUpdateInput, TaskUpdatePatch};

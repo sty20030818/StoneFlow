@@ -3,55 +3,31 @@
 //! 本模块将承接项目创建、更新、删除子树、恢复、归档、
 //! 取消归档与排序等写用例，并统一管理跨 repo 事务编排。
 
+pub mod dto;
+mod helpers;
+
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set, TransactionTrait};
 use uuid::Uuid;
 
-use crate::db::{entities::{projects, sea_orm_active_enums::Priority}, now_ms};
+use crate::db::{entities::projects, now_ms};
 use crate::repos::{
     common_task_utils,
     link_repo::{self, LinkEntity},
-    project_repo::{activity_logs, helpers, mutation, query, ProjectRepo},
+    project_repo::{activity_logs, helpers as repo_helpers, mutation, query, ProjectRepo},
     tag_repo::{self, TagEntity},
     task_repo::TaskRepo,
 };
-use crate::types::{
-    dto::{LinkInputDto, ProjectDto},
-    error::AppError,
-};
+use crate::types::{dto::ProjectDto, error::AppError};
+pub use dto::{ProjectCreateInput, ProjectUpdateInput, ProjectUpdatePatch};
+use helpers::{is_default_project_id, priority_to_string};
 
 pub struct ProjectService;
 
-#[derive(Debug, Clone)]
-pub struct ProjectCreateInput {
-    pub space_id: String,
-    pub title: String,
-    pub parent_id: Option<String>,
-    pub note: Option<String>,
-    pub priority: Option<String>,
-    pub rank: Option<i64>,
-    pub tags: Option<Vec<String>>,
-    pub links: Option<Vec<LinkInputDto>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ProjectUpdateInput {
-    pub project_id: String,
-    pub patch: ProjectUpdatePatch,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ProjectUpdatePatch {
-    pub title: Option<String>,
-    pub note: Option<Option<String>>,
-    pub priority: Option<String>,
-    pub space_id: Option<String>,
-    pub parent_id: Option<Option<String>>,
-    pub tags: Option<Vec<String>>,
-    pub links: Option<Vec<LinkInputDto>>,
-}
-
 impl ProjectService {
-    pub async fn create(conn: &DatabaseConnection, input: ProjectCreateInput) -> Result<ProjectDto, AppError> {
+    pub async fn create(
+        conn: &DatabaseConnection,
+        input: ProjectCreateInput,
+    ) -> Result<ProjectDto, AppError> {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let title = input.title.trim();
         if title.is_empty() {
@@ -68,12 +44,18 @@ impl ProjectService {
         let tags = input.tags.unwrap_or_default();
         let links = input.links.unwrap_or_default();
         let priority = common_task_utils::parse_priority(input.priority.as_deref())?;
-        let path = helpers::build_project_path(&txn, &input.space_id, input.parent_id.as_deref(), title).await?;
+        let path = repo_helpers::build_project_path(
+            &txn,
+            &input.space_id,
+            input.parent_id.as_deref(),
+            title,
+        )
+        .await?;
         let now = now_ms();
         let id = Uuid::new_v4().to_string();
-        let rank = input
-            .rank
-            .unwrap_or(query::next_rank_in_scope(&txn, &input.space_id, input.parent_id.as_deref()).await?);
+        let rank = input.rank.unwrap_or(
+            query::next_rank_in_scope(&txn, &input.space_id, input.parent_id.as_deref()).await?,
+        );
 
         let project = mutation::insert(
             &txn,
@@ -113,13 +95,16 @@ impl ProjectService {
 
         txn.commit().await.map_err(AppError::from)?;
 
-        let mut dto = helpers::project_model_to_dto(project);
-        helpers::attach_links(conn, std::slice::from_mut(&mut dto)).await?;
-        helpers::attach_tags(conn, std::slice::from_mut(&mut dto)).await?;
+        let mut dto = repo_helpers::project_model_to_dto(project);
+        repo_helpers::attach_links(conn, std::slice::from_mut(&mut dto)).await?;
+        repo_helpers::attach_tags(conn, std::slice::from_mut(&mut dto)).await?;
         Ok(dto)
     }
 
-    pub async fn update(conn: &DatabaseConnection, input: ProjectUpdateInput) -> Result<(), AppError> {
+    pub async fn update(
+        conn: &DatabaseConnection,
+        input: ProjectUpdateInput,
+    ) -> Result<(), AppError> {
         let ProjectUpdateInput { project_id, patch } = input;
         let txn = conn.begin().await.map_err(AppError::from)?;
         let model = query::find_by_id(&txn, project_id.as_str()).await?;
@@ -127,7 +112,9 @@ impl ProjectService {
         if is_default_project_id(project_id.as_str())
             && (patch.title.is_some() || patch.space_id.is_some() || patch.parent_id.is_some())
         {
-            return Err(AppError::Validation("默认项目不允许修改标题、Space 或父级".to_string()));
+            return Err(AppError::Validation(
+                "默认项目不允许修改标题、Space 或父级".to_string(),
+            ));
         }
 
         let now = now_ms();
@@ -198,9 +185,12 @@ impl ProjectService {
             }
 
             if normalized != old_space_id {
-                let subtree_ids = ProjectRepo::collect_subtree_ids(&txn, project_id.as_str()).await?;
+                let subtree_ids =
+                    ProjectRepo::collect_subtree_ids(&txn, project_id.as_str()).await?;
                 if subtree_ids.len() > 1 {
-                    return Err(AppError::Validation("当前项目存在子项目，暂不支持跨 Space 迁移".to_string()));
+                    return Err(AppError::Validation(
+                        "当前项目存在子项目，暂不支持跨 Space 迁移".to_string(),
+                    ));
                 }
 
                 next_space_id = normalized.to_string();
@@ -221,7 +211,8 @@ impl ProjectService {
                 if parent_id == project_id {
                     return Err(AppError::Validation("项目不能挂载到自身".to_string()));
                 }
-                let subtree_ids = ProjectRepo::collect_subtree_ids(&txn, project_id.as_str()).await?;
+                let subtree_ids =
+                    ProjectRepo::collect_subtree_ids(&txn, project_id.as_str()).await?;
                 if subtree_ids.iter().any(|id| id == parent_id) {
                     return Err(AppError::Validation("项目不能挂载到自身后代".to_string()));
                 }
@@ -235,9 +226,13 @@ impl ProjectService {
         }
 
         if next_title != old_title || next_parent_id != old_parent_id || space_changed {
-            let rebuilt_path =
-                helpers::build_project_path(&txn, &next_space_id, next_parent_id.as_deref(), next_title.as_str())
-                    .await?;
+            let rebuilt_path = repo_helpers::build_project_path(
+                &txn,
+                &next_space_id,
+                next_parent_id.as_deref(),
+                next_title.as_str(),
+            )
+            .await?;
             if rebuilt_path != old_path {
                 next_path = rebuilt_path;
                 active_model.path = Set(next_path.clone());
@@ -254,7 +249,8 @@ impl ProjectService {
         let saved_model = mutation::update(&txn, active_model).await?;
 
         if space_changed {
-            mutation::update_tasks_space_by_project(&txn, project_id.as_str(), &next_space_id, now).await?;
+            mutation::update_tasks_space_by_project(&txn, project_id.as_str(), &next_space_id, now)
+                .await?;
         }
 
         if let Some(tags) = patch.tags.as_ref() {
@@ -265,7 +261,8 @@ impl ProjectService {
         }
 
         if path_changed {
-            mutation::rebase_descendant_paths(&txn, &old_space_id, &old_path, &next_path, now).await?;
+            mutation::rebase_descendant_paths(&txn, &old_space_id, &old_path, &next_path, now)
+                .await?;
         }
 
         let log_ctx = activity_logs::ProjectLogCtx {
@@ -324,7 +321,10 @@ impl ProjectService {
         Ok(())
     }
 
-    pub async fn delete_subtree(conn: &DatabaseConnection, project_id: &str) -> Result<(), AppError> {
+    pub async fn delete_subtree(
+        conn: &DatabaseConnection,
+        project_id: &str,
+    ) -> Result<(), AppError> {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let subtree_project_ids = ProjectRepo::collect_subtree_ids(&txn, project_id).await?;
         let project_models = query::find_not_deleted_by_ids(&txn, &subtree_project_ids).await?;
@@ -462,9 +462,13 @@ impl ProjectService {
         if let Some(parent_id) = new_parent_id {
             active_model.parent_id = Set(parent_id.clone());
             if old_parent_id != parent_id {
-                next_path =
-                    helpers::build_project_path(&txn, &model.space_id, parent_id.as_deref(), &model.title)
-                        .await?;
+                next_path = repo_helpers::build_project_path(
+                    &txn,
+                    &model.space_id,
+                    parent_id.as_deref(),
+                    &model.title,
+                )
+                .await?;
                 active_model.path = Set(next_path.clone());
                 path_changed = true;
             }
@@ -472,7 +476,8 @@ impl ProjectService {
 
         mutation::update(&txn, active_model).await?;
         if path_changed {
-            mutation::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now).await?;
+            mutation::rebase_descendant_paths(&txn, &model.space_id, &old_path, &next_path, now)
+                .await?;
         }
         txn.commit().await.map_err(AppError::from)?;
         Ok(())
@@ -497,18 +502,4 @@ impl ProjectService {
         txn.commit().await.map_err(AppError::from)?;
         Ok(())
     }
-}
-
-fn is_default_project_id(project_id: &str) -> bool {
-    project_id.ends_with("_default")
-}
-
-fn priority_to_string(priority: &Priority) -> String {
-    match priority {
-        Priority::P0 => "P0",
-        Priority::P1 => "P1",
-        Priority::P2 => "P2",
-        Priority::P3 => "P3",
-    }
-    .to_string()
 }

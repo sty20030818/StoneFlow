@@ -7,83 +7,35 @@
 //!
 //! 纯查询继续保留在命令层直达 query repo，不在这里创建空壳透传方法。
 
+pub mod dto;
+mod helpers;
+
 use std::collections::HashSet;
 
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set, TransactionTrait};
 use uuid::Uuid;
 
 use crate::db::{
-    entities::{
-        sea_orm_active_enums::{DoneReason, Priority, TaskStatus},
-    },
+    entities::sea_orm_active_enums::{DoneReason, Priority, TaskStatus},
     now_ms,
 };
 use crate::repos::task_repo::{
     activity_logs, custom_fields, links, mutation, query, stats, tags, validations,
 };
-use crate::types::{
-    dto::{CustomFieldsDto, LinkInputDto, TaskDto},
-    error::AppError,
+use crate::types::{dto::TaskDto, error::AppError};
+pub use dto::{TaskCreateInput, TaskCreatePatch, TaskUpdateInput, TaskUpdatePatch};
+use helpers::{
+    dedup_project_ids, done_reason_to_value, normalize_links_for_log, normalize_tags,
+    normalize_tags_for_log, priority_to_value, to_optional_join,
 };
 
 pub struct TaskService;
 
-#[derive(Debug, Clone, Default)]
-pub struct TaskCreatePatch {
-    pub status: Option<String>,
-    pub done_reason: Option<String>,
-    pub priority: Option<String>,
-    pub note: Option<String>,
-    pub deadline_at: Option<i64>,
-    pub tags: Option<Vec<String>>,
-    pub links: Option<Vec<LinkInputDto>>,
-    pub custom_fields: Option<CustomFieldsDto>,
-}
-
-#[derive(Debug, Clone)]
-pub struct TaskCreateInput {
-    pub space_id: String,
-    pub title: String,
-    pub auto_start: bool,
-    pub project_id: Option<String>,
-    pub patch: TaskCreatePatch,
-}
-
-#[derive(Debug, Clone)]
-pub struct TaskUpdateInput {
-    pub id: String,
-    pub patch: TaskUpdatePatch,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct TaskUpdatePatch {
-    pub title: Option<String>,
-    pub status: Option<String>,
-    pub done_reason: Option<Option<String>>,
-    pub priority: Option<String>,
-    pub note: Option<Option<String>>,
-    pub tags: Option<Vec<String>>,
-    pub space_id: Option<String>,
-    pub project_id: Option<Option<String>>,
-    pub deadline_at: Option<Option<i64>>,
-    pub rank: Option<i64>,
-    pub links: Option<Vec<LinkInputDto>>,
-    pub custom_fields: Option<Option<CustomFieldsDto>>,
-    pub archived_at: Option<Option<i64>>,
-    pub deleted_at: Option<Option<i64>>,
-}
-
-impl TaskUpdatePatch {
-    pub fn rank_only(new_rank: i64) -> Self {
-        Self {
-            rank: Some(new_rank),
-            ..Self::default()
-        }
-    }
-}
-
 impl TaskService {
-    pub async fn create(conn: &DatabaseConnection, input: TaskCreateInput) -> Result<TaskDto, AppError> {
+    pub async fn create(
+        conn: &DatabaseConnection,
+        input: TaskCreateInput,
+    ) -> Result<TaskDto, AppError> {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let patch = input.patch;
         let title = validations::trim_and_validate_title(&input.title)?;
@@ -261,7 +213,8 @@ impl TaskService {
             .as_ref()
             .map(|items| to_optional_join(normalize_links_for_log(items), ", "))
             .unwrap_or(None);
-        let tags_changed = tags_input_for_log.is_some() && previous_tags_for_log != next_tags_for_log;
+        let tags_changed =
+            tags_input_for_log.is_some() && previous_tags_for_log != next_tags_for_log;
         let links_changed =
             links_input_for_log.is_some() && previous_links_for_log != next_links_for_log;
 
@@ -319,7 +272,9 @@ impl TaskService {
             changed_any = true;
         } else if let Some(reason_opt) = done_reason.as_ref() {
             if !current_status_is_done {
-                return Err(AppError::Validation("仅完成任务可设置 doneReason".to_string()));
+                return Err(AppError::Validation(
+                    "仅完成任务可设置 doneReason".to_string(),
+                ));
             }
             let reason = validations::normalize_done_reason(
                 reason_opt
@@ -353,7 +308,9 @@ impl TaskService {
         }
 
         if let Some(note_opt) = note {
-            active_model.note = Set(note_opt.map(|value| value.trim().to_string()).filter(|value| !value.is_empty()));
+            active_model.note = Set(note_opt
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()));
             touch_updated_at = true;
             changed_any = true;
         }
@@ -387,9 +344,13 @@ impl TaskService {
         } else if effective_status == TaskStatus::Todo
             && (priority_changed || status_changed_to_todo || space_changed || project_changed)
         {
-            let new_rank =
-                query::next_rank_in_bucket(&txn, &effective_space_id, &TaskStatus::Todo, &effective_priority)
-                    .await?;
+            let new_rank = query::next_rank_in_bucket(
+                &txn,
+                &effective_space_id,
+                &TaskStatus::Todo,
+                &effective_priority,
+            )
+            .await?;
             active_model.rank = Set(new_rank);
             rank_changed_by_auto_bucket = true;
             touch_updated_at = true;
@@ -648,7 +609,10 @@ impl TaskService {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let now = now_ms();
         let task_models = query::find_not_deleted_by_ids(&txn, ids).await?;
-        let project_ids: Vec<String> = task_models.iter().filter_map(|task| task.project_id.clone()).collect();
+        let project_ids: Vec<String> = task_models
+            .iter()
+            .filter_map(|task| task.project_id.clone())
+            .collect();
         let count = mutation::soft_delete_many(&txn, ids, now).await?;
 
         for task in &task_models {
@@ -674,7 +638,10 @@ impl TaskService {
         Ok(count)
     }
 
-    pub async fn restore_many(conn: &DatabaseConnection, ids: &[String]) -> Result<usize, AppError> {
+    pub async fn restore_many(
+        conn: &DatabaseConnection,
+        ids: &[String],
+    ) -> Result<usize, AppError> {
         if ids.is_empty() {
             return Err(AppError::Validation("请选择要恢复的任务".to_string()));
         }
@@ -682,7 +649,10 @@ impl TaskService {
         let txn = conn.begin().await.map_err(AppError::from)?;
         let now = now_ms();
         let task_models = query::find_deleted_by_ids(&txn, ids).await?;
-        let project_ids: Vec<String> = task_models.iter().filter_map(|task| task.project_id.clone()).collect();
+        let project_ids: Vec<String> = task_models
+            .iter()
+            .filter_map(|task| task.project_id.clone())
+            .collect();
         let count = mutation::restore_many(&txn, ids, now).await?;
 
         for task in &task_models {
@@ -708,7 +678,11 @@ impl TaskService {
         Ok(count)
     }
 
-    pub async fn reorder(conn: &DatabaseConnection, task_id: String, new_rank: i64) -> Result<(), AppError> {
+    pub async fn reorder(
+        conn: &DatabaseConnection,
+        task_id: String,
+        new_rank: i64,
+    ) -> Result<(), AppError> {
         Self::update(
             conn,
             TaskUpdateInput {
@@ -730,70 +704,4 @@ impl TaskService {
         }
         Ok(())
     }
-}
-
-fn priority_to_value(priority: &Priority) -> String {
-    match priority {
-        Priority::P0 => "P0",
-        Priority::P1 => "P1",
-        Priority::P2 => "P2",
-        Priority::P3 => "P3",
-    }
-    .to_string()
-}
-
-fn done_reason_to_value(done_reason: &Option<DoneReason>) -> Option<String> {
-    done_reason.as_ref().map(|value| match value {
-        DoneReason::Completed => "completed".to_string(),
-        DoneReason::Cancelled => "cancelled".to_string(),
-    })
-}
-
-fn normalize_tags(values: Vec<String>) -> Vec<String> {
-    let mut normalized = Vec::new();
-    for value in values {
-        let tag = value.trim();
-        if tag.is_empty() || normalized.iter().any(|item: &String| item == tag) {
-            continue;
-        }
-        normalized.push(tag.to_string());
-    }
-    normalized
-}
-
-fn normalize_tags_for_log(tags: &[String]) -> Vec<String> {
-    let mut normalized = Vec::new();
-    for tag in tags {
-        let value = tag.trim();
-        if value.is_empty() || normalized.iter().any(|item: &String| item == value) {
-            continue;
-        }
-        normalized.push(value.to_string());
-    }
-    normalized
-}
-
-fn format_link_for_log(kind: &str, title: &str, url: &str) -> String {
-    format!("{}:{}<{}>", kind, title.trim(), url.trim())
-}
-
-fn normalize_links_for_log(links: &[LinkInputDto]) -> Vec<String> {
-    links
-        .iter()
-        .map(|item| format_link_for_log(item.kind.as_str(), item.title.as_str(), item.url.as_str()))
-        .collect()
-}
-
-fn to_optional_join(values: Vec<String>, separator: &str) -> Option<String> {
-    if values.is_empty() {
-        None
-    } else {
-        Some(values.join(separator))
-    }
-}
-
-fn dedup_project_ids(mut project_ids: Vec<String>) -> Vec<String> {
-    project_ids.sort();
-    project_ids.dedup();
-    project_ids
 }

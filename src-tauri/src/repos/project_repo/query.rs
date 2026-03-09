@@ -67,5 +67,7 @@ where
         .await
         .map_err(AppError::from)?;
 
-    Ok(max_rank_project.map(|project| project.rank + 1024).unwrap_or(1024))
+    Ok(max_rank_project
+        .map(|project| project.rank + 1024)
+        .unwrap_or(1024))
 }

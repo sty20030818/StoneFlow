@@ -6,7 +6,10 @@ use sea_orm::{
     prelude::Expr, ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set,
 };
 
-use crate::db::entities::{tasks, sea_orm_active_enums::{DoneReason, Priority, TaskStatus}};
+use crate::db::entities::{
+    sea_orm_active_enums::{DoneReason, Priority, TaskStatus},
+    tasks,
+};
 use crate::types::error::AppError;
 
 pub struct NewTaskRecord {

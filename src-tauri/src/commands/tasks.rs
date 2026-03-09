@@ -10,7 +10,10 @@ use tauri::State;
 
 use crate::db::DbState;
 use crate::repos::task_repo::TaskRepo;
-use crate::services::{TaskCreateInput, TaskCreatePatch, TaskService, TaskUpdateInput, TaskUpdatePatch as ServiceTaskUpdatePatch};
+use crate::services::{
+    TaskCreateInput, TaskCreatePatch, TaskService, TaskUpdateInput,
+    TaskUpdatePatch as ServiceTaskUpdatePatch,
+};
 use crate::types::{
     dto::{CustomFieldsDto, LinkInputDto, TaskDto},
     error::ApiError,
@@ -212,8 +215,8 @@ pub async fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Res
             patch: args.patch.into(),
         },
     )
-        .await
-        .map_err(ApiError::from)
+    .await
+    .map_err(ApiError::from)
 }
 
 #[derive(Debug, Deserialize)]

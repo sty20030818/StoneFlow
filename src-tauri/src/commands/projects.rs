@@ -119,8 +119,8 @@ pub async fn create_project(
             links: args.links,
         },
     )
-        .await
-        .map_err(ApiError::from)
+    .await
+    .map_err(ApiError::from)
 }
 
 #[tauri::command]
@@ -135,8 +135,8 @@ pub async fn update_project(
             patch: args.patch.into(),
         },
     )
-        .await
-        .map_err(ApiError::from)
+    .await
+    .map_err(ApiError::from)
 }
 
 /// 获取默认 Project。
