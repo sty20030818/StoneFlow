@@ -9,9 +9,8 @@ use serde::Deserialize;
 use tauri::State;
 
 use crate::db::DbState;
-use crate::repos::task_repo::{
-    TaskCreatePatchInput, TaskRepo, TaskUpdateInput, TaskUpdatePatch as RepoTaskUpdatePatch,
-};
+use crate::repos::task_repo::TaskRepo;
+use crate::services::{TaskCreateInput, TaskCreatePatch, TaskService, TaskUpdateInput, TaskUpdatePatch as ServiceTaskUpdatePatch};
 use crate::types::{
     dto::{CustomFieldsDto, LinkInputDto, TaskDto},
     error::ApiError,
@@ -79,13 +78,15 @@ pub async fn create_task(
     state: State<'_, DbState>,
     args: CreateTaskArgs,
 ) -> Result<TaskDto, ApiError> {
-    let auto_start = args.auto_start.unwrap_or(true);
-    TaskRepo::create(
+    TaskService::create(
         &state.conn,
-        &args.space_id,
-        &args.title,
-        auto_start,
-        args.project_id.as_deref(),
+        TaskCreateInput {
+            space_id: args.space_id,
+            title: args.title,
+            auto_start: args.auto_start.unwrap_or(true),
+            project_id: args.project_id,
+            patch: TaskCreatePatch::default(),
+        },
     )
     .await
     .map_err(ApiError::from)
@@ -113,24 +114,24 @@ pub async fn create_task_with_patch(
     state: State<'_, DbState>,
     args: CreateTaskWithPatchArgs,
 ) -> Result<TaskDto, ApiError> {
-    let auto_start = args.auto_start.unwrap_or(true);
-    let patch = TaskCreatePatchInput {
-        status: args.status,
-        done_reason: args.done_reason,
-        priority: args.priority,
-        note: args.note,
-        deadline_at: args.deadline_at,
-        tags: args.tags,
-        links: args.links,
-        custom_fields: args.custom_fields,
-    };
-    TaskRepo::create_with_patch(
+    TaskService::create(
         &state.conn,
-        &args.space_id,
-        &args.title,
-        auto_start,
-        args.project_id.as_deref(),
-        patch,
+        TaskCreateInput {
+            space_id: args.space_id,
+            title: args.title,
+            auto_start: args.auto_start.unwrap_or(true),
+            project_id: args.project_id,
+            patch: TaskCreatePatch {
+                status: args.status,
+                done_reason: args.done_reason,
+                priority: args.priority,
+                note: args.note,
+                deadline_at: args.deadline_at,
+                tags: args.tags,
+                links: args.links,
+                custom_fields: args.custom_fields,
+            },
+        },
     )
     .await
     .map_err(ApiError::from)
@@ -180,8 +181,8 @@ pub struct UpdateTaskPatch {
     pub deleted_at: Option<Option<i64>>,
 }
 
-impl From<UpdateTaskPatch> for RepoTaskUpdatePatch {
-    // 把命令层 DTO 转为 repo 层输入，避免 repo 感知 tauri 参数结构。
+impl From<UpdateTaskPatch> for ServiceTaskUpdatePatch {
+    // 把命令层 DTO 转为 service 层输入，避免底层感知 tauri 参数结构。
     fn from(value: UpdateTaskPatch) -> Self {
         Self {
             title: value.title,
@@ -204,12 +205,13 @@ impl From<UpdateTaskPatch> for RepoTaskUpdatePatch {
 
 #[tauri::command]
 pub async fn update_task(state: State<'_, DbState>, args: UpdateTaskArgs) -> Result<(), ApiError> {
-    // 重点：`id + patch` 模式比长参数函数更稳定、可扩展。
-    let input = TaskUpdateInput {
-        id: args.id,
-        patch: args.patch.into(),
-    };
-    TaskRepo::update(&state.conn, input)
+    TaskService::update(
+        &state.conn,
+        TaskUpdateInput {
+            id: args.id,
+            patch: args.patch.into(),
+        },
+    )
         .await
         .map_err(ApiError::from)
 }
@@ -225,7 +227,7 @@ pub async fn complete_task(
     state: State<'_, DbState>,
     args: CompleteTaskArgs,
 ) -> Result<(), ApiError> {
-    TaskRepo::complete(&state.conn, &args.id)
+    TaskService::complete(&state.conn, &args.id)
         .await
         .map_err(ApiError::from)
 }
@@ -241,7 +243,7 @@ pub async fn delete_tasks(
     state: State<'_, DbState>,
     args: DeleteTasksArgs,
 ) -> Result<usize, ApiError> {
-    TaskRepo::delete_many(&state.conn, &args.ids)
+    TaskService::delete_many(&state.conn, &args.ids)
         .await
         .map_err(ApiError::from)
 }
@@ -257,7 +259,7 @@ pub async fn restore_tasks(
     state: State<'_, DbState>,
     args: RestoreTasksArgs,
 ) -> Result<usize, ApiError> {
-    TaskRepo::restore_many(&state.conn, &args.ids)
+    TaskService::restore_many(&state.conn, &args.ids)
         .await
         .map_err(ApiError::from)
 }
@@ -275,12 +277,7 @@ pub async fn reorder_task(
     state: State<'_, DbState>,
     args: ReorderTaskArgs,
 ) -> Result<(), ApiError> {
-    // 仅修改 rank，其他字段保持不变。
-    let input = TaskUpdateInput {
-        id: args.task_id,
-        patch: RepoTaskUpdatePatch::rank_only(args.new_rank),
-    };
-    TaskRepo::update(&state.conn, input)
+    TaskService::reorder(&state.conn, args.task_id, args.new_rank)
         .await
         .map_err(ApiError::from)
 }
@@ -300,17 +297,7 @@ pub async fn rebalance_ranks(
     state: State<'_, DbState>,
     args: RebalanceRanksArgs,
 ) -> Result<(), ApiError> {
-    // 重点：这里逐条更新，逻辑简单直观；后续可按性能需求改为批量 SQL。
-    let step = args.step.unwrap_or(1024);
-    for (index, task_id) in args.task_ids.iter().enumerate() {
-        let new_rank = (index as i64) * step;
-        let input = TaskUpdateInput {
-            id: task_id.clone(),
-            patch: RepoTaskUpdatePatch::rank_only(new_rank),
-        };
-        TaskRepo::update(&state.conn, input)
-            .await
-            .map_err(ApiError::from)?;
-    }
-    Ok(())
+    TaskService::rebalance(&state.conn, &args.task_ids, args.step.unwrap_or(1024))
+        .await
+        .map_err(ApiError::from)
 }

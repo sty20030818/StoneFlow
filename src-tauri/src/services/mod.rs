@@ -11,6 +11,10 @@ pub mod project_service;
 pub mod sync_service;
 pub mod task_service;
 
+#[allow(unused_imports)]
 pub use project_service::ProjectService;
+#[allow(unused_imports)]
 pub use sync_service::SyncService;
-pub use task_service::TaskService;
+pub use task_service::{
+    TaskCreateInput, TaskCreatePatch, TaskService, TaskUpdateInput, TaskUpdatePatch,
+};

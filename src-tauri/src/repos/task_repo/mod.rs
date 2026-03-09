@@ -28,6 +28,8 @@ pub mod custom_fields;
 pub mod delete;
 pub mod links;
 pub mod list;
+pub mod mutation;
+pub mod query;
 pub mod stats;
 pub mod tags;
 pub mod update;
