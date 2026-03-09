@@ -1,31 +1,30 @@
-import type { Query } from '@tanstack/vue-query'
-
-import { stoneFlowQueryClient } from '@/features/shared'
+import { stoneFlowLegacyQueryClient, useStoneFlowQueryCache } from '@/features/shared'
 
 import { workspaceQueryKeys } from './query-keys'
 
-function byWorkspaceTaskQuery(query: Query): boolean {
-	return workspaceQueryKeys.tasks.isMatch(query.queryKey)
-}
-
-function byWorkspaceProjectQuery(query: Query): boolean {
-	return workspaceQueryKeys.projects.isMatch(query.queryKey)
-}
-
 export async function invalidateWorkspaceTaskQueries() {
-	await stoneFlowQueryClient.invalidateQueries({
-		predicate: byWorkspaceTaskQuery,
-	})
+	const queryCache = useStoneFlowQueryCache()
+	await Promise.all([
+		queryCache.invalidateQueries({
+			key: ['workspace', 'tasks'],
+		}, 'all'),
+		stoneFlowLegacyQueryClient.invalidateQueries({
+			predicate: (query) => workspaceQueryKeys.tasks.isMatch(query.queryKey),
+		}),
+	])
 }
 
 export async function invalidateWorkspaceProjectQueries() {
-	await stoneFlowQueryClient.invalidateQueries({
-		predicate: byWorkspaceProjectQuery,
-	})
-	await stoneFlowQueryClient.refetchQueries({
-		predicate: byWorkspaceProjectQuery,
-		type: 'all',
-	})
+	const queryCache = useStoneFlowQueryCache()
+	await Promise.all([
+		queryCache.invalidateQueries({
+			key: ['workspace', 'projects'],
+		}, 'all'),
+		stoneFlowLegacyQueryClient.invalidateQueries({
+			predicate: (query) => workspaceQueryKeys.projects.isMatch(query.queryKey),
+			refetchType: 'all',
+		}),
+	])
 }
 
 export async function invalidateWorkspaceTaskAndProjectQueries() {

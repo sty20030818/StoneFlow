@@ -1,27 +1,17 @@
-import type { Query } from '@tanstack/vue-query'
-
-import { stoneFlowQueryClient } from '@/features/shared'
-
-import { remoteSyncQueryKeys } from './query-keys'
-
-function byRemoteSyncProfilesQuery(query: Query): boolean {
-	return remoteSyncQueryKeys.profiles.isMatch(query.queryKey)
-}
-
-function byRemoteSyncHistoryQuery(query: Query): boolean {
-	return remoteSyncQueryKeys.history.isMatch(query.queryKey)
-}
+import { useStoneFlowQueryCache } from '@/features/shared'
 
 export async function invalidateRemoteSyncProfilesQueries() {
-	await stoneFlowQueryClient.invalidateQueries({
-		predicate: byRemoteSyncProfilesQuery,
-	})
+	const queryCache = useStoneFlowQueryCache()
+	await queryCache.invalidateQueries({
+		key: ['remote-sync', 'profiles'],
+	}, 'all')
 }
 
 export async function invalidateRemoteSyncHistoryQueries() {
-	await stoneFlowQueryClient.invalidateQueries({
-		predicate: byRemoteSyncHistoryQuery,
-	})
+	const queryCache = useStoneFlowQueryCache()
+	await queryCache.invalidateQueries({
+		key: ['remote-sync', 'history'],
+	}, 'all')
 }
 
 export async function invalidateRemoteSyncQueries() {

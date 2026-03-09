@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery } from '@pinia/colada'
 import { computed } from 'vue'
 
 import { useRemoteSyncStore } from '@/stores/remote-sync'
@@ -23,8 +23,8 @@ export function useRemoteSyncHistoryQuery() {
 	const remoteSyncStore = useRemoteSyncStore()
 
 	const query = useQuery<RemoteSyncHistoryItem[]>({
-		queryKey: remoteSyncQueryKeys.history.list(),
-		queryFn: async () => {
+		key: remoteSyncQueryKeys.history.list(),
+		query: async () => {
 			await ensureRemoteSyncStoreLoaded(remoteSyncStore)
 			return remoteSyncStore.syncHistory.map(cloneSyncHistoryItem)
 		},

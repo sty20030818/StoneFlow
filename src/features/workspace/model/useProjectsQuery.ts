@@ -1,40 +1,42 @@
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import type { Ref } from 'vue'
+import { useQuery } from '@pinia/colada'
+import { toValue, type MaybeRefOrGetter } from 'vue'
 
 import { listWorkspaceProjects } from '../queries'
+import type { WorkspaceProject } from './types'
+import { useStoneFlowQueryCache } from '@/features/shared'
 import { workspaceQueryKeys, type WorkspaceProjectListScope } from './query-keys'
 
-export interface UseProjectsQueryOptions {
-	spaceId: string | Ref<string>
-	enabled?: boolean | Ref<boolean>
+export type UseProjectsQueryOptions = {
+	spaceId: MaybeRefOrGetter<string>
+	enabled?: MaybeRefOrGetter<boolean>
 	staleTime?: number
 }
 
 export function useProjectsQuery(options: UseProjectsQueryOptions) {
-	const spaceId = typeof options.spaceId === 'string' ? options.spaceId : options.spaceId.value
-	const enabled = typeof options.enabled === 'boolean' ? options.enabled : (options.enabled?.value ?? true)
-
 	return useQuery({
-		queryKey: workspaceQueryKeys.projects.list({ spaceId }),
-		queryFn: () => listWorkspaceProjects(spaceId),
-		enabled,
+		key: () => workspaceQueryKeys.projects.list({ spaceId: toValue(options.spaceId) }),
+		query: () => listWorkspaceProjects(toValue(options.spaceId)),
+		enabled: () => toValue(options.enabled) ?? true,
 		staleTime: options.staleTime ?? 5 * 60 * 1000,
 		gcTime: 10 * 60 * 1000,
 	})
 }
 
 export function useProjectsMutations() {
-	const queryClient = useQueryClient()
+	const queryCache = useStoneFlowQueryCache()
 
 	const invalidateProjects = async (scope: WorkspaceProjectListScope) => {
-		await queryClient.invalidateQueries({
-			queryKey: workspaceQueryKeys.projects.list(scope),
+		await queryCache.invalidateQueries({
+			key: workspaceQueryKeys.projects.list(scope),
 			exact: true,
-		})
+		}, 'all')
 	}
 
-	const setProjectsData = (scope: WorkspaceProjectListScope, data: any) => {
-		queryClient.setQueryData(workspaceQueryKeys.projects.list(scope), data)
+	const setProjectsData = (
+		scope: WorkspaceProjectListScope,
+		data: WorkspaceProject[] | ((oldData: WorkspaceProject[] | undefined) => WorkspaceProject[]),
+	) => {
+		queryCache.setQueryData(workspaceQueryKeys.projects.list(scope), data)
 	}
 
 	return {

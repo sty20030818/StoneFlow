@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/vue-query'
+import { useQuery } from '@pinia/colada'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
 import { listWorkspaceTasks, type ListWorkspaceTasksArgs } from '../queries'
@@ -37,19 +37,19 @@ export function useWorkspaceTaskBoardQuery(
 	}))
 
 	const todoQuery = useQuery<WorkspaceTask[]>({
-		queryKey: computed(() => workspaceQueryKeys.tasks.list(todoScope.value)),
-		queryFn: async () => {
+		key: () => workspaceQueryKeys.tasks.list(todoScope.value),
+		query: async () => {
 			return await listWorkspaceTasks(toTaskListArgs(todoScope.value))
 		},
-		placeholderData: keepPreviousData,
+		placeholderData: (previousData) => previousData,
 	})
 
 	const doneQuery = useQuery<WorkspaceTask[]>({
-		queryKey: computed(() => workspaceQueryKeys.tasks.list(doneScope.value)),
-		queryFn: async () => {
+		key: () => workspaceQueryKeys.tasks.list(doneScope.value),
+		query: async () => {
 			return await listWorkspaceTasks(toTaskListArgs(doneScope.value))
 		},
-		placeholderData: keepPreviousData,
+		placeholderData: (previousData) => previousData,
 	})
 
 	const loading = computed(() => todoQuery.isLoading.value || doneQuery.isLoading.value)
