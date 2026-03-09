@@ -5,6 +5,9 @@ pub(super) enum UpsertDecision {
     ConflictSkip,
 }
 
+/// 读取冲突保护开关。
+///
+/// 默认开启，只有显式配置关闭时才允许旧数据覆盖较新的目标端数据。
 pub(super) fn is_conflict_guard_enabled() -> bool {
     match std::env::var("STONEFLOW_SYNC_CONFLICT_GUARD") {
         Ok(raw) => {
@@ -15,6 +18,7 @@ pub(super) fn is_conflict_guard_enabled() -> bool {
     }
 }
 
+/// 根据目标端已有版本和输入记录版本，决定这次写入应该走哪条路径。
 pub(super) fn decide_upsert(
     existing_updated_at: Option<i64>,
     incoming_updated_at: i64,

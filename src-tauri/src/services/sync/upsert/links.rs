@@ -1,3 +1,8 @@
+//! `links` 主表同步。
+//!
+//! 链接表虽然体量不大，但也遵循主表统一策略：
+//! 增量读取、比较版本、最后 upsert 到目标端。
+
 use std::collections::HashMap;
 
 use sea_orm::{
@@ -13,6 +18,7 @@ use crate::services::sync::{
 
 use super::SyncDirection;
 
+/// 同步 `links` 表。
 pub(super) async fn sync(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
@@ -20,6 +26,7 @@ pub(super) async fn sync(
     conflict_guard_enabled: bool,
     direction: SyncDirection,
 ) -> Result<UpsertStats, SyncError> {
+    // 只同步更新时间晚于水位的链接记录。
     let source_items = Links::find()
         .filter(links::Column::UpdatedAt.gt(since_ms))
         .all(source_db)
@@ -27,6 +34,7 @@ pub(super) async fn sync(
         .map_err(|error| SyncError::source_read(direction.as_str(), "Links", error))?;
 
     let total = source_items.len();
+    // 目标端已有版本号用于保护较新的数据不被回写覆盖。
     let existing_versions: HashMap<String, i64> = if source_items.is_empty() {
         HashMap::new()
     } else {
@@ -67,6 +75,7 @@ pub(super) async fn sync(
             }
         }
 
+        // 链接标题、URL、排序、kind 都允许通过 upsert 覆盖。
         let active_model: links::ActiveModel = item.into();
         links::Entity::insert(active_model)
             .on_conflict(

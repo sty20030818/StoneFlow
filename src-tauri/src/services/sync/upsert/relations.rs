@@ -1,3 +1,8 @@
+//! 关系表同步。
+//!
+//! 当前这些表都没有 `updated_at`，因此没法做真正的增量覆盖。
+//! 当前策略选择“全量读取 + 主键去重插入”，优先保证实现简单和结果幂等。
+
 use sea_orm::{sea_query::OnConflict, DatabaseConnection, EntityTrait};
 
 use crate::db::entities::{
@@ -8,11 +13,13 @@ use crate::services::sync::{error::SyncError, report::DedupStats};
 
 use super::{RelationSyncStats, SyncDirection};
 
+/// 同步所有关系表。
 pub(super) async fn sync(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
 ) -> Result<RelationSyncStats, SyncError> {
+    // 这里串行执行是为了让统计逻辑和错误定位更直接。
     Ok(RelationSyncStats {
         task_tags: sync_task_tags(source_db, target_db, direction).await?,
         task_links: sync_task_links(source_db, target_db, direction).await?,
@@ -21,11 +28,13 @@ pub(super) async fn sync(
     })
 }
 
+/// 同步任务与标签的关联关系。
 async fn sync_task_tags(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
     direction: SyncDirection,
 ) -> Result<DedupStats, SyncError> {
+    // 关系表没有版本列，所以直接全量取出源端数据。
     let source_items = TaskTags::find()
         .all(source_db)
         .await
@@ -36,6 +45,7 @@ async fn sync_task_tags(
         ..Default::default()
     };
     for item in source_items {
+        // 复合主键冲突时直接忽略，保证多次同步是幂等的。
         let active_model: task_tags::ActiveModel = item.into();
         let inserted = task_tags::Entity::insert(active_model)
             .on_conflict(
@@ -52,6 +62,7 @@ async fn sync_task_tags(
     Ok(stats)
 }
 
+/// 同步任务与链接的关联关系。
 async fn sync_task_links(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
@@ -83,6 +94,7 @@ async fn sync_task_links(
     Ok(stats)
 }
 
+/// 同步项目与标签的关联关系。
 async fn sync_project_tags(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
@@ -114,6 +126,7 @@ async fn sync_project_tags(
     Ok(stats)
 }
 
+/// 同步项目与链接的关联关系。
 async fn sync_project_links(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,

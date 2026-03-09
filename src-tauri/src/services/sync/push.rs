@@ -1,3 +1,10 @@
+//! Push 编排入口。
+//!
+//! 它和 `pull.rs` 基本对称，但方向相反：
+//! - 数据源变成本地
+//! - 目标端变成远端
+//! - 水位改读写 `last_pushed_at`
+
 use sea_orm::DatabaseConnection;
 
 use super::{
@@ -9,17 +16,21 @@ use super::{
     watermarks,
 };
 
+/// 执行一次完整的 push 流程。
+///
+/// 它和 pull 共用统计结构，但数据方向和水位语义相反。
 pub(super) async fn push(
     local_db: &DatabaseConnection,
     database_url: &str,
 ) -> Result<super::SyncCommandReport, SyncError> {
     let remote_db = connection::get_remote_db(database_url).await?;
     let current_sync_start = chrono::Utc::now().timestamp_millis();
+    // push 的增量起点记录在本地，因为本地知道自己上次推送到了哪里。
     let last_pushed_at = watermarks::read_last_pushed_at(local_db).await?;
     let conflict_guard_enabled = helpers::is_conflict_guard_enabled();
 
-    let mut stats = SyncRunStats::default();
-    stats.spaces = upsert::sync_spaces(
+    // 同样先推主表，再推 append-only 和关系表，保证引用顺序稳定。
+    let spaces = upsert::sync_spaces(
         local_db,
         &remote_db,
         last_pushed_at,
@@ -27,7 +38,7 @@ pub(super) async fn push(
         SyncDirection::Push,
     )
     .await?;
-    stats.projects = upsert::sync_projects(
+    let projects = upsert::sync_projects(
         local_db,
         &remote_db,
         last_pushed_at,
@@ -36,6 +47,13 @@ pub(super) async fn push(
     )
     .await?;
 
+    let mut stats = SyncRunStats {
+        spaces,
+        projects,
+        ..Default::default()
+    };
+
+    // append-only 表只关心“有没有重复插入”，不做版本覆盖。
     let append_only =
         upsert::sync_append_only(local_db, &remote_db, last_pushed_at, SyncDirection::Push).await?;
     stats.tags = append_only.tags;
@@ -58,12 +76,14 @@ pub(super) async fn push(
     )
     .await?;
 
+    // 关系表沿用全量 + 去重策略，当前实现更简单也更稳。
     let relations = upsert::sync_relations(local_db, &remote_db, SyncDirection::Push).await?;
     stats.task_tags = relations.task_tags;
     stats.task_links = relations.task_links;
     stats.project_tags = relations.project_tags;
     stats.project_links = relations.project_links;
 
+    // 只有整轮 push 成功，才写入新的 push 水位。
     watermarks::write_last_pushed_at(local_db, current_sync_start).await?;
 
     Ok(stats.into_command_report(current_sync_start, conflict_guard_enabled))
