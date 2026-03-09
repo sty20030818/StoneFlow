@@ -164,6 +164,39 @@ export default [
 		},
 	},
 
+	// 套件迁移边界：禁止继续依赖旧 settings 路径，并阻断套件外穿透内部实现
+	{
+		files: ['src/**/*.{ts,tsx,vue}'],
+		ignores: ['src/features/settings/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: [
+								'@/features/settings-core',
+								'@/features/settings-core/*',
+								'@/features/settings-core/**',
+								'@/features/settings-about',
+								'@/features/settings-about/*',
+								'@/features/settings-about/**',
+								'@/features/remote-sync',
+								'@/features/remote-sync/*',
+								'@/features/remote-sync/**',
+							],
+							message: '旧 settings feature 已废弃，请改用 @/features/settings 公开入口。',
+						},
+						{
+							regex: '^@/features/settings/(?!index(?:\\.ts)?$).+',
+							message: '套件外禁止直接导入 settings 内部实现，请改用 @/features/settings 公开入口。',
+						},
+					],
+				},
+			],
+		},
+	},
+
 	// 大页面 index 迁移后：禁止回流到页面 partials
 	{
 		files: [

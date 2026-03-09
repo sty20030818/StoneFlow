@@ -225,13 +225,15 @@
 </template>
 
 <script setup lang="ts">
-	import RemoteSyncActionsCard from '@/features/remote-sync/ui/partials/RemoteSyncActionsCard.vue'
-	import RemoteSyncCreateForm from '@/features/remote-sync/ui/partials/RemoteSyncCreateForm.vue'
-	import RemoteSyncDeleteBody from '@/features/remote-sync/ui/partials/RemoteSyncDeleteBody.vue'
-	import RemoteSyncEditForm from '@/features/remote-sync/ui/partials/RemoteSyncEditForm.vue'
-	import RemoteSyncImportForm from '@/features/remote-sync/ui/partials/RemoteSyncImportForm.vue'
-	import RemoteSyncProfilesCard from '@/features/remote-sync/ui/partials/RemoteSyncProfilesCard.vue'
-	import { useRemoteSyncPageFacade } from '@/features/remote-sync'
+	import {
+		RemoteSyncActionsCard,
+		RemoteSyncCreateForm,
+		RemoteSyncDeleteBody,
+		RemoteSyncEditForm,
+		RemoteSyncImportForm,
+		RemoteSyncProfilesCard,
+		useRemoteSyncPageFacade,
+	} from '@/features/settings'
 
 	const {
 		t,

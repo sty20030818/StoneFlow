@@ -193,7 +193,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { ref } from 'vue'
 
-	import { SettingsSectionCard } from '@/features/settings-core'
+	import { SettingsSectionCard } from '../../../shared'
 	const { t } = useI18n({ useScope: 'global' })
 
 	defineProps<{

@@ -36,7 +36,7 @@
 	import DOMPurify from 'dompurify'
 	import { createMarkdownExit } from 'markdown-exit'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import { SettingsSectionCard } from '@/features/settings-core'
+	import { SettingsSectionCard } from '../../../shared'
 
 	type ChangelogEntry = {
 		version: string

@@ -82,7 +82,7 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import { SettingsSectionCard } from '@/features/settings-core'
+	import { SettingsSectionCard } from '../../../shared'
 	import type { RemoteDbProfile } from '@/types/shared/remote-sync'
 
 	const profileItemHoverMotion = useCardHoverMotionPreset()

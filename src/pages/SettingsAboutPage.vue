@@ -67,7 +67,7 @@
 		AboutLegalSection,
 		AboutLinksSection,
 		useSettingsAboutPage,
-	} from '@/features/settings-about'
+	} from '@/features/settings'
 
 	const {
 		state,

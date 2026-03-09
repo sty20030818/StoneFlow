@@ -49,6 +49,10 @@ export default {
 			title: '设置',
 			description: '应用偏好设置',
 		},
+		settingsCore: {
+			title: '核心设置',
+			description: '语言与基础应用偏好',
+		},
 		settingsAbout: {
 			title: '关于',
 			description: '版本、更新与应用信息',
@@ -109,6 +113,10 @@ export default {
 		settings: {
 			title: '设置',
 			description: '管理应用配置与关于信息',
+			core: {
+				title: '核心',
+				description: '语言与基础偏好',
+			},
 			about: {
 				title: '关于',
 				description: '版本、更新、下载与链接',
@@ -759,6 +767,11 @@ export default {
 		},
 	},
 	settings: {
+		core: {
+			title: '核心设置',
+			description: '集中管理当前设备上的基础偏好设置。',
+			intro: '这里收拢会影响整个应用体验的基础设置，后续新增通用偏好也默认放在这里。',
+		},
 		about: {
 			header: {
 				subtitle: '像 IDE 一样顺手的任务与项目系统',

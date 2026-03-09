@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 	import { useSettingsLocaleControl } from '../../composables/useSettingsLocaleControl'
-	import SettingsSectionCard from './SettingsSectionCard.vue'
+	import { SettingsSectionCard } from '../../../shared'
 
 	const { appNuxtUiLocales, selectedLocale, t } = useSettingsLocaleControl()
 </script>

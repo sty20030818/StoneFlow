@@ -4,12 +4,13 @@ import { useI18n } from 'vue-i18n'
 
 import { APP_BUILD_NUMBER } from '@/config/app-meta'
 import { useUpdater } from '@/composables/useUpdater'
-import { useSettingsSystemActions } from '@/features/settings-core'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { formatRelativeDistance } from '@/utils/time'
 import { getIdentifier, getName, getVersion } from '@tauri-apps/api/app'
 import { appLocalDataDir, executableDir } from '@tauri-apps/api/path'
-import changelogSource from '../../../../changelog/changelog.md?raw'
+import changelogSource from '../../../../../changelog/changelog.md?raw'
+
+import { useSettingsSystemActions } from '../../shared'
 
 import { ABOUT_LINKS, CHANGELOG_URL, LICENSE_URL, PRIVACY_URL, RELEASE_PAGE_URL } from '../config'
 

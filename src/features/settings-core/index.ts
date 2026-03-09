@@ -1,5 +1,0 @@
-export { useSettingsSystemActions } from './composables/useSettingsSystemActions'
-export { useSettingsLocaleControl } from './composables/useSettingsLocaleControl'
-export { useSettingsNav } from './composables/useSettingsNav'
-export { SettingsLocaleCard, SettingsNavCard, SettingsSectionCard } from './ui'
-export type { SettingsNavConfigItem, SettingsNavId, SettingsNavItem } from './config'

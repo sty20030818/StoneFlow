@@ -49,6 +49,10 @@ export default {
 			title: 'Settings',
 			description: 'App preferences',
 		},
+		settingsCore: {
+			title: 'Core Settings',
+			description: 'Language and base app preferences',
+		},
 		settingsAbout: {
 			title: 'About',
 			description: 'Version, updates, and app information',
@@ -109,6 +113,10 @@ export default {
 		settings: {
 			title: 'Settings',
 			description: 'Manage app config and about info',
+			core: {
+				title: 'Core',
+				description: 'Language and base preferences',
+			},
 			about: {
 				title: 'About',
 				description: 'Version, updates, downloads, and links',
@@ -759,6 +767,11 @@ export default {
 		},
 	},
 	settings: {
+		core: {
+			title: 'Core Settings',
+			description: 'Manage the base preferences that affect the whole app on this device.',
+			intro: 'This page gathers the foundational settings for the app experience. Future global preferences should land here by default.',
+		},
 		about: {
 			header: {
 				subtitle: 'A task and project system that feels like your IDE',
