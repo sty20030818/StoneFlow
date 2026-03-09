@@ -10,7 +10,7 @@
 mod complete;
 mod create;
 mod delete;
-pub mod dto;
+mod dto;
 mod helpers;
 mod reorder;
 mod update;

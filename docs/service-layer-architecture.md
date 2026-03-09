@@ -70,7 +70,8 @@
 ### Task
 
 - `commands/tasks.rs`：命令边界
-- `services/task_service.rs`：任务写用例
+- `services/task/`：任务写用例目录模块
+- `services/task/create.rs` `update.rs` `complete.rs` `delete.rs` `reorder.rs`：任务用例入口
 - `repos/task_repo/query.rs`：任务读取原语
 - `repos/task_repo/mutation.rs`：任务主表写入原语
 - `repos/task_repo/tags.rs` `links.rs` `custom_fields.rs`：关联数据同步原语
@@ -81,7 +82,8 @@
 ### Project
 
 - `commands/projects.rs`：命令边界
-- `services/project_service.rs`：项目写用例
+- `services/project/`：项目写用例目录模块
+- `services/project/create.rs` `update.rs` `delete_subtree.rs` `archive.rs` `restore.rs` `reorder.rs`：项目用例入口
 - `repos/project_repo/query.rs`：项目读取原语
 - `repos/project_repo/mutation.rs`：项目主表写入原语
 - `repos/project_repo/helpers.rs`：路径重建、DTO 填充等辅助逻辑
@@ -91,7 +93,10 @@
 ### Sync
 
 - `commands/sync.rs`：参数和错误边界
-- `services/sync_service.rs`：拉取、推送、连接测试
+- `services/sync/pull.rs` `push.rs`：同步流程编排
+- `services/sync/connection.rs` `watermarks.rs` `report.rs`：同步支撑模块
+- `services/sync/upsert/*`：分表或表组同步逻辑
+- `services/sync/error.rs`：同步结构化错误边界
 
 同步逻辑不再停留在 command 中。
 
@@ -116,4 +121,4 @@
 - 兼容旧 repo 入口的策略
 - 临时测试文件保留约定
 
-后续如果继续演进，应该直接修改最终态设计，而不是重新引入兼容层。
+未来如果继续演进，应该直接修改最终态设计，而不是重新引入兼容层。

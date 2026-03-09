@@ -81,7 +81,7 @@ impl TaskRepository for TaskRepo {
 ### 步骤3: Service 依赖 Trait
 
 ```rust
-// src-tauri/src/services/task_service.rs
+// src-tauri/src/services/task/mod.rs
 use std::sync::Arc;
 use crate::repos::traits::TaskRepository;
 

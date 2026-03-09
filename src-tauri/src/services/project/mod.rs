@@ -6,7 +6,7 @@
 mod archive;
 mod create;
 mod delete_subtree;
-pub mod dto;
+mod dto;
 mod helpers;
 mod reorder;
 mod restore;

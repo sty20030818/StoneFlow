@@ -6,7 +6,7 @@
 //! - `upsert/*` 负责各表或表组的实际同步写入
 
 mod connection;
-pub mod dto;
+mod dto;
 mod error;
 mod helpers;
 mod pull;

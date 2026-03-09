@@ -59,8 +59,9 @@ stoneflow/
 │   │   │   ├── project_repo/
 │   │   │   └── ...
 │   │   ├── services/              # 服务层
-│   │   │   ├── task_service.rs
-│   │   │   ├── task_service_tests.rs
+│   │   │   ├── task/
+│   │   │   ├── project/
+│   │   │   ├── sync/
 │   │   │   └── ...
 │   │   ├── types/                 # 类型定义
 │   │   │   ├── dto.rs
@@ -186,7 +187,7 @@ Tauri IPC (invoke)
     ↓
 Command Layer (commands/projects.rs)
     ↓
-Service Layer (services/project_service.rs)
+Service Layer (services/project/)
     ↓
 Repository Layer (repos/project_repo.rs)
     ↓
@@ -208,7 +209,7 @@ Tauri IPC (invoke)
     ↓
 Command Layer (commands/projects.rs)
     ↓
-Service Layer (services/project_service.rs)
+Service Layer (services/project/)
     ↓
 Transaction Begin
     ↓

@@ -1,11 +1,11 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UpsertDecision {
+pub(super) enum UpsertDecision {
     Insert,
     Update,
     ConflictSkip,
 }
 
-pub fn is_conflict_guard_enabled() -> bool {
+pub(super) fn is_conflict_guard_enabled() -> bool {
     match std::env::var("STONEFLOW_SYNC_CONFLICT_GUARD") {
         Ok(raw) => {
             let normalized = raw.trim().to_ascii_lowercase();
@@ -15,7 +15,7 @@ pub fn is_conflict_guard_enabled() -> bool {
     }
 }
 
-pub fn decide_upsert(
+pub(super) fn decide_upsert(
     existing_updated_at: Option<i64>,
     incoming_updated_at: i64,
     guard_enabled: bool,
