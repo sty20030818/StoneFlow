@@ -4,5 +4,6 @@
 export * from './useWorkspaceProjectBreadcrumb'
 export * from './useWorkspaceProjectTasks'
 export * from './useWorkspaceProjectView'
+export * from './useSpaceProjectsState'
 export * from './useWorkspaceTaskSnapshotState'
 export * from './useWorkspaceTaskActions'

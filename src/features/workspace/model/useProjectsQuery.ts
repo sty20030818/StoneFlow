@@ -6,20 +6,58 @@ import type { WorkspaceProject } from './types'
 import { useStoneFlowQueryCache } from '@/features/shared'
 import { workspaceQueryKeys, type WorkspaceProjectListScope } from './query-keys'
 
+const PROJECTS_QUERY_STALE_TIME = 5 * 60 * 1000
+const PROJECTS_QUERY_GC_TIME = 10 * 60 * 1000
+
 export type UseProjectsQueryOptions = {
 	spaceId: MaybeRefOrGetter<string>
 	enabled?: MaybeRefOrGetter<boolean>
 	staleTime?: number
 }
 
+function createProjectsScope(spaceId: string): WorkspaceProjectListScope {
+	return { spaceId }
+}
+
+function createProjectsListQueryOptions(spaceId: string, staleTime = PROJECTS_QUERY_STALE_TIME) {
+	return {
+		key: workspaceQueryKeys.projects.list(createProjectsScope(spaceId)),
+		query: () => listWorkspaceProjects(spaceId),
+		enabled: true,
+		staleTime,
+		gcTime: PROJECTS_QUERY_GC_TIME,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: true,
+		refetchOnMount: true,
+	}
+}
+
 export function useProjectsQuery(options: UseProjectsQueryOptions) {
-	return useQuery({
-		key: () => workspaceQueryKeys.projects.list({ spaceId: toValue(options.spaceId) }),
-		query: () => listWorkspaceProjects(toValue(options.spaceId)),
-		enabled: () => toValue(options.enabled) ?? true,
-		staleTime: options.staleTime ?? 5 * 60 * 1000,
-		gcTime: 10 * 60 * 1000,
-	})
+	return useQuery(() => ({
+		...createProjectsListQueryOptions(toValue(options.spaceId), options.staleTime),
+		enabled: toValue(options.enabled) ?? true,
+	}))
+}
+
+export function getWorkspaceProjectsSnapshot(spaceId: string): WorkspaceProject[] {
+	const queryCache = useStoneFlowQueryCache()
+	return queryCache.getQueryData<WorkspaceProject[]>(workspaceQueryKeys.projects.list(createProjectsScope(spaceId))) ?? []
+}
+
+export async function refreshWorkspaceProjectsQuery(spaceId: string, options: { force?: boolean } = {}) {
+	const queryCache = useStoneFlowQueryCache()
+	const queryOptions = createProjectsListQueryOptions(spaceId)
+	const entry = queryCache.ensure(queryOptions)
+
+	if (options.force) {
+		return await queryCache.fetch(entry, queryOptions)
+	}
+
+	return await queryCache.refresh(entry, queryOptions)
+}
+
+export async function warmupWorkspaceProjectsQuery(spaceId: string) {
+	await refreshWorkspaceProjectsQuery(spaceId)
 }
 
 export function useProjectsMutations() {
@@ -27,7 +65,7 @@ export function useProjectsMutations() {
 
 	const invalidateProjects = async (scope: WorkspaceProjectListScope) => {
 		await queryCache.invalidateQueries({
-			key: workspaceQueryKeys.projects.list(scope),
+			key: workspaceQueryKeys.projects.list(createProjectsScope(scope.spaceId)),
 			exact: true,
 		}, 'all')
 	}

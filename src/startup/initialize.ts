@@ -2,6 +2,7 @@ import { readonly, ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import { SPACE_IDS } from '@/config/space'
+import { warmupWorkspaceProjectsQuery } from '@/features/workspace'
 import {
 	resolveLaunchHashTarget,
 	toLibraryRouteTarget,
@@ -9,7 +10,6 @@ import {
 	type StartupRouteTarget,
 } from '@/startup/route-memory-policy'
 import { useProjectTreeStore } from '@/stores/project-tree'
-import { useProjectsStore } from '@/stores/projects'
 import { useSettingsStore } from '@/stores/settings'
 import { useViewStateStore } from '@/stores/view-state'
 
@@ -93,7 +93,6 @@ export async function initializeAppStartup(router: Router, options: InitializeSt
 	startupPromise = (async () => {
 		startupReady.value = false
 		const settingsStore = useSettingsStore()
-		const projectsStore = useProjectsStore()
 		const viewStateStore = useViewStateStore()
 		const projectTreeStore = useProjectTreeStore()
 
@@ -119,7 +118,7 @@ export async function initializeAppStartup(router: Router, options: InitializeSt
 			settingsStore.load(),
 			viewStateStore.load(),
 			projectTreeStore.load(),
-			projectsStore.load(visibleSpaceId),
+			warmupWorkspaceProjectsQuery(visibleSpaceId),
 		])
 	})().finally(() => {
 		startupPromise = null

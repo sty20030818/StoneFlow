@@ -167,7 +167,7 @@
 
 <script setup lang="ts">
 	import { watchDebounced, watchThrottled } from '@vueuse/core'
-	import { computed, inject, onMounted, ref } from 'vue'
+	import { computed, inject, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useRoute } from 'vue-router'
 
@@ -175,13 +175,12 @@
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import BrandLogo from '@/components/BrandLogo.vue'
-	import { DraggableProjectTree, type ProjectTreeItem } from '@/features/workspace'
+	import { DraggableProjectTree, type ProjectTreeItem, useSpaceProjectsState } from '@/features/workspace'
 	import UserCard from '@/components/UserCard.vue'
 	import { LIBRARY_NAV_ITEMS, PAGE_NAV_CONFIG } from '@/config/page-nav'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 	import { useProjectTreeStore } from '@/stores/project-tree'
-	import { useProjectsStore } from '@/stores/projects'
 	import { useViewStateStore } from '@/stores/view-state'
 	const props = defineProps<{
 		space?: string | null
@@ -259,15 +258,14 @@
 	const allTasksNav = PAGE_NAV_CONFIG.allTasks
 	const trashNav = PAGE_NAV_CONFIG.trash
 
-	const projectsStore = useProjectsStore()
-
 	// 通过 inject 获取全局的创建项目弹窗控制函数
 	const openCreateProjectModal = inject(OPEN_CREATE_PROJECT_MODAL_KEY)
 
-	const currentProjects = computed(() => projectsStore.getProjectsOfSpace(spaceValue.value))
+	const projectsQuery = useSpaceProjectsState(spaceValue)
+	const currentProjects = computed(() => projectsQuery.projects.value)
 	const defaultProject = computed(() => currentProjects.value.find((p) => isDefaultProjectId(p.id)) ?? null)
-	const isProjectsLoaded = computed(() => projectsStore.isSpaceLoaded(spaceValue.value))
-	const isProjectsLoading = computed(() => projectsStore.isSpaceLoading(spaceValue.value))
+	const isProjectsLoaded = computed(() => projectsQuery.isLoaded.value)
+	const isProjectsLoading = computed(() => projectsQuery.isLoading.value)
 
 	/**
 	 * 构建项目树（用于嵌套拖拽）
@@ -370,27 +368,11 @@
 		}
 	})
 
-	async function loadProjects(force = false) {
-		if (force) {
-			await projectsStore.load(spaceValue.value, { force: true })
-		} else {
-			await projectsStore.ensureLoaded(spaceValue.value)
-		}
-	}
-
 	function handleOpenCreateProjectModal() {
 		if (openCreateProjectModal) {
 			openCreateProjectModal(spaceValue.value)
 		}
 	}
-
-	watchDebounced(
-		spaceValue,
-		() => {
-			void loadProjects()
-		},
-		{ debounce: 80, maxWait: 240 },
-	)
 
 	// 路由驱动祖先展开：目标变化即应用；树延迟加载后会基于同一目标补偿应用。
 	watchDebounced(
@@ -411,10 +393,6 @@
 			maxWait: 160,
 		},
 	)
-
-	onMounted(() => {
-		void loadProjects()
-	})
 </script>
 
 <style scoped>

@@ -6,13 +6,13 @@ import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { OPEN_CREATE_TASK_MODAL_KEY, WORKSPACE_BREADCRUMB_ITEMS_KEY } from '@/app/injection-keys'
 import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
-import { useProjectsStore } from '@/stores/projects'
 import { useSettingsStore } from '@/stores/settings'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { useWorkspaceEditStore, type WorkspaceEditCommand } from '@/stores/workspace-edit'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { invalidateWorkspaceTaskAndProjectQueries, type WorkspaceTask } from '../model'
 import { deleteWorkspaceTasks } from '../mutations'
+import { useSpaceProjectsState } from './useSpaceProjectsState'
 import { useWorkspaceProjectBreadcrumb } from './useWorkspaceProjectBreadcrumb'
 import { useWorkspaceProjectTasks } from './useWorkspaceProjectTasks'
 
@@ -34,7 +34,6 @@ export function useWorkspaceProjectView() {
 	const route = useRoute()
 	const { t } = useI18n({ useScope: 'global' })
 	const routeProjectId = useNullableStringRouteQuery('project')
-	const projectsStore = useProjectsStore()
 	const settingsStore = useSettingsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
 	const projectInspectorStore = useProjectInspectorStore()
@@ -54,6 +53,12 @@ export function useWorkspaceProjectView() {
 	})
 	const collapseResetKey = computed(() => `${route.path}|${spaceId.value ?? 'all'}|${projectId.value ?? 'none'}`)
 	const showSpaceLabel = computed(() => !spaceId.value)
+	const projectsState = useSpaceProjectsState(
+		computed(() => spaceId.value ?? 'work'),
+		{
+		enabled: computed(() => Boolean(spaceId.value)),
+		},
+	)
 
 	const { loading, todo, doneAll, refresh, onComplete } = useWorkspaceProjectTasks(taskSpaceId, projectId)
 
@@ -155,16 +160,13 @@ export function useWorkspaceProjectView() {
 	const currentProject = computed(() => {
 		const currentProjectId = projectId.value
 		if (!currentProjectId || !spaceId.value) return null
-		const projects = projectsStore.getProjectsOfSpace(spaceId.value)
-		return projects.find((project) => project.id === currentProjectId) ?? null
+		return projectsState.projects.value.find((project) => project.id === currentProjectId) ?? null
 	})
 
 	watchDebounced(
 		() => [route.params.spaceId, routeProjectId.value],
 		() => {
 			exitEditMode()
-			if (!spaceId.value) return
-			void projectsStore.load(spaceId.value)
 		},
 		{
 			immediate: true,
@@ -207,8 +209,7 @@ export function useWorkspaceProjectView() {
 	)
 
 	const projectsList = computed(() => {
-		if (!spaceId.value) return []
-		return projectsStore.getProjectsOfSpace(spaceId.value)
+		return projectsState.projects.value
 	})
 	const breadcrumbItems = useWorkspaceProjectBreadcrumb(spaceId, projectId, projectsList)
 	provide(WORKSPACE_BREADCRUMB_ITEMS_KEY, breadcrumbItems)

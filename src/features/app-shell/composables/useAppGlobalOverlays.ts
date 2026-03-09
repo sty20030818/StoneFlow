@@ -13,9 +13,9 @@ import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 import { createModalLayerUi } from '@/config/ui-layer'
 import type { CreateFlowProject, CreateFlowTask } from '@/features/create-flow'
+import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, useSpaceProjectsState } from '@/features/workspace'
 import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
 import { useProjectTreeStore } from '@/stores/project-tree'
-import { useProjectsStore } from '@/stores/projects'
 import { useSettingsStore } from '@/stores/settings'
 
 export function useAppGlobalOverlays() {
@@ -31,7 +31,6 @@ export function useAppGlobalOverlays() {
 
 	const settingsStore = useSettingsStore()
 	const projectTreeStore = useProjectTreeStore()
-	const projectsStore = useProjectsStore()
 	const inlineCreateFocusStore = useInlineCreateFocusStore()
 	const commandPaletteModalUi = createModalLayerUi({
 		content: 'p-0',
@@ -42,9 +41,8 @@ export function useAppGlobalOverlays() {
 		return settingsStore.settings.activeSpaceId ?? 'work'
 	})
 
-	const currentProjects = computed<CreateFlowProject[]>(() => {
-		return projectsStore.getProjectsOfSpace(currentSpaceId.value)
-	})
+	const { projects: currentSpaceProjects } = useSpaceProjectsState(currentSpaceId)
+	const currentProjects = computed<CreateFlowProject[]>(() => currentSpaceProjects.value)
 
 	const currentRouteProjectId = computed<string | undefined>(() => {
 		return routeProjectId.value ?? undefined
@@ -117,7 +115,7 @@ export function useAppGlobalOverlays() {
 		if (settingsStore.settings.activeSpaceId !== targetSpaceId) {
 			await settingsStore.update({ activeSpaceId: targetSpaceId })
 		}
-		await projectsStore.load(targetSpaceId, { force: true })
+		await refreshWorkspaceProjectsQuery(targetSpaceId, { force: true })
 		await router.push({
 			path: `/space/${targetSpaceId}`,
 			query: { project: project.id },
@@ -125,7 +123,7 @@ export function useAppGlobalOverlays() {
 		await projectTreeStore.ensureProjectVisible(
 			targetSpaceId,
 			project.id,
-			projectsStore.getProjectsOfSpace(targetSpaceId),
+			getWorkspaceProjectsSnapshot(targetSpaceId),
 		)
 	}
 

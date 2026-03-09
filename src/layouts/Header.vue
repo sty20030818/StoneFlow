@@ -207,11 +207,10 @@
 	import { DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useSettingsNav } from '@/features/settings-core'
+	import { type WorkspaceProject, useSpaceProjectsState } from '@/features/workspace'
 	import { getPageNavByPath } from '@/config/page-nav'
-	import type { WorkspaceProject } from '@/features/workspace'
 	import { PROJECT_ICON, PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 	import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-	import { useProjectsStore } from '@/stores/projects'
 	import { useSettingsStore } from '@/stores/settings'
 	import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
@@ -219,7 +218,6 @@
 	const router = useRouter()
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const settingsStore = useSettingsStore()
-	const projectsStore = useProjectsStore()
 	const workspaceEditStore = useWorkspaceEditStore()
 	const { navItems: settingsNavItems, isActive: isSettingsNavActive } = useSettingsNav()
 	const toast = useToast()
@@ -361,6 +359,9 @@
 		if (typeof sid === 'string') return sid
 		return settingsStore.settings.activeSpaceId ?? 'work'
 	})
+	const currentSpaceProjectsState = useSpaceProjectsState(currentSpaceId, {
+		enabled: isWorkspacePage,
+	})
 
 	const currentSpaceLabel = computed(() => {
 		const spaceId = currentSpaceId.value
@@ -466,8 +467,7 @@
 			const base: { label: string; to?: string; icon?: string; description?: string }[] = []
 			const pid = route.query.project
 			if (typeof pid === 'string' && spaceId) {
-				const list = projectsStore.getProjectsOfSpace(spaceId)
-				const path = projectPath(list, pid)
+				const path = projectPath(currentSpaceProjectsState.projects.value, pid)
 				if (path.length) {
 					for (let i = 0; i < path.length; i++) {
 						const p = path[i]
