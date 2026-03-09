@@ -1,9 +1,13 @@
+//! Sync service 对外返回与输入模型。
+
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DatabaseUrlArgs {
+    /// 远端数据库连接串，由前端配置页传入。
     pub database_url: String,
 }
 
+/// 单张表在一次同步里的统计结果。
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncTableReport {
@@ -15,6 +19,7 @@ pub struct SyncTableReport {
 }
 
 impl SyncTableReport {
+    /// 适用于“插入 / 更新 / 冲突跳过”类型表的统计构造器。
     pub fn upsert(total: usize, inserted: usize, updated: usize, conflicted: usize) -> Self {
         Self {
             total,
@@ -26,6 +31,7 @@ impl SyncTableReport {
         }
     }
 
+    /// 适用于 append-only 或全量去重表的统计构造器。
     pub fn dedup(total: usize, inserted: usize) -> Self {
         Self {
             total,
@@ -37,6 +43,7 @@ impl SyncTableReport {
     }
 }
 
+/// 一次同步里所有表的统计汇总。
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncTablesReport {
@@ -52,10 +59,13 @@ pub struct SyncTablesReport {
     pub project_links: SyncTableReport,
 }
 
+/// pull / push 命令最终返回给前端的完整结果。
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncCommandReport {
+    /// 本轮同步开始时的毫秒时间戳。
     pub synced_at: i64,
+    /// 是否启用了“目标端较新数据不被旧数据覆盖”的保护。
     pub conflict_guard_enabled: bool,
     pub tables: SyncTablesReport,
 }

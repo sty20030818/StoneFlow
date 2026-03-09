@@ -1,5 +1,10 @@
+//! Project service 输入模型。
+//!
+//! 这些结构体位于 service 边界，用来表达项目写用例需要的输入语义。
+
 use crate::types::dto::LinkInputDto;
 
+/// 创建项目用例的输入。
 #[derive(Debug, Clone)]
 pub struct ProjectCreateInput {
     pub space_id: String,
@@ -12,12 +17,14 @@ pub struct ProjectCreateInput {
     pub links: Option<Vec<LinkInputDto>>,
 }
 
+/// 更新项目用例的输入。
 #[derive(Debug, Clone)]
 pub struct ProjectUpdateInput {
     pub project_id: String,
     pub patch: ProjectUpdatePatch,
 }
 
+/// 项目 patch 更新模型。
 #[derive(Debug, Clone, Default)]
 pub struct ProjectUpdatePatch {
     pub title: Option<String>,

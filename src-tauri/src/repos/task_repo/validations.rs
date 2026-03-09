@@ -13,14 +13,17 @@ pub fn trim_and_validate_title(title: &str) -> Result<String, AppError> {
     }
 }
 
+/// 规范化并校验任务状态字符串。
 pub fn normalize_status(status: &str) -> Result<String, AppError> {
     common_task_utils::validate_status(status)
 }
 
+/// 规范化完成原因字符串。
 pub fn normalize_done_reason(reason: &str) -> Result<String, AppError> {
     common_task_utils::normalize_done_reason(reason)
 }
 
+/// 在“任务被标记为完成”语义下，强制要求 doneReason 存在。
 pub fn require_done_reason(done_reason: Option<Option<&str>>) -> Result<String, AppError> {
     // 重点：双层 Option 的语义
     // - None: 字段未传
@@ -32,6 +35,7 @@ pub fn require_done_reason(done_reason: Option<Option<&str>>) -> Result<String, 
     normalize_done_reason(reason)
 }
 
+/// 规范化优先级字符串，并确保它是支持的值。
 pub fn normalize_priority(priority: &str) -> Result<String, AppError> {
     let normalized = common_task_utils::normalize_priority(priority);
     common_task_utils::validate_priority(&normalized)?;

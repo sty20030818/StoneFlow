@@ -32,6 +32,7 @@ pub struct NewTaskRecord {
     pub create_by: String,
 }
 
+/// 插入一条新任务记录。
 pub async fn insert<C>(conn: &C, record: NewTaskRecord) -> Result<tasks::Model, AppError>
 where
     C: ConnectionTrait,
@@ -60,6 +61,7 @@ where
     .map_err(AppError::from)
 }
 
+/// 更新任务主表。
 pub async fn update<C>(conn: &C, active_model: tasks::ActiveModel) -> Result<tasks::Model, AppError>
 where
     C: ConnectionTrait,
@@ -67,6 +69,9 @@ where
     active_model.update(conn).await.map_err(AppError::from)
 }
 
+/// 批量软删除任务。
+///
+/// repo 层只负责字段更新，不负责日志和统计副作用。
 pub async fn soft_delete_many<C>(conn: &C, ids: &[String], now: i64) -> Result<usize, AppError>
 where
     C: ConnectionTrait,
@@ -83,6 +88,7 @@ where
     Ok(result.rows_affected as usize)
 }
 
+/// 批量恢复已软删除任务。
 pub async fn restore_many<C>(conn: &C, ids: &[String], now: i64) -> Result<usize, AppError>
 where
     C: ConnectionTrait,

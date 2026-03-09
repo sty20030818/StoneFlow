@@ -12,6 +12,7 @@ const ACTION_PROJECT_ARCHIVED: &str = "project_archived";
 const ACTION_PROJECT_UNARCHIVED: &str = "project_unarchived";
 const ACTION_PROJECT_FIELD_UPDATED: &str = "project_field_updated";
 
+/// 项目活动日志写入时复用的上下文。
 #[derive(Debug, Clone)]
 pub struct ProjectLogCtx<'a> {
     pub project_id: &'a str,
@@ -20,6 +21,7 @@ pub struct ProjectLogCtx<'a> {
     pub created_at: i64,
 }
 
+/// 追加“项目创建”日志。
 pub async fn append_created<C>(
     conn: &C,
     ctx: ProjectLogCtx<'_>,
@@ -47,6 +49,7 @@ where
     .await
 }
 
+/// 追加“项目删除”日志。
 pub async fn append_deleted<C>(
     conn: &C,
     ctx: ProjectLogCtx<'_>,
@@ -74,6 +77,7 @@ where
     .await
 }
 
+/// 追加“项目恢复”日志。
 pub async fn append_restored<C>(
     conn: &C,
     ctx: ProjectLogCtx<'_>,
@@ -101,6 +105,7 @@ where
     .await
 }
 
+/// 追加“项目归档”日志。
 pub async fn append_archived<C>(
     conn: &C,
     ctx: ProjectLogCtx<'_>,
@@ -128,6 +133,7 @@ where
     .await
 }
 
+/// 追加“项目取消归档”日志。
 pub async fn append_unarchived<C>(
     conn: &C,
     ctx: ProjectLogCtx<'_>,
@@ -155,6 +161,7 @@ where
     .await
 }
 
+/// 追加字段级项目变更日志。
 pub async fn append_field_updated<C>(
     conn: &C,
     ctx: ProjectLogCtx<'_>,

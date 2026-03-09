@@ -12,6 +12,7 @@ pub async fn refresh_project_stats<C>(conn: &C, project_id: &str, now: i64) -> R
 where
     C: ConnectionTrait,
 {
+    // todo / done 分开统计，供项目列表与详情直接展示。
     // 分别统计 todo/done，且忽略 archived/deleted。
     let todo_task_count = tasks::Entity::find()
         .filter(tasks::Column::ProjectId.eq(project_id))

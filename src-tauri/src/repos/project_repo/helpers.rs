@@ -32,6 +32,7 @@ pub fn compute_status(
     "inProgress".to_string()
 }
 
+/// 把项目模型转换成前端 DTO。
 pub fn project_model_to_dto(m: projects::Model) -> ProjectDto {
     let computed_status = compute_status(
         m.deleted_at,
@@ -70,6 +71,7 @@ pub fn project_model_to_dto(m: projects::Model) -> ProjectDto {
     }
 }
 
+/// 批量回填项目链接，避免 N+1 查询。
 pub async fn attach_links(
     conn: &DatabaseConnection,
     projects: &mut [ProjectDto],
@@ -88,6 +90,7 @@ pub async fn attach_links(
     Ok(())
 }
 
+/// 批量回填项目标签。
 pub async fn attach_tags(
     conn: &DatabaseConnection,
     projects: &mut [ProjectDto],
@@ -105,6 +108,9 @@ pub async fn attach_tags(
     Ok(())
 }
 
+/// 根据父节点路径构建项目 path。
+///
+/// path 是冗余字段，但它能显著提高树结构查询和展示效率。
 pub async fn build_project_path<C>(
     conn: &C,
     space_id: &str,

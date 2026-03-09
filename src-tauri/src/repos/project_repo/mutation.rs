@@ -21,6 +21,7 @@ pub struct NewProjectRecord {
     pub create_by: String,
 }
 
+/// 插入一条新项目记录。
 pub async fn insert<C>(conn: &C, record: NewProjectRecord) -> Result<projects::Model, AppError>
 where
     C: ConnectionTrait,
@@ -48,6 +49,7 @@ where
     .map_err(AppError::from)
 }
 
+/// 更新项目主表。
 pub async fn update<C>(
     conn: &C,
     active_model: projects::ActiveModel,
@@ -58,6 +60,7 @@ where
     active_model.update(conn).await.map_err(AppError::from)
 }
 
+/// 批量软删除项目。
 pub async fn soft_delete_by_ids<C>(
     conn: &C,
     project_ids: &[String],
@@ -82,6 +85,7 @@ where
     Ok(result.rows_affected as usize)
 }
 
+/// 当项目迁移到新空间时，把挂在该项目下的任务也同步到新 space。
 pub async fn update_tasks_space_by_project<C>(
     conn: &C,
     project_id: &str,
@@ -102,6 +106,9 @@ where
     Ok(())
 }
 
+/// 回刷所有后代项目路径。
+///
+/// 只有根路径变化后才需要调用它。
 pub async fn rebase_descendant_paths<C>(
     conn: &C,
     space_id: &str,

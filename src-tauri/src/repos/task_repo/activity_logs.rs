@@ -11,6 +11,7 @@ const ACTION_TASK_DELETED: &str = "task_deleted";
 const ACTION_TASK_RESTORED: &str = "task_restored";
 const ACTION_TASK_FIELD_UPDATED: &str = "task_field_updated";
 
+/// 任务活动日志写入时需要的公共上下文。
 #[derive(Debug, Clone)]
 pub struct TaskLogCtx<'a> {
     pub task_id: &'a str,
@@ -20,10 +21,12 @@ pub struct TaskLogCtx<'a> {
     pub created_at: i64,
 }
 
+/// 把可选项目 id 转成日志输入结构需要的 `Option<String>`。
 fn project_id_string(project_id: Option<&str>) -> Option<String> {
     project_id.map(|x| x.to_string())
 }
 
+/// 追加“任务创建”日志。
 pub async fn append_created<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> Result<(), AppError>
 where
     C: ConnectionTrait,
@@ -48,6 +51,7 @@ where
     .await
 }
 
+/// 追加“任务完成”日志。
 pub async fn append_completed<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> Result<(), AppError>
 where
     C: ConnectionTrait,
@@ -72,6 +76,7 @@ where
     .await
 }
 
+/// 追加“任务删除”日志。
 pub async fn append_deleted<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> Result<(), AppError>
 where
     C: ConnectionTrait,
@@ -96,6 +101,7 @@ where
     .await
 }
 
+/// 追加“任务恢复”日志。
 pub async fn append_restored<C>(conn: &C, ctx: TaskLogCtx<'_>, title: &str) -> Result<(), AppError>
 where
     C: ConnectionTrait,
@@ -120,6 +126,9 @@ where
     .await
 }
 
+/// 追加字段级更新日志。
+///
+/// 如果前后值相同，会直接跳过，避免产生噪声日志。
 pub async fn append_field_updated<C>(
     conn: &C,
     ctx: TaskLogCtx<'_>,
