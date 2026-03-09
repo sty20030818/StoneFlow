@@ -15,9 +15,11 @@ pub async fn load_links_for_tasks(
     conn: &DatabaseConnection,
     task_ids: &[String],
 ) -> Result<HashMap<String, Vec<LinkDto>>, AppError> {
+    // 任务链接读取同样是对通用 link_repo 的轻量封装。
     link_repo::load_links(conn, LinkEntity::Task, task_ids).await
 }
 
+/// 同步单个任务的链接集合。
 pub async fn sync_links<C>(conn: &C, task_id: &str, links: &[LinkInputDto]) -> Result<(), AppError>
 where
     C: ConnectionTrait,

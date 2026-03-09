@@ -12,9 +12,11 @@ pub async fn load_tags_for_tasks(
     conn: &DatabaseConnection,
     task_ids: &[String],
 ) -> Result<HashMap<String, Vec<String>>, AppError> {
+    // 任务维度的标签读取只是对通用 tag_repo 的轻量适配。
     tag_repo::load_tags(conn, TagEntity::Task, task_ids).await
 }
 
+/// 同步单个任务的标签集合。
 pub async fn sync_tags<C>(conn: &C, task_id: &str, tags: &[String]) -> Result<(), AppError>
 where
     C: ConnectionTrait,

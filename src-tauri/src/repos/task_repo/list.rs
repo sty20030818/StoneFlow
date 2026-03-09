@@ -14,6 +14,7 @@ pub async fn list(
     status: Option<&str>,
     project_id: Option<&str>,
 ) -> Result<Vec<TaskDto>, AppError> {
+    // 列表查询只负责构造筛选条件，不承载“任务是否允许展示”的业务编排。
     let mut query = tasks::Entity::find();
 
     if let Some(sid) = space_id {
@@ -53,6 +54,7 @@ pub async fn list(
 
     let models = query.all(conn).await.map_err(AppError::from)?;
 
+    // 先把主表模型转成 DTO，后面再集中回填 tags / links。
     let mut dtos = Vec::with_capacity(models.len());
     for m in models {
         let custom_fields = custom_fields::parse_from_json_string(m.custom_fields.as_deref());
@@ -109,6 +111,9 @@ pub async fn list(
     Ok(dtos)
 }
 
+/// 列出已软删除任务。
+///
+/// 它和 `list` 结构相似，但排序更强调“最近删除”的语义。
 pub async fn list_deleted(
     conn: &DatabaseConnection,
     space_id: Option<&str>,
@@ -145,6 +150,7 @@ pub async fn list_deleted(
 
     let models = query.all(conn).await.map_err(AppError::from)?;
 
+    // 回收站列表同样沿用“主表先转 DTO，再批量回填关联数据”的策略。
     let mut dtos = Vec::with_capacity(models.len());
     for m in models {
         let custom_fields = custom_fields::parse_from_json_string(m.custom_fields.as_deref());

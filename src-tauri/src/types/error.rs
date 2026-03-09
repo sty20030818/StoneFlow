@@ -21,6 +21,9 @@ pub struct ApiError {
 }
 
 impl ApiError {
+    /// 构造一个自定义错误对象。
+    ///
+    /// 这是最底层的构造入口，其它快捷方法都复用这里。
     pub fn custom(
         code: impl Into<String>,
         message: impl Into<String>,
@@ -33,14 +36,17 @@ impl ApiError {
         }
     }
 
+    /// 构造参数校验错误。
     pub fn validation(message: impl Into<String>) -> Self {
         Self::custom("VALIDATION_ERROR", message, None)
     }
 
+    /// 构造数据库错误。
     pub fn db(message: impl Into<String>) -> Self {
         Self::custom("DB_ERROR", message, None)
     }
 
+    /// 构造内部错误。
     pub fn internal(message: impl Into<String>) -> Self {
         Self::custom("INTERNAL_ERROR", message, None)
     }
@@ -66,6 +72,7 @@ pub enum AppError {
 }
 
 impl From<AppError> for ApiError {
+    /// 把内部错误统一映射成前端稳定错误结构。
     fn from(value: AppError) -> Self {
         match value {
             AppError::Validation(msg) => ApiError::validation(msg),
