@@ -2,14 +2,9 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import {
-	createStaggeredEnterMotions,
-	getAppStaggerDelay,
-	useAppMotionPreset,
-	useMotionPreset,
-} from '@/composables/base/motion'
+import { createStaggeredEnterMotions, getAppStaggerDelay, useAppMotionPreset, useMotionPreset } from '@/composables/base/motion'
 
-import { useReviewStats } from '../useReviewStats'
+import { useReviewStats } from './useReviewStats'
 
 export function useReviewStatsPageFacade() {
 	const { t } = useI18n({ useScope: 'global' })

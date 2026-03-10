@@ -10,8 +10,8 @@ import {
 	useMotionPreset,
 } from '@/composables/base/motion'
 
-import type { InspectorActivityLog } from '../../model'
-import { useReviewLogs } from '../useReviewLogs'
+import type { InspectorActivityLog } from '../model'
+import { useReviewLogs } from './useReviewLogs'
 
 export function useReviewLogsPageFacade() {
 	const { t } = useI18n({ useScope: 'global' })

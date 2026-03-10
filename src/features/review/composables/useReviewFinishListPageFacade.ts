@@ -10,7 +10,7 @@ import {
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
-import { useReviewFinishList } from '../useReviewFinishList'
+import { useReviewFinishList } from './useReviewFinishList'
 
 export function useReviewFinishListPageFacade() {
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
