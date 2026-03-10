@@ -77,7 +77,27 @@
 				v-motion="listMotion"
 				class="flex-1 min-w-0 overflow-y-auto">
 				<div
-					v-if="filteredSnippets.length === 0 && !loading"
+					v-if="showLoadErrorState"
+					class="py-8">
+					<EmptyState
+						:text="t('assets.snippets.toast.loadFailedTitle')"
+						icon="i-lucide-triangle-alert"
+						stacked>
+						<p>{{ loadErrorMessage }}</p>
+						<UButton
+							class="mt-3"
+							color="neutral"
+							variant="soft"
+							size="sm"
+							icon="i-lucide-rotate-cw"
+							@click="refresh">
+							{{ t('common.actions.retry') }}
+						</UButton>
+					</EmptyState>
+				</div>
+
+				<div
+					v-else-if="filteredSnippets.length === 0 && !loading"
 					class="py-8 text-center text-sm text-muted">
 					{{ t('assets.snippets.empty') }}
 				</div>
@@ -231,6 +251,7 @@
 </template>
 
 <script setup lang="ts">
+	import EmptyState from '@/components/base/EmptyState.vue'
 	import { assetModalInputUi, assetModalTextareaUi, useAssetsSnippetsPageFacade } from '@/features/assets'
 
 	const {
@@ -238,10 +259,12 @@
 		headerMotion,
 		layoutMotion,
 		folderMotion,
+		loadErrorMessage,
 		listMotion,
 		modalBodyMotion,
 		modalFooterMotion,
 		loading,
+		showLoadErrorState,
 		selectedSnippet,
 		editOpen,
 		selectedFolder,
@@ -252,6 +275,7 @@
 		filteredSnippets,
 		snippetModalUi,
 		snippetItemMotions,
+		refresh,
 		openEditor,
 		onCreateNew,
 		closeEditor,

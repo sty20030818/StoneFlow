@@ -1,10 +1,10 @@
 import { useI18n } from 'vue-i18n'
-import { watch } from 'vue'
+import { computed } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 
+import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { useWorkspaceTaskBoardQuery } from '../shared/queries'
 import { useWorkspaceTaskActions } from '../tasks'
-import { resolveErrorMessage } from '@/utils/error-message'
 
 /**
  * Workspace 看板数据与基础动作编排。
@@ -16,24 +16,16 @@ export function useWorkspaceProjectTasks(
 	spaceId?: MaybeRefOrGetter<string | undefined>,
 	projectId?: MaybeRefOrGetter<string | null | undefined>,
 ) {
-	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const { todo, doneAll, loading, refresh, todoError, doneError } = useWorkspaceTaskBoardQuery(spaceId, projectId)
-
-	watch(
-		[todoError, doneError],
-		([nextTodoError, nextDoneError], [prevTodoError, prevDoneError]) => {
-			const nextError = nextTodoError ?? nextDoneError
-			const prevError = prevTodoError ?? prevDoneError
-			if (!nextError || nextError === prevError) return
-			toast.add({
-				title: t('projectView.toast.loadFailedTitle'),
-				description: resolveErrorMessage(nextError, t),
-				color: 'error',
-			})
-		},
-		{ immediate: true },
-	)
+	const loadError = computed(() => todoError.value ?? doneError.value)
+	const hasTasks = computed(() => todo.value.length > 0 || doneAll.value.length > 0)
+	const { loadErrorMessage, showLoadErrorState } = useLoadErrorFeedback({
+		error: loadError,
+		hasData: hasTasks,
+		loading,
+		toastTitle: computed(() => t('projectView.toast.loadFailedTitle')),
+	})
 
 	const { complete } = useWorkspaceTaskActions()
 
@@ -45,6 +37,8 @@ export function useWorkspaceProjectTasks(
 		loading,
 		todo,
 		doneAll,
+		loadErrorMessage,
+		showLoadErrorState,
 		refresh,
 		onComplete,
 	}

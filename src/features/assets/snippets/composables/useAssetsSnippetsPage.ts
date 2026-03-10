@@ -2,6 +2,7 @@ import { refDebounced, useAsyncState } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
 import { validateWithZod } from '@/composables/base/zod'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -19,6 +20,7 @@ export function useAssetsSnippetsPage() {
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
+	const loadError = ref<unknown | null>(null)
 
 	const {
 		state: snippets,
@@ -27,13 +29,18 @@ export function useAssetsSnippetsPage() {
 	} = useAsyncState(() => listAssetSnippets(), [] as AssetSnippet[], {
 		immediate: true,
 		resetOnExecute: false,
-		onError: (error) => {
-			toast.add({
-				title: t('assets.snippets.toast.loadFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
-			})
+		onSuccess: () => {
+			loadError.value = null
 		},
+		onError: (error) => {
+			loadError.value = error
+		},
+	})
+	const { loadErrorMessage, showLoadErrorState } = useLoadErrorFeedback({
+		error: loadError,
+		hasData: computed(() => snippets.value.length > 0),
+		loading,
+		toastTitle: computed(() => t('assets.snippets.toast.loadFailedTitle')),
 	})
 
 	const editForm = ref({
@@ -169,6 +176,8 @@ export function useAssetsSnippetsPage() {
 	return {
 		t,
 		loading,
+		loadErrorMessage,
+		showLoadErrorState,
 		selectedSnippet,
 		editOpen,
 		selectedFolder,
@@ -177,6 +186,7 @@ export function useAssetsSnippetsPage() {
 		tagsInput,
 		folders,
 		filteredSnippets,
+		refresh,
 		openEditor,
 		onCreateNew,
 		closeEditor,

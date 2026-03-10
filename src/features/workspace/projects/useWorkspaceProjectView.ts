@@ -60,7 +60,10 @@ export function useWorkspaceProjectView() {
 		},
 	)
 
-	const { loading, todo, doneAll, refresh, onComplete } = useWorkspaceProjectTasks(taskSpaceId, projectId)
+	const { loading, todo, doneAll, loadErrorMessage, showLoadErrorState, refresh, onComplete } = useWorkspaceProjectTasks(
+		taskSpaceId,
+		projectId,
+	)
 
 	const isEditMode = ref(false)
 	const confirmDeleteOpen = ref(false)
@@ -280,6 +283,7 @@ export function useWorkspaceProjectView() {
 		doneAll,
 		deleting,
 		isEditMode,
+		loadErrorMessage,
 		loading,
 		onComplete,
 		onCreateTaskRequest,
@@ -289,6 +293,7 @@ export function useWorkspaceProjectView() {
 		requestDeleteTask,
 		selectedTaskIds,
 		showSpaceLabel,
+		showLoadErrorState,
 		taskSpaceId,
 		todo,
 		toggleColumnSelect,

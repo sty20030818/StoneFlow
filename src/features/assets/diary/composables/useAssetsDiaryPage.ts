@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { validateWithZod } from '@/composables/base/zod'
 import { diarySubmitSchema } from '@/composables/domain/validation/forms'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -21,6 +22,7 @@ export function useAssetsDiaryPage() {
 	const tasks = ref<AssetDiaryTask[]>([])
 	const selectedEntry = ref<AssetDiaryEntry | null>(null)
 	const editOpen = ref(false)
+	const loadError = ref<unknown | null>(null)
 	const { isLoading: loading, execute: executeRefresh } = useAsyncState(
 		async () => {
 			const [diaryEntries, doneTasks] = await Promise.all([listAssetDiaryEntries(), listAssetDiaryDoneTasks()])
@@ -39,13 +41,10 @@ export function useAssetsDiaryPage() {
 			onSuccess: ({ entries: nextEntries, tasks: nextTasks }) => {
 				entries.value = nextEntries
 				tasks.value = nextTasks
+				loadError.value = null
 			},
 			onError: (error) => {
-				toast.add({
-					title: t('assets.diary.toast.loadFailedTitle'),
-					description: resolveErrorMessage(error, t),
-					color: 'error',
-				})
+				loadError.value = error
 			},
 		},
 	)
@@ -92,6 +91,12 @@ export function useAssetsDiaryPage() {
 		}
 
 		return result.sort((a, b) => b.date.localeCompare(a.date))
+	})
+	const { loadErrorMessage, showLoadErrorState } = useLoadErrorFeedback({
+		error: loadError,
+		hasData: computed(() => groupedEntries.value.length > 0),
+		loading,
+		toastTitle: computed(() => t('assets.diary.toast.loadFailedTitle')),
 	})
 
 	function selectEntry(entry: AssetDiaryEntry) {
@@ -176,11 +181,14 @@ export function useAssetsDiaryPage() {
 
 	return {
 		t,
+		loadErrorMessage,
 		loading,
+		showLoadErrorState,
 		selectedEntry,
 		editOpen,
 		editForm,
 		groupedEntries,
+		refresh,
 		selectEntry,
 		onCreateNew,
 		closeEditor,

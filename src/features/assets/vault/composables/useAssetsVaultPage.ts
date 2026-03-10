@@ -2,6 +2,7 @@ import { refDebounced, useAsyncState, useClipboard, useTimeoutFn } from '@vueuse
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { validateWithZod } from '@/composables/base/zod'
 import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -19,6 +20,7 @@ export function useAssetsVaultPage() {
 	const selectedFolder = ref<string | null>(null)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
+	const loadError = ref<unknown | null>(null)
 	const {
 		state: entries,
 		isLoading: loading,
@@ -26,13 +28,18 @@ export function useAssetsVaultPage() {
 	} = useAsyncState(() => listAssetVaultEntries(), [] as AssetVaultEntry[], {
 		immediate: true,
 		resetOnExecute: false,
-		onError: (error) => {
-			toast.add({
-				title: t('assets.vault.toast.loadFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
-			})
+		onSuccess: () => {
+			loadError.value = null
 		},
+		onError: (error) => {
+			loadError.value = error
+		},
+	})
+	const { loadErrorMessage, showLoadErrorState } = useLoadErrorFeedback({
+		error: loadError,
+		hasData: computed(() => entries.value.length > 0),
+		loading,
+		toastTitle: computed(() => t('assets.vault.toast.loadFailedTitle')),
 	})
 
 	const showValue = ref(false)
@@ -203,6 +210,8 @@ export function useAssetsVaultPage() {
 	return {
 		t,
 		loading,
+		loadErrorMessage,
+		showLoadErrorState,
 		selectedEntry,
 		editOpen,
 		selectedFolder,
@@ -213,6 +222,7 @@ export function useAssetsVaultPage() {
 		folders,
 		filteredEntries,
 		typeLabel,
+		refresh,
 		openEditor,
 		onCreateNew,
 		closeEditor,

@@ -2,6 +2,7 @@ import { refDebounced, useAsyncState } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { noteSubmitSchema } from '@/composables/domain/validation/forms'
 import { validateWithZod } from '@/composables/base/zod'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -18,6 +19,7 @@ export function useAssetsNotesPage() {
 	const editOpen = ref(false)
 	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
+	const loadError = ref<unknown | null>(null)
 
 	const {
 		state: notes,
@@ -26,13 +28,18 @@ export function useAssetsNotesPage() {
 	} = useAsyncState(() => listAssetNotes(), [] as AssetNote[], {
 		immediate: true,
 		resetOnExecute: false,
-		onError: (error) => {
-			toast.add({
-				title: t('assets.notes.toast.loadFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
-			})
+		onSuccess: () => {
+			loadError.value = null
 		},
+		onError: (error) => {
+			loadError.value = error
+		},
+	})
+	const { loadErrorMessage, showLoadErrorState } = useLoadErrorFeedback({
+		error: loadError,
+		hasData: computed(() => notes.value.length > 0),
+		loading,
+		toastTitle: computed(() => t('assets.notes.toast.loadFailedTitle')),
 	})
 
 	const editForm = ref({
@@ -139,11 +146,14 @@ export function useAssetsNotesPage() {
 	return {
 		t,
 		loading,
+		loadErrorMessage,
+		showLoadErrorState,
 		selectedNote,
 		editOpen,
 		searchKeyword,
 		editForm,
 		filteredNotes,
+		refresh,
 		openEditor,
 		onCreateNew,
 		closeEditor,

@@ -9,7 +9,30 @@
 				@open-settings="openProjectSettings" />
 		</div>
 
-		<div v-motion="workspaceColumnsMotion">
+		<div
+			v-if="showLoadErrorState"
+			v-motion="workspaceColumnsMotion">
+			<EmptyState
+				:text="t('projectView.toast.loadFailedTitle')"
+				icon="i-lucide-triangle-alert"
+				stacked
+				class="bg-elevated/40">
+				<p>{{ loadErrorMessage }}</p>
+				<UButton
+					class="mt-3"
+					color="neutral"
+					variant="soft"
+					size="sm"
+					icon="i-lucide-rotate-cw"
+					@click="refresh">
+					{{ t('common.actions.retry') }}
+				</UButton>
+			</EmptyState>
+		</div>
+
+		<div
+			v-else
+			v-motion="workspaceColumnsMotion">
 			<WorkspaceLayout>
 				<template #todo>
 					<TaskColumn
@@ -89,6 +112,7 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import EmptyState from '@/components/base/EmptyState.vue'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { ProjectHeaderCard, TaskColumn, useWorkspaceProjectView, WorkspaceLayout } from '@/features/workspace'
 
@@ -109,15 +133,18 @@
 		doneAll,
 		deleting,
 		isEditMode,
+		loadErrorMessage,
 		loading,
 		onComplete,
 		onCreateTaskRequest,
 		onTaskClick,
 		openProjectSettings,
 		projectId,
+		refresh,
 		requestDeleteTask,
 		selectedTaskIds,
 		showSpaceLabel,
+		showLoadErrorState,
 		taskSpaceId,
 		todo,
 		toggleColumnSelect,

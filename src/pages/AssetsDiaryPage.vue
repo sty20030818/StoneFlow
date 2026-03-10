@@ -28,7 +28,27 @@
 			v-motion="timelineMotion"
 			class="flex-1 min-h-0 overflow-y-auto mt-4">
 			<div
-				v-if="groupedEntries.length === 0 && !loading"
+				v-if="showLoadErrorState"
+				class="py-8">
+				<EmptyState
+					:text="t('assets.diary.toast.loadFailedTitle')"
+					icon="i-lucide-triangle-alert"
+					stacked>
+					<p>{{ loadErrorMessage }}</p>
+					<UButton
+						class="mt-3"
+						color="neutral"
+						variant="soft"
+						size="sm"
+						icon="i-lucide-rotate-cw"
+						@click="refresh">
+						{{ t('common.actions.retry') }}
+					</UButton>
+				</EmptyState>
+			</div>
+
+			<div
+				v-else-if="groupedEntries.length === 0 && !loading"
 				class="text-sm text-muted py-8 text-center">
 				{{ t('assets.diary.empty') }}
 			</div>
@@ -190,20 +210,24 @@
 </template>
 
 <script setup lang="ts">
+	import EmptyState from '@/components/base/EmptyState.vue'
 	import { assetModalInputUi, assetModalTextareaUi, useAssetsDiaryPageFacade } from '@/features/assets'
 
 	const {
 		t,
 		headerMotion,
+		loadErrorMessage,
 		timelineMotion,
 		modalBodyMotion,
 		modalFooterMotion,
 		loading,
+		showLoadErrorState,
 		selectedEntry,
 		editOpen,
 		editForm,
 		groupedEntries,
 		diaryModalUi,
+		refresh,
 		selectEntry,
 		onCreateNew,
 		closeEditor,
