@@ -2,7 +2,7 @@ import { computed } from 'vue'
 
 import { useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 
-import { useTrashPage } from '../useTrashPage'
+import { useTrashPage } from './useTrashPage'
 
 export function useTrashPageFacade() {
 	const headerActionMotion = useAppMotionPreset('statusFeedback', 'stateAction')

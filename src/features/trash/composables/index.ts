@@ -1,2 +1,2 @@
 export * from './useTrashPage'
-export * from './pages'
+export * from './useTrashPageFacade'
