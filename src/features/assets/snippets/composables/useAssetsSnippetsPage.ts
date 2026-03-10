@@ -2,18 +2,18 @@ import { refDebounced, useAsyncState } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useErrorHandler } from '@/composables/base/useErrorHandler'
 import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { snippetSubmitSchema } from '@/composables/domain/validation/forms'
 import { validateWithZod } from '@/composables/base/zod'
-import { resolveErrorMessage } from '@/utils/error-message'
 
 import type { AssetSnippet } from '../model'
 import { createAssetSnippet, deleteAssetSnippet, updateAssetSnippet } from '../mutations'
 import { listAssetSnippets } from '../queries'
 
 export function useAssetsSnippetsPage() {
-	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
+	const { handleApiError, handleSuccess, handleValidationError } = useErrorHandler()
 
 	const selectedSnippet = ref<AssetSnippet | null>(null)
 	const editOpen = ref(false)
@@ -128,7 +128,7 @@ export function useAssetsSnippetsPage() {
 		if (!selectedSnippet.value) return
 		const validation = validateWithZod(snippetSubmitSchema, { title: editForm.value.title })
 		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
+			handleValidationError(validation.message)
 			return
 		}
 
@@ -140,18 +140,16 @@ export function useAssetsSnippetsPage() {
 			}
 			if (selectedSnippet.value.id) {
 				await updateAssetSnippet(selectedSnippet.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.savedTitle'))
 			} else {
 				await createAssetSnippet(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.createdTitle'))
 			}
 			await refresh()
 			closeEditor()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -159,16 +157,14 @@ export function useAssetsSnippetsPage() {
 	async function onDelete(id: string) {
 		try {
 			await deleteAssetSnippet(id)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
+			handleSuccess(t('assets.common.toast.deletedTitle'))
 			if (selectedSnippet.value?.id === id) {
 				closeEditor()
 			}
 			await refresh()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}

@@ -2,10 +2,10 @@ import { refDebounced, useAsyncState, useClipboard, useTimeoutFn } from '@vueuse
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useErrorHandler } from '@/composables/base/useErrorHandler'
 import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { validateWithZod } from '@/composables/base/zod'
 import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
-import { resolveErrorMessage } from '@/utils/error-message'
 
 import type { AssetVaultEntry, AssetVaultEntryType } from '../model'
 import { createAssetVaultEntry, deleteAssetVaultEntry, updateAssetVaultEntry } from '../mutations'
@@ -14,6 +14,7 @@ import { listAssetVaultEntries } from '../queries'
 export function useAssetsVaultPage() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
+	const { handleApiError, handleSuccess, handleValidationError } = useErrorHandler()
 
 	const selectedEntry = ref<AssetVaultEntry | null>(null)
 	const editOpen = ref(false)
@@ -139,14 +140,12 @@ export function useAssetsVaultPage() {
 		}
 		try {
 			await copy(editForm.value.value)
-			toast.add({ title: t('assets.vault.toast.copiedTitle'), color: 'success' })
+			handleSuccess(t('assets.vault.toast.copiedTitle'))
 			stopHideValueTimer()
 			hideValueLater()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.vault.toast.copyFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -158,7 +157,7 @@ export function useAssetsVaultPage() {
 			value: editForm.value.value,
 		})
 		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
+			handleValidationError(validation.message)
 			return
 		}
 
@@ -170,18 +169,16 @@ export function useAssetsVaultPage() {
 			}
 			if (selectedEntry.value.id) {
 				await updateAssetVaultEntry(selectedEntry.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.savedTitle'))
 			} else {
 				await createAssetVaultEntry(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.createdTitle'))
 			}
 			await refresh()
 			closeEditor()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -189,16 +186,14 @@ export function useAssetsVaultPage() {
 	async function onDelete(id: string) {
 		try {
 			await deleteAssetVaultEntry(id)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
+			handleSuccess(t('assets.common.toast.deletedTitle'))
 			if (selectedEntry.value?.id === id) {
 				closeEditor()
 			}
 			await refresh()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}

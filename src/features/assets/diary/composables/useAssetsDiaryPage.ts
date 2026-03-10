@@ -3,10 +3,10 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { useErrorHandler } from '@/composables/base/useErrorHandler'
 import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { validateWithZod } from '@/composables/base/zod'
 import { diarySubmitSchema } from '@/composables/domain/validation/forms'
-import { resolveErrorMessage } from '@/utils/error-message'
 import { formatDate } from '@/utils/time'
 
 import type { AssetDiaryEntry, AssetDiaryTask, DiaryGroupedEntry } from '../model'
@@ -14,9 +14,9 @@ import { createAssetDiaryEntry, deleteAssetDiaryEntry, updateAssetDiaryEntry } f
 import { listAssetDiaryDoneTasks, listAssetDiaryEntries } from '../queries'
 
 export function useAssetsDiaryPage() {
-	const toast = useToast()
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const router = useRouter()
+	const { handleApiError, handleSuccess, handleValidationError } = useErrorHandler()
 
 	const entries = ref<AssetDiaryEntry[]>([])
 	const tasks = ref<AssetDiaryTask[]>([])
@@ -130,7 +130,7 @@ export function useAssetsDiaryPage() {
 	async function onSave() {
 		const validation = validateWithZod(diarySubmitSchema, { title: editForm.value.title })
 		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
+			handleValidationError(validation.message)
 			return
 		}
 
@@ -141,18 +141,16 @@ export function useAssetsDiaryPage() {
 			}
 			if (selectedEntry.value) {
 				await updateAssetDiaryEntry(selectedEntry.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.savedTitle'))
 			} else {
 				await createAssetDiaryEntry(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.createdTitle'))
 			}
 			await refresh()
 			closeEditor()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -160,13 +158,11 @@ export function useAssetsDiaryPage() {
 	async function onDelete(entryId: string) {
 		try {
 			await deleteAssetDiaryEntry(entryId)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
+			handleSuccess(t('assets.common.toast.deletedTitle'))
 			await refresh()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}

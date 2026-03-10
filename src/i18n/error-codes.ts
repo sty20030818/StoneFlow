@@ -2,6 +2,10 @@ const API_ERROR_CODE_TO_I18N_KEY = {
 	VALIDATION_ERROR: 'errors.codes.VALIDATION_ERROR',
 	DB_ERROR: 'errors.codes.DB_ERROR',
 	INTERNAL_ERROR: 'errors.codes.INTERNAL_ERROR',
+	NETWORK_ERROR: 'errors.codes.NETWORK_ERROR',
+	UNAUTHORIZED: 'errors.codes.UNAUTHORIZED',
+	FORBIDDEN: 'errors.codes.FORBIDDEN',
+	NOT_FOUND: 'errors.codes.NOT_FOUND',
 	SYNC_VALIDATION_ERROR: 'errors.codes.SYNC_VALIDATION_ERROR',
 	SYNC_CONNECTION_ERROR: 'errors.codes.SYNC_CONNECTION_ERROR',
 	SYNC_MIGRATION_ERROR: 'errors.codes.SYNC_MIGRATION_ERROR',
@@ -16,6 +20,10 @@ type ApiErrorCode = keyof typeof API_ERROR_CODE_TO_I18N_KEY
 
 export function resolveApiErrorI18nKey(code: string | null | undefined): string | null {
 	if (!code) return null
-	const normalized = code.trim().toUpperCase() as ApiErrorCode
+	const normalized = code
+		.trim()
+		.replace(/[^a-zA-Z0-9]+/g, '_')
+		.replace(/^_+|_+$/g, '')
+		.toUpperCase() as ApiErrorCode
 	return API_ERROR_CODE_TO_I18N_KEY[normalized] ?? null
 }

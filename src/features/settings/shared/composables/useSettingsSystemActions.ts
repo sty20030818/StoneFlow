@@ -1,13 +1,13 @@
 import { useClipboard } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 
+import { useErrorHandler } from '@/composables/base/useErrorHandler'
 import { copyText, openExternalUrl, openLocalPath } from '@/services/tauri/system-actions'
-import { resolveErrorMessage } from '@/utils/error-message'
 
 export function useSettingsSystemActions() {
-	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
 	const { copy: copyToClipboard, isSupported } = useClipboard()
+	const { handleApiError, handleSuccess } = useErrorHandler()
 
 	async function copy(text: string, successMessage: string, failTitle = t('toast.settingsActions.copyFailedTitle')) {
 		try {
@@ -17,12 +17,10 @@ export function useSettingsSystemActions() {
 			} else {
 				await copyToClipboard(text)
 			}
-			toast.add({ title: successMessage, color: 'success' })
+			handleSuccess(successMessage)
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: failTitle,
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -31,10 +29,8 @@ export function useSettingsSystemActions() {
 		try {
 			await openExternalUrl(url)
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: failTitle,
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -45,10 +41,8 @@ export function useSettingsSystemActions() {
 		try {
 			await openLocalPath(path)
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: failTitle,
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}

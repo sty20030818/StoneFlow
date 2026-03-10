@@ -2,18 +2,18 @@ import { refDebounced, useAsyncState } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useErrorHandler } from '@/composables/base/useErrorHandler'
 import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { noteSubmitSchema } from '@/composables/domain/validation/forms'
 import { validateWithZod } from '@/composables/base/zod'
-import { resolveErrorMessage } from '@/utils/error-message'
 
 import type { AssetNote } from '../model'
 import { createAssetNote, deleteAssetNote, updateAssetNote } from '../mutations'
 import { listAssetNotes } from '../queries'
 
 export function useAssetsNotesPage() {
-	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
+	const { handleApiError, handleSuccess, handleValidationError } = useErrorHandler()
 
 	const selectedNote = ref<AssetNote | null>(null)
 	const editOpen = ref(false)
@@ -98,7 +98,7 @@ export function useAssetsNotesPage() {
 		if (!selectedNote.value) return
 		const validation = validateWithZod(noteSubmitSchema, { title: editForm.value.title })
 		if (!validation.ok) {
-			toast.add({ title: validation.message, color: 'error' })
+			handleValidationError(validation.message)
 			return
 		}
 
@@ -110,18 +110,16 @@ export function useAssetsNotesPage() {
 			}
 			if (selectedNote.value.id) {
 				await updateAssetNote(selectedNote.value.id, payload)
-				toast.add({ title: t('assets.common.toast.savedTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.savedTitle'))
 			} else {
 				await createAssetNote(payload)
-				toast.add({ title: t('assets.common.toast.createdTitle'), color: 'success' })
+				handleSuccess(t('assets.common.toast.createdTitle'))
 			}
 			await refresh()
 			closeEditor()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.saveFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
@@ -129,16 +127,14 @@ export function useAssetsNotesPage() {
 	async function onDelete(id: string) {
 		try {
 			await deleteAssetNote(id)
-			toast.add({ title: t('assets.common.toast.deletedTitle'), color: 'success' })
+			handleSuccess(t('assets.common.toast.deletedTitle'))
 			if (selectedNote.value?.id === id) {
 				closeEditor()
 			}
 			await refresh()
 		} catch (error) {
-			toast.add({
+			handleApiError(error, {
 				title: t('assets.common.toast.deleteFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
 			})
 		}
 	}
