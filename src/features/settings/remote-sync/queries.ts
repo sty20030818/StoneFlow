@@ -2,9 +2,9 @@ import { useQuery } from '@pinia/colada'
 import { computed } from 'vue'
 
 import { useRemoteSyncStore } from '@/stores/remote-sync'
-import type { RemoteDbProfile } from '@/types/shared/remote-sync'
+import type { RemoteDbProfile, RemoteSyncHistoryItem } from '@/types/shared/remote-sync'
 
-import { remoteSyncQueryKeys } from './query-keys'
+import { remoteSyncQueryKeys } from './model'
 
 async function ensureRemoteSyncStoreLoaded(remoteSyncStore: ReturnType<typeof useRemoteSyncStore>) {
 	if (!remoteSyncStore.loaded) {
@@ -15,6 +15,13 @@ async function ensureRemoteSyncStoreLoaded(remoteSyncStore: ReturnType<typeof us
 function cloneProfile(profile: RemoteDbProfile): RemoteDbProfile {
 	return {
 		...profile,
+	}
+}
+
+function cloneSyncHistoryItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryItem {
+	return {
+		...item,
+		report: structuredClone(item.report),
 	}
 }
 
@@ -34,5 +41,24 @@ export function useRemoteSyncProfilesQuery() {
 	return {
 		...query,
 		profiles,
+	}
+}
+
+export function useRemoteSyncHistoryQuery() {
+	const remoteSyncStore = useRemoteSyncStore()
+
+	const query = useQuery<RemoteSyncHistoryItem[]>({
+		key: remoteSyncQueryKeys.history.list(),
+		query: async () => {
+			await ensureRemoteSyncStoreLoaded(remoteSyncStore)
+			return remoteSyncStore.syncHistory.map(cloneSyncHistoryItem)
+		},
+	})
+
+	const syncHistory = computed(() => query.data.value ?? [])
+
+	return {
+		...query,
+		syncHistory,
 	}
 }

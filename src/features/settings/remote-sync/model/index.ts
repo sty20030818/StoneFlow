@@ -3,5 +3,3 @@
  */
 export * from './query-invalidation'
 export * from './query-keys'
-export * from './useRemoteSyncHistoryQuery'
-export * from './useRemoteSyncProfilesQuery'

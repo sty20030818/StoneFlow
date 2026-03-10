@@ -1,3 +1,9 @@
-export * from './composables'
-export * from './model'
-export * from './ui'
+export { useRemoteSyncPageFacade } from './composables'
+export {
+	RemoteSyncActionsCard,
+	RemoteSyncCreateForm,
+	RemoteSyncDeleteBody,
+	RemoteSyncEditForm,
+	RemoteSyncImportForm,
+	RemoteSyncProfilesCard,
+} from './ui'
