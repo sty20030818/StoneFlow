@@ -1,5 +1,5 @@
 <template>
-	<SettingsShell>
+	<section class="mx-auto w-full max-w-6xl">
 		<div class="min-w-0">
 			<RouterView v-slot="{ Component, route }">
 				<div :key="route.fullPath">
@@ -7,9 +7,5 @@
 				</div>
 			</RouterView>
 		</div>
-	</SettingsShell>
+	</section>
 </template>
-
-<script setup lang="ts">
-	import { SettingsShell } from '@/features/settings'
-</script>

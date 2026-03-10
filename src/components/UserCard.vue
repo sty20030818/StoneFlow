@@ -25,7 +25,7 @@
 			</div>
 
 			<RouterLink
-				to="/settings/core"
+				to="/settings"
 				class="flex items-center justify-center w-8 h-8 rounded-full text-muted hover:bg-elevated hover:text-default transition-colors duration-200">
 				<span v-motion="settingsIconHoverMotion">
 					<UIcon
