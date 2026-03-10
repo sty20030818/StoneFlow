@@ -66,6 +66,13 @@ src/features/<suite>
 
 不要为了“看起来规范”提前制造空目录。
 
+进一步约束：
+
+- 当 `queries` 或 `mutations` 只有一个实现模块时，优先使用同层 `queries.ts`、`mutations.ts`
+- 只有在同一层已经出现两个及以上需要独立维护的实现文件时，才引入 `queries/`、`mutations/` 目录
+- `composables/pages` 只在确实需要承载多个页面编排文件时保留；单文件 façade 直接放回 `composables/`
+- `ui/index.ts`、`queries/index.ts`、`mutations/index.ts` 若只是空导出或单跳转发，必须在同一批次删除
+
 ## 公开入口规则
 
 - 页面层与其他 feature 只能导入 `@/features/<domain>`
@@ -74,6 +81,8 @@ src/features/<suite>
   - `@/features/<suite>/shared/*` 的其他内部目录
   - `@/features/<suite>/<subdomain>/*`
   - 历史碎片式顶层 feature，如 `assets-diary`、`settings-core`
+- 套件根入口必须使用白名单导出，只暴露页面层和其他 feature 已确认消费的稳定 symbol
+- 套件根入口不得通过 `export *` 把空层、内部读写层或过渡模块一并暴露出去
 
 `workspace` 是当前唯一明确开放 `shared/model` 给套件外使用的套件，用于稳定 query key、失效策略和领域类型复用。
 
