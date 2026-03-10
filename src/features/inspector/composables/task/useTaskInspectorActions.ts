@@ -2,11 +2,16 @@ import type { Ref } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
-import { refreshWorkspaceProjectsQuery } from '@/features/workspace'
+import {
+	invalidateWorkspaceProjectQueries,
+	invalidateWorkspaceTaskQueries,
+	patchWorkspaceProjectSnapshot,
+	patchWorkspaceTaskSnapshot,
+	refreshWorkspaceProjectsQuery,
+} from '@/features/workspace'
 import { usePatchQueue } from '../shared'
 import { updateInspectorTask } from '../../mutations'
 import type { InspectorLink, InspectorLinkInput, InspectorTask, InspectorTaskPatch } from '../../model'
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
 import type { useTaskInspectorStore } from '@/stores/taskInspector'
 
 import type { TaskInspectorState, TextInteractionField } from './useTaskInspectorState'
@@ -23,9 +28,23 @@ import {
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
 const TEXT_AUTOSAVE_MAX_WAIT = 2000
+const TASK_QUERY_REFRESH_FIELDS = ['status', 'priority', 'spaceId', 'projectId', 'rank', 'archivedAt', 'deletedAt'] as const
+const PROJECT_QUERY_REFRESH_FIELDS = ['status', 'spaceId', 'projectId', 'archivedAt', 'deletedAt'] as const
 
 function hasPatchValue(patch: InspectorTaskPatch): boolean {
 	return Object.keys(patch).length > 0
+}
+
+function hasPatchField<TKey extends keyof InspectorTaskPatch>(patch: InspectorTaskPatch, field: TKey): boolean {
+	return Object.prototype.hasOwnProperty.call(patch, field)
+}
+
+function shouldRefreshTaskQueries(patch: InspectorTaskPatch): boolean {
+	return TASK_QUERY_REFRESH_FIELDS.some((field) => hasPatchField(patch, field))
+}
+
+function shouldRefreshProjectQueries(patch: InspectorTaskPatch): boolean {
+	return PROJECT_QUERY_REFRESH_FIELDS.some((field) => hasPatchField(patch, field))
 }
 
 type TaskPatchQueuePayload = {
@@ -39,6 +58,50 @@ export function useTaskInspectorActions(params: {
 	store: ReturnType<typeof useTaskInspectorStore>
 }) {
 	const { currentTask, state, store } = params
+
+	function buildNextTaskSnapshot(task: InspectorTask, storePatch: Partial<InspectorTask>): InspectorTask {
+		return {
+			...task,
+			...storePatch,
+			updatedAt: Date.now(),
+		}
+	}
+
+	async function syncWorkspaceAfterTaskUpdate(
+		previousTask: InspectorTask | null,
+		nextTask: InspectorTask | null,
+		patch: InspectorTaskPatch,
+	) {
+		if (!previousTask || !nextTask) {
+			await Promise.all([invalidateWorkspaceTaskQueries(), invalidateWorkspaceProjectQueries()])
+			return
+		}
+
+		patchWorkspaceTaskSnapshot(previousTask, nextTask)
+
+		const refreshTaskQueries = shouldRefreshTaskQueries(patch)
+		const refreshProjectQueries = shouldRefreshProjectQueries(patch)
+
+		if (refreshTaskQueries && refreshProjectQueries) {
+			await Promise.all([invalidateWorkspaceTaskQueries(), invalidateWorkspaceProjectQueries()])
+			return
+		}
+
+		if (refreshTaskQueries) {
+			await invalidateWorkspaceTaskQueries()
+		}
+
+		if (refreshProjectQueries) {
+			await invalidateWorkspaceProjectQueries()
+			return
+		}
+
+		if (nextTask.projectId) {
+			patchWorkspaceProjectSnapshot(nextTask.spaceId, nextTask.projectId, {
+				lastTaskUpdatedAt: nextTask.updatedAt,
+			})
+		}
+	}
 
 	function getCurrentTaskId(): string | null {
 		return currentTask.value?.id ?? null
@@ -63,10 +126,14 @@ export function useTaskInspectorActions(params: {
 		}
 
 		if (ok) {
-			if (Object.keys(payload.storePatch).length > 0 && getCurrentTaskId() === taskId) {
-				store.patchTask(payload.storePatch)
+			const previousTaskSnapshot = currentTask.value?.id === taskId ? currentTask.value : null
+			const nextTaskSnapshot = previousTaskSnapshot
+				? buildNextTaskSnapshot(previousTaskSnapshot, payload.storePatch)
+				: null
+			if (nextTaskSnapshot && getCurrentTaskId() === taskId) {
+				store.patchTask(nextTaskSnapshot)
 			}
-			await invalidateWorkspaceTaskAndProjectQueries()
+			await syncWorkspaceAfterTaskUpdate(previousTaskSnapshot, nextTaskSnapshot, payload.patch)
 			return true
 		}
 

@@ -45,11 +45,25 @@ function isWorkspaceProjectListQueryKey(
 	return typeof (scope as WorkspaceProjectListScope).spaceId === 'string'
 }
 
+function isWorkspaceTaskListQueryKey(
+	queryKey: QueryKeyLike,
+): queryKey is readonly ['workspace', 'tasks', 'list', WorkspaceTaskListScope] {
+	if (queryKey.length !== 4) return false
+	if (queryKey[0] !== 'workspace' || queryKey[1] !== 'tasks' || queryKey[2] !== 'list') return false
+	const scope = queryKey[3]
+	if (!scope || typeof scope !== 'object') return false
+	const taskScope = scope as WorkspaceTaskListScope
+	const hasSpaceId = taskScope.spaceId === null || typeof taskScope.spaceId === 'string'
+	const hasProjectId = taskScope.projectId === null || typeof taskScope.projectId === 'string'
+	return hasSpaceId && hasProjectId && typeof taskScope.status === 'string'
+}
+
 export const workspaceQueryKeys = {
 	tasks: {
 		list: (scope: WorkspaceTaskListScope) =>
 			createQueryKey('workspace', 'tasks', 'list', normalizeWorkspaceTaskScope(scope)),
 		isMatch: isWorkspaceTaskQueryKey,
+		isListKey: isWorkspaceTaskListQueryKey,
 	},
 	projects: {
 		list: (scope: WorkspaceProjectListScope) =>

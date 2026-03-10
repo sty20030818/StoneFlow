@@ -11,6 +11,7 @@ export { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspac
 export {
 	getWorkspaceProjectById,
 	getWorkspaceProjectsSnapshot,
+	patchWorkspaceTaskSnapshot,
 	patchWorkspaceProjectSnapshot,
 	refreshWorkspaceProjectsQuery,
 	warmupWorkspaceProjectsQuery,
