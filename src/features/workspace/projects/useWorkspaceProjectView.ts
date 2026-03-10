@@ -290,6 +290,7 @@ export function useWorkspaceProjectView() {
 		onTaskClick,
 		openProjectSettings,
 		projectId,
+		refresh,
 		requestDeleteTask,
 		selectedTaskIds,
 		showSpaceLabel,
