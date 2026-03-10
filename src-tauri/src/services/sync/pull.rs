@@ -56,12 +56,6 @@ pub(super) async fn pull(
         ..Default::default()
     };
 
-    // append-only 表按创建时间增量拉取，不参与版本冲突判断。
-    let append_only =
-        upsert::sync_append_only(&remote_db, local_db, last_pulled_at, SyncDirection::Pull).await?;
-    stats.tags = append_only.tags;
-    stats.task_activity_logs = append_only.task_activity_logs;
-
     stats.links = upsert::sync_links(
         &remote_db,
         local_db,
@@ -78,6 +72,12 @@ pub(super) async fn pull(
         SyncDirection::Pull,
     )
     .await?;
+
+    // append-only 表按创建时间增量拉取，但任务日志必须在任务主表落库后再写入。
+    let append_only =
+        upsert::sync_append_only(&remote_db, local_db, last_pulled_at, SyncDirection::Pull).await?;
+    stats.tags = append_only.tags;
+    stats.task_activity_logs = append_only.task_activity_logs;
 
     // 关系表没有更新时间，当前策略是全量读取 + 主键去重写入。
     let relations = upsert::sync_relations(&remote_db, local_db, SyncDirection::Pull).await?;

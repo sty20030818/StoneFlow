@@ -53,12 +53,6 @@ pub(super) async fn push(
         ..Default::default()
     };
 
-    // append-only 表只关心“有没有重复插入”，不做版本覆盖。
-    let append_only =
-        upsert::sync_append_only(local_db, &remote_db, last_pushed_at, SyncDirection::Push).await?;
-    stats.tags = append_only.tags;
-    stats.task_activity_logs = append_only.task_activity_logs;
-
     stats.links = upsert::sync_links(
         local_db,
         &remote_db,
@@ -75,6 +69,12 @@ pub(super) async fn push(
         SyncDirection::Push,
     )
     .await?;
+
+    // append-only 表只关心“有没有重复插入”，但任务日志必须在任务主表之后同步。
+    let append_only =
+        upsert::sync_append_only(local_db, &remote_db, last_pushed_at, SyncDirection::Push).await?;
+    stats.tags = append_only.tags;
+    stats.task_activity_logs = append_only.task_activity_logs;
 
     // 关系表沿用全量 + 去重策略，当前实现更简单也更稳。
     let relations = upsert::sync_relations(local_db, &remote_db, SyncDirection::Push).await?;

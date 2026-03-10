@@ -1,5 +1,5 @@
 import { useQuery } from '@pinia/colada'
-import { computed } from 'vue'
+import { computed, toRaw } from 'vue'
 
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 import type { RemoteDbProfile, RemoteSyncHistoryItem } from '@/types/shared/remote-sync'
@@ -14,14 +14,15 @@ async function ensureRemoteSyncStoreLoaded(remoteSyncStore: ReturnType<typeof us
 
 function cloneProfile(profile: RemoteDbProfile): RemoteDbProfile {
 	return {
-		...profile,
+		...toRaw(profile),
 	}
 }
 
 function cloneSyncHistoryItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryItem {
+	const rawItem = toRaw(item)
 	return {
-		...item,
-		report: structuredClone(item.report),
+		...rawItem,
+		report: structuredClone(toRaw(rawItem.report)),
 	}
 }
 
