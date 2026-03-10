@@ -5,7 +5,7 @@ import {
 	mapAssetDiaryEntryPatchToDto,
 	type AssetDiaryEntry,
 	type AssetDiaryEntryPatch,
-} from '../model'
+} from './model'
 
 type SaveDiaryPayload = {
 	date: string

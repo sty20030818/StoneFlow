@@ -1,2 +1,2 @@
 export * from './useAssetsVaultPage'
-export * from './pages'
+export * from './useAssetsVaultPageFacade'

@@ -1,2 +1,2 @@
 export * from './useAssetsSnippetsPage'
-export * from './pages'
+export * from './useAssetsSnippetsPageFacade'

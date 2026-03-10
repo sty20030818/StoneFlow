@@ -1,2 +1,2 @@
 export * from './useAssetsDiaryPage'
-export * from './pages'
+export * from './useAssetsDiaryPageFacade'

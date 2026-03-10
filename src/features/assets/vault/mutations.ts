@@ -6,7 +6,7 @@ import {
 	type AssetVaultEntry,
 	type AssetVaultEntryPatch,
 	type AssetVaultEntryType,
-} from '../model'
+} from './model'
 
 type SaveVaultEntryPayload = {
 	name: string

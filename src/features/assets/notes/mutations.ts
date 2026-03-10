@@ -5,7 +5,7 @@ import {
 	mapAssetNotePatchToDto,
 	type AssetNote,
 	type AssetNotePatch,
-} from '../model'
+} from './model'
 
 type SaveNotePayload = {
 	title: string

@@ -11,7 +11,7 @@ import {
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
-import { useAssetsDiaryPage } from '../useAssetsDiaryPage'
+import { useAssetsDiaryPage } from './useAssetsDiaryPage'
 
 export function useAssetsDiaryPageFacade() {
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')

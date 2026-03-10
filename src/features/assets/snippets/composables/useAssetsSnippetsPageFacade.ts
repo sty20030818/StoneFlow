@@ -10,44 +10,42 @@ import {
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
-import { useAssetsVaultPage } from '../useAssetsVaultPage'
+import { useAssetsSnippetsPage } from './useAssetsSnippetsPage'
 
-export function useAssetsVaultPageFacade() {
+export function useAssetsSnippetsPageFacade() {
 	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
 	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
 	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
 	const listMotion = useAppMotionPreset('drawerSection', 'sectionBase', 42)
-	const entryItemPreset = useMotionPreset('listItem')
+	const snippetItemPreset = useMotionPreset('listItem')
 	const modalBodyMotion = useMotionPreset('modalSection')
 	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
 	const {
 		t,
 		loading,
-		selectedEntry,
+		selectedSnippet,
 		editOpen,
 		selectedFolder,
 		searchKeyword,
-		showValue,
 		editForm,
-		typeOptions,
+		tagsInput,
 		folders,
-		filteredEntries,
-		typeLabel,
+		filteredSnippets,
 		openEditor,
 		onCreateNew,
 		closeEditor,
-		onCopy,
+		onTagsBlur,
 		onSave,
 		onDelete,
-	} = useAssetsVaultPage()
+	} = useAssetsSnippetsPage()
 
-	const vaultModalUi = createModalLayerUi({
-		width: 'sm:max-w-2xl',
+	const snippetModalUi = createModalLayerUi({
+		width: 'sm:max-w-3xl',
 		rounded: 'rounded-2xl',
 	})
 
-	const entryItemMotions = computed(() =>
-		createStaggeredEnterMotions(filteredEntries.value.length, entryItemPreset.value, getAppStaggerDelay, {
+	const snippetItemMotions = computed(() =>
+		createStaggeredEnterMotions(filteredSnippets.value.length, snippetItemPreset.value, getAppStaggerDelay, {
 			limit: DEFAULT_STAGGER_MOTION_LIMIT,
 		}),
 	)
@@ -61,22 +59,20 @@ export function useAssetsVaultPageFacade() {
 		modalBodyMotion,
 		modalFooterMotion,
 		loading,
-		selectedEntry,
+		selectedSnippet,
 		editOpen,
 		selectedFolder,
 		searchKeyword,
-		showValue,
 		editForm,
-		typeOptions,
+		tagsInput,
 		folders,
-		filteredEntries,
-		typeLabel,
-		vaultModalUi,
-		entryItemMotions,
+		filteredSnippets,
+		snippetModalUi,
+		snippetItemMotions,
 		openEditor,
 		onCreateNew,
 		closeEditor,
-		onCopy,
+		onTagsBlur,
 		onSave,
 		onDelete,
 	}

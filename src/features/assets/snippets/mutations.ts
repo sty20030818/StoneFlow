@@ -5,7 +5,7 @@ import {
 	mapAssetSnippetPatchToDto,
 	type AssetSnippet,
 	type AssetSnippetPatch,
-} from '../model'
+} from './model'
 
 type SaveSnippetPayload = {
 	title: string

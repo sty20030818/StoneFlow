@@ -1,2 +1,2 @@
 export * from './useAssetsNotesPage'
-export * from './pages'
+export * from './useAssetsNotesPageFacade'

@@ -6,7 +6,7 @@ import {
 	mapAssetDiaryTasksDtoToDomain,
 	type AssetDiaryEntry,
 	type AssetDiaryTask,
-} from '../model'
+} from './model'
 
 export async function listAssetDiaryEntries(): Promise<AssetDiaryEntry[]> {
 	const entries = await listDiaryEntries()
