@@ -1,6 +1,6 @@
 import { listTasks, type ListTasksArgs } from '@/services/api/tasks'
 
-import { mapWorkspaceTasksDtoToDomain, type WorkspaceTask, type WorkspaceTaskListArgs } from '../../shared/model'
+import { mapWorkspaceTasksDtoToDomain, type WorkspaceTask, type WorkspaceTaskListArgs } from '../shared/model'
 
 export type ListWorkspaceTasksArgs = WorkspaceTaskListArgs
 

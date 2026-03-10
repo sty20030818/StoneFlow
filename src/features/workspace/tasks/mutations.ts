@@ -1,6 +1,6 @@
 import { completeTask, deleteTasks, rebalanceRanks, reorderTask, updateTask } from '@/services/api/tasks'
 
-import { mapWorkspaceTaskPatchToDto, type WorkspaceTaskPatch } from '../../shared/model'
+import { mapWorkspaceTaskPatchToDto, type WorkspaceTaskPatch } from '../shared/model'
 
 export type WorkspaceTaskUpdatePatch = WorkspaceTaskPatch
 
