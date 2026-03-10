@@ -97,6 +97,12 @@ impl TaskService {
         let mut touch_updated_at = false;
         let mut changed_any = false;
 
+        // tags / links 存在于独立关系表，但只更新它们时也应视为一次有效任务变更。
+        if tags_changed || links_changed {
+            touch_updated_at = true;
+            changed_any = true;
+        }
+
         // 标题更新是最简单的 patch：先校验，再写入。
         if let Some(title) = title.as_deref() {
             let title = validations::trim_and_validate_title(title)?;
