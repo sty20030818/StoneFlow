@@ -15,7 +15,11 @@ use crate::repos::task_repo::{
 };
 use crate::types::{dto::TaskDto, error::AppError};
 
-use super::{dto::TaskCreateInput, helpers::normalize_tags, TaskService};
+use super::{
+    dto::TaskCreateInput,
+    helpers::{normalize_tags, resolve_default_project_id},
+    TaskService,
+};
 
 impl TaskService {
     /// 创建任务并返回创建后的 DTO。
@@ -81,6 +85,10 @@ impl TaskService {
             .as_ref()
             .map(custom_fields::serialize_custom_fields)
             .transpose()?;
+        let project_id = match input.project_id {
+            Some(project_id) => Some(project_id),
+            None => Some(resolve_default_project_id(&txn, &input.space_id).await?),
+        };
         let rank = query::next_rank_in_bucket(&txn, &input.space_id, &status, &priority).await?;
         let create_by = "stonefish".to_string();
 
@@ -90,7 +98,7 @@ impl TaskService {
             mutation::NewTaskRecord {
                 id: id.clone(),
                 space_id: input.space_id.clone(),
-                project_id: input.project_id.clone(),
+                project_id: project_id.clone(),
                 title: title.clone(),
                 note: note.clone(),
                 status: status.clone(),

@@ -1,5 +1,11 @@
-use crate::db::entities::sea_orm_active_enums::{DoneReason, Priority};
+use sea_orm::{ConnectionTrait, EntityTrait};
+
+use crate::db::entities::{
+    projects,
+    sea_orm_active_enums::{DoneReason, Priority},
+};
 use crate::types::dto::LinkInputDto;
+use crate::types::error::AppError;
 
 /// 把优先级枚举转成前端日志展示使用的字符串。
 pub(super) fn priority_to_value(priority: &Priority) -> String {
@@ -73,4 +79,28 @@ pub(super) fn dedup_project_ids(mut project_ids: Vec<String>) -> Vec<String> {
     project_ids.sort();
     project_ids.dedup();
     project_ids
+}
+
+/// 解析某个 Space 的默认项目 ID，并确保默认项目已存在。
+pub(super) async fn resolve_default_project_id<C>(
+    conn: &C,
+    space_id: &str,
+) -> Result<String, AppError>
+where
+    C: ConnectionTrait,
+{
+    let default_project_id = format!("{space_id}_default");
+    let exists = projects::Entity::find_by_id(&default_project_id)
+        .one(conn)
+        .await
+        .map_err(AppError::from)?;
+
+    if exists.is_some() {
+        Ok(default_project_id)
+    } else {
+        Err(AppError::Validation(format!(
+            "Space '{}' 缺少默认项目，无法为任务兜底归类",
+            space_id
+        )))
+    }
 }

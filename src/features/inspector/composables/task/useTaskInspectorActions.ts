@@ -2,7 +2,9 @@ import type { Ref } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
+import { findDefaultProject, getDefaultProjectId } from '@/config/project'
 import {
+	getWorkspaceProjectsSnapshot,
 	invalidateWorkspaceProjectQueries,
 	invalidateWorkspaceTaskQueries,
 	patchWorkspaceProjectSnapshot,
@@ -20,7 +22,6 @@ import {
 	areLinkPatchesEqual,
 	getNextCustomFieldRank,
 	normalizeOptionalText,
-	normalizeProjectId,
 	toCustomFieldsPatch,
 	toDeadlineTimestamp,
 	toLinkPatch,
@@ -45,6 +46,11 @@ function shouldRefreshTaskQueries(patch: InspectorTaskPatch): boolean {
 
 function shouldRefreshProjectQueries(patch: InspectorTaskPatch): boolean {
 	return PROJECT_QUERY_REFRESH_FIELDS.some((field) => hasPatchField(patch, field))
+}
+
+function resolveDefaultProjectId(spaceId: string): string {
+	const defaultProject = findDefaultProject(getWorkspaceProjectsSnapshot(spaceId))
+	return defaultProject?.id ?? getDefaultProjectId(spaceId)
 }
 
 type TaskPatchQueuePayload = {
@@ -420,17 +426,21 @@ export function useTaskInspectorActions(params: {
 	async function onSpaceChange(value: string) {
 		if (!currentTask.value || value === currentTask.value.spaceId) return
 		state.spaceIdLocal.value = value
-		state.projectIdLocal.value = null
 		await refreshWorkspaceProjectsQuery(value)
+		const nextProjectId = resolveDefaultProjectId(value)
+		state.projectIdLocal.value = nextProjectId
 
-		queueImmediateUpdate({ spaceId: value, projectId: null }, { spaceId: value, projectId: null })
+		queueImmediateUpdate(
+			{ spaceId: value, projectId: nextProjectId },
+			{ spaceId: value, projectId: nextProjectId },
+		)
 		await processQueuedUpdates()
 	}
 
-	async function onProjectChange(value: string | null) {
+	async function onProjectChange(value: string) {
 		if (!currentTask.value) return
-		const nextProjectId = normalizeProjectId(value)
-		if ((currentTask.value.projectId ?? null) === nextProjectId) return
+		const nextProjectId = value.trim()
+		if (!nextProjectId || currentTask.value.projectId === nextProjectId) return
 		state.projectIdLocal.value = nextProjectId
 
 		queueImmediateUpdate({ projectId: nextProjectId }, { projectId: nextProjectId })

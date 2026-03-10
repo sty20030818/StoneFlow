@@ -23,7 +23,7 @@ use super::{
     dto::TaskUpdateInput,
     helpers::{
         done_reason_to_value, normalize_links_for_log, normalize_tags_for_log, priority_to_value,
-        to_optional_join,
+        resolve_default_project_id, to_optional_join,
     },
     TaskService,
 };
@@ -42,7 +42,7 @@ impl TaskService {
         let note = patch.note;
         let tags_input = patch.tags;
         let space_id = patch.space_id;
-        let project_id = patch.project_id;
+        let requested_project_id = patch.project_id;
         let deadline_at = patch.deadline_at;
         let rank = patch.rank;
         let links_input = patch.links;
@@ -83,6 +83,17 @@ impl TaskService {
         let previous_status = task_model.status.clone();
         let previous_priority = task_model.priority.clone();
         let previous_space_id = task_model.space_id.clone();
+        let effective_project_patch = match (space_id.as_deref(), requested_project_id) {
+            (Some(_next_space_id), Some(Some(project_id))) => Some(Some(project_id)),
+            (Some(next_space_id), Some(None)) | (Some(next_space_id), None) => {
+                Some(Some(resolve_default_project_id(&txn, next_space_id).await?))
+            }
+            (None, Some(Some(project_id))) => Some(Some(project_id)),
+            (None, Some(None)) => Some(Some(
+                resolve_default_project_id(&txn, previous_space_id.as_str()).await?,
+            )),
+            (None, None) => None,
+        };
         let mut effective_status = task_model.status.clone();
         let mut effective_priority = task_model.priority.clone();
         let mut effective_space_id = task_model.space_id.clone();
@@ -192,7 +203,7 @@ impl TaskService {
             changed_any = true;
         }
 
-        if let Some(project_id_opt) = project_id.as_ref() {
+        if let Some(project_id_opt) = effective_project_patch.as_ref() {
             let next_project_id = project_id_opt.clone();
             active_model.project_id = Set(next_project_id.clone());
             project_changed = next_project_id != previous_project_id;

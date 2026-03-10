@@ -12,10 +12,14 @@ import type {
 	TaskStatus,
 } from '@/features/create-flow/model'
 import {
+	findDefaultProject,
+	getDefaultProjectId,
+	getDefaultProjectLabel,
 	PROJECT_ICON,
 	PROJECT_LEVEL_TEXT_CLASSES,
 	PROJECT_UNCATEGORIZED_ICON,
 	PROJECT_UNCATEGORIZED_ICON_CLASS,
+	isDefaultProjectId,
 } from '@/config/project'
 import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/config/task'
@@ -55,7 +59,7 @@ export type TaskCustomFieldFormItem = {
 export type CreateTaskFormState = {
 	title: string
 	spaceId: SpaceId
-	projectId: string | null
+	projectId: string
 	status: TaskStatus
 	doneReason: TaskDoneReason
 	priority: TaskPriorityValue
@@ -67,7 +71,7 @@ export type CreateTaskFormState = {
 }
 
 export type ProjectOption = {
-	value: string | null
+	value: string
 	label: string
 	icon: string
 	iconClass: string
@@ -87,7 +91,8 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	const { createTaskFromModal } = useTaskCreateWorkflow()
 
 	const loading = ref(false)
-	const defaultProjectId = ref<string | null>(null)
+	const initialSpaceId = normalizeSpaceId(props.spaceId)
+	const defaultProjectId = ref<string>(getDefaultProjectId(initialSpaceId))
 	const isOpen = useVModel(props, 'modelValue', emit)
 
 	const statusOptionsArray = [...statusOptions]
@@ -100,8 +105,8 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 
 	const form = ref<CreateTaskFormState>({
 		title: '',
-		spaceId: normalizeSpaceId(props.spaceId),
-		projectId: null,
+		spaceId: initialSpaceId,
+		projectId: defaultProjectId.value,
 		status: 'todo',
 		doneReason: 'completed',
 		priority: 'P1',
@@ -137,7 +142,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	})
 
 	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
-	const uncategorizedLabel = computed(() => t('common.labels.uncategorized'))
+	const defaultProjectLabel = computed(() => getDefaultProjectLabel())
 
 	function normalizeTags(values: string[]): string[] {
 		const seen = new Set<string>()
@@ -230,23 +235,23 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 	}
 
 	const projectOptions = computed<ProjectOption[]>(() => {
+		const storeProjects = projectsState.projects.value
+		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === form.value.spaceId)
+		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
+		const defaultProject = findDefaultProject(projectsList)
 		const options: ProjectOption[] = [
 			{
-				value: null,
-				label: uncategorizedLabel.value,
+				value: defaultProject?.id ?? defaultProjectId.value,
+				label: defaultProject?.title ?? defaultProjectLabel.value,
 				icon: PROJECT_UNCATEGORIZED_ICON,
 				iconClass: PROJECT_UNCATEGORIZED_ICON_CLASS,
 				depth: 0,
 			},
 		]
-
-		const storeProjects = projectsState.projects.value
-		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === form.value.spaceId)
-		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
 		if (!projectsList.length) return options
 
 		function buildTree(parentId: string | null, depth: number) {
-			const children = projectsList.filter((p) => p.parentId === parentId && !p.id.endsWith('_default'))
+			const children = projectsList.filter((p) => p.parentId === parentId && !isDefaultProjectId(p.id))
 			for (const project of children) {
 				options.push({
 					value: project.id,
@@ -259,16 +264,19 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			}
 		}
 
+		if (defaultProject) {
+			buildTree(defaultProject.id, 1)
+		}
 		buildTree(null, 0)
 		return options
 	})
 
 	watchDebounced(
 		() => form.value.spaceId,
-		async (newSpaceId, oldSpaceId) => {
-			if (oldSpaceId && newSpaceId !== oldSpaceId) {
-				form.value.projectId = null
-			}
+		async (newSpaceId) => {
+			const fallbackDefaultProjectId = getDefaultProjectId(newSpaceId)
+			defaultProjectId.value = fallbackDefaultProjectId
+			form.value.projectId = fallbackDefaultProjectId
 			await refreshWorkspaceProjectsQuery(newSpaceId)
 			try {
 				const defaultProject = await getCreateFlowDefaultProject(newSpaceId)
@@ -276,6 +284,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 				form.value.projectId = defaultProject.id
 			} catch (error) {
 				console.error('加载默认项目失败:', error)
+				form.value.projectId = fallbackDefaultProjectId
 			}
 		},
 		{ debounce: 80, maxWait: 240 },
@@ -304,6 +313,8 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		tagInput.value = ''
 		advancedOpen.value = false
 		form.value.spaceId = normalizeSpaceId(props.spaceId)
+		defaultProjectId.value = getDefaultProjectId(form.value.spaceId)
+		form.value.projectId = defaultProjectId.value
 
 		await refreshWorkspaceProjectsQuery(form.value.spaceId)
 		try {
@@ -316,6 +327,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			form.value.projectId = hasCandidate ? candidateProjectId : defaultProjectId.value
 		} catch (error) {
 			console.error('加载默认项目失败:', error)
+			form.value.projectId = defaultProjectId.value
 		}
 	})
 
@@ -329,7 +341,6 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 
 		loading.value = true
 		try {
-			const projectId = form.value.projectId ?? defaultProjectId.value
 			const tags = normalizeTags(form.value.tags)
 			const links = normalizeLinks(form.value.links)
 			const customFields = normalizeCustomFields(form.value.customFields)
@@ -344,7 +355,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 			const task = await createTaskFromModal({
 				spaceId: form.value.spaceId,
 				title: form.value.title.trim(),
-				projectId,
+				projectId: form.value.projectId,
 				status: form.value.status,
 				doneReason: form.value.doneReason,
 				priority: form.value.priority,
@@ -386,7 +397,7 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		priorityOptions,
 		doneReasonOptions,
 		linkKindOptions,
-		uncategorizedLabel,
+		defaultProjectLabel,
 		toggleAdvanced,
 		addTag,
 		removeTag,

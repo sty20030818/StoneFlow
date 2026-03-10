@@ -2,7 +2,16 @@ import { useI18n } from 'vue-i18n'
 import { computed, type Ref } from 'vue'
 
 import { SPACE_OPTIONS } from '@/config/space'
-import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES } from '@/config/project'
+import {
+	findDefaultProject,
+	getDefaultProjectId,
+	getDefaultProjectLabel,
+	PROJECT_ICON,
+	PROJECT_LEVEL_TEXT_CLASSES,
+	PROJECT_UNCATEGORIZED_ICON,
+	PROJECT_UNCATEGORIZED_ICON_CLASS,
+	isDefaultProjectId,
+} from '@/config/project'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS_SEGMENT_OPTIONS } from '@/config/task'
 import type { WorkspaceProject } from '@/features/workspace'
 import type { InspectorLink } from '../../model'
@@ -42,11 +51,19 @@ export function useTaskInspectorOptions(params: {
 		const projects = getProjectsOfSpace(sid)
 		const levelColors = PROJECT_LEVEL_TEXT_CLASSES
 
-		const options: Array<{ value: string | null; label: string; icon: string; iconClass: string; depth: number }> = []
-		const defaultProject = projects.find((project) => project.id.endsWith('_default'))
+		const defaultProject = findDefaultProject(projects)
+		const options: Array<{ value: string; label: string; icon: string; iconClass: string; depth: number }> = [
+			{
+				value: defaultProject?.id ?? getDefaultProjectId(sid),
+				label: defaultProject?.title ?? getDefaultProjectLabel(),
+				icon: PROJECT_UNCATEGORIZED_ICON,
+				iconClass: PROJECT_UNCATEGORIZED_ICON_CLASS,
+				depth: 0,
+			},
+		]
 
 		function addProjects(parentId: string | null, depth: number, skipProjectId?: string) {
-			const children = projects.filter((p) => p.parentId === parentId)
+			const children = projects.filter((p) => p.parentId === parentId && !isDefaultProjectId(p.id))
 			for (const proj of children) {
 				if (skipProjectId && proj.id === skipProjectId) continue
 				options.push({
@@ -61,13 +78,6 @@ export function useTaskInspectorOptions(params: {
 		}
 
 		if (defaultProject) {
-			options.push({
-				value: defaultProject.id,
-				label: defaultProject.title,
-				icon: PROJECT_ICON,
-				iconClass: levelColors[0],
-				depth: 0,
-			})
 			addProjects(defaultProject.id, 1)
 		}
 

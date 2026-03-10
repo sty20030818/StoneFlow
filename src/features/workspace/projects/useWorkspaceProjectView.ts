@@ -5,6 +5,7 @@ import { onBeforeRouteLeave, useRoute } from 'vue-router'
 
 import { OPEN_CREATE_TASK_MODAL_KEY, WORKSPACE_BREADCRUMB_ITEMS_KEY } from '@/app/injection-keys'
 import { useNullableStringRouteQuery } from '@/composables/base/route-query'
+import { findDefaultProject, getDefaultProjectId, isDefaultProjectId } from '@/config/project'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
 import { useSettingsStore } from '@/stores/settings'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
@@ -165,6 +166,22 @@ export function useWorkspaceProjectView() {
 		if (!currentProjectId || !spaceId.value) return null
 		return projectsState.projects.value.find((project) => project.id === currentProjectId) ?? null
 	})
+
+	// 统一约束：project query 只能指向当前 space 下的真实项目。
+	// 默认项目 query 若串了别的 space，直接纠正到当前 space 的默认项目；普通无效项目则退回所有任务。
+	watch(
+		() => [spaceId.value, routeProjectId.value, projectsState.isLoaded.value, projectsState.projects.value] as const,
+		([currentSpaceId, currentProjectId, isProjectsLoaded, projects]) => {
+			if (!currentSpaceId || !isProjectsLoaded || !currentProjectId) return
+			if (projects.some((project) => project.id === currentProjectId)) return
+			if (isDefaultProjectId(currentProjectId)) {
+				routeProjectId.value = findDefaultProject(projects)?.id ?? getDefaultProjectId(currentSpaceId)
+				return
+			}
+			routeProjectId.value = null
+		},
+		{ immediate: true },
+	)
 
 	watchDebounced(
 		() => [route.params.spaceId, routeProjectId.value],

@@ -64,7 +64,7 @@
 	}
 
 	type ProjectOption = {
-		value: string | null
+		value: string
 		label: string
 		icon: string
 		iconClass: string
@@ -82,7 +82,7 @@
 		currentSpaceLabel: string
 		currentProjectLabel: string
 		onSpaceChange: (value: string) => void
-		onProjectChange: (value: string | null) => void
+		onProjectChange: (value: string) => void
 	}
 
 	const props = defineProps<Props>()
@@ -99,7 +99,7 @@
 		'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/60',
 		'bg-rose-50/40 border-rose-200 hover:bg-rose-50/60',
 	] as const
-	const FALLBACK_PROJECT_CARD_CLASS = PROJECT_LEVEL_CARD_CLASSES[0]
+	const FALLBACK_PROJECT_CARD_CLASS = 'bg-slate-50/50 border-slate-200 hover:bg-slate-50/70'
 
 	const spaceOptionItems = computed<DrawerAttributeOptionItem[]>(() => {
 		return props.spaceOptions.map((option) => ({
@@ -123,13 +123,8 @@
 	})
 
 	const currentProjectOption = computed(() => {
-		if (props.projectIdLocal !== null) {
-			return props.projectOptions.find((option) => option.value === props.projectIdLocal) ?? null
-		}
-		return (
-			props.projectOptions.find((option) => typeof option.value === 'string' && option.value.endsWith('_default')) ??
-			null
-		)
+		if (props.projectIdLocal === null) return null
+		return props.projectOptions.find((option) => option.value === props.projectIdLocal) ?? null
 	})
 
 	const projectCardClass = computed(() => {
@@ -138,13 +133,13 @@
 		return PROJECT_LEVEL_CARD_CLASSES[Math.min(option.depth, PROJECT_LEVEL_CARD_CLASSES.length - 1)]
 	})
 
-	const projectIconClass = computed(() => currentProjectOption.value?.iconClass ?? 'text-amber-500')
+	const projectIconClass = computed(() => currentProjectOption.value?.iconClass ?? 'text-slate-500')
 	const onSpaceChange = (value: string) => {
 		props.onSpaceChange(value)
 		spacePopoverOpen.value = false
 	}
 
-	const onProjectChange = (value: string | null) => {
+	const onProjectChange = (value: string) => {
 		props.onProjectChange(value)
 		projectPopoverOpen.value = false
 	}
@@ -155,7 +150,7 @@
 	}
 
 	const onProjectSelect = (value: string | number | boolean | null) => {
-		if (value !== null && typeof value !== 'string') return
+		if (typeof value !== 'string') return
 		onProjectChange(value)
 	}
 </script>

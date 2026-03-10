@@ -16,7 +16,7 @@
 					:done-reason-options="doneReasonOptions"
 					:link-kind-options="linkKindOptions"
 					:advanced-open="advancedOpen"
-					:uncategorized-label="uncategorizedLabel"
+					:default-project-label="defaultProjectLabel"
 					@submit="handleSubmit"
 					@toggle-advanced="toggleAdvanced()"
 					@add-tag="addTag"
@@ -75,7 +75,7 @@
 		priorityOptions,
 		doneReasonOptions,
 		linkKindOptions,
-		uncategorizedLabel,
+		defaultProjectLabel,
 		toggleAdvanced,
 		addTag,
 		removeTag,

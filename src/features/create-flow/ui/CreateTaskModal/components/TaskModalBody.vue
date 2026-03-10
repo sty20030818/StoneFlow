@@ -47,7 +47,7 @@
 					label-key="label"
 					size="md"
 					class="w-full"
-					:placeholder="uncategorizedLabel"
+					:placeholder="defaultProjectLabel"
 					:search-input="false"
 					:ui="selectMenuUi">
 					<template #item="{ item }">
@@ -342,7 +342,7 @@
 		doneReasonOptions: DoneReasonOption[]
 		linkKindOptions: LinkKindOption[]
 		advancedOpen: boolean
-		uncategorizedLabel: string
+		defaultProjectLabel: string
 	}>()
 
 	const emit = defineEmits<{

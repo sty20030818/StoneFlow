@@ -2,7 +2,7 @@ import { refDebounced, useAsyncState } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { getDefaultProjectLabel } from '@/config/project'
+import { getUnknownProjectLabel } from '@/config/project'
 import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, type WorkspaceProject } from '@/features/workspace'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -152,7 +152,7 @@ export function useReviewFinishList() {
 		const byProject = new Map<string, WorkspaceTask[]>()
 
 		for (const task of filteredTasks.value) {
-			const key = `${task.spaceId}::${task.projectId ?? 'default'}`
+			const key = `${task.spaceId}::${task.projectId ?? '__missing__'}`
 			const bucket = byProject.get(key) ?? []
 			bucket.push(task)
 			byProject.set(key, bucket)
@@ -176,8 +176,8 @@ export function useReviewFinishList() {
 
 			groups.push({
 				groupKey,
-				projectId: sample.projectId ?? 'default',
-				projectName: project?.title ?? getDefaultProjectLabel(),
+				projectId: sample.projectId ?? `missing:${sample.spaceId}`,
+				projectName: project?.title ?? getUnknownProjectLabel(),
 				spaceId: sample.spaceId,
 				spaceLabel: resolveSpaceLabel(sample.spaceId),
 				tasks: list,
@@ -194,8 +194,7 @@ export function useReviewFinishList() {
 		)
 		const activeProjectIds = new Set<string>()
 		for (const task of thisWeekTasks) {
-			const projects = getProjectsOfSpace(task.spaceId)
-			if (projects[0]) activeProjectIds.add(projects[0].id)
+			if (task.projectId) activeProjectIds.add(task.projectId)
 		}
 		const spaceIds = new Set(thisWeekTasks.map((task) => task.spaceId))
 		return {

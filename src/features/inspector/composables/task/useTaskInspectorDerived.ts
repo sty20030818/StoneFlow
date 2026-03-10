@@ -14,10 +14,6 @@ import {
 
 import type { TaskInspectorState } from './useTaskInspectorState'
 
-function getDefaultProject<T extends { id: string }>(projects: T[]): T | undefined {
-	return projects.find((project) => project.id.endsWith('_default'))
-}
-
 function normalizePriorityKey(priority: string | null | undefined): keyof typeof TASK_PRIORITY_STYLES {
 	const normalized = priority?.trim().toUpperCase() ?? ''
 	if (normalized === 'P0' || normalized === 'P1' || normalized === 'P2' || normalized === 'P3') {
@@ -77,10 +73,9 @@ export function useTaskInspectorDerived(params: {
 
 	const currentProjectLabel = computed(() => {
 		const projects = getProjectsOfSpace(state.spaceIdLocal.value)
-		const defaultProject = getDefaultProject(projects)
-		if (!state.projectIdLocal.value) return defaultProject?.title ?? t('common.labels.unknownProject')
+		if (!state.projectIdLocal.value) return t('nav.pages.allTasks.title')
 		const proj = projects.find((p) => p.id === state.projectIdLocal.value)
-		return proj?.title ?? defaultProject?.title ?? t('common.labels.unknownProject')
+		return proj?.title ?? t('common.labels.unknownProject')
 	})
 
 	const deadlineLabel = computed(() => {
@@ -111,8 +106,8 @@ export function useTaskInspectorDerived(params: {
 		const task = currentTask.value
 		if (!task) return t('common.labels.unknownProject')
 		const projects = getProjectsOfSpace(task.spaceId)
-		const defaultProject = getDefaultProject(projects)
-		const project = task.projectId ? projects.find((p) => p.id === task.projectId) : defaultProject
+		if (!task.projectId) return t('nav.pages.allTasks.title')
+		const project = projects.find((p) => p.id === task.projectId)
 		if (!project) return t('common.labels.unknownProject')
 		return project.path || project.title
 	})

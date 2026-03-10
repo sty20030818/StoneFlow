@@ -2,6 +2,7 @@ import { refDebounced, useStorage } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { getUnknownProjectLabel } from '@/config/project'
 import { invalidateWorkspaceTaskAndProjectQueries, useSpaceProjectsState } from '@/features/workspace'
 import { useSettingsStore } from '@/stores/settings'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -50,7 +51,7 @@ export function useTrashPage() {
 	}
 
 	function getTaskProjectLabel(projectId: string | null) {
-		if (!projectId) return t('common.labels.uncategorized')
+		if (!projectId) return getUnknownProjectLabel()
 		return projectNameMap.value.get(projectId) ?? t('trash.labels.deletedProject')
 	}
 

@@ -45,8 +45,16 @@ export function getDefaultProjectLabel() {
 	return t('project.defaultLabel')
 }
 
+export function getDefaultProjectId(spaceId: string): string {
+	return `${spaceId}${DEFAULT_PROJECT_ID_SUFFIX}`
+}
+
 export function isDefaultProjectId(projectId: string): boolean {
 	return projectId.endsWith(DEFAULT_PROJECT_ID_SUFFIX)
+}
+
+export function findDefaultProject<T extends { id: string }>(projects: readonly T[]): T | null {
+	return projects.find((project) => isDefaultProjectId(project.id)) ?? null
 }
 
 export const PROJECT_PRIORITY_OPTIONS = PRIORITY_OPTIONS
