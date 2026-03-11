@@ -8,6 +8,8 @@ import {
 	mapWorkspaceProjectsDtoToEntities,
 	mapWorkspaceTaskDtoToEntity,
 	mapWorkspaceTasksDtoToEntities,
+	type WorkspaceEntityProject,
+	type WorkspaceEntityTask,
 } from './types'
 
 export type WorkspaceTaskScope = {
@@ -27,7 +29,7 @@ export function createWorkspaceRequestToken() {
 }
 
 /**
- * Repository 负责把 transport DTO 写入实体缓存，后续 query/controller 统一只调这里。
+ * Repository 负责把 transport DTO 与本地写回结果统一落到实体缓存。
  */
 export function useWorkspaceEntityRepository() {
 	const store = useWorkspaceEntitiesStore()
@@ -38,7 +40,15 @@ export function useWorkspaceEntityRepository() {
 	}
 
 	function upsertProject(project: ProjectDto) {
-		store.upsertProjectEntities([mapWorkspaceProjectDtoToEntity(project)])
+		upsertProjectEntity(mapWorkspaceProjectDtoToEntity(project))
+	}
+
+	function upsertProjectEntity(project: WorkspaceEntityProject) {
+		store.upsertProjectEntities([project])
+	}
+
+	function upsertProjectEntities(projects: WorkspaceEntityProject[]) {
+		store.upsertProjectEntities(projects)
 	}
 
 	function removeProjects(projectIds: string[]) {
@@ -51,7 +61,15 @@ export function useWorkspaceEntityRepository() {
 	}
 
 	function upsertTask(task: TaskDto) {
-		store.upsertTaskEntities([mapWorkspaceTaskDtoToEntity(task)])
+		upsertTaskEntity(mapWorkspaceTaskDtoToEntity(task))
+	}
+
+	function upsertTaskEntity(task: WorkspaceEntityTask) {
+		store.upsertTaskEntities([task])
+	}
+
+	function upsertTaskEntities(tasks: WorkspaceEntityTask[]) {
+		store.upsertTaskEntities(tasks)
 	}
 
 	function removeTasks(taskIds: string[]) {
@@ -79,9 +97,13 @@ export function useWorkspaceEntityRepository() {
 	return {
 		replaceProjectsForSpace,
 		upsertProject,
+		upsertProjectEntity,
+		upsertProjectEntities,
 		removeProjects,
 		replaceTasksForScope,
 		upsertTask,
+		upsertTaskEntity,
+		upsertTaskEntities,
 		removeTasks,
 		setTaskScopeRequestToken,
 		getTaskScopeRequestToken,

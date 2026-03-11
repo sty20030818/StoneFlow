@@ -1,4 +1,4 @@
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
+import { refreshWorkspaceProjectsQuery, useWorkspaceEntityRepository } from '@/features/workspace'
 
 import type {
 	CreateTaskWithPatchArgs,
@@ -46,6 +46,12 @@ async function resolveTaskProjectId(spaceId: string, projectId?: string | null):
 }
 
 export function useTaskCreateWorkflow() {
+	const repository = useWorkspaceEntityRepository()
+
+	async function syncProjectSpace(spaceId: string) {
+		await refreshWorkspaceProjectsQuery(spaceId, { force: true })
+	}
+
 	async function createTaskFromModal(input: CreateTaskFromModalInput): Promise<CreateFlowTask> {
 		const args: CreateTaskWithPatchArgs = {
 			spaceId: input.spaceId,
@@ -63,7 +69,8 @@ export function useTaskCreateWorkflow() {
 		}
 
 		const task = await createFlowTaskWithPatch(args)
-		await invalidateWorkspaceTaskAndProjectQueries()
+		repository.upsertTask(task)
+		await syncProjectSpace(task.spaceId)
 		return task
 	}
 
@@ -87,7 +94,8 @@ export function useTaskCreateWorkflow() {
 			Object.assign(task, patch)
 		}
 
-		await invalidateWorkspaceTaskAndProjectQueries()
+		repository.upsertTask(task)
+		await syncProjectSpace(task.spaceId)
 		return task
 	}
 

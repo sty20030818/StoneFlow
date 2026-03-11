@@ -14,12 +14,12 @@ import {
 import type { InspectorLink, InspectorLinkInput, InspectorProject, InspectorProjectPatch } from '../../model'
 import {
 	getWorkspaceProjectById,
+	getWorkspaceProjectEntityByIdSnapshot,
 	getWorkspaceProjectsSnapshot,
-	invalidateWorkspaceTaskAndProjectQueries,
-	invalidateWorkspaceProjectQueries,
-	patchWorkspaceProjectSnapshot,
 	refreshWorkspaceProjectsQuery,
+	refreshWorkspaceTaskScopes,
 	useSpaceProjectsState,
+	useWorkspaceEntityRepository,
 	type WorkspaceProject,
 } from '@/features/workspace'
 import { SPACE_OPTIONS } from '@/config/space'
@@ -44,6 +44,11 @@ type ProjectPatchQueuePayload = {
 	spaceId: string
 	patch: InspectorProjectPatch
 }
+
+type ProjectStorePatch = Pick<
+	InspectorProject,
+	'title' | 'note' | 'priority' | 'spaceId' | 'parentId' | 'tags' | 'archivedAt' | 'deletedAt'
+>
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
 const TEXT_AUTOSAVE_MAX_WAIT = 2000
@@ -103,6 +108,7 @@ export function useProjectInspectorDrawer() {
 	const spaceOptions = SPACE_OPTIONS
 	const linkKindOptions = computed(() => buildDrawerLinkKindOptions(t))
 	const rootLabel = computed(() => t('common.labels.projectRoot'))
+	const workspaceRepository = useWorkspaceEntityRepository()
 
 	const isStructureLocked = computed(() => {
 		const project = currentProject.value
@@ -236,7 +242,7 @@ export function useProjectInspectorDrawer() {
 	}
 
 	function shouldForceRefreshAfterCommit(patch: InspectorProjectPatch): boolean {
-		return patch.title !== undefined || patch.parentId !== undefined || patch.spaceId !== undefined
+		return patch.title !== undefined || patch.parentId !== undefined || patch.spaceId !== undefined || patch.links !== undefined
 	}
 
 	function stageUpdateForCurrentProject(patch: InspectorProjectPatch): boolean {
@@ -258,7 +264,8 @@ export function useProjectInspectorDrawer() {
 		stageUpdateForCurrentProject(patch)
 	}
 
-	function patchStoreProject(projectId: string, spaceId: string, patch: InspectorProjectPatch) {
+	function patchStoreProject(projectId: string, spaceId: string, patch: Partial<ProjectStorePatch>) {
+		const currentEntity = getWorkspaceProjectEntityByIdSnapshot(projectId)
 		const draftPatch: Partial<InspectorProject> = {}
 		if (patch.title !== undefined) draftPatch.title = patch.title
 		if (patch.note !== undefined) draftPatch.note = patch.note
@@ -266,11 +273,22 @@ export function useProjectInspectorDrawer() {
 		if (patch.spaceId !== undefined) draftPatch.spaceId = patch.spaceId
 		if (patch.parentId !== undefined) draftPatch.parentId = patch.parentId
 		if (patch.tags !== undefined) draftPatch.tags = patch.tags
+		if (patch.archivedAt !== undefined) draftPatch.archivedAt = patch.archivedAt
+		if (patch.deletedAt !== undefined) draftPatch.deletedAt = patch.deletedAt
 		if (!hasPatchValue(draftPatch)) return
 
-		patchWorkspaceProjectSnapshot(spaceId, projectId, draftPatch as Partial<WorkspaceProject>)
+		if (currentEntity && currentEntity.spaceId === spaceId) {
+			workspaceRepository.upsertProjectEntity({
+				...currentEntity,
+				...draftPatch,
+				updatedAt: Date.now(),
+			})
+		}
 		if (currentProject.value?.id === projectId) {
-			store.patchProject(draftPatch)
+			store.patchProject({
+				...draftPatch,
+				updatedAt: Date.now(),
+			})
 		}
 	}
 
@@ -302,12 +320,10 @@ export function useProjectInspectorDrawer() {
 			const targetSpaceId = patch.spaceId ?? spaceId
 			if (patch.spaceId && patch.spaceId !== spaceId) {
 				void refreshStoreProjectAfterSpaceChange(spaceId, targetSpaceId, projectId)
+				void refreshWorkspaceTaskScopes(spaceId, { force: true })
+				void refreshWorkspaceTaskScopes(targetSpaceId, { force: true })
 			} else if (shouldForceRefreshAfterCommit(patch)) {
 				void refreshStoreProject(spaceId, projectId, { force: true })
-			}
-			await invalidateWorkspaceProjectQueries()
-			if (patch.spaceId !== undefined) {
-				await invalidateWorkspaceTaskAndProjectQueries()
 			}
 			return true
 		} catch (error) {
@@ -681,7 +697,15 @@ export function useProjectInspectorDrawer() {
 		try {
 			if (action === 'delete') {
 				await deleteInspectorProject(project.id)
-				await invalidateWorkspaceTaskAndProjectQueries()
+				workspaceRepository.removeProjects([project.id])
+				store.patchProject({
+					deletedAt: Date.now(),
+					updatedAt: Date.now(),
+				})
+				await Promise.all([
+					refreshWorkspaceProjectsQuery(project.spaceId, { force: true }),
+					refreshWorkspaceTaskScopes(project.spaceId, { force: true }),
+				])
 				toast.add({
 					title: t('inspector.project.toast.deletedTitle'),
 					description: project.title,
@@ -693,8 +717,8 @@ export function useProjectInspectorDrawer() {
 
 			if (action === 'restore') {
 				await restoreInspectorProject(project.id)
-				await invalidateWorkspaceProjectQueries()
-				await refreshStoreProject(project.spaceId, project.id, { force: true })
+				patchStoreProject(project.id, project.spaceId, { deletedAt: null })
+				await refreshWorkspaceProjectsQuery(project.spaceId, { force: true })
 				toast.add({
 					title: t('inspector.project.toast.restoredTitle'),
 					description: project.title,
@@ -705,8 +729,8 @@ export function useProjectInspectorDrawer() {
 
 			if (action === 'archive') {
 				await archiveInspectorProject(project.id)
-				await invalidateWorkspaceProjectQueries()
-				await refreshStoreProject(project.spaceId, project.id, { force: true })
+				patchStoreProject(project.id, project.spaceId, { archivedAt: Date.now() })
+				await refreshWorkspaceProjectsQuery(project.spaceId, { force: true })
 				toast.add({
 					title: t('inspector.project.toast.archivedTitle'),
 					description: project.title,
@@ -716,8 +740,8 @@ export function useProjectInspectorDrawer() {
 			}
 
 			await unarchiveInspectorProject(project.id)
-			await invalidateWorkspaceProjectQueries()
-			await refreshStoreProject(project.spaceId, project.id, { force: true })
+			patchStoreProject(project.id, project.spaceId, { archivedAt: null })
+			await refreshWorkspaceProjectsQuery(project.spaceId, { force: true })
 			toast.add({
 				title: t('inspector.project.toast.unarchivedTitle'),
 				description: project.title,

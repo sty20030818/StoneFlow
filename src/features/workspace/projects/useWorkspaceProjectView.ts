@@ -11,7 +11,9 @@ import { useSettingsStore } from '@/stores/settings'
 import { useTaskInspectorStore } from '@/stores/taskInspector'
 import { useWorkspaceEditStore, type WorkspaceEditCommand } from '@/stores/workspace-edit'
 import { resolveErrorMessage } from '@/utils/error-message'
-import { invalidateWorkspaceTaskAndProjectQueries, type WorkspaceTask } from '../shared/model'
+import type { WorkspaceTask } from '../shared/model'
+import { refreshWorkspaceProjectsQuery } from '../shared/queries'
+import { useWorkspaceEntityRepository } from '../entities/repository'
 import { useSpaceProjectsState } from '../spaces'
 import { deleteWorkspaceTasks } from '../tasks'
 import { useWorkspaceProjectBreadcrumb } from './useWorkspaceProjectBreadcrumb'
@@ -41,6 +43,7 @@ export function useWorkspaceProjectView() {
 	const taskInspectorStore = useTaskInspectorStore()
 	const openCreateTaskModal = inject(OPEN_CREATE_TASK_MODAL_KEY)
 	const toast = useToast()
+	const workspaceRepository = useWorkspaceEntityRepository()
 	const workspaceEditContextId = createWorkspaceEditContextId()
 
 	const spaceId = computed(() => {
@@ -160,9 +163,16 @@ export function useWorkspaceProjectView() {
 		deleting.value = true
 		try {
 			const ids = deleteTargetIds.value ?? Array.from(selectedTaskIds.value)
+			const affectedSpaceIds = new Set(
+				[...todo.value, ...doneAll.value]
+					.filter((task) => ids.includes(task.id))
+					.map((task) => task.spaceId),
+			)
 			const deletedCount = await deleteWorkspaceTasks(ids)
-			await invalidateWorkspaceTaskAndProjectQueries()
-			await refresh()
+			workspaceRepository.removeTasks(ids)
+			await Promise.all(
+				[...affectedSpaceIds].map((currentSpaceId) => refreshWorkspaceProjectsQuery(currentSpaceId, { force: true })),
+			)
 			toast.add({
 				title: t('projectView.toast.deletedTitle'),
 				description: t('projectView.toast.deletedDescription', { count: deletedCount }),

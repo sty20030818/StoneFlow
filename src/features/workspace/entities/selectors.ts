@@ -31,14 +31,32 @@ export function getWorkspaceProjectsBySpaceSnapshot(spaceId: string): WorkspaceP
 	return getWorkspaceProjectEntitiesBySpace(spaceId).map(mapWorkspaceProjectEntityToView)
 }
 
-export function getWorkspaceProjectEntityByIdSnapshot(spaceId: string, projectId: string): WorkspaceEntityProject | null {
-	const project = getWorkspaceProjectEntitiesBySpace(spaceId).find((item) => item.id === projectId)
-	return project ?? null
+export function getWorkspaceProjectEntityByIdSnapshot(
+	spaceIdOrProjectId: string,
+	projectId?: string,
+): WorkspaceEntityProject | null {
+	const store = useWorkspaceEntitiesStore()
+	const expectedSpaceId = projectId ? spaceIdOrProjectId : null
+	const resolvedProjectId = projectId ?? spaceIdOrProjectId
+	const project = store.projectsById[resolvedProjectId] ?? null
+	if (!project) return null
+	if (expectedSpaceId && project.spaceId !== expectedSpaceId) return null
+	return project
 }
 
 export function getWorkspaceProjectByIdSnapshot(spaceId: string, projectId: string): WorkspaceProject | null {
 	const project = getWorkspaceProjectEntityByIdSnapshot(spaceId, projectId)
 	return project ? mapWorkspaceProjectEntityToView(project) : null
+}
+
+export function getWorkspaceTaskEntityByIdSnapshot(taskId: string): WorkspaceEntityTask | null {
+	const store = useWorkspaceEntitiesStore()
+	return store.tasksById[taskId] ?? null
+}
+
+export function getWorkspaceTaskByIdSnapshot(taskId: string): WorkspaceTask | null {
+	const task = getWorkspaceTaskEntityByIdSnapshot(taskId)
+	return task ? mapWorkspaceTaskEntityToView(task) : null
 }
 
 export function getWorkspaceTasksByScopeSnapshot(

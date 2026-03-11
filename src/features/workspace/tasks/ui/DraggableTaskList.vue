@@ -47,7 +47,9 @@
 		useMotionPreset,
 	} from '@/composables/base/motion'
 	import { calculateInsertRank } from '@/utils/rank'
-	import { invalidateWorkspaceTaskQueries, type WorkspaceTask } from '../../shared/model'
+	import type { WorkspaceTask } from '../../shared/model'
+	import { refreshWorkspaceTaskScopes } from '../../shared/queries'
+	import { useWorkspaceEntityRepository } from '../../entities/repository'
 	import { rebalanceWorkspaceTaskRanks, reorderWorkspaceTask } from '../mutations'
 	import TaskCard from './TaskCard'
 
@@ -71,6 +73,7 @@
 		/** 拖拽结束后触发，传递更新后的任务列表用于同步状态 */
 		reorder: [tasks: WorkspaceTask[]]
 	}>()
+	const repository = useWorkspaceEntityRepository()
 	const listItemMotion = useMotionPreset('listItem')
 	const listItemStaticMotion = computed(() => toStaticMotionVariants(listItemMotion.value))
 	const LIST_STAGGER_STEP = getProjectMotionPhaseDelay('listStep')
@@ -192,14 +195,20 @@
 		try {
 			// 立即更新被拖拽任务的 rank
 			await reorderWorkspaceTask(movedTask.id, newRank)
+			repository.upsertTask({
+				...movedTask,
+				rank: newRank,
+				updatedAt: Date.now(),
+			})
 
 			// 如果需要重排，后台异步执行
 			if (needsRebalance) {
 				const taskIds = tasks.map((t) => t.id)
-				// 不 await，让重排在后台执行
-				rebalanceWorkspaceTaskRanks(taskIds).catch(console.error)
+				// 不 await，让重排在后台执行；完成后定向回拉当前 Space 对应状态列。
+				rebalanceWorkspaceTaskRanks(taskIds)
+					.then(() => refreshWorkspaceTaskScopes(movedTask.spaceId, { force: true, statuses: [movedTask.status] }))
+					.catch(console.error)
 			}
-			await invalidateWorkspaceTaskQueries()
 		} catch (error) {
 			console.error('Failed to reorder task:', error)
 		}

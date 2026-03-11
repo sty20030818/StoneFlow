@@ -1,12 +1,14 @@
-import { invalidateWorkspaceProjectQueries } from '@/features/workspace'
+import { useWorkspaceEntityRepository } from '@/features/workspace'
 
 import type { CreateFlowProject, CreateProjectArgs } from '../model'
 import { createFlowProject } from '../mutations'
 
 export function useProjectCreateWorkflow() {
+	const repository = useWorkspaceEntityRepository()
+
 	async function createProjectFromModal(input: CreateProjectArgs): Promise<CreateFlowProject> {
 		const project = await createFlowProject(input)
-		await invalidateWorkspaceProjectQueries()
+		repository.upsertProject(project)
 		return project
 	}
 

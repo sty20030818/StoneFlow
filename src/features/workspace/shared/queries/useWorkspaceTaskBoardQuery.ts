@@ -1,22 +1,48 @@
 import { useQuery } from '@pinia/colada'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
-import { listTasks } from '@/services/api/tasks'
+import { listTasks, type TaskStatus } from '@/services/api/tasks'
 import { useStoneFlowQueryCache } from '@/features/shared'
 import { useWorkspaceEntityRepository } from '../../entities/repository'
+import { createWorkspaceTaskScopeKey } from '../../entities/indexes'
 import { useWorkspaceTaskScopeSelector } from '../../entities/selectors'
 import { useWorkspaceEntitiesStore } from '../../entities/store'
-import { createWorkspaceTaskScopeKey } from '../../entities/indexes'
 import { workspaceQueryKeys, type WorkspaceTask, type WorkspaceTaskListScope } from '../model'
+
+export type WorkspaceTaskTransportStatus = Extract<TaskStatus, 'todo' | 'done'>
+
+const TASKS_QUERY_STALE_TIME = 60 * 1000
+const TASKS_QUERY_GC_TIME = 10 * 60 * 1000
 
 function createTransportScope(
 	spaceId: string | undefined,
-	status: WorkspaceTaskListScope['status'],
+	status: WorkspaceTaskTransportStatus,
 ): WorkspaceTaskListScope {
 	return {
 		spaceId: spaceId ?? null,
 		projectId: null,
 		status,
+	}
+}
+
+function createTaskTransportQueryOptions(
+	spaceId: string,
+	status: WorkspaceTaskTransportStatus,
+	repository: ReturnType<typeof useWorkspaceEntityRepository>,
+) {
+	return {
+		key: workspaceQueryKeys.tasks.list(createTransportScope(spaceId, status)),
+		query: async () => {
+			const tasks = await listTasks({ spaceId, status })
+			repository.replaceTasksForScope({ spaceId, status }, tasks)
+			return tasks.length
+		},
+		enabled: true,
+		staleTime: TASKS_QUERY_STALE_TIME,
+		gcTime: TASKS_QUERY_GC_TIME,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: true,
+		refetchOnMount: true,
 	}
 }
 
@@ -72,6 +98,32 @@ export function patchWorkspaceTaskSnapshot(previousTask: WorkspaceTask, nextTask
 	repository.upsertTask(nextTask)
 }
 
+export async function refreshWorkspaceTaskScopes(
+	spaceId: string,
+	options: {
+		force?: boolean
+		statuses?: WorkspaceTaskTransportStatus[]
+	} = {},
+) {
+	const queryCache = useStoneFlowQueryCache()
+	const repository = useWorkspaceEntityRepository()
+	const statuses = options.statuses ?? ['todo', 'done']
+
+	await Promise.all(
+		statuses.map(async (status) => {
+			const queryOptions = createTaskTransportQueryOptions(spaceId, status, repository)
+			const entry = queryCache.ensure(queryOptions)
+
+			if (options.force) {
+				await queryCache.fetch(entry, queryOptions)
+				return
+			}
+
+			await queryCache.refresh(entry, queryOptions)
+		}),
+	)
+}
+
 export function useWorkspaceTaskBoardQuery(
 	spaceId?: MaybeRefOrGetter<string | undefined>,
 	projectId?: MaybeRefOrGetter<string | null | undefined>,
@@ -88,6 +140,11 @@ export function useWorkspaceTaskBoardQuery(
 	const todoQuery = useQuery<number>({
 		key: () => workspaceQueryKeys.tasks.list(todoScope.value),
 		enabled: () => Boolean(activeSpaceId.value),
+		staleTime: TASKS_QUERY_STALE_TIME,
+		gcTime: TASKS_QUERY_GC_TIME,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: true,
+		refetchOnMount: true,
 		query: async () => {
 			const currentSpaceId = activeSpaceId.value
 			if (!currentSpaceId) return 0
@@ -100,6 +157,11 @@ export function useWorkspaceTaskBoardQuery(
 	const doneQuery = useQuery<number>({
 		key: () => workspaceQueryKeys.tasks.list(doneScope.value),
 		enabled: () => Boolean(activeSpaceId.value),
+		staleTime: TASKS_QUERY_STALE_TIME,
+		gcTime: TASKS_QUERY_GC_TIME,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: true,
+		refetchOnMount: true,
 		query: async () => {
 			const currentSpaceId = activeSpaceId.value
 			if (!currentSpaceId) return 0

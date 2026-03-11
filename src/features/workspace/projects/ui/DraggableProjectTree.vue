@@ -137,8 +137,8 @@
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { resolveErrorMessage } from '@/utils/error-message'
 	import { calculateInsertRank } from '@/utils/rank'
-	import { getWorkspaceProjectById } from '../../shared/queries'
-	import { invalidateWorkspaceTaskAndProjectQueries } from '../../shared/model'
+	import { getWorkspaceProjectById, refreshWorkspaceProjectsQuery, refreshWorkspaceTaskScopes } from '../../shared/queries'
+	import { getWorkspaceProjectEntityByIdSnapshot, useWorkspaceEntityRepository } from '../../entities'
 	import { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from '../mutations'
 
 	const props = withDefaults(
@@ -176,6 +176,7 @@
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
 	})
+	const workspaceRepository = useWorkspaceEntityRepository()
 
 	// 本地项目列表副本，用于拖拽
 	const localProjects = ref<ProjectTreeItem[]>([])
@@ -282,7 +283,11 @@
 		deleting.value = true
 		try {
 			await deleteWorkspaceProject(deleteTarget.value.id)
-			await invalidateWorkspaceTaskAndProjectQueries()
+			workspaceRepository.removeProjects([deleteTarget.value.id])
+			await Promise.all([
+				refreshWorkspaceProjectsQuery(spaceId.value, { force: true }),
+				refreshWorkspaceTaskScopes(spaceId.value, { force: true }),
+			])
 			toast.add({
 				title: t('toast.projectTree.deletedTitle'),
 				description: deleteTarget.value.label,
@@ -323,11 +328,21 @@
 		try {
 			// 立即更新被拖拽项目的 rank
 			await reorderWorkspaceProject(movedProject.id, newRank)
+			const currentProject = getWorkspaceProjectEntityByIdSnapshot(movedProject.id)
+			if (currentProject) {
+				workspaceRepository.upsertProjectEntity({
+					...currentProject,
+					rank: newRank,
+					updatedAt: Date.now(),
+				})
+			}
 
 			// 如果需要重排，后台异步执行
 			if (needsRebalance) {
 				const projectIds = projects.map((p) => p.id)
-				rebalanceWorkspaceProjectRanks(projectIds).catch(console.error)
+				rebalanceWorkspaceProjectRanks(projectIds)
+					.then(() => refreshWorkspaceProjectsQuery(spaceId.value, { force: true }))
+					.catch(console.error)
 			}
 		} catch (error) {
 			console.error('Failed to reorder project:', error)

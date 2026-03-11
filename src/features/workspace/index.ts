@@ -14,6 +14,7 @@ export {
 	patchWorkspaceTaskSnapshot,
 	patchWorkspaceProjectSnapshot,
 	refreshWorkspaceProjectsQuery,
+	refreshWorkspaceTaskScopes,
 	warmupWorkspaceProjectsQuery,
 } from './shared/queries'
 export {
@@ -32,6 +33,9 @@ export {
 	createWorkspaceTaskScopeKey,
 	getWorkspaceProjectByIdSnapshot,
 	getWorkspaceProjectsBySpaceSnapshot,
+	getWorkspaceProjectEntityByIdSnapshot,
+	getWorkspaceTaskByIdSnapshot,
+	getWorkspaceTaskEntityByIdSnapshot,
 	getWorkspaceTasksByScopeSnapshot,
 	isWorkspaceDefaultProject,
 	useWorkspaceEntitiesStore,

@@ -4,12 +4,10 @@ import { watchDebounced } from '@vueuse/core'
 import type { TaskDoneReasonValue, TaskPriorityValue, TaskStatusValue } from '@/config/task'
 import { findDefaultProject, getDefaultProjectId } from '@/config/project'
 import {
+	getWorkspaceProjectEntityByIdSnapshot,
 	getWorkspaceProjectsSnapshot,
-	invalidateWorkspaceProjectQueries,
-	invalidateWorkspaceTaskQueries,
-	patchWorkspaceProjectSnapshot,
-	patchWorkspaceTaskSnapshot,
 	refreshWorkspaceProjectsQuery,
+	useWorkspaceEntityRepository,
 } from '@/features/workspace'
 import { usePatchQueue } from '../shared'
 import { updateInspectorTask } from '../../mutations'
@@ -29,7 +27,6 @@ import {
 
 const TEXT_AUTOSAVE_DEBOUNCE = 600
 const TEXT_AUTOSAVE_MAX_WAIT = 2000
-const TASK_QUERY_REFRESH_FIELDS = ['status', 'priority', 'spaceId', 'projectId', 'rank', 'archivedAt', 'deletedAt'] as const
 const PROJECT_QUERY_REFRESH_FIELDS = ['status', 'spaceId', 'projectId', 'archivedAt', 'deletedAt'] as const
 
 function hasPatchValue(patch: InspectorTaskPatch): boolean {
@@ -38,10 +35,6 @@ function hasPatchValue(patch: InspectorTaskPatch): boolean {
 
 function hasPatchField<TKey extends keyof InspectorTaskPatch>(patch: InspectorTaskPatch, field: TKey): boolean {
 	return Object.prototype.hasOwnProperty.call(patch, field)
-}
-
-function shouldRefreshTaskQueries(patch: InspectorTaskPatch): boolean {
-	return TASK_QUERY_REFRESH_FIELDS.some((field) => hasPatchField(patch, field))
 }
 
 function shouldRefreshProjectQueries(patch: InspectorTaskPatch): boolean {
@@ -64,6 +57,7 @@ export function useTaskInspectorActions(params: {
 	store: ReturnType<typeof useTaskInspectorStore>
 }) {
 	const { currentTask, state, store } = params
+	const workspaceRepository = useWorkspaceEntityRepository()
 
 	function buildNextTaskSnapshot(task: InspectorTask, storePatch: Partial<InspectorTask>): InspectorTask {
 		return {
@@ -78,34 +72,26 @@ export function useTaskInspectorActions(params: {
 		nextTask: InspectorTask | null,
 		patch: InspectorTaskPatch,
 	) {
-		if (!previousTask || !nextTask) {
-			await Promise.all([invalidateWorkspaceTaskQueries(), invalidateWorkspaceProjectQueries()])
-			return
-		}
+		if (!previousTask || !nextTask) return
 
-		patchWorkspaceTaskSnapshot(previousTask, nextTask)
+		workspaceRepository.upsertTask(nextTask)
 
-		const refreshTaskQueries = shouldRefreshTaskQueries(patch)
-		const refreshProjectQueries = shouldRefreshProjectQueries(patch)
-
-		if (refreshTaskQueries && refreshProjectQueries) {
-			await Promise.all([invalidateWorkspaceTaskQueries(), invalidateWorkspaceProjectQueries()])
-			return
-		}
-
-		if (refreshTaskQueries) {
-			await invalidateWorkspaceTaskQueries()
-		}
-
-		if (refreshProjectQueries) {
-			await invalidateWorkspaceProjectQueries()
+		if (shouldRefreshProjectQueries(patch)) {
+			const affectedSpaceIds = new Set([previousTask.spaceId, nextTask.spaceId])
+			await Promise.all(
+				[...affectedSpaceIds].map((spaceId) => refreshWorkspaceProjectsQuery(spaceId, { force: true })),
+			)
 			return
 		}
 
 		if (nextTask.projectId) {
-			patchWorkspaceProjectSnapshot(nextTask.spaceId, nextTask.projectId, {
-				lastTaskUpdatedAt: nextTask.updatedAt,
-			})
+			const currentProject = getWorkspaceProjectEntityByIdSnapshot(nextTask.projectId)
+			if (currentProject && currentProject.spaceId === nextTask.spaceId) {
+				workspaceRepository.upsertProjectEntity({
+					...currentProject,
+					lastTaskUpdatedAt: nextTask.updatedAt,
+				})
+			}
 		}
 	}
 
