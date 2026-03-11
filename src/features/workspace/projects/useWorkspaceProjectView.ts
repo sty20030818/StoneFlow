@@ -47,24 +47,43 @@ export function useWorkspaceProjectView() {
 		const value = route.params.spaceId
 		return typeof value === 'string' ? value : undefined
 	})
-	const projectId = computed(() => routeProjectId.value)
 	const taskSpaceId = computed(() => {
 		if (route.path === '/all-tasks') return settingsStore.settings.activeSpaceId
 		return spaceId.value
 	})
-	const collapseResetKey = computed(() => `${route.path}|${spaceId.value ?? 'all'}|${projectId.value ?? 'none'}`)
 	const showSpaceLabel = computed(() => !spaceId.value)
 	const projectsState = useSpaceProjectsState(
 		computed(() => spaceId.value ?? 'work'),
 		{
-		enabled: computed(() => Boolean(spaceId.value)),
+			enabled: computed(() => Boolean(spaceId.value)),
 		},
 	)
 
-	const { loading, todo, doneAll, loadErrorMessage, showLoadErrorState, refresh, onComplete } = useWorkspaceProjectTasks(
-		taskSpaceId,
-		projectId,
-	)
+	// 页面真正消费的是 resolved project scope，而不是路由上暂时残留的 raw query。
+	const resolvedProjectId = computed(() => {
+		const currentSpaceId = spaceId.value
+		const currentRouteProjectId = routeProjectId.value
+		if (!currentRouteProjectId || !currentSpaceId) return currentRouteProjectId ?? null
+		if (!projectsState.isLoaded.value) return currentRouteProjectId
+		const projects = projectsState.projects.value
+		if (projects.some((project) => project.id === currentRouteProjectId)) return currentRouteProjectId
+		if (isDefaultProjectId(currentRouteProjectId)) {
+			return findDefaultProject(projects)?.id ?? getDefaultProjectId(currentSpaceId)
+		}
+		return null
+	})
+	const projectId = computed(() => resolvedProjectId.value)
+	const collapseResetKey = computed(() => `${route.path}|${spaceId.value ?? 'all'}|${projectId.value ?? 'none'}`)
+
+	const {
+		loading: taskBoardLoading,
+		todo,
+		doneAll,
+		loadErrorMessage,
+		showLoadErrorState: taskBoardLoadErrorState,
+		refresh,
+		onComplete,
+	} = useWorkspaceProjectTasks(taskSpaceId, projectId)
 
 	const isEditMode = ref(false)
 	const confirmDeleteOpen = ref(false)
@@ -75,6 +94,15 @@ export function useWorkspaceProjectView() {
 
 	const selectedCount = computed(() => selectedTaskIds.value.size)
 	const deleteCount = computed(() => deleteTargetIds.value?.length ?? selectedCount.value)
+	const isProjectRouteResolving = computed(() => {
+		const currentSpaceId = spaceId.value
+		const currentRouteProjectId = routeProjectId.value
+		if (!currentSpaceId || !currentRouteProjectId) return false
+		if (!projectsState.isLoaded.value) return true
+		return resolvedProjectId.value !== currentRouteProjectId
+	})
+	const loading = computed(() => taskBoardLoading.value || isProjectRouteResolving.value)
+	const showLoadErrorState = computed(() => !isProjectRouteResolving.value && taskBoardLoadErrorState.value)
 
 	function updateSelected(mutator: (next: Set<string>) => void) {
 		const next = new Set(selectedTaskIds.value)
@@ -167,18 +195,14 @@ export function useWorkspaceProjectView() {
 		return projectsState.projects.value.find((project) => project.id === currentProjectId) ?? null
 	})
 
-	// 统一约束：project query 只能指向当前 space 下的真实项目。
-	// 默认项目 query 若串了别的 space，直接纠正到当前 space 的默认项目；普通无效项目则退回所有任务。
+	// 页面渲染只认 resolved scope；当路由上的 project query 对当前 space 无效时，
+	// 先保持安全 loading，再将 query 纠正到当前 space 下的真实 project 或 all tasks。
 	watch(
-		() => [spaceId.value, routeProjectId.value, projectsState.isLoaded.value, projectsState.projects.value] as const,
-		([currentSpaceId, currentProjectId, isProjectsLoaded, projects]) => {
-			if (!currentSpaceId || !isProjectsLoaded || !currentProjectId) return
-			if (projects.some((project) => project.id === currentProjectId)) return
-			if (isDefaultProjectId(currentProjectId)) {
-				routeProjectId.value = findDefaultProject(projects)?.id ?? getDefaultProjectId(currentSpaceId)
-				return
-			}
-			routeProjectId.value = null
+		() => [spaceId.value, routeProjectId.value, projectsState.isLoaded.value, resolvedProjectId.value] as const,
+		([currentSpaceId, currentRouteProjectId, isProjectsLoaded, nextResolvedProjectId]) => {
+			if (!currentSpaceId || !isProjectsLoaded) return
+			if ((currentRouteProjectId ?? null) === nextResolvedProjectId) return
+			routeProjectId.value = nextResolvedProjectId
 		},
 		{ immediate: true },
 	)
@@ -228,9 +252,7 @@ export function useWorkspaceProjectView() {
 		{ throttle: 120, trailing: true },
 	)
 
-	const projectsList = computed(() => {
-		return projectsState.projects.value
-	})
+	const projectsList = computed(() => projectsState.projects.value)
 	const breadcrumbItems = useWorkspaceProjectBreadcrumb(spaceId, projectId, projectsList)
 	provide(WORKSPACE_BREADCRUMB_ITEMS_KEY, breadcrumbItems)
 
