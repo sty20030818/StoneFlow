@@ -25,6 +25,10 @@ function createTransportScope(
 	}
 }
 
+/**
+ * 任务 query 的 transport 主键已经收敛到 space + status。
+ * 页面层不再以 projectId 作为请求粒度，而是先整批入库，再由 selector 做 project 级投影。
+ */
 function createTaskTransportQueryOptions(
 	spaceId: string,
 	status: WorkspaceTaskTransportStatus,
@@ -62,6 +66,10 @@ function sortTasksForScope(tasks: WorkspaceTask[], scope: WorkspaceTaskListScope
 	return [...tasks].sort((left, right) => left.rank - right.rank)
 }
 
+/**
+ * 旧调用链兼容桥：少量历史入口仍会依赖 query cache 的当前列表数据。
+ * 新链路应优先直接写 repository，并在必要时定向 refresh 对应的 transport scope。
+ */
 export function patchWorkspaceTaskSnapshot(previousTask: WorkspaceTask, nextTask: WorkspaceTask) {
 	const queryCache = useStoneFlowQueryCache()
 	const repository = useWorkspaceEntityRepository()
@@ -98,6 +106,10 @@ export function patchWorkspaceTaskSnapshot(previousTask: WorkspaceTask, nextTask
 	repository.upsertTask(nextTask)
 }
 
+/**
+ * 对外暴露的定向刷新 helper。
+ * 供删除项目、拖拽重排、结构性变更后，按 space 精准回拉 todo / done 双状态任务。
+ */
 export async function refreshWorkspaceTaskScopes(
 	spaceId: string,
 	options: {

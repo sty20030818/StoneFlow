@@ -19,6 +19,10 @@ function mapWorkspaceProjectEntityToView(project: WorkspaceEntityProject): Works
 	return mapWorkspaceProjectDtoToDomain(project)
 }
 
+/**
+ * 以 space 为单位读取项目实体快照。
+ * selector 层统一在这里做实体 -> 视图模型映射，页面无需感知 default project 的原始实体语义。
+ */
 export function getWorkspaceProjectEntitiesBySpace(spaceId: string): WorkspaceEntityProject[] {
 	const store = useWorkspaceEntitiesStore()
 	const projectIds = store.projectIdsBySpace[spaceId] ?? []
@@ -31,6 +35,11 @@ export function getWorkspaceProjectsBySpaceSnapshot(spaceId: string): WorkspaceP
 	return getWorkspaceProjectEntitiesBySpace(spaceId).map(mapWorkspaceProjectEntityToView)
 }
 
+/**
+ * 兼容两种读取方式：
+ * 1. 传入 `(spaceId, projectId)` 时校验 project 是否属于该 space
+ * 2. 只传入 `projectId` 时直接按主键读取实体
+ */
 export function getWorkspaceProjectEntityByIdSnapshot(
 	spaceIdOrProjectId: string,
 	projectId?: string,
@@ -59,6 +68,11 @@ export function getWorkspaceTaskByIdSnapshot(taskId: string): WorkspaceTask | nu
 	return task ? mapWorkspaceTaskEntityToView(task) : null
 }
 
+/**
+ * 任务视图统一从实体索引派生：
+ * - `spaceId + status` 是主加载粒度
+ * - `projectId` 只影响最终投影，不再决定 transport 层缓存主键
+ */
 export function getWorkspaceTasksByScopeSnapshot(
 	spaceId: string | undefined,
 	projectId: string | null | undefined,

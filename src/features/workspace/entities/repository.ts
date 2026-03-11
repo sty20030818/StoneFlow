@@ -30,10 +30,12 @@ export function createWorkspaceRequestToken() {
 
 /**
  * Repository 负责把 transport DTO 与本地写回结果统一落到实体缓存。
+ * 所有 workspace 域的写入主路径都应尽量先经过这里，避免页面直接 patch 多份列表快照。
  */
 export function useWorkspaceEntityRepository() {
 	const store = useWorkspaceEntitiesStore()
 
+	/** 以 space 为单位替换项目快照，并同步该 space 的加载完成标记。 */
 	function replaceProjectsForSpace(spaceId: string, projects: ProjectDto[]) {
 		store.replaceProjectEntitiesForSpace(spaceId, mapWorkspaceProjectsDtoToEntities(projects))
 		store.markProjectSpaceLoaded(spaceId, true)
@@ -43,6 +45,7 @@ export function useWorkspaceEntityRepository() {
 		upsertProjectEntity(mapWorkspaceProjectDtoToEntity(project))
 	}
 
+	/** 写入单个项目实体，适合创建、标题变更、拖拽排序等局部回写。 */
 	function upsertProjectEntity(project: WorkspaceEntityProject) {
 		store.upsertProjectEntities([project])
 	}
@@ -55,6 +58,7 @@ export function useWorkspaceEntityRepository() {
 		store.removeProjectEntities(projectIds)
 	}
 
+	/** 任务主加载粒度固定为 space + status，替换时会清掉该 scope 的旧任务。 */
 	function replaceTasksForScope(scope: WorkspaceTaskScope, tasks: TaskDto[]) {
 		store.replaceTaskEntitiesForScope(scope.spaceId, scope.status, mapWorkspaceTasksDtoToEntities(tasks))
 		store.markTaskScopeLoaded(scope.spaceId, scope.status, true)
@@ -64,6 +68,7 @@ export function useWorkspaceEntityRepository() {
 		upsertTaskEntity(mapWorkspaceTaskDtoToEntity(task))
 	}
 
+	/** 写入单个任务实体，供 inspector、创建流、拖拽和完成态切换等链路复用。 */
 	function upsertTaskEntity(task: WorkspaceEntityTask) {
 		store.upsertTaskEntities([task])
 	}

@@ -24,6 +24,12 @@ function createProjectsScope(spaceId: string): WorkspaceProjectListScope {
 	return { spaceId }
 }
 
+/**
+ * 项目 query 的职责只剩 transport：
+ * - 请求远端/本地 API
+ * - 把结果落到 repository
+ * - 把 selector 当前快照返回给 query 订阅方用于加载态联动
+ */
 function createProjectsListQueryOptions(
 	spaceId: string,
 	repository: ReturnType<typeof useWorkspaceEntityRepository>,
@@ -61,6 +67,10 @@ export function getWorkspaceProjectById(spaceId: string, projectId: string): Wor
 	return getWorkspaceProjectByIdSnapshot(spaceId, projectId)
 }
 
+/**
+ * 旧调用链的兼容桥：目前仍保留给少量历史入口使用。
+ * 新链路应优先直接写 repository，而不是继续扩散这个 snapshot patch helper。
+ */
 export function patchWorkspaceProjectSnapshot(spaceId: string, projectId: string, patch: Partial<WorkspaceProject>) {
 	const queryCache = useStoneFlowQueryCache()
 	const repository = useWorkspaceEntityRepository()
