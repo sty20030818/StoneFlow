@@ -1,6 +1,6 @@
-import { computed, type MaybeRefOrGetter } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
 
-import { useProjectsQuery } from '../shared/queries'
+import { useWorkspaceProjectsController } from '../entities/controller'
 
 type UseSpaceProjectsStateOptions = {
 	enabled?: MaybeRefOrGetter<boolean>
@@ -14,18 +14,9 @@ export function useSpaceProjectsState(
 	spaceId: MaybeRefOrGetter<string>,
 	options: UseSpaceProjectsStateOptions = {},
 ) {
-	const projectsQuery = useProjectsQuery({
+	return useWorkspaceProjectsController({
 		spaceId,
 		enabled: options.enabled,
 		staleTime: options.staleTime,
 	})
-
-	const projects = computed(() => projectsQuery.data.value ?? [])
-	const isLoaded = computed(() => projectsQuery.status.value !== 'pending')
-
-	return {
-		...projectsQuery,
-		projects,
-		isLoaded,
-	}
 }

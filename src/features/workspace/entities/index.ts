@@ -1,4 +1,6 @@
+export * from './controller'
 export * from './indexes'
 export * from './repository'
+export * from './selectors'
 export * from './store'
 export * from './types'

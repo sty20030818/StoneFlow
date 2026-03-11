@@ -1,24 +1,23 @@
 import { useQuery } from '@pinia/colada'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
+import { listTasks } from '@/services/api/tasks'
 import { useStoneFlowQueryCache } from '@/features/shared'
-import { listWorkspaceTasks, type ListWorkspaceTasksArgs } from '../../tasks/queries'
+import { useWorkspaceEntityRepository } from '../../entities/repository'
+import { useWorkspaceTaskScopeSelector } from '../../entities/selectors'
+import { useWorkspaceEntitiesStore } from '../../entities/store'
+import { createWorkspaceTaskScopeKey } from '../../entities/indexes'
 import { workspaceQueryKeys, type WorkspaceTask, type WorkspaceTaskListScope } from '../model'
 
-function normalizeScope(spaceId?: string, projectId?: string | null): Omit<WorkspaceTaskListScope, 'status'> {
+function createTransportScope(
+	spaceId: string | undefined,
+	status: WorkspaceTaskListScope['status'],
+): WorkspaceTaskListScope {
 	return {
 		spaceId: spaceId ?? null,
-		projectId: projectId ?? null,
+		projectId: null,
+		status,
 	}
-}
-
-function toTaskListArgs(scope: WorkspaceTaskListScope): ListWorkspaceTasksArgs {
-	const args: ListWorkspaceTasksArgs = {
-		status: scope.status,
-	}
-	if (scope.spaceId) args.spaceId = scope.spaceId
-	if (scope.projectId !== null) args.projectId = scope.projectId
-	return args
 }
 
 function isTaskVisibleInScope(task: WorkspaceTask, scope: WorkspaceTaskListScope): boolean {
@@ -39,6 +38,7 @@ function sortTasksForScope(tasks: WorkspaceTask[], scope: WorkspaceTaskListScope
 
 export function patchWorkspaceTaskSnapshot(previousTask: WorkspaceTask, nextTask: WorkspaceTask) {
 	const queryCache = useStoneFlowQueryCache()
+	const repository = useWorkspaceEntityRepository()
 	const entries = queryCache.getEntries({
 		key: ['workspace', 'tasks', 'list'],
 	})
@@ -68,45 +68,58 @@ export function patchWorkspaceTaskSnapshot(previousTask: WorkspaceTask, nextTask
 			return sortTasksForScope(nextList, scope)
 		})
 	}
+
+	repository.upsertTask(nextTask)
 }
 
 export function useWorkspaceTaskBoardQuery(
 	spaceId?: MaybeRefOrGetter<string | undefined>,
 	projectId?: MaybeRefOrGetter<string | null | undefined>,
 ) {
-	const baseScope = computed(() => normalizeScope(toValue(spaceId), toValue(projectId)))
-	const todoScope = computed<WorkspaceTaskListScope>(() => ({
-		...baseScope.value,
-		status: 'todo',
-	}))
-	const doneScope = computed<WorkspaceTaskListScope>(() => ({
-		...baseScope.value,
-		status: 'done',
-	}))
+	const repository = useWorkspaceEntityRepository()
+	const entityStore = useWorkspaceEntitiesStore()
+	const activeSpaceId = computed(() => toValue(spaceId))
+	const activeProjectId = computed(() => toValue(projectId) ?? null)
+	const todoStatus = computed(() => 'todo' as const)
+	const doneStatus = computed(() => 'done' as const)
+	const todoScope = computed(() => createTransportScope(activeSpaceId.value, 'todo'))
+	const doneScope = computed(() => createTransportScope(activeSpaceId.value, 'done'))
 
-	const todoQuery = useQuery<WorkspaceTask[]>({
+	const todoQuery = useQuery<number>({
 		key: () => workspaceQueryKeys.tasks.list(todoScope.value),
+		enabled: () => Boolean(activeSpaceId.value),
 		query: async () => {
-			return await listWorkspaceTasks(toTaskListArgs(todoScope.value))
+			const currentSpaceId = activeSpaceId.value
+			if (!currentSpaceId) return 0
+			const tasks = await listTasks({ spaceId: currentSpaceId, status: 'todo' })
+			repository.replaceTasksForScope({ spaceId: currentSpaceId, status: 'todo' }, tasks)
+			return tasks.length
 		},
-		placeholderData: (previousData) => previousData,
 	})
 
-	const doneQuery = useQuery<WorkspaceTask[]>({
+	const doneQuery = useQuery<number>({
 		key: () => workspaceQueryKeys.tasks.list(doneScope.value),
+		enabled: () => Boolean(activeSpaceId.value),
 		query: async () => {
-			return await listWorkspaceTasks(toTaskListArgs(doneScope.value))
+			const currentSpaceId = activeSpaceId.value
+			if (!currentSpaceId) return 0
+			const tasks = await listTasks({ spaceId: currentSpaceId, status: 'done' })
+			repository.replaceTasksForScope({ spaceId: currentSpaceId, status: 'done' }, tasks)
+			return tasks.length
 		},
-		placeholderData: (previousData) => previousData,
 	})
 
+	const todo = useWorkspaceTaskScopeSelector(activeSpaceId, activeProjectId, todoStatus)
+	const doneAll = useWorkspaceTaskScopeSelector(activeSpaceId, activeProjectId, doneStatus)
 	const loading = computed(() => {
-		const todoInitialLoading = todoQuery.isLoading.value && todoQuery.data.value === undefined
-		const doneInitialLoading = doneQuery.isLoading.value && doneQuery.data.value === undefined
+		const currentSpaceId = activeSpaceId.value
+		if (!currentSpaceId) return false
+		const todoLoaded = Boolean(entityStore.loadedTaskScopes[createWorkspaceTaskScopeKey(currentSpaceId, 'todo')])
+		const doneLoaded = Boolean(entityStore.loadedTaskScopes[createWorkspaceTaskScopeKey(currentSpaceId, 'done')])
+		const todoInitialLoading = !todoLoaded && todoQuery.isLoading.value
+		const doneInitialLoading = !doneLoaded && doneQuery.isLoading.value
 		return todoInitialLoading || doneInitialLoading
 	})
-	const todo = computed(() => todoQuery.data.value ?? [])
-	const doneAll = computed(() => doneQuery.data.value ?? [])
 
 	async function refresh() {
 		await Promise.all([todoQuery.refetch(), doneQuery.refetch()])

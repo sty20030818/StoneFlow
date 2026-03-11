@@ -1,12 +1,18 @@
 import { useQuery } from '@pinia/colada'
 import { toValue, type MaybeRefOrGetter } from 'vue'
 
-import { listWorkspaceProjects } from '../../projects/queries'
-import { workspaceQueryKeys, type WorkspaceProjectListScope, type WorkspaceProject } from '../model'
+import { listProjects } from '@/services/api/projects'
 import { useStoneFlowQueryCache } from '@/features/shared'
+import { useWorkspaceEntityRepository } from '../../entities/repository'
+import {
+	getWorkspaceProjectByIdSnapshot,
+	getWorkspaceProjectEntityByIdSnapshot,
+	getWorkspaceProjectsBySpaceSnapshot,
+} from '../../entities/selectors'
+import { workspaceQueryKeys, type WorkspaceProjectListScope, type WorkspaceProject } from '../model'
 
-const PROJECTS_QUERY_STALE_TIME = 5 * 60 * 1000
-const PROJECTS_QUERY_GC_TIME = 10 * 60 * 1000
+export const PROJECTS_QUERY_STALE_TIME = 5 * 60 * 1000
+export const PROJECTS_QUERY_GC_TIME = 10 * 60 * 1000
 
 export type UseProjectsQueryOptions = {
 	spaceId: MaybeRefOrGetter<string>
@@ -18,10 +24,18 @@ function createProjectsScope(spaceId: string): WorkspaceProjectListScope {
 	return { spaceId }
 }
 
-function createProjectsListQueryOptions(spaceId: string, staleTime = PROJECTS_QUERY_STALE_TIME) {
+function createProjectsListQueryOptions(
+	spaceId: string,
+	repository: ReturnType<typeof useWorkspaceEntityRepository>,
+	staleTime = PROJECTS_QUERY_STALE_TIME,
+) {
 	return {
 		key: workspaceQueryKeys.projects.list(createProjectsScope(spaceId)),
-		query: () => listWorkspaceProjects(spaceId),
+		query: async () => {
+			const projects = await listProjects({ spaceId })
+			repository.replaceProjectsForSpace(spaceId, projects)
+			return getWorkspaceProjectsBySpaceSnapshot(spaceId)
+		},
 		enabled: true,
 		staleTime,
 		gcTime: PROJECTS_QUERY_GC_TIME,
@@ -32,25 +46,33 @@ function createProjectsListQueryOptions(spaceId: string, staleTime = PROJECTS_QU
 }
 
 export function useProjectsQuery(options: UseProjectsQueryOptions) {
+	const repository = useWorkspaceEntityRepository()
 	return useQuery(() => ({
-		...createProjectsListQueryOptions(toValue(options.spaceId), options.staleTime),
+		...createProjectsListQueryOptions(toValue(options.spaceId), repository, options.staleTime),
 		enabled: toValue(options.enabled) ?? true,
 	}))
 }
 
 export function getWorkspaceProjectsSnapshot(spaceId: string): WorkspaceProject[] {
-	const queryCache = useStoneFlowQueryCache()
-	return (
-		queryCache.getQueryData<WorkspaceProject[]>(workspaceQueryKeys.projects.list(createProjectsScope(spaceId))) ?? []
-	)
+	return getWorkspaceProjectsBySpaceSnapshot(spaceId)
 }
 
 export function getWorkspaceProjectById(spaceId: string, projectId: string): WorkspaceProject | null {
-	return getWorkspaceProjectsSnapshot(spaceId).find((project) => project.id === projectId) ?? null
+	return getWorkspaceProjectByIdSnapshot(spaceId, projectId)
 }
 
 export function patchWorkspaceProjectSnapshot(spaceId: string, projectId: string, patch: Partial<WorkspaceProject>) {
 	const queryCache = useStoneFlowQueryCache()
+	const repository = useWorkspaceEntityRepository()
+	const currentProject = getWorkspaceProjectEntityByIdSnapshot(spaceId, projectId)
+
+	if (currentProject) {
+		repository.upsertProject({
+			...currentProject,
+			...patch,
+		})
+	}
+
 	queryCache.setQueryData<WorkspaceProject[]>(
 		workspaceQueryKeys.projects.list(createProjectsScope(spaceId)),
 		(oldData: WorkspaceProject[] | undefined) => {
@@ -68,7 +90,8 @@ export function patchWorkspaceProjectSnapshot(spaceId: string, projectId: string
 
 export async function refreshWorkspaceProjectsQuery(spaceId: string, options: { force?: boolean } = {}) {
 	const queryCache = useStoneFlowQueryCache()
-	const queryOptions = createProjectsListQueryOptions(spaceId)
+	const repository = useWorkspaceEntityRepository()
+	const queryOptions = createProjectsListQueryOptions(spaceId, repository)
 	const entry = queryCache.ensure(queryOptions)
 
 	if (options.force) {
