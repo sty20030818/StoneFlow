@@ -1,5 +1,5 @@
 import { useI18n } from 'vue-i18n'
-import { computed } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import type { WorkspaceTask } from '../../../../shared/model'
 
 export type TaskCardMetaItem = {
@@ -24,18 +24,20 @@ function normalizeText(value: string | null | undefined, fallback: string) {
 	return normalized ? normalized : fallback
 }
 
-export function useTaskCardMetadataBadges(task: TaskCardMetadataSource) {
+export function useTaskCardMetadataBadges(task: MaybeRefOrGetter<TaskCardMetadataSource>) {
 	const { t } = useI18n({ useScope: 'global' })
 
 	const linkItems = computed<TaskCardMetaItem[]>(() => {
-		return (task.links ?? []).map((item) => ({
+		const currentTask = toValue(task)
+		return (currentTask.links ?? []).map((item) => ({
 			title: normalizeText(item.title, t('taskCard.metadata.untitled')),
 			value: normalizeText(item.url, t('taskCard.metadata.emptyValue')),
 		}))
 	})
 
 	const customFieldItems = computed<TaskCardMetaItem[]>(() => {
-		return (task.customFields?.fields ?? []).map((field) => ({
+		const currentTask = toValue(task)
+		return (currentTask.customFields?.fields ?? []).map((field) => ({
 			title: normalizeText(field.title, t('taskCard.metadata.untitled')),
 			value: normalizeText(field.value, t('taskCard.metadata.emptyValue')),
 		}))

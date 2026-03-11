@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+	import { toRef } from 'vue'
 	import type { WorkspaceTask } from '../../../../shared/model'
 
 	import TaskCardMetaBadgePopover from './TaskCardMetaBadgePopover.vue'
@@ -24,5 +25,5 @@
 
 	const props = defineProps<Props>()
 
-	const { badges } = useTaskCardMetadataBadges(props.task)
+	const { badges } = useTaskCardMetadataBadges(toRef(props, 'task'))
 </script>
