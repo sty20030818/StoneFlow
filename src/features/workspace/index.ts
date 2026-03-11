@@ -24,3 +24,17 @@ export {
 	type WorkspaceProject,
 	type WorkspaceTask,
 } from './shared/model'
+export {
+	createWorkspaceDefaultProjectSemantic,
+	createWorkspaceProjectIndexKey,
+	createWorkspaceProjectScopeKey,
+	createWorkspaceRequestToken,
+	createWorkspaceTaskScopeKey,
+	isWorkspaceDefaultProject,
+	useWorkspaceEntitiesStore,
+	useWorkspaceEntityRepository,
+	type WorkspaceDefaultProjectSemantic,
+	type WorkspaceEntityProject,
+	type WorkspaceEntityTask,
+	WORKSPACE_UNASSIGNED_PROJECT_INDEX_KEY,
+} from './entities'
