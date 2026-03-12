@@ -42,7 +42,7 @@
 							<UIcon
 								:name="item.icon ?? projectIcon"
 								class="size-3.5 shrink-0 text-white" />
-							<span class="truncate max-w-[160px]">{{ item.label }}</span>
+							<span class="truncate max-w-40">{{ item.label }}</span>
 						</RouterLink>
 						<span
 							v-else-if="index < projectTrail.length - 1"
@@ -51,11 +51,11 @@
 							<UIcon
 								:name="item.icon ?? projectIcon"
 								class="size-3.5 shrink-0 text-white" />
-							<span class="truncate max-w-[160px]">{{ item.label }}</span>
+							<span class="truncate max-w-40">{{ item.label }}</span>
 						</span>
 						<span
 							v-else
-							class="text-base font-bold text-default truncate max-w-[400px] flex items-baseline gap-2">
+							class="text-base font-bold text-default truncate max-w-100 flex items-baseline gap-2">
 							<span
 								v-if="item.icon"
 								class="inline-flex items-center gap-2">
@@ -68,7 +68,7 @@
 
 							<span
 								v-if="item.description"
-								class="text-xs font-normal text-muted truncate max-w-[300px]">
+								class="text-xs font-normal text-muted truncate max-w-75">
 								{{ item.description }}
 							</span>
 						</span>
@@ -118,7 +118,9 @@
 						:ui="localeTabsUi"
 						@update:model-value="onLocaleTabChange">
 						<template #leading="{ item }">
-							<span class="text-sm leading-none">{{ item.flag }}</span>
+							<LocaleFlag
+								:locale="item.locale"
+								class="size-3.5 shrink-0" />
 						</template>
 					</UTabs>
 				</template>
@@ -203,6 +205,7 @@
 	import { useRoute, useRouter } from 'vue-router'
 
 	import { WORKSPACE_BREADCRUMB_ITEMS_KEY, type WorkspaceBreadcrumbItem } from '@/app/injection-keys'
+	import LocaleFlag from '@/components/shared/LocaleFlag.vue'
 	import { useProjectMotionPreset } from '@/composables/base/motion'
 	import { useSettingsLocaleControl, useSettingsNav } from '@/features/settings'
 	import { type WorkspaceProject, useSpaceProjectsState } from '@/features/workspace'
@@ -262,12 +265,12 @@
 		{
 			label: t('locale.compactOptions.zh'),
 			value: 'zh-CN',
-			flag: '🇨🇳',
+			locale: 'zh-CN' as const,
 		},
 		{
 			label: t('locale.compactOptions.en'),
 			value: 'en-US',
-			flag: '🇺🇸',
+			locale: 'en-US' as const,
 		},
 	])
 
@@ -475,3 +478,5 @@
 		return out
 	}
 </script>
+
+
