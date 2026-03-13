@@ -32,7 +32,7 @@
 	import { computed, onBeforeUnmount, ref, watch } from 'vue'
 	import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 
-	import AppShellHeaderProvider from '@/app/shell-header/AppShellHeaderProvider.vue'
+	import { AppShellHeaderProvider } from '@/app/shell-header'
 	import { useAppMotionPreset } from '@/composables/base/motion'
 	import GlobalBackToTopButton from '@/components/GlobalBackToTopButton.vue'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'

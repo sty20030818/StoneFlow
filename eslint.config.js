@@ -164,6 +164,54 @@ export default [
 		},
 	},
 
+	// 壳层头部公开入口：禁止套件外直接导入内部实现
+	{
+		files: ['src/**/*.{ts,tsx,vue}'],
+		ignores: ['src/app/shell-header/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							regex: '^@/app/shell-header/(?!index(?:\\.ts)?$).+',
+							message: '套件外禁止直接导入 shell-header 内部实现，请改用 @/app/shell-header 公开入口。',
+						},
+					],
+				},
+			],
+		},
+	},
+
+	// Header 壳层边界：禁止重新耦合 Feature 与路径特判
+	{
+		files: ['src/layouts/Header.vue', 'src/layouts/header/**/*.{ts,tsx,vue}'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@/features', '@/features/*', '@/features/**'],
+							message: 'Header 壳层禁止直接依赖 feature 实现，请改为消费 @/app/shell-header 协议或系统级 store。',
+						},
+					],
+				},
+			],
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "MemberExpression[object.name='route'][property.name='path']",
+					message: 'Header 壳层禁止通过 route.path 做业务特判，请改为消费已注册的 shell-header 状态。',
+				},
+				{
+					selector: "MemberExpression[object.name='route'][property.name='name']",
+					message: 'Header 壳层禁止通过 route.name 做业务特判，请改为消费已注册的 shell-header 状态。',
+				},
+			],
+		},
+	},
+
 	// 套件迁移边界：禁止继续依赖旧 settings 路径，并阻断套件外穿透内部实现
 	{
 		files: ['src/**/*.{ts,tsx,vue}'],
@@ -343,6 +391,27 @@ export default [
 							message: '跨 feature 只能导入公开入口：@/features/<domain> 或 @/features/<domain>/<subdomain>/model',
 						},
 					],
+				},
+			],
+		},
+	},
+
+	// Shell Header 旧模式阻断：禁止 Teleport 到固定头部 portal
+	{
+		files: ['src/**/*.vue'],
+		rules: {
+			'vue/no-restricted-static-attribute': [
+				'error',
+				{
+					element: 'Teleport',
+					key: 'to',
+					value: '#header-actions-portal',
+					message: '头部动作禁止通过固定 portal id 注入，请改用 shell-header 的 rightActions 注册协议。',
+				},
+				{
+					key: 'id',
+					value: 'header-actions-portal',
+					message: '禁止新增固定 header portal 宿主，请改用 shell-header 动作宿主。',
 				},
 			],
 		},
