@@ -100,7 +100,7 @@ export const routes = [
 			iconClass: 'text-gray-500',
 			pillClass: 'bg-gray-500',
 			descriptionKey: 'routes.settings.description',
-			group: 'settings',
+			leadingMode: 'root',
 		},
 		children: [
 			{

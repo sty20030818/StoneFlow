@@ -5,41 +5,10 @@ type PageNavConfig = {
 	icon: string
 	iconClass: string
 	pillClass: string
-	group: Exclude<HeaderGroupId, 'settings'>
 	leadingMode: HeaderLeadingMode
 }
 
-export type HeaderGroupId = 'system' | 'review' | 'assets' | 'settings'
-export type HeaderLeadingMode = 'group' | 'page'
-
-type HeaderGroupConfig = {
-	labelKey: string
-	icon: string
-	pillClass: string
-}
-
-export const HEADER_GROUP_CONFIG = {
-	system: {
-		labelKey: 'nav.groups.system',
-		icon: 'i-lucide-command',
-		pillClass: 'bg-zinc-600',
-	},
-	review: {
-		labelKey: 'nav.groups.review',
-		icon: 'i-lucide-history',
-		pillClass: 'bg-emerald-600',
-	},
-	assets: {
-		labelKey: 'nav.groups.assets',
-		icon: 'i-lucide-library',
-		pillClass: 'bg-cyan-600',
-	},
-	settings: {
-		labelKey: 'nav.groups.settings',
-		icon: 'i-lucide-settings-2',
-		pillClass: 'bg-slate-600',
-	},
-} as const satisfies Record<HeaderGroupId, HeaderGroupConfig>
+export type HeaderLeadingMode = 'page' | 'root'
 
 export const PAGE_NAV_CONFIG = {
 	allTasks: {
@@ -49,8 +18,7 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-list-checks',
 		iconClass: 'text-pink-500',
 		pillClass: 'bg-pink-500',
-		group: 'system',
-		leadingMode: 'group',
+		leadingMode: 'page',
 	},
 	finishList: {
 		path: '/finish-list',
@@ -59,8 +27,7 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-check-circle',
 		iconClass: 'text-green-500',
 		pillClass: 'bg-green-500',
-		group: 'review',
-		leadingMode: 'group',
+		leadingMode: 'page',
 	},
 	stats: {
 		path: '/stats',
@@ -69,8 +36,7 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-bar-chart-3',
 		iconClass: 'text-blue-500',
 		pillClass: 'bg-blue-500',
-		group: 'review',
-		leadingMode: 'group',
+		leadingMode: 'page',
 	},
 	logs: {
 		path: '/logs',
@@ -79,8 +45,7 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-scroll-text',
 		iconClass: 'text-orange-500',
 		pillClass: 'bg-orange-500',
-		group: 'review',
-		leadingMode: 'group',
+		leadingMode: 'page',
 	},
 	snippets: {
 		path: '/snippets',
@@ -89,7 +54,6 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-code',
 		iconClass: 'text-cyan-500',
 		pillClass: 'bg-cyan-500',
-		group: 'assets',
 		leadingMode: 'page',
 	},
 	vault: {
@@ -99,7 +63,6 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-lock',
 		iconClass: 'text-yellow-500',
 		pillClass: 'bg-yellow-500',
-		group: 'assets',
 		leadingMode: 'page',
 	},
 	notes: {
@@ -109,7 +72,6 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-notebook',
 		iconClass: 'text-pink-500',
 		pillClass: 'bg-pink-500',
-		group: 'assets',
 		leadingMode: 'page',
 	},
 	diary: {
@@ -119,7 +81,6 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-book-open-text',
 		iconClass: 'text-indigo-500',
 		pillClass: 'bg-indigo-500',
-		group: 'assets',
 		leadingMode: 'page',
 	},
 	trash: {
@@ -129,14 +90,13 @@ export const PAGE_NAV_CONFIG = {
 		icon: 'i-lucide-trash-2',
 		iconClass: 'text-red-500',
 		pillClass: 'bg-red-500',
-		group: 'system',
-		leadingMode: 'group',
+		leadingMode: 'page',
 	},
 } as const satisfies Record<string, PageNavConfig>
 
 export type PageNavKey = keyof typeof PAGE_NAV_CONFIG
 
-type RouteMetaConfig = Pick<PageNavConfig, 'titleKey' | 'descriptionKey' | 'icon' | 'iconClass' | 'pillClass' | 'group' | 'leadingMode'>
+type RouteMetaConfig = Pick<PageNavConfig, 'titleKey' | 'descriptionKey' | 'icon' | 'iconClass' | 'pillClass' | 'leadingMode'>
 
 type LibraryNavItem = {
 	to: string
@@ -191,7 +151,6 @@ export function toRouteMeta(config: PageNavConfig): RouteMetaConfig {
 		icon: config.icon,
 		iconClass: config.iconClass,
 		pillClass: config.pillClass,
-		group: config.group,
 		leadingMode: config.leadingMode,
 	}
 }

@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import { useShellHeaderController } from '@/app/shell-header'
-import { HEADER_GROUP_CONFIG, type HeaderGroupId, type HeaderLeadingMode } from '@/config/page-nav'
+import type { HeaderLeadingMode } from '@/config/page-nav'
 import { PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 import { useProjectMotionPreset } from '@/composables/base/motion'
@@ -24,12 +24,8 @@ function resolveMetaText(
 	return typeof direct === 'string' ? direct : null
 }
 
-function isHeaderGroupId(value: unknown): value is HeaderGroupId {
-	return typeof value === 'string' && value in HEADER_GROUP_CONFIG
-}
-
 function isHeaderLeadingMode(value: unknown): value is HeaderLeadingMode {
-	return value === 'group' || value === 'page'
+	return value === 'page' || value === 'root'
 }
 
 export function useAppHeaderPresentation() {
@@ -63,12 +59,29 @@ export function useAppHeaderPresentation() {
 			}
 		}
 
+		const matchedRootRecord = route.matched.find((item) => {
+			const title = resolveMetaText(t, item.meta as Record<string, unknown> | undefined, 'title')
+			return item.meta?.leadingMode === 'root' && typeof title === 'string' && typeof item.meta?.icon === 'string'
+		})
+		if (matchedRootRecord) {
+			const title = resolveMetaText(t, matchedRootRecord.meta as Record<string, unknown> | undefined, 'title')
+			const icon = matchedRootRecord.meta?.icon
+			if (typeof title === 'string' && typeof icon === 'string') {
+				return {
+					label: title,
+					icon,
+					pillClass:
+						typeof matchedRootRecord.meta?.pillClass === 'string' ? matchedRootRecord.meta.pillClass : 'bg-slate-500',
+				}
+			}
+		}
+
 		const leafRecord = [...route.matched].reverse().find((item) => {
 			const title = resolveMetaText(t, item.meta as Record<string, unknown> | undefined, 'title')
 			return typeof title === 'string' && typeof item.meta?.icon === 'string'
 		})
 		const leadingMode = leafRecord?.meta?.leadingMode
-		if (isHeaderLeadingMode(leadingMode) && leadingMode === 'page') {
+		if (!isHeaderLeadingMode(leadingMode) || leadingMode === 'page') {
 			const title = resolveMetaText(t, leafRecord?.meta as Record<string, unknown> | undefined, 'title')
 			const icon = leafRecord?.meta?.icon
 			if (typeof title === 'string' && typeof icon === 'string') {
@@ -77,16 +90,6 @@ export function useAppHeaderPresentation() {
 					icon,
 					pillClass: typeof leafRecord?.meta?.pillClass === 'string' ? leafRecord.meta.pillClass : 'bg-slate-500',
 				}
-			}
-		}
-
-		const matchedGroup = route.matched.find((record) => isHeaderGroupId(record.meta?.group))?.meta?.group
-		if (isHeaderGroupId(matchedGroup)) {
-			const groupConfig = HEADER_GROUP_CONFIG[matchedGroup]
-			return {
-				label: t(groupConfig.labelKey),
-				icon: groupConfig.icon,
-				pillClass: groupConfig.pillClass,
 			}
 		}
 
