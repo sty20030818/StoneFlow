@@ -1,0 +1,11 @@
+export { createShellHeaderController, resolveShellHeaderState } from './controller'
+export { bindShellHeaderContribution, provideShellHeaderController, useRegisterShellHeader, useShellHeaderController } from './use-shell-header'
+export type {
+	ShellHeaderBreadcrumbItem,
+	ShellHeaderContribution,
+	ShellHeaderController,
+	ShellHeaderLayerRegistration,
+	ShellHeaderLayerSnapshot,
+	ShellHeaderResolvedState,
+	ShellHeaderSearchVisibility,
+} from './types'
