@@ -222,10 +222,7 @@
 		RemoteSyncImportForm,
 		RemoteSyncProfilesCard,
 		useRemoteSyncPageFacade,
-		useSettingsSectionShellHeader,
 	} from '@/features/settings'
-
-	useSettingsSectionShellHeader('remote-sync')
 
 	const {
 		t,

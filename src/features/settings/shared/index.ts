@@ -1,7 +1,6 @@
 export { useSettingsNav } from './composables/useSettingsNav'
 export { useSettingsLocaleControl } from './composables/useSettingsLocaleControl'
 export { useSettingsShellHeader } from './composables/useSettingsShellHeader'
-export { useSettingsSectionShellHeader } from './composables/useSettingsSectionShellHeader'
 export { useSettingsSystemActions } from './composables/useSettingsSystemActions'
 export { SettingsSectionCard } from './ui'
 export type { SettingsNavConfigItem, SettingsNavId, SettingsNavItem } from './config'
