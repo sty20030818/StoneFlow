@@ -10,7 +10,15 @@ export type ShellHeaderBreadcrumbItem = {
 	description?: string
 }
 
+export type ShellHeaderLeadingPill = {
+	label: string
+	icon: string
+	pillClass: string
+	to?: RouteLocationRaw
+}
+
 export type ShellHeaderContribution = {
+	leading?: ShellHeaderLeadingPill | null
 	breadcrumb?: readonly ShellHeaderBreadcrumbItem[]
 	center?: Component | null
 	rightPrimary?: Component | null
@@ -19,6 +27,7 @@ export type ShellHeaderContribution = {
 }
 
 export type ShellHeaderResolvedState = {
+	leading: ShellHeaderLeadingPill | null
 	breadcrumb: readonly ShellHeaderBreadcrumbItem[]
 	center: Component | null
 	rightPrimary: Component | null

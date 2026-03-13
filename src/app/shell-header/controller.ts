@@ -13,6 +13,10 @@ const EMPTY_BREADCRUMB: readonly [] = []
 function normalizeContribution(contribution: ShellHeaderContribution): ShellHeaderContribution {
 	const normalized: ShellHeaderContribution = {}
 
+	if (contribution.leading !== undefined) {
+		normalized.leading = contribution.leading ? { ...contribution.leading } : null
+	}
+
 	if (contribution.breadcrumb !== undefined) {
 		normalized.breadcrumb = [...contribution.breadcrumb]
 	}
@@ -37,6 +41,7 @@ function normalizeContribution(contribution: ShellHeaderContribution): ShellHead
 }
 
 export function resolveShellHeaderState(layers: readonly ShellHeaderLayerSnapshot[]): ShellHeaderResolvedState {
+	let leading: ShellHeaderResolvedState['leading'] = null
 	let breadcrumb = EMPTY_BREADCRUMB as ShellHeaderResolvedState['breadcrumb']
 	let center: ShellHeaderResolvedState['center'] = null
 	let rightPrimary: ShellHeaderResolvedState['rightPrimary'] = null
@@ -45,6 +50,10 @@ export function resolveShellHeaderState(layers: readonly ShellHeaderLayerSnapsho
 
 	for (const layer of layers) {
 		const { contribution } = layer
+
+		if (contribution.leading !== undefined) {
+			leading = contribution.leading
+		}
 
 		if (contribution.breadcrumb !== undefined) {
 			breadcrumb = contribution.breadcrumb
@@ -68,6 +77,7 @@ export function resolveShellHeaderState(layers: readonly ShellHeaderLayerSnapsho
 	}
 
 	return {
+		leading,
 		breadcrumb,
 		center,
 		rightPrimary,

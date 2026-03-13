@@ -47,7 +47,7 @@ export function useAppHeaderPresentation() {
 		return settingsStore.settings.activeSpaceId ?? 'work'
 	})
 
-	const leadingPill = computed<AppHeaderLeadingPill | null>(() => {
+	const fallbackLeadingPill = computed<AppHeaderLeadingPill | null>(() => {
 		const spaceId = currentSpaceId.value
 		if (typeof route.params.spaceId === 'string') {
 			const display = SPACE_DISPLAY[spaceId as keyof typeof SPACE_DISPLAY] ?? DEFAULT_SPACE_DISPLAY
@@ -84,6 +84,18 @@ export function useAppHeaderPresentation() {
 			label: title,
 			icon,
 			pillClass: typeof record?.meta?.pillClass === 'string' ? record.meta.pillClass : 'bg-slate-500',
+		}
+	})
+
+	const leadingPill = computed<AppHeaderLeadingPill | null>(() => {
+		const leading = shellHeaderController.state.value.leading
+		if (!leading) return fallbackLeadingPill.value
+
+		return {
+			label: leading.label,
+			icon: leading.icon,
+			pillClass: leading.pillClass,
+			to: typeof leading.to === 'string' ? leading.to : undefined,
 		}
 	})
 

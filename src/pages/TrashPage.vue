@@ -84,11 +84,8 @@
 </template>
 
 <script setup lang="ts">
-	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import TimeDisplay from '@/components/shared/TimeDisplay.vue'
 	import { useTrashPageFacade } from '@/features/trash'
-
-	useRouteMetaShellBreadcrumb('trash-page')
 
 	const {
 		t,

@@ -1,10 +1,15 @@
+import { computed } from 'vue'
+
 import { useRegisterShellHeader } from '@/app/shell-header'
 import { useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
+import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
+import { useSettingsStore } from '@/stores/settings'
 
 import TrashHeaderTabs from '../ui/TrashHeaderTabs.vue'
 import { useTrashPage } from './useTrashPage'
 
 export function useTrashPageFacade() {
+	const settingsStore = useSettingsStore()
 	const loadingMotion = useAppMotionPreset('statusFeedback', 'sectionBase', 8)
 	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const listItemMotion = useMotionPreset('listItem')
@@ -22,10 +27,26 @@ export function useTrashPageFacade() {
 	} = useTrashPage()
 
 	useRegisterShellHeader(
-		{
-			rightActions: TrashHeaderTabs,
-		},
-		'trash-page-actions',
+		computed(() => {
+			const currentSpaceId = settingsStore.settings.activeSpaceId
+			const display = SPACE_DISPLAY[currentSpaceId] ?? DEFAULT_SPACE_DISPLAY
+
+			return {
+				leading: {
+					label: display.label,
+					icon: display.icon,
+					pillClass: display.pillClass,
+					to: `/space/${currentSpaceId}`,
+				},
+				breadcrumb: [
+					{
+						label: t('nav.pages.trash.title'),
+					},
+				],
+				center: TrashHeaderTabs,
+			}
+		}),
+		'trash-shell',
 	)
 
 	const projectItemMotionCache = new Map<string, number>()

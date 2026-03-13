@@ -27,8 +27,8 @@
 	const viewMode = useTrashViewMode()
 
 	const viewTabsUi = {
-		root: 'w-full',
-		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
+		root: 'w-fit',
+		list: 'rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
 		trigger:
 			'rounded-full px-3.5 py-1.5 text-[11px] font-semibold hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm data-[state=active]:text-default',
 		leadingIcon: 'size-3.5',
