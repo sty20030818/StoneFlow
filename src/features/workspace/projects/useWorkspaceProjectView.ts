@@ -1,9 +1,10 @@
 import { useI18n } from 'vue-i18n'
 import { watchDebounced, watchThrottled } from '@vueuse/core'
-import { computed, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 
-import { OPEN_CREATE_TASK_MODAL_KEY, WORKSPACE_BREADCRUMB_ITEMS_KEY } from '@/app/injection-keys'
+import { useRegisterShellHeader } from '@/app/shell-header'
+import { OPEN_CREATE_TASK_MODAL_KEY } from '@/app/injection-keys'
 import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 import { findDefaultProject, getDefaultProjectId, isDefaultProjectId } from '@/config/project'
 import { useProjectInspectorStore } from '@/stores/projectInspector'
@@ -263,8 +264,24 @@ export function useWorkspaceProjectView() {
 	)
 
 	const projectsList = computed(() => projectsState.projects.value)
-	const breadcrumbItems = useWorkspaceProjectBreadcrumb(spaceId, projectId, projectsList)
-	provide(WORKSPACE_BREADCRUMB_ITEMS_KEY, breadcrumbItems)
+	const projectBreadcrumbItems = useWorkspaceProjectBreadcrumb(spaceId, projectId, projectsList)
+	const breadcrumbItems = computed(() => {
+		if (projectBreadcrumbItems.value.length > 0) return projectBreadcrumbItems.value
+		if (route.path !== '/all-tasks') return []
+		return [
+			{
+				label: t('nav.pages.allTasks.title'),
+				description: t('nav.pages.allTasks.description'),
+				icon: typeof route.meta.icon === 'string' ? route.meta.icon : undefined,
+			},
+		]
+	})
+	useRegisterShellHeader(
+		computed(() => ({
+			breadcrumb: breadcrumbItems.value,
+		})),
+		'workspace-project-view',
+	)
 
 	function applyWorkspaceEditCommand(command: WorkspaceEditCommand) {
 		switch (command.type) {

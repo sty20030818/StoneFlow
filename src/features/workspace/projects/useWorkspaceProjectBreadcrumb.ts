@@ -28,7 +28,6 @@ export function useWorkspaceProjectBreadcrumb(
 		const breadcrumbItems: Array<{ label: string; to?: string }> = []
 
 		if (!projectId.value) {
-			breadcrumbItems.push({ label: '所有任务' })
 			return breadcrumbItems
 		}
 
