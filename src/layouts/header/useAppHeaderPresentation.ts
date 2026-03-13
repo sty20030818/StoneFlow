@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import { useShellHeaderController } from '@/app/shell-header'
-import { HEADER_GROUP_CONFIG, type HeaderGroupId } from '@/config/page-nav'
+import { HEADER_GROUP_CONFIG, type HeaderGroupId, type HeaderLeadingMode } from '@/config/page-nav'
 import { PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 import { useProjectMotionPreset } from '@/composables/base/motion'
@@ -26,6 +26,10 @@ function resolveMetaText(
 
 function isHeaderGroupId(value: unknown): value is HeaderGroupId {
 	return typeof value === 'string' && value in HEADER_GROUP_CONFIG
+}
+
+function isHeaderLeadingMode(value: unknown): value is HeaderLeadingMode {
+	return value === 'group' || value === 'page'
 }
 
 export function useAppHeaderPresentation() {
@@ -56,6 +60,23 @@ export function useAppHeaderPresentation() {
 				icon: display.icon,
 				pillClass: display.pillClass,
 				to: `/space/${spaceId}`,
+			}
+		}
+
+		const leafRecord = [...route.matched].reverse().find((item) => {
+			const title = resolveMetaText(t, item.meta as Record<string, unknown> | undefined, 'title')
+			return typeof title === 'string' && typeof item.meta?.icon === 'string'
+		})
+		const leadingMode = leafRecord?.meta?.leadingMode
+		if (isHeaderLeadingMode(leadingMode) && leadingMode === 'page') {
+			const title = resolveMetaText(t, leafRecord?.meta as Record<string, unknown> | undefined, 'title')
+			const icon = leafRecord?.meta?.icon
+			if (typeof title === 'string' && typeof icon === 'string') {
+				return {
+					label: title,
+					icon,
+					pillClass: typeof leafRecord?.meta?.pillClass === 'string' ? leafRecord.meta.pillClass : 'bg-slate-500',
+				}
 			}
 		}
 

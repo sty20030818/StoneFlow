@@ -16,6 +16,10 @@ function resolveMetaText(
 	return typeof direct === 'string' ? direct : null
 }
 
+function isPageLeadingMode(value: unknown) {
+	return value === 'page'
+}
+
 /**
  * 为普通页面注册当前叶子路由的 breadcrumb。
  * Header 本身只负责渲染，不再内置页面路径特判。
@@ -32,6 +36,12 @@ export function useRouteMetaShellBreadcrumb(source = 'route-meta-breadcrumb') {
 			})
 
 			if (!leafRecord) {
+				return {
+					breadcrumb: [],
+				}
+			}
+
+			if (isPageLeadingMode(leafRecord.meta?.leadingMode)) {
 				return {
 					breadcrumb: [],
 				}

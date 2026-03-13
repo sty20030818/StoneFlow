@@ -6,9 +6,11 @@ type PageNavConfig = {
 	iconClass: string
 	pillClass: string
 	group: Exclude<HeaderGroupId, 'settings'>
+	leadingMode: HeaderLeadingMode
 }
 
 export type HeaderGroupId = 'system' | 'review' | 'assets' | 'settings'
+export type HeaderLeadingMode = 'group' | 'page'
 
 type HeaderGroupConfig = {
 	labelKey: string
@@ -48,6 +50,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-pink-500',
 		pillClass: 'bg-pink-500',
 		group: 'system',
+		leadingMode: 'group',
 	},
 	finishList: {
 		path: '/finish-list',
@@ -57,6 +60,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-green-500',
 		pillClass: 'bg-green-500',
 		group: 'review',
+		leadingMode: 'group',
 	},
 	stats: {
 		path: '/stats',
@@ -66,6 +70,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-blue-500',
 		pillClass: 'bg-blue-500',
 		group: 'review',
+		leadingMode: 'group',
 	},
 	logs: {
 		path: '/logs',
@@ -75,6 +80,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-orange-500',
 		pillClass: 'bg-orange-500',
 		group: 'review',
+		leadingMode: 'group',
 	},
 	snippets: {
 		path: '/snippets',
@@ -84,6 +90,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-cyan-500',
 		pillClass: 'bg-cyan-500',
 		group: 'assets',
+		leadingMode: 'page',
 	},
 	vault: {
 		path: '/vault',
@@ -93,6 +100,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-yellow-500',
 		pillClass: 'bg-yellow-500',
 		group: 'assets',
+		leadingMode: 'page',
 	},
 	notes: {
 		path: '/notes',
@@ -102,6 +110,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-pink-500',
 		pillClass: 'bg-pink-500',
 		group: 'assets',
+		leadingMode: 'page',
 	},
 	diary: {
 		path: '/diary',
@@ -111,6 +120,7 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-indigo-500',
 		pillClass: 'bg-indigo-500',
 		group: 'assets',
+		leadingMode: 'page',
 	},
 	trash: {
 		path: '/trash',
@@ -120,12 +130,13 @@ export const PAGE_NAV_CONFIG = {
 		iconClass: 'text-red-500',
 		pillClass: 'bg-red-500',
 		group: 'system',
+		leadingMode: 'group',
 	},
 } as const satisfies Record<string, PageNavConfig>
 
 export type PageNavKey = keyof typeof PAGE_NAV_CONFIG
 
-type RouteMetaConfig = Pick<PageNavConfig, 'titleKey' | 'descriptionKey' | 'icon' | 'iconClass' | 'pillClass' | 'group'>
+type RouteMetaConfig = Pick<PageNavConfig, 'titleKey' | 'descriptionKey' | 'icon' | 'iconClass' | 'pillClass' | 'group' | 'leadingMode'>
 
 type LibraryNavItem = {
 	to: string
@@ -181,5 +192,6 @@ export function toRouteMeta(config: PageNavConfig): RouteMetaConfig {
 		iconClass: config.iconClass,
 		pillClass: config.pillClass,
 		group: config.group,
+		leadingMode: config.leadingMode,
 	}
 }
