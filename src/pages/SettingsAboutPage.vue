@@ -67,7 +67,10 @@
 		AboutLegalSection,
 		AboutLinksSection,
 		useSettingsAboutPage,
+		useSettingsSectionShellHeader,
 	} from '@/features/settings'
+
+	useSettingsSectionShellHeader('about')
 
 	const {
 		state,

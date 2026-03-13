@@ -1,17 +1,6 @@
 <template>
 	<section class="mx-auto w-full max-w-6xl space-y-6">
 		<div
-			v-motion="headerMotion"
-			class="flex flex-col gap-2">
-			<div class="space-y-1">
-				<div class="text-2xl font-semibold text-default">{{ t('settings.remoteSync.title') }}</div>
-				<div class="text-sm text-muted">
-					{{ t('settings.remoteSync.description') }}
-				</div>
-			</div>
-		</div>
-
-		<div
 			v-motion="actionsCardMotion"
 			class="space-y-6">
 			<RemoteSyncActionsCard
@@ -233,13 +222,15 @@
 		RemoteSyncImportForm,
 		RemoteSyncProfilesCard,
 		useRemoteSyncPageFacade,
+		useSettingsSectionShellHeader,
 	} from '@/features/settings'
+
+	useSettingsSectionShellHeader('remote-sync')
 
 	const {
 		t,
 		remoteSyncModalUi,
 		actionsCardMotion,
-		headerMotion,
 		contentGridMotion,
 		profilesCardMotion,
 		modalBodyMotion,

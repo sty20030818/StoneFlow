@@ -9,3 +9,9 @@
 		</div>
 	</section>
 </template>
+
+<script setup lang="ts">
+	import { useSettingsShellHeader } from '@/features/settings'
+
+	useSettingsShellHeader()
+</script>

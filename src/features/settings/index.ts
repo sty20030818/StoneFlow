@@ -1,4 +1,11 @@
-export { useSettingsNav, useSettingsLocaleControl, useSettingsSystemActions, SettingsSectionCard } from './shared'
+export {
+	useSettingsNav,
+	useSettingsLocaleControl,
+	useSettingsShellHeader,
+	useSettingsSectionShellHeader,
+	useSettingsSystemActions,
+	SettingsSectionCard,
+} from './shared'
 export type { SettingsNavConfigItem, SettingsNavId, SettingsNavItem } from './shared'
 export { AboutChangelogSection, AboutHeaderCard, AboutLegalSection, AboutLinksSection, useSettingsAboutPage } from './about'
 export {
