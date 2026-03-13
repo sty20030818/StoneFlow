@@ -1,11 +1,10 @@
-import { computed } from 'vue'
-
+import { useRegisterShellHeader } from '@/app/shell-header'
 import { useAppMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
 
+import TrashHeaderTabs from '../ui/TrashHeaderTabs.vue'
 import { useTrashPage } from './useTrashPage'
 
 export function useTrashPageFacade() {
-	const headerActionMotion = useAppMotionPreset('statusFeedback', 'stateAction')
 	const loadingMotion = useAppMotionPreset('statusFeedback', 'sectionBase', 8)
 	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
 	const listItemMotion = useMotionPreset('listItem')
@@ -17,45 +16,20 @@ export function useTrashPageFacade() {
 		deletedTasks,
 		restoringProjectIds,
 		restoringTaskIds,
-		onViewModeChange,
 		getTaskProjectLabel,
 		restoreProjectItem,
 		restoreTaskItem,
 	} = useTrashPage()
 
+	useRegisterShellHeader(
+		{
+			rightActions: TrashHeaderTabs,
+		},
+		'trash-page-actions',
+	)
+
 	const projectItemMotionCache = new Map<string, number>()
 	const taskItemMotionCache = new Map<string, number>()
-
-	const viewOptions = computed(() => [
-		{
-			value: 'projects' as const,
-			label: t('trash.tabs.projects'),
-			icon: 'i-lucide-folder',
-			iconClass: 'text-emerald-600',
-		},
-		{
-			value: 'tasks' as const,
-			label: t('trash.tabs.tasks'),
-			icon: 'i-lucide-list-checks',
-			iconClass: 'text-pink-500',
-		},
-	])
-	const viewTabsUi = {
-		root: 'w-full',
-		list: 'w-full rounded-full bg-elevated/70 border border-default/80 p-1 gap-1',
-		trigger:
-			'rounded-full px-3.5 py-1.5 text-[11px] font-semibold hover:data-[state=inactive]:bg-default/40 hover:data-[state=inactive]:text-default hover:data-[state=inactive]:shadow-sm data-[state=active]:text-default',
-		leadingIcon: 'size-3.5',
-		indicator: 'rounded-full shadow-sm bg-default inset-y-1',
-	}
-	const viewTabItems = computed(() =>
-		viewOptions.value.map((opt) => ({
-			label: opt.label,
-			value: opt.value,
-			icon: opt.icon,
-			iconClass: opt.iconClass,
-		})),
-	)
 
 	function getProjectItemMotion(projectId: string) {
 		const cached = projectItemMotionCache.get(projectId)
@@ -75,7 +49,6 @@ export function useTrashPageFacade() {
 
 	return {
 		t,
-		headerActionMotion,
 		loadingMotion,
 		contentMotion,
 		viewMode,
@@ -84,9 +57,6 @@ export function useTrashPageFacade() {
 		deletedTasks,
 		restoringProjectIds,
 		restoringTaskIds,
-		viewTabsUi,
-		viewTabItems,
-		onViewModeChange,
 		getTaskProjectLabel,
 		restoreProjectItem,
 		restoreTaskItem,

@@ -1,27 +1,5 @@
 <template>
 	<div class="space-y-6">
-		<Teleport
-			defer
-			to="#header-actions-portal">
-			<UTabs
-				v-motion="headerActionMotion"
-				:items="viewTabItems"
-				:model-value="viewMode"
-				:content="false"
-				color="neutral"
-				variant="pill"
-				size="sm"
-				:ui="viewTabsUi"
-				@update:model-value="onViewModeChange">
-				<template #leading="{ item }">
-					<UIcon
-						:name="item.icon"
-						class="size-3.5"
-						:class="viewMode === item.value ? item.iconClass : 'text-muted'" />
-				</template>
-			</UTabs>
-		</Teleport>
-
 		<div
 			v-if="loading"
 			v-motion="loadingMotion"
@@ -106,12 +84,14 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import TimeDisplay from '@/components/shared/TimeDisplay.vue'
 	import { useTrashPageFacade } from '@/features/trash'
 
+	useRouteMetaShellBreadcrumb('trash-page')
+
 	const {
 		t,
-		headerActionMotion,
 		loadingMotion,
 		contentMotion,
 		viewMode,
@@ -120,9 +100,6 @@
 		deletedTasks,
 		restoringProjectIds,
 		restoringTaskIds,
-		viewTabsUi,
-		viewTabItems,
-		onViewModeChange,
 		getTaskProjectLabel,
 		restoreProjectItem,
 		restoreTaskItem,

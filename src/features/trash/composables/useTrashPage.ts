@@ -10,6 +10,7 @@ import { resolveErrorMessage } from '@/utils/error-message'
 import type { TrashProject, TrashTask } from '../model'
 import { restoreTrashProject, restoreTrashTasks } from '../mutations'
 import { listTrashDeletedProjects, listTrashDeletedTasks } from '../queries'
+import { useTrashViewMode } from './useTrashViewMode'
 
 type TrashSnapshot = {
 	projects: TrashProject[]
@@ -21,7 +22,7 @@ export function useTrashPage() {
 	const { t } = useI18n({ useScope: 'global' })
 	const settingsStore = useSettingsStore()
 
-	const viewMode = ref<'projects' | 'tasks'>('projects')
+	const viewMode = useTrashViewMode()
 	const loading = ref(true)
 	const deletedProjects = ref<TrashProject[]>([])
 	const deletedTasks = ref<TrashTask[]>([])
@@ -45,10 +46,6 @@ export function useTrashPage() {
 		}
 		return map
 	})
-
-	function onViewModeChange(value: string | number) {
-		if (value === 'projects' || value === 'tasks') viewMode.value = value
-	}
 
 	function getTaskProjectLabel(projectId: string | null) {
 		if (!projectId) return getUnknownProjectLabel()
@@ -198,7 +195,6 @@ export function useTrashPage() {
 		deletedTasks,
 		restoringProjectIds,
 		restoringTaskIds,
-		onViewModeChange,
 		getTaskProjectLabel,
 		restoreProjectItem,
 		restoreTaskItem,
