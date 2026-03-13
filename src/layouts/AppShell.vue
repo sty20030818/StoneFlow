@@ -1,35 +1,38 @@
 <template>
-	<div class="h-full flex bg-default text-default relative overflow-hidden z-layer-base">
-		<Sidebar v-model:space="space" />
+	<AppShellHeaderProvider>
+		<div class="h-full flex bg-default text-default relative overflow-hidden z-layer-base">
+			<Sidebar v-model:space="space" />
 
-		<div
-			v-motion="layoutMainMotion"
-			class="relative flex-1 min-w-0 flex flex-col">
-			<Header />
+			<div
+				v-motion="layoutMainMotion"
+				class="relative flex-1 min-w-0 flex flex-col">
+				<Header />
 
-			<main
-				ref="mainScrollContainerRef"
-				class="flex-1 min-h-0 overflow-auto">
-				<div
-					v-motion="layoutContentMotion"
-					class="p-4">
-					<slot />
-				</div>
-			</main>
+				<main
+					ref="mainScrollContainerRef"
+					class="flex-1 min-h-0 overflow-auto">
+					<div
+						v-motion="layoutContentMotion"
+						class="p-4">
+						<slot />
+					</div>
+				</main>
 
-			<GlobalBackToTopButton :scroll-container="mainScrollContainerRef" />
+				<GlobalBackToTopButton :scroll-container="mainScrollContainerRef" />
+			</div>
+
+			<!-- 右侧 Task Inspector Drawer，全局挂载在 Workspace Shell 上 -->
+			<TaskInspectorDrawer />
+			<ProjectInspectorDrawer />
 		</div>
-
-		<!-- 右侧 Task Inspector Drawer，全局挂载在 Workspace Shell 上 -->
-		<TaskInspectorDrawer />
-		<ProjectInspectorDrawer />
-	</div>
+	</AppShellHeaderProvider>
 </template>
 
 <script setup lang="ts">
 	import { computed, onBeforeUnmount, ref, watch } from 'vue'
 	import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 
+	import AppShellHeaderProvider from '@/app/shell-header/AppShellHeaderProvider.vue'
 	import { useAppMotionPreset } from '@/composables/base/motion'
 	import GlobalBackToTopButton from '@/components/GlobalBackToTopButton.vue'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'
