@@ -155,7 +155,10 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import { useReviewStatsPageFacade } from '@/features/review'
+
+	useRouteMetaShellBreadcrumb('review-stats-page')
 
 	const {
 		t,

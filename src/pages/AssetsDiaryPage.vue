@@ -210,8 +210,11 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import EmptyState from '@/components/base/EmptyState.vue'
 	import { assetModalInputUi, assetModalTextareaUi, useAssetsDiaryPageFacade } from '@/features/assets'
+
+	useRouteMetaShellBreadcrumb('assets-diary-page')
 
 	const {
 		t,

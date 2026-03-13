@@ -199,7 +199,10 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import { useReviewFinishListPageFacade } from '@/features/review'
+
+	useRouteMetaShellBreadcrumb('review-finish-list-page')
 
 	const {
 		t,

@@ -185,8 +185,11 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import EmptyState from '@/components/base/EmptyState.vue'
 	import { assetModalInputUi, assetModalTextareaUi, useAssetsNotesPageFacade } from '@/features/assets'
+
+	useRouteMetaShellBreadcrumb('assets-notes-page')
 
 	const {
 		t,

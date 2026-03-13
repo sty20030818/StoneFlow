@@ -263,6 +263,7 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import EmptyState from '@/components/base/EmptyState.vue'
 	import {
 		assetModalInputUi,
@@ -270,6 +271,8 @@
 		assetModalTextareaUi,
 		useAssetsVaultPageFacade,
 	} from '@/features/assets'
+
+	useRouteMetaShellBreadcrumb('assets-vault-page')
 
 	const {
 		t,

@@ -278,7 +278,10 @@
 </template>
 
 <script setup lang="ts">
+	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
 	import { useReviewLogsPageFacade } from '@/features/review'
+
+	useRouteMetaShellBreadcrumb('review-logs-page')
 
 	const {
 		t,
