@@ -172,7 +172,7 @@
 	import { useRoute } from 'vue-router'
 
 	import { OPEN_CREATE_PROJECT_MODAL_KEY } from '@/app/injection-keys'
-	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import { useProjectShellMotionPreset } from '@/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import { DraggableProjectTree, type ProjectTreeItem, useSpaceProjectsState } from '@/features/workspace'
@@ -194,11 +194,11 @@
 	const { t } = useI18n({ useScope: 'global' })
 	const routeProjectId = useNullableStringRouteQuery('project')
 	const currentPath = computed(() => route.path)
-	const sidebarShellMotion = useProjectMotionPreset('drawerSection', 'sidebarShell')
-	const spaceSegmentMotion = useProjectMotionPreset('drawerSection', 'sidebarSpaceSegment')
-	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectHeader')
-	const projectTreeMotion = useProjectMotionPreset('drawerSection', 'sidebarProjectTree')
-	const userCardMotion = useProjectMotionPreset('drawerSection', 'sidebarUser')
+	const sidebarShellMotion = useProjectShellMotionPreset('sidebarShell')
+	const spaceSegmentMotion = useProjectShellMotionPreset('sidebarSpaceSegment')
+	const projectHeaderMotion = useProjectShellMotionPreset('sidebarProjectHeader')
+	const projectTreeMotion = useProjectShellMotionPreset('sidebarProjectTree')
+	const userCardMotion = useProjectShellMotionPreset('sidebarUser')
 
 	const spaceValue = computed(() => props.space ?? 'work')
 	const projectIcon = PROJECT_ICON

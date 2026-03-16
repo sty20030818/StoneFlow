@@ -33,7 +33,7 @@
 	import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 
 	import { AppShellHeaderProvider } from '@/app/shell-header'
-	import { useAppMotionPreset } from '@/composables/base/motion'
+	import { useAppShellMotionPreset } from '@/composables/base/motion'
 	import GlobalBackToTopButton from '@/components/GlobalBackToTopButton.vue'
 	import { SPACE_IDS, type SpaceId } from '@/config/space'
 	import { useStartupReady } from '@/startup/initialize'
@@ -60,8 +60,8 @@
 	const taskInspectorStore = useTaskInspectorStore()
 	const projectInspectorStore = useProjectInspectorStore()
 	const viewStateStore = useViewStateStore()
-	const layoutMainMotion = useAppMotionPreset('drawerSection', 'layoutShell')
-	const layoutContentMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const layoutMainMotion = useAppShellMotionPreset('layoutShell')
+	const layoutContentMotion = useAppShellMotionPreset('layoutContent')
 	const mainScrollContainerRef = ref<HTMLElement | null>(null)
 
 	function isKnownSpaceId(value: string): value is SpaceId {

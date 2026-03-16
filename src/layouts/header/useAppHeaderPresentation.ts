@@ -6,7 +6,7 @@ import { useShellHeaderController } from '@/app/shell-header'
 import type { HeaderLeadingMode } from '@/config/page-nav'
 import { PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
-import { useProjectMotionPreset } from '@/composables/base/motion'
+import { useProjectInteractionMotionPreset, useProjectShellMotionPreset } from '@/composables/base/motion'
 import { useSettingsStore } from '@/stores/settings'
 import { useWorkspaceEditStore } from '@/stores/workspace-edit'
 
@@ -35,11 +35,11 @@ export function useAppHeaderPresentation() {
 	const workspaceEditStore = useWorkspaceEditStore()
 	const shellHeaderController = useShellHeaderController()
 
-	const headerShellMotion = useProjectMotionPreset('drawerSection', 'headerShell')
-	const headerBreadcrumbMotion = useProjectMotionPreset('drawerSection', 'headerBreadcrumb')
-	const headerActionsMotion = useProjectMotionPreset('drawerSection', 'headerActions')
-	const editButtonMotion = useProjectMotionPreset('statusFeedback', 'stateAction')
-	const editStripMotion = useProjectMotionPreset('statusFeedback', 'editStrip')
+	const headerShellMotion = useProjectShellMotionPreset('headerShell')
+	const headerBreadcrumbMotion = useProjectShellMotionPreset('headerBreadcrumb')
+	const headerActionsMotion = useProjectShellMotionPreset('headerActions')
+	const editButtonMotion = useProjectInteractionMotionPreset('statusFeedback', 'stateAction')
+	const editStripMotion = useProjectInteractionMotionPreset('statusFeedback', 'editStrip')
 
 	const currentSpaceId = computed(() => {
 		const spaceId = route.params.spaceId

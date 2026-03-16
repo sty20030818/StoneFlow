@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 
 import App from '@/App.vue'
 import { createAppProviders, installAppProviders } from '@/app/providers'
+import { markMotionStartupBooting, markMotionStartupReady } from '@/composables/base/motion'
 import { installAppLifecyclePlugin } from '@/plugins/app-lifecycle'
 import { initializeAppLocale } from '@/plugins/i18n'
 import { installStartupPlugin, warmupStartupPlugin } from '@/plugins/startup'
@@ -15,6 +16,7 @@ export async function bootstrapApp(): Promise<void> {
 	const app = createApp(App)
 	const providers = createAppProviders()
 	const launchHashAtBoot = readLaunchHashAtBoot()
+	markMotionStartupBooting()
 
 	await initializeAppLocale()
 	installAppProviders(app, router, providers)
@@ -26,6 +28,13 @@ export async function bootstrapApp(): Promise<void> {
 	}
 
 	app.mount('#app')
+	if (typeof window !== 'undefined') {
+		window.requestAnimationFrame(() => {
+			markMotionStartupReady()
+		})
+	} else {
+		markMotionStartupReady()
+	}
 	void installAppLifecyclePlugin()
 
 	void warmupStartupPlugin().catch((error) => {

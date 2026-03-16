@@ -12,6 +12,8 @@ import {
 } from '@/config/motion'
 
 type MotionPresetVariants = MotionVariants<string>
+export type MotionLayer = 'shell' | 'content' | 'interaction'
+export type MotionStartupPolicy = 'booting' | 'ready'
 
 type RuntimeTransition = Transition & {
 	delay?: number
@@ -32,6 +34,9 @@ type ActionIconHoverMotionOptions = {
 type StaggeredEnterMotionOptions = {
 	limit?: number
 	fallback?: MotionPresetVariants
+}
+type MotionPresetOptions = {
+	layer?: MotionLayer
 }
 
 export const DEFAULT_STAGGER_MOTION_LIMIT = 24
@@ -78,15 +83,31 @@ const useMotionRuntime = createGlobalState(() => {
 	// 预留 reduced-motion 接入口，默认关闭，保持当前视觉表现不变。
 	const followSystemReducedPreference = ref(false)
 	const systemReducedMotion = useReducedMotion()
+	const startupPolicy = ref<MotionStartupPolicy>('booting')
 
 	const mode = computed<MotionMode>(() => {
 		if (!followSystemReducedPreference.value) return 'default'
 		return systemReducedMotion.value ? 'reduced' : 'default'
 	})
 
+	function resolvePreset(name: MotionPresetName, layer: MotionLayer = 'content') {
+		const preset = getMotionPreset(name, mode.value)
+		if (layer === 'shell' && startupPolicy.value !== 'ready') {
+			return toStaticMotionVariants(preset)
+		}
+		return preset
+	}
+
+	function setStartupPolicy(policy: MotionStartupPolicy) {
+		startupPolicy.value = policy
+	}
+
 	return {
 		mode,
 		followSystemReducedPreference,
+		startupPolicy,
+		resolvePreset,
+		setStartupPolicy,
 	}
 })
 
@@ -94,9 +115,29 @@ export function useMotionRuntimeMode() {
 	return useMotionRuntime()
 }
 
-export function useMotionPreset(name: MotionPresetName) {
+function useLayeredMotionPreset(name: MotionPresetName, options: MotionPresetOptions = {}) {
 	const runtime = useMotionRuntime()
-	return computed(() => getMotionPreset(name, runtime.mode.value))
+	return computed(() => runtime.resolvePreset(name, options.layer ?? 'content'))
+}
+
+export function markMotionStartupBooting() {
+	useMotionRuntime().setStartupPolicy('booting')
+}
+
+export function markMotionStartupReady() {
+	useMotionRuntime().setStartupPolicy('ready')
+}
+
+export function useMotionPreset(name: MotionPresetName, options: MotionPresetOptions = {}) {
+	return useLayeredMotionPreset(name, options)
+}
+
+export function useShellMotionPreset(name: MotionPresetName = 'drawerSection') {
+	return useLayeredMotionPreset(name, { layer: 'shell' })
+}
+
+export function useInteractionMotionPreset(name: MotionPresetName) {
+	return useLayeredMotionPreset(name, { layer: 'interaction' })
 }
 
 export function useCardHoverMotionPreset() {
@@ -229,6 +270,54 @@ export function useAppMotionPreset(name: MotionPresetName, phase: AppMotionPhase
 	})
 }
 
+export function useProjectShellMotionPreset(phase: ProjectMotionPhaseName, offset = 0, name: MotionPresetName = 'drawerSection') {
+	const preset = useShellMotionPreset(name)
+	return computed(() => {
+		const phaseDelay = getProjectMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
+export function useAppShellMotionPreset(phase: AppMotionPhaseName, offset = 0, name: MotionPresetName = 'drawerSection') {
+	const preset = useShellMotionPreset(name)
+	return computed(() => {
+		const phaseDelay = getAppMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
+export function useProjectContentMotionPreset(name: MotionPresetName, phase: ProjectMotionPhaseName, offset = 0) {
+	const preset = useMotionPreset(name, { layer: 'content' })
+	return computed(() => {
+		const phaseDelay = getProjectMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
+export function useAppContentMotionPreset(name: MotionPresetName, phase: AppMotionPhaseName, offset = 0) {
+	const preset = useMotionPreset(name, { layer: 'content' })
+	return computed(() => {
+		const phaseDelay = getAppMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
+export function useProjectInteractionMotionPreset(name: MotionPresetName, phase: ProjectMotionPhaseName, offset = 0) {
+	const preset = useInteractionMotionPreset(name)
+	return computed(() => {
+		const phaseDelay = getProjectMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
+export function useAppInteractionMotionPreset(name: MotionPresetName, phase: AppMotionPhaseName, offset = 0) {
+	const preset = useInteractionMotionPreset(name)
+	return computed(() => {
+		const phaseDelay = getAppMotionPhaseDelay(phase) + offset
+		return withMotionDelay(preset.value, phaseDelay)
+	})
+}
+
 export function getProjectStaggerDelay(
 	index: number,
 	basePhase: ProjectMotionPhaseName,
@@ -254,7 +343,12 @@ export function getAppStaggerDelay(
 }
 
 // delay 使用毫秒，与 @vueuse/motion 的 transition.duration/delay 单位保持一致。
-export function useMotionPresetWithDelay(name: MotionPresetName, delay = 0) {
-	const preset = useMotionPreset(name)
+export function useMotionPresetWithDelay(name: MotionPresetName, delay = 0, options: MotionPresetOptions = {}) {
+	const preset = useMotionPreset(name, options)
+	return computed(() => withMotionDelay(preset.value, delay))
+}
+
+export function useInteractionMotionPresetWithDelay(name: MotionPresetName, delay = 0) {
+	const preset = useInteractionMotionPreset(name)
 	return computed(() => withMotionDelay(preset.value, delay))
 }

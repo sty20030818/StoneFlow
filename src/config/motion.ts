@@ -23,6 +23,7 @@ type MotionEase = [number, number, number, number]
 export const APP_MOTION_PHASE = {
 	routePage: 0,
 	layoutShell: 10,
+	layoutContent: 24,
 	sectionBase: 24,
 	sectionStep: 18,
 	sectionMax: 220,
@@ -213,6 +214,11 @@ export const MOTION_PRESETS: Record<MotionPresetName, MotionPresetDefinition> = 
 	},
 }
 
+/**
+ * 预设本身只描述视觉 token；真正的壳层/内容/交互边界由组合式入口负责约束。
+ * `drawerSection` 在迁移期继续作为 section reveal 的基础视觉语义保留，但新的调用点
+ * 不应直接拿它混用于壳层与内容区，必须通过分层组合式消费。
+ */
 export function getMotionPreset(name: MotionPresetName, mode: MotionMode = 'default'): MotionPresetVariants {
 	return MOTION_PRESETS[name][mode]
 }
