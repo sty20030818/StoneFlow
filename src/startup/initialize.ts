@@ -3,7 +3,6 @@ import type { Router } from 'vue-router'
 
 import { SPACE_IDS } from '@/config/space'
 import { warmupWorkspaceProjectsQuery } from '@/features/workspace'
-import { cleanupLegacyStorageKeys } from '@/startup/legacy-storage-cleanup'
 import {
 	resolveLaunchHashTarget,
 	toLibraryRouteTarget,
@@ -91,7 +90,6 @@ export async function initializeAppStartup(router: Router, options: InitializeSt
 
 	startupPromise = (async () => {
 		startupReady.value = false
-		cleanupLegacyStorageKeys()
 		const settingsStore = useSettingsStore()
 		const viewStateStore = useViewStateStore()
 

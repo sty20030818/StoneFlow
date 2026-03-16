@@ -1,7 +1,9 @@
-import { useStorage } from '@vueuse/core'
+import { ref } from 'vue'
 
 type TrashViewMode = 'projects' | 'tasks'
 
+const trashViewMode = ref<TrashViewMode>('projects')
+
 export function useTrashViewMode() {
-	return useStorage<TrashViewMode>('trash_view_mode_v1', 'projects')
+	return trashViewMode
 }

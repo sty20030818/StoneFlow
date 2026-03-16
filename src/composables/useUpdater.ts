@@ -1,14 +1,9 @@
-import { useStorage, useTimeoutFn } from '@vueuse/core'
-import { onMounted, ref } from 'vue'
+import { useTimeoutFn } from '@vueuse/core'
+import { computed, onMounted, ref } from 'vue'
 
 import { check, type Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
-
-const AUTO_CHECK_KEY = 'settings_updater_auto_check'
-const PROMPT_INSTALL_KEY = 'settings_updater_prompt_install'
-
-const DEFAULT_AUTO_CHECK = true
-const DEFAULT_PROMPT_INSTALL = true
+import { useSettingsStore } from '@/stores/settings'
 
 export type UpdateState = {
 	/** 是否有可用更新 */
@@ -40,9 +35,6 @@ const state = ref<UpdateState>({
 	lastCheckedAt: null,
 })
 
-const autoCheckEnabled = useStorage<boolean>(AUTO_CHECK_KEY, DEFAULT_AUTO_CHECK)
-const promptInstallEnabled = useStorage<boolean>(PROMPT_INSTALL_KEY, DEFAULT_PROMPT_INSTALL)
-
 let updateInstance: Update | null = null
 let initialized = false
 const { start: startAutoCheckTimer, stop: stopAutoCheckTimer } = useTimeoutFn(
@@ -67,7 +59,7 @@ function clearAutoCheckTimer() {
 
 function scheduleAutoCheck() {
 	clearAutoCheckTimer()
-	if (!autoCheckEnabled.value) return
+	if (!useSettingsStore().settings.updaterAutoCheck) return
 	// 延迟 3 秒检查，避免影响启动性能。
 	startAutoCheckTimer()
 }
@@ -165,7 +157,7 @@ function dismiss() {
 }
 
 function setAutoCheckEnabled(value: boolean) {
-	autoCheckEnabled.value = value
+	void useSettingsStore().update({ updaterAutoCheck: value })
 	if (value) {
 		scheduleAutoCheck()
 	} else {
@@ -174,10 +166,14 @@ function setAutoCheckEnabled(value: boolean) {
 }
 
 function setPromptInstallEnabled(value: boolean) {
-	promptInstallEnabled.value = value
+	void useSettingsStore().update({ updaterPromptInstall: value })
 }
 
 export function useUpdater() {
+	const settingsStore = useSettingsStore()
+	const autoCheckEnabled = computed(() => settingsStore.settings.updaterAutoCheck)
+	const promptInstallEnabled = computed(() => settingsStore.settings.updaterPromptInstall)
+
 	onMounted(() => {
 		ensureInitialized()
 	})

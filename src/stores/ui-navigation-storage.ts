@@ -124,3 +124,14 @@ export function readUiNavigationStateSnapshot(): UiNavigationState {
 		return createDefaultUiNavigationState()
 	}
 }
+
+export function writeUiNavigationActiveSpaceId(spaceId: SpaceId) {
+	if (typeof window === 'undefined') return
+
+	const nextState = {
+		...readUiNavigationStateSnapshot(),
+		activeSpaceId: normalizeSpaceId(spaceId),
+	}
+
+	window.localStorage.setItem(UI_NAVIGATION_STATE_CACHE_KEY, JSON.stringify(nextState))
+}

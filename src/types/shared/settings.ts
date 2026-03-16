@@ -11,6 +11,8 @@ export type SettingsModel = {
 	autoStart: boolean
 	activeSpaceId: SpaceId
 	locale: AppLocale | null
+	updaterAutoCheck: boolean
+	updaterPromptInstall: boolean
 }
 
 export type WorkspaceLastView = {

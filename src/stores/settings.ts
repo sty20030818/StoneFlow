@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import { useStorage } from '@vueuse/core'
 import { computed, reactive, ref } from 'vue'
 
 import { SPACE_IDS } from '@/config/space'
 import { normalizeAppLocale } from '@/i18n/messages'
+import { readUiNavigationStateSnapshot, writeUiNavigationActiveSpaceId } from '@/stores/ui-navigation-storage'
 import type { SpaceId } from '@/types/domain/space'
 import type { SettingsModel } from '@/services/tauri/store'
 import { DEFAULT_SETTINGS, settingsStore } from '@/services/tauri/store'
@@ -18,9 +18,7 @@ function normalizeSpaceId(value: string | null | undefined): SpaceId {
 export const useSettingsStore = defineStore('settings', () => {
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
-	// 用 VueUse 持久化 activeSpaceId，避免手写 localStorage 样板与闪烁。
-	const activeSpaceIdStorage = useStorage<SpaceId>('settings_active_space_id', DEFAULT_SETTINGS.activeSpaceId)
-	const initialSpaceId = normalizeSpaceId(activeSpaceIdStorage.value)
+	const initialSpaceId = normalizeSpaceId(readUiNavigationStateSnapshot().activeSpaceId)
 
 	const state = reactive<SettingsModel>({
 		...DEFAULT_SETTINGS,
@@ -37,7 +35,7 @@ export const useSettingsStore = defineStore('settings', () => {
 			locale: normalizeAppLocale(stored.locale),
 		}
 		Object.assign(state, next)
-		activeSpaceIdStorage.value = next.activeSpaceId
+		writeUiNavigationActiveSpaceId(next.activeSpaceId)
 		loaded.value = true
 	}
 
@@ -61,7 +59,7 @@ export const useSettingsStore = defineStore('settings', () => {
 	}
 
 	async function flush() {
-		activeSpaceIdStorage.value = state.activeSpaceId
+		writeUiNavigationActiveSpaceId(state.activeSpaceId)
 		await settingsStore.set('settings', { ...state })
 		await settingsStore.save()
 	}
@@ -80,7 +78,7 @@ export const useSettingsStore = defineStore('settings', () => {
 		}
 		Object.assign(state, nextPatch)
 		if (patch.activeSpaceId !== undefined) {
-			activeSpaceIdStorage.value = normalizeSpaceId(patch.activeSpaceId)
+			writeUiNavigationActiveSpaceId(normalizeSpaceId(patch.activeSpaceId))
 		}
 		await settingsStore.set('settings', { ...state })
 	}

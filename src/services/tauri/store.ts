@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS: SettingsModel = {
 	autoStart: true,
 	activeSpaceId: 'work',
 	locale: null,
+	updaterAutoCheck: true,
+	updaterPromptInstall: true,
 }
 
 export const settingsStore = new LazyStore('settings.json', {
