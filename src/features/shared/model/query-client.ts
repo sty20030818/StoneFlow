@@ -1,6 +1,7 @@
 import { PiniaColadaQueryHooksPlugin, type PiniaColadaOptions, useQueryCache } from '@pinia/colada'
 import type { Pinia } from 'pinia'
 
+// Colada 只承担运行时查询缓存，不参与本地持久化和页面快照恢复。
 export const DEFAULT_QUERY_STALE_TIME = 30 * 1000
 export const DEFAULT_QUERY_GC_TIME = 5 * 60 * 1000
 

@@ -3,7 +3,6 @@ import { useStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { SPACE_IDS, type SpaceId } from '@/config/space'
-import { DEFAULT_UI_STATE, uiStore, type UiState } from '@/services/tauri/store'
 import { classifyRouteScope, normalizeSpaceId } from '@/startup/route-memory-policy'
 import type { ExitMode, LibraryLastView, WorkspaceLastView } from '@/types/shared/settings'
 
@@ -12,6 +11,10 @@ const WORKSPACE_LAST_VIEWS_CACHE_KEY = 'ui_workspace_last_views_v1'
 const WORKSPACE_LAST_ACTIVE_SPACE_CACHE_KEY = 'ui_workspace_last_active_space_v1'
 const LIBRARY_LAST_VIEW_CACHE_KEY = 'ui_library_last_view_v1'
 const LAST_EXIT_MODE_CACHE_KEY = 'ui_last_exit_mode_v1'
+const DEFAULT_LIBRARY_COLLAPSED = false
+const DEFAULT_WORKSPACE_LAST_ACTIVE_SPACE_ID: SpaceId = 'work'
+const DEFAULT_LIBRARY_LAST_VIEW: LibraryLastView | null = null
+const DEFAULT_LAST_EXIT_MODE: ExitMode = 'unknown'
 
 function createDefaultWorkspaceLastViews(): Record<SpaceId, WorkspaceLastView | null> {
 	return {
@@ -75,89 +78,45 @@ function sanitizeWorkspaceLastViews(value: unknown): Record<SpaceId, WorkspaceLa
 	return next
 }
 
-function sanitizeUiState(value: unknown): UiState | null {
-	if (!value || typeof value !== 'object') return null
-	const maybe = value as Partial<UiState>
-	if (!maybe.projectTreeExpanded || typeof maybe.projectTreeExpanded !== 'object') return null
-	if (typeof maybe.libraryCollapsed !== 'boolean') return null
-	if (!isExitMode(maybe.lastExitMode)) return null
-
-	const workspaceLastViews = sanitizeWorkspaceLastViews(maybe.workspaceLastViews)
-	if (!workspaceLastViews) return null
-
-	return {
-		projectTreeExpanded: maybe.projectTreeExpanded,
-		libraryCollapsed: maybe.libraryCollapsed,
-		workspaceLastViews,
-		workspaceLastActiveSpaceId: normalizeSpaceId(maybe.workspaceLastActiveSpaceId),
-		libraryLastView: sanitizeLibraryLastView(maybe.libraryLastView),
-		lastExitMode: maybe.lastExitMode,
-	}
-}
-
 export const useViewStateStore = defineStore('view-state', () => {
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
 
-	const libraryCollapsed = useStorage<boolean>(LIBRARY_COLLAPSED_CACHE_KEY, DEFAULT_UI_STATE.libraryCollapsed)
+	// 轻量 UI 状态只在前端本地持久化，不再同步到额外的 UI 文件存储。
+	const libraryCollapsed = useStorage<boolean>(LIBRARY_COLLAPSED_CACHE_KEY, DEFAULT_LIBRARY_COLLAPSED)
 	const workspaceLastViews = useStorage<Record<SpaceId, WorkspaceLastView | null>>(
 		WORKSPACE_LAST_VIEWS_CACHE_KEY,
 		createDefaultWorkspaceLastViews(),
 	)
 	const workspaceLastActiveSpaceId = useStorage<SpaceId>(
 		WORKSPACE_LAST_ACTIVE_SPACE_CACHE_KEY,
-		DEFAULT_UI_STATE.workspaceLastActiveSpaceId,
+		DEFAULT_WORKSPACE_LAST_ACTIVE_SPACE_ID,
 	)
-	const libraryLastView = useStorage<LibraryLastView | null>(
-		LIBRARY_LAST_VIEW_CACHE_KEY,
-		DEFAULT_UI_STATE.libraryLastView,
-	)
-	const lastExitMode = useStorage<ExitMode>(LAST_EXIT_MODE_CACHE_KEY, DEFAULT_UI_STATE.lastExitMode)
-
-	function buildUiState(projectTreeExpanded: Record<string, string[]>): UiState {
-		return {
-			projectTreeExpanded,
-			libraryCollapsed: libraryCollapsed.value,
-			workspaceLastViews: { ...workspaceLastViews.value },
-			workspaceLastActiveSpaceId: normalizeSpaceId(workspaceLastActiveSpaceId.value),
-			libraryLastView: libraryLastView.value ? { ...libraryLastView.value } : null,
-			lastExitMode: isExitMode(lastExitMode.value) ? lastExitMode.value : 'unknown',
-		}
-	}
+	const libraryLastView = useStorage<LibraryLastView | null>(LIBRARY_LAST_VIEW_CACHE_KEY, DEFAULT_LIBRARY_LAST_VIEW)
+	const lastExitMode = useStorage<ExitMode>(LAST_EXIT_MODE_CACHE_KEY, DEFAULT_LAST_EXIT_MODE)
 
 	function resetMemoryState() {
-		libraryCollapsed.value = DEFAULT_UI_STATE.libraryCollapsed
+		libraryCollapsed.value = DEFAULT_LIBRARY_COLLAPSED
 		workspaceLastViews.value = createDefaultWorkspaceLastViews()
-		workspaceLastActiveSpaceId.value = DEFAULT_UI_STATE.workspaceLastActiveSpaceId
-		libraryLastView.value = DEFAULT_UI_STATE.libraryLastView
-		lastExitMode.value = DEFAULT_UI_STATE.lastExitMode
-	}
-
-	async function persistUiState() {
-		const current = await uiStore.get<UiState>('ui')
-		const projectTreeExpanded =
-			current?.projectTreeExpanded && typeof current.projectTreeExpanded === 'object' ? current.projectTreeExpanded : {}
-		const nextUiState = buildUiState(projectTreeExpanded)
-		await uiStore.set('ui', nextUiState)
+		workspaceLastActiveSpaceId.value = DEFAULT_WORKSPACE_LAST_ACTIVE_SPACE_ID
+		libraryLastView.value = DEFAULT_LIBRARY_LAST_VIEW
+		lastExitMode.value = DEFAULT_LAST_EXIT_MODE
 	}
 
 	async function loadInternal() {
-		const raw = await uiStore.get<UiState>('ui')
-		const next = sanitizeUiState(raw)
-
-		// 一步到位：旧结构或损坏结构全部重置，不做迁移兼容。
-		if (!next) {
+		const nextWorkspaceLastViews = sanitizeWorkspaceLastViews(workspaceLastViews.value)
+		if (!nextWorkspaceLastViews) {
 			resetMemoryState()
-			await persistUiState()
 			loaded.value = true
 			return
 		}
 
-		libraryCollapsed.value = next.libraryCollapsed
-		workspaceLastViews.value = next.workspaceLastViews
-		workspaceLastActiveSpaceId.value = next.workspaceLastActiveSpaceId
-		libraryLastView.value = next.libraryLastView
-		lastExitMode.value = next.lastExitMode
+		libraryCollapsed.value =
+			typeof libraryCollapsed.value === 'boolean' ? libraryCollapsed.value : DEFAULT_LIBRARY_COLLAPSED
+		workspaceLastViews.value = nextWorkspaceLastViews
+		workspaceLastActiveSpaceId.value = normalizeSpaceId(workspaceLastActiveSpaceId.value)
+		libraryLastView.value = sanitizeLibraryLastView(libraryLastView.value)
+		lastExitMode.value = isExitMode(lastExitMode.value) ? lastExitMode.value : DEFAULT_LAST_EXIT_MODE
 		loaded.value = true
 	}
 
@@ -183,7 +142,6 @@ export const useViewStateStore = defineStore('view-state', () => {
 	async function setLibraryCollapsed(collapsed: boolean) {
 		if (libraryCollapsed.value === collapsed) return
 		libraryCollapsed.value = collapsed
-		await persistUiState()
 	}
 
 	async function recordWorkspaceExit(payload: WorkspaceLastView) {
@@ -205,7 +163,6 @@ export const useViewStateStore = defineStore('view-state', () => {
 		}
 		workspaceLastActiveSpaceId.value = next.spaceId
 		lastExitMode.value = 'workspace'
-		await persistUiState()
 	}
 
 	async function recordLibraryExit(route: string) {
@@ -220,13 +177,11 @@ export const useViewStateStore = defineStore('view-state', () => {
 
 		libraryLastView.value = next
 		lastExitMode.value = 'library'
-		await persistUiState()
 	}
 
 	async function recordUnknownExit() {
 		if (lastExitMode.value === 'unknown') return
 		lastExitMode.value = 'unknown'
-		await persistUiState()
 	}
 
 	function getWorkspaceRestoreTarget(spaceId?: SpaceId): WorkspaceLastView | null {
@@ -246,11 +201,6 @@ export const useViewStateStore = defineStore('view-state', () => {
 		return normalizeSpaceId(workspaceLastActiveSpaceId.value)
 	}
 
-	async function flush() {
-		await persistUiState()
-		await uiStore.save()
-	}
-
 	return {
 		loaded,
 		libraryCollapsed: computed(() => libraryCollapsed.value),
@@ -267,6 +217,5 @@ export const useViewStateStore = defineStore('view-state', () => {
 		getLibraryRestoreTarget,
 		getLastExitMode,
 		getWorkspaceLastActiveSpaceId,
-		flush,
 	}
 })

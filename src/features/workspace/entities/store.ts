@@ -16,6 +16,7 @@ import {
 } from './indexes'
 import { isWorkspaceDefaultProject, type WorkspaceEntityProject, type WorkspaceEntityTask } from './types'
 
+// Workspace entity cache 只保留会话内内存真值，不落本地持久化。
 function isWorkspaceActiveTask(task: WorkspaceEntityTask): boolean {
 	return task.archivedAt === null && task.deletedAt === null
 }

@@ -2,6 +2,7 @@ import { appDataDir, join } from '@tauri-apps/api/path'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { Stronghold, type Client } from '@tauri-apps/plugin-stronghold'
 
+// Stronghold 只负责敏感密钥，不能用前端 UI 持久化机制替代。
 const vaultStore = new LazyStore('stronghold.json', {
 	defaults: {
 		vaultPassword: null,

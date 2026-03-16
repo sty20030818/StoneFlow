@@ -2,8 +2,6 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import { DEFAULT_UI_STATE, uiStore, type UiState } from '@/services/tauri/store'
-
 const PROJECT_TREE_EXPANDED_CACHE_KEY = 'ui_project_tree_expanded_v1'
 
 type ProjectTreeNodeLike = {
@@ -12,10 +10,10 @@ type ProjectTreeNodeLike = {
 }
 
 export const useProjectTreeStore = defineStore('project-tree', () => {
+	// 项目树展开状态属于轻量 UI 偏好，只保留本地单一持久化来源。
 	const expandedBySpace = useStorage<Record<string, string[]>>(PROJECT_TREE_EXPANDED_CACHE_KEY, {})
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
-	const persistTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 
 	function getAncestorIds(projectId: string, projects: readonly ProjectTreeNodeLike[]) {
 		const byId = new Map(projects.map((p) => [p.id, p]))
@@ -29,9 +27,8 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 	}
 
 	async function loadInternal() {
-		const val = await uiStore.get<UiState>('ui')
-		if (val?.projectTreeExpanded) {
-			expandedBySpace.value = val.projectTreeExpanded
+		if (!expandedBySpace.value || typeof expandedBySpace.value !== 'object') {
+			expandedBySpace.value = {}
 		}
 		loaded.value = true
 	}
@@ -82,20 +79,6 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 		return ancestors.some((ancestorId) => !currentExpanded.includes(ancestorId))
 	}
 
-	function schedulePersistExpandedState() {
-		if (persistTimer.value) clearTimeout(persistTimer.value)
-		// 折叠展开需要即时反馈，持久化延后批处理，避免点击时主线程抖动。
-		persistTimer.value = setTimeout(async () => {
-			try {
-				const snapshot = { ...expandedBySpace.value }
-				const current = (await uiStore.get<UiState>('ui')) ?? DEFAULT_UI_STATE
-				await uiStore.set('ui', { ...current, projectTreeExpanded: snapshot })
-			} catch (error) {
-				console.error('持久化项目树展开状态失败:', error)
-			}
-		}, 120)
-	}
-
 	function setExpanded(spaceId: string, keys: string[]) {
 		const prev = expandedBySpace.value[spaceId] ?? []
 		if (prev.length === keys.length && prev.every((k, idx) => k === keys[idx])) {
@@ -105,7 +88,6 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 			...expandedBySpace.value,
 			[spaceId]: keys,
 		}
-		schedulePersistExpandedState()
 	}
 
 	function ensureProjectVisible(

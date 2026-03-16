@@ -1,9 +1,7 @@
 import { useSettingsStore } from '@/stores/settings'
-import { useViewStateStore } from '@/stores/view-state'
 
 export async function installAppLifecyclePlugin() {
 	const settingsStore = useSettingsStore()
-	const viewStateStore = useViewStateStore()
 
 	try {
 		const { getCurrentWindow } = await import('@tauri-apps/api/window')
@@ -15,7 +13,7 @@ export async function installAppLifecyclePlugin() {
 			event.preventDefault()
 			closingWithFlush = true
 			try {
-				await Promise.allSettled([settingsStore.flush(), viewStateStore.flush()])
+				await settingsStore.flush()
 			} finally {
 				await appWindow.hide()
 				closingWithFlush = false

@@ -24,12 +24,3 @@ export type LibraryLastView = {
 	route: string
 	updatedAt: number
 }
-
-export type UiState = {
-	projectTreeExpanded: Record<string, string[]>
-	libraryCollapsed: boolean
-	workspaceLastViews: Record<SpaceId, WorkspaceLastView | null>
-	workspaceLastActiveSpaceId: SpaceId
-	libraryLastView: LibraryLastView | null
-	lastExitMode: ExitMode
-}

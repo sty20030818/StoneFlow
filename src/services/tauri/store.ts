@@ -1,6 +1,6 @@
 import { LazyStore } from '@tauri-apps/plugin-store'
 
-import type { SettingsModel, UiState } from '@/types/shared/settings'
+import type { SettingsModel } from '@/types/shared/settings'
 
 export type ActiveSpaceId = SettingsModel['activeSpaceId']
 
@@ -10,10 +10,10 @@ export type {
 	InfoDensity,
 	LibraryLastView,
 	SettingsModel,
-	UiState,
 	WorkspaceLastView,
 } from '@/types/shared/settings'
 
+// 这里只保存应用级配置；前端轻量 UI 状态统一走 Pinia + localStorage。
 export const DEFAULT_SETTINGS: SettingsModel = {
 	homeView: 'today',
 	density: 'comfortable',
@@ -22,29 +22,9 @@ export const DEFAULT_SETTINGS: SettingsModel = {
 	locale: null,
 }
 
-export const DEFAULT_UI_STATE: UiState = {
-	projectTreeExpanded: {},
-	libraryCollapsed: false,
-	workspaceLastViews: {
-		work: null,
-		personal: null,
-		study: null,
-	},
-	workspaceLastActiveSpaceId: 'work',
-	libraryLastView: null,
-	lastExitMode: 'unknown',
-}
-
 export const settingsStore = new LazyStore('settings.json', {
 	defaults: {
 		settings: DEFAULT_SETTINGS,
-	},
-	autoSave: 200,
-})
-
-export const uiStore = new LazyStore('ui.json', {
-	defaults: {
-		ui: DEFAULT_UI_STATE,
 	},
 	autoSave: 200,
 })
