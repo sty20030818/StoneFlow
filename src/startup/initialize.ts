@@ -72,8 +72,7 @@ function resolveStartupTargetFromMemory(viewStateStore: ReturnType<typeof useVie
 		if (workspaceTarget) {
 			return toWorkspaceRouteTarget(workspaceTarget)
 		}
-		const fallbackSpaceId = viewStateStore.getWorkspaceLastActiveSpaceId()
-		return resolveFallbackTarget(fallbackSpaceId)
+		return resolveFallbackTarget(activeSpaceId)
 	}
 
 	if (mode === 'library') {

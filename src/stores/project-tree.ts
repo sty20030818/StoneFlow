@@ -1,8 +1,14 @@
 import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
-const PROJECT_TREE_EXPANDED_CACHE_KEY = 'ui_project_tree_expanded_v1'
+const PROJECT_TREE_EXPANDED_CACHE_KEY = 'ui_project_tree_expanded'
+const PROJECT_TREE_EXPANDED_SCHEMA_VERSION = 1
+
+type ProjectTreeExpandedState = {
+	schemaVersion: number
+	expandedBySpace: Record<string, string[]>
+}
 
 type ProjectTreeNodeLike = {
 	id: string
@@ -11,7 +17,10 @@ type ProjectTreeNodeLike = {
 
 export const useProjectTreeStore = defineStore('project-tree', () => {
 	// 项目树展开状态属于轻量 UI 偏好，只保留本地单一持久化来源。
-	const expandedBySpace = useStorage<Record<string, string[]>>(PROJECT_TREE_EXPANDED_CACHE_KEY, {})
+	const expandedState = useStorage<ProjectTreeExpandedState>(PROJECT_TREE_EXPANDED_CACHE_KEY, {
+		schemaVersion: PROJECT_TREE_EXPANDED_SCHEMA_VERSION,
+		expandedBySpace: {},
+	})
 	const loaded = ref(false)
 	const loadingPromise = ref<Promise<void> | null>(null)
 
@@ -27,8 +36,13 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 	}
 
 	async function loadInternal() {
-		if (!expandedBySpace.value || typeof expandedBySpace.value !== 'object') {
-			expandedBySpace.value = {}
+		const nextExpandedBySpace =
+			expandedState.value?.expandedBySpace && typeof expandedState.value.expandedBySpace === 'object'
+				? expandedState.value.expandedBySpace
+				: {}
+		expandedState.value = {
+			schemaVersion: PROJECT_TREE_EXPANDED_SCHEMA_VERSION,
+			expandedBySpace: nextExpandedBySpace,
 		}
 		loaded.value = true
 	}
@@ -53,7 +67,7 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 	}
 
 	function getExpanded(spaceId: string) {
-		return expandedBySpace.value[spaceId] ?? []
+		return expandedState.value.expandedBySpace[spaceId] ?? []
 	}
 
 	function resolveExpandedWithAncestors(
@@ -80,13 +94,16 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 	}
 
 	function setExpanded(spaceId: string, keys: string[]) {
-		const prev = expandedBySpace.value[spaceId] ?? []
+		const prev = expandedState.value.expandedBySpace[spaceId] ?? []
 		if (prev.length === keys.length && prev.every((k, idx) => k === keys[idx])) {
 			return
 		}
-		expandedBySpace.value = {
-			...expandedBySpace.value,
-			[spaceId]: keys,
+		expandedState.value = {
+			schemaVersion: PROJECT_TREE_EXPANDED_SCHEMA_VERSION,
+			expandedBySpace: {
+				...expandedState.value.expandedBySpace,
+				[spaceId]: keys,
+			},
 		}
 	}
 
@@ -101,7 +118,7 @@ export const useProjectTreeStore = defineStore('project-tree', () => {
 	}
 
 	return {
-		expandedBySpace,
+		expandedBySpace: computed(() => expandedState.value.expandedBySpace),
 		loaded,
 		load,
 		getExpanded,
