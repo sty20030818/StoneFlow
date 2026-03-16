@@ -1,4 +1,4 @@
-import { refDebounced, useStorage } from '@vueuse/core'
+import { refDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -12,11 +12,6 @@ import { restoreTrashProject, restoreTrashTasks } from '../mutations'
 import { listTrashDeletedProjects, listTrashDeletedTasks } from '../queries'
 import { useTrashViewMode } from './useTrashViewMode'
 
-type TrashSnapshot = {
-	projects: TrashProject[]
-	tasks: TrashTask[]
-}
-
 export function useTrashPage() {
 	const toast = useToast()
 	const { t } = useI18n({ useScope: 'global' })
@@ -28,8 +23,6 @@ export function useTrashPage() {
 	const deletedTasks = ref<TrashTask[]>([])
 	const restoringProjectIds = ref<Set<string>>(new Set())
 	const restoringTaskIds = ref<Set<string>>(new Set())
-	const trashSnapshots = useStorage<Record<string, TrashSnapshot>>('trash_snapshot_v1', {})
-	const loadedTrashScopes = ref(new Set<string>())
 
 	const activeSpaceId = computed(() => settingsStore.settings.activeSpaceId ?? 'work')
 	const scopeKey = computed(() => activeSpaceId.value)
@@ -52,33 +45,6 @@ export function useTrashPage() {
 		return projectNameMap.value.get(projectId) ?? t('trash.labels.deletedProject')
 	}
 
-	function writeSnapshot(spaceId: string, projects: TrashProject[], tasks: TrashTask[]) {
-		trashSnapshots.value = {
-			...trashSnapshots.value,
-			[spaceId]: {
-				projects,
-				tasks,
-			},
-		}
-	}
-
-	function applySnapshot(spaceId: string): boolean {
-		const snapshot = trashSnapshots.value[spaceId]
-		if (!snapshot) return false
-		deletedProjects.value = snapshot.projects
-		deletedTasks.value = snapshot.tasks
-		return true
-	}
-
-	function markScopeLoaded(spaceId: string) {
-		loadedTrashScopes.value = new Set(loadedTrashScopes.value).add(spaceId)
-	}
-
-	function refreshCurrentSnapshot() {
-		const spaceId = scopeKey.value
-		writeSnapshot(spaceId, deletedProjects.value, deletedTasks.value)
-	}
-
 	async function withTimeout<T>(promise: Promise<T>, timeoutMs = 12000): Promise<T> {
 		let timer: ReturnType<typeof setTimeout> | null = null
 		const timeoutPromise = new Promise<never>((_, reject) => {
@@ -93,17 +59,15 @@ export function useTrashPage() {
 		}
 	}
 
-	async function refreshTrash(silent = false) {
+	async function refreshTrash() {
 		const spaceId = scopeKey.value
-		const useSilent = silent && loadedTrashScopes.value.has(spaceId)
-		if (!useSilent) loading.value = true
+		loading.value = true
 		try {
 			const [projects, tasks] = await withTimeout(
 				Promise.all([listTrashDeletedProjects(spaceId), listTrashDeletedTasks(spaceId)]),
 			)
 			deletedProjects.value = projects
 			deletedTasks.value = tasks
-			writeSnapshot(spaceId, projects, tasks)
 		} catch (error) {
 			toast.add({
 				title: t('trash.toast.loadFailedTitle'),
@@ -111,8 +75,7 @@ export function useTrashPage() {
 				color: 'error',
 			})
 		} finally {
-			markScopeLoaded(spaceId)
-			if (!useSilent) loading.value = false
+			loading.value = false
 		}
 	}
 
@@ -125,7 +88,6 @@ export function useTrashPage() {
 			await restoreTrashProject(project.id)
 			deletedProjects.value = deletedProjects.value.filter((item) => item.id !== project.id)
 			await invalidateWorkspaceTaskAndProjectQueries()
-			refreshCurrentSnapshot()
 			toast.add({
 				title: t('trash.toast.projectRestoredTitle'),
 				description: project.title,
@@ -153,7 +115,6 @@ export function useTrashPage() {
 			await restoreTrashTasks([task.id])
 			deletedTasks.value = deletedTasks.value.filter((item) => item.id !== task.id)
 			await invalidateWorkspaceTaskAndProjectQueries()
-			refreshCurrentSnapshot()
 			toast.add({
 				title: t('trash.toast.taskRestoredTitle'),
 				description: task.title,
@@ -174,15 +135,10 @@ export function useTrashPage() {
 
 	watch(
 		debouncedScopeKey,
-		(nextScope) => {
-			const hasSnapshot = applySnapshot(nextScope)
-			if (hasSnapshot) {
-				loading.value = false
-				markScopeLoaded(nextScope)
-				void refreshTrash(true)
-				return
-			}
-			void refreshTrash(false)
+		() => {
+			deletedProjects.value = []
+			deletedTasks.value = []
+			void refreshTrash()
 		},
 		{ immediate: true },
 	)

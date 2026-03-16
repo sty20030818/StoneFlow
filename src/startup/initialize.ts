@@ -3,13 +3,13 @@ import type { Router } from 'vue-router'
 
 import { SPACE_IDS } from '@/config/space'
 import { warmupWorkspaceProjectsQuery } from '@/features/workspace'
+import { cleanupLegacyStorageKeys } from '@/startup/legacy-storage-cleanup'
 import {
 	resolveLaunchHashTarget,
 	toLibraryRouteTarget,
 	toWorkspaceRouteTarget,
 	type StartupRouteTarget,
 } from '@/startup/route-memory-policy'
-import { useProjectTreeStore } from '@/stores/project-tree'
 import { useSettingsStore } from '@/stores/settings'
 import { useViewStateStore } from '@/stores/view-state'
 
@@ -92,11 +92,11 @@ export async function initializeAppStartup(router: Router, options: InitializeSt
 
 	startupPromise = (async () => {
 		startupReady.value = false
+		cleanupLegacyStorageKeys()
 		const settingsStore = useSettingsStore()
 		const viewStateStore = useViewStateStore()
-		const projectTreeStore = useProjectTreeStore()
 
-		// 启动路由决策依赖 settings/view-state 的持久化数据，必须先加载。
+		// 启动恢复只依赖应用设置与轻量 UI 记忆，不再依赖页面数据快照。
 		await Promise.allSettled([settingsStore.load(), viewStateStore.load()])
 
 		const activeSpaceId = normalizeSpaceId(settingsStore.settings.activeSpaceId)
@@ -113,13 +113,8 @@ export async function initializeAppStartup(router: Router, options: InitializeSt
 
 		startupReady.value = true
 		const visibleSpaceId = extractCurrentSpaceId(router, activeSpaceId)
-		// 其余状态与数据后台并发，避免阻塞挂载
-		void Promise.allSettled([
-			settingsStore.load(),
-			viewStateStore.load(),
-			projectTreeStore.load(),
-			warmupWorkspaceProjectsQuery(visibleSpaceId),
-		])
+		// 业务数据统一在后台重新拉取，不恢复历史页面列表快照。
+		void warmupWorkspaceProjectsQuery(visibleSpaceId)
 	})().finally(() => {
 		startupPromise = null
 		startupReady.value = true
