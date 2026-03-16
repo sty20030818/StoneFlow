@@ -20,7 +20,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	import { useMotionPresetWithDelay } from '@/composables/base/motion'
+	import { useContentMotionPresetWithDelay } from '@/composables/base/motion'
 
 	const props = withDefaults(
 		defineProps<{
@@ -35,6 +35,6 @@
 		},
 	)
 
-	const headerMotionPreset = useMotionPresetWithDelay('drawerSection', props.motionDelay)
+	const headerMotionPreset = useContentMotionPresetWithDelay('drawerSection', props.motionDelay)
 	const headerMotion = computed(() => headerMotionPreset.value)
 </script>

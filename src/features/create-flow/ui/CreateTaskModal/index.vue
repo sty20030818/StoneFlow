@@ -44,7 +44,7 @@
 	import { useI18n } from 'vue-i18n'
 	import TaskModalBody from './components/TaskModalBody.vue'
 	import TaskModalFooter from './components/TaskModalFooter.vue'
-	import { useMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
+	import { useInteractionMotionPreset, useInteractionMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import {
 		useCreateTaskModal,
@@ -55,8 +55,8 @@
 	const props = defineProps<CreateTaskModalProps>()
 	const emit = defineEmits<CreateTaskModalEmits>()
 	const { t } = useI18n({ useScope: 'global' })
-	const modalBodyMotionPreset = useMotionPreset('modalSection')
-	const modalFooterMotionPreset = useMotionPresetWithDelay('statusFeedback', 20)
+	const modalBodyMotionPreset = useInteractionMotionPreset('modalSection')
+	const modalFooterMotionPreset = useInteractionMotionPresetWithDelay('statusFeedback', 20)
 	const taskModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
 		rounded: 'rounded-2xl',

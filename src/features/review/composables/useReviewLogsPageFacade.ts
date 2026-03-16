@@ -6,7 +6,7 @@ import {
 	DEFAULT_STAGGER_MOTION_LIMIT,
 	createStaggeredEnterMotions,
 	getAppStaggerDelay,
-	useAppMotionPreset,
+	useAppContentMotionPreset,
 	useMotionPreset,
 } from '@/composables/base/motion'
 
@@ -16,12 +16,12 @@ import { useReviewLogs } from './useReviewLogs'
 export function useReviewLogsPageFacade() {
 	const { t } = useI18n({ useScope: 'global' })
 	const router = useRouter()
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
-	const contentMotion = useAppMotionPreset('drawerSection', 'sectionBase', 34)
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
+	const filtersMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 18)
+	const contentMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 34)
 	const rawItemPreset = useMotionPreset('listItem')
-	const aggregateTodayMotion = useAppMotionPreset('card', 'sectionBase', 52)
-	const aggregateWeekMotion = useAppMotionPreset('card', 'sectionBase', 70)
+	const aggregateTodayMotion = useAppContentMotionPreset('card', 'sectionBase', 52)
+	const aggregateWeekMotion = useAppContentMotionPreset('card', 'sectionBase', 70)
 	const {
 		loading,
 		loadingMore,

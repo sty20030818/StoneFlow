@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useProjectMotionPreset } from '@/composables/base/motion'
+	import { useProjectContentMotionPreset } from '@/composables/base/motion'
 	import EmptyState from '@/components/base/EmptyState.vue'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { ProjectHeaderCard, TaskColumn, useWorkspaceProjectView, WorkspaceLayout } from '@/features/workspace'
@@ -120,8 +120,8 @@
 	const deleteModalUi = createModalLayerUi({
 		width: 'sm:max-w-lg',
 	})
-	const projectHeaderMotion = useProjectMotionPreset('drawerSection', 'headerBreadcrumb')
-	const workspaceColumnsMotion = useProjectMotionPreset('drawerSection', 'headerActions')
+	const projectHeaderMotion = useProjectContentMotionPreset('drawerSection', 'headerBreadcrumb')
+	const workspaceColumnsMotion = useProjectContentMotionPreset('drawerSection', 'headerActions')
 	const {
 		columnStickyOffset,
 		collapseResetKey,

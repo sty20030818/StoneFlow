@@ -2,17 +2,17 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { createStaggeredEnterMotions, getAppStaggerDelay, useAppMotionPreset, useMotionPreset } from '@/composables/base/motion'
+import { createStaggeredEnterMotions, getAppStaggerDelay, useAppContentMotionPreset, useMotionPreset } from '@/composables/base/motion'
 
 import { useReviewStats } from './useReviewStats'
 
 export function useReviewStatsPageFacade() {
 	const { t } = useI18n({ useScope: 'global' })
 	const router = useRouter()
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
 	const cardMotionPreset = useMotionPreset('card')
-	const trendCardMotion = useAppMotionPreset('card', 'sectionBase', 46)
-	const statusCardMotion = useAppMotionPreset('card', 'sectionBase', 60)
+	const trendCardMotion = useAppContentMotionPreset('card', 'sectionBase', 46)
+	const statusCardMotion = useAppContentMotionPreset('card', 'sectionBase', 60)
 	const { loading, spaceCards, last7d, statusTotal, statusSlices } = useReviewStats()
 
 	const spaceCardMotions = computed(() =>

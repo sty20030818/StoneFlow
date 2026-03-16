@@ -44,7 +44,7 @@
 	import { refDebounced, useEventListener } from '@vueuse/core'
 
 	import { MOTION_TOKENS } from '@/config/motion'
-	import { useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import { useInteractionMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
 	import { useTaskCreateWorkflow } from '@/features/create-flow'
 	import type { TaskPriorityValue } from '@/config/task'
 	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
@@ -108,7 +108,7 @@
 			props.enterDelay,
 		),
 	)
-	const priorityBadgeMotion = useMotionPreset('statusFeedback')
+	const priorityBadgeMotion = useInteractionMotionPreset('statusFeedback')
 	const noteSectionMotion = useMotionPresetWithDelay('listItem', 72)
 	const cardMotionPreset = useMotionPreset('card')
 	const creatorInteractionMotion = computed<MotionVariants<string>>(() => ({

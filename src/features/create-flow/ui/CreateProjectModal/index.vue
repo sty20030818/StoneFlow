@@ -38,7 +38,7 @@
 	import { useI18n } from 'vue-i18n'
 	import ProjectModalBody from './components/ProjectModalBody.vue'
 	import ProjectModalFooter from './components/ProjectModalFooter.vue'
-	import { useMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
+	import { useInteractionMotionPreset, useInteractionMotionPresetWithDelay } from '@/composables/base/motion'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import {
 		useCreateProjectModal,
@@ -49,8 +49,8 @@
 	const props = defineProps<CreateProjectModalProps>()
 	const emit = defineEmits<CreateProjectModalEmits>()
 	const { t } = useI18n({ useScope: 'global' })
-	const modalBodyMotionPreset = useMotionPreset('modalSection')
-	const modalFooterMotionPreset = useMotionPresetWithDelay('statusFeedback', 20)
+	const modalBodyMotionPreset = useInteractionMotionPreset('modalSection')
+	const modalFooterMotionPreset = useInteractionMotionPresetWithDelay('statusFeedback', 20)
 	const projectModalUi = createModalLayerUi({
 		width: 'sm:max-w-2xl',
 		rounded: 'rounded-2xl',

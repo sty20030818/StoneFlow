@@ -153,7 +153,7 @@
 		DrawerTimelineSection,
 		DrawerTitleInputSection,
 	} from '../shared/sections'
-	import { getProjectMotionPhaseDelay, useProjectMotionPreset } from '@/composables/base/motion'
+	import { getProjectMotionPhaseDelay, useProjectInteractionMotionPreset } from '@/composables/base/motion'
 	import AdvancedSection from './components/AdvancedSection.vue'
 	import LocationSection from './components/LocationSection.vue'
 	import PriorityDeadlineSection from './components/PriorityDeadlineSection.vue'
@@ -274,16 +274,16 @@
 	})
 
 	const drawerSectionStep = getProjectMotionPhaseDelay('drawerSectionStep')
-	const drawerHeaderMotion = useProjectMotionPreset('drawerSection', 'drawerHeader')
-	const statusSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart')
-	const titleSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 1)
-	const prioritySectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 2)
-	const locationSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 3)
-	const advancedSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 4)
-	const tagsSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 5)
-	const noteSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 6)
-	const linksSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 7)
-	const timelineSectionMotion = useProjectMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 8)
+	const drawerHeaderMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerHeader')
+	const statusSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart')
+	const titleSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 1)
+	const prioritySectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 2)
+	const locationSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 3)
+	const advancedSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 4)
+	const tagsSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 5)
+	const noteSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 6)
+	const linksSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 7)
+	const timelineSectionMotion = useProjectInteractionMotionPreset('drawerSection', 'drawerSectionStart', drawerSectionStep * 8)
 
 	const handleDeadlineUpdate = (val: string) => {
 		deadlineLocal.value = val

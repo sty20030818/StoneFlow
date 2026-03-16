@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useMotionPreset } from '@/composables/base/motion'
+	import { useInteractionMotionPreset } from '@/composables/base/motion'
 
 	type Props = {
 		currentSpaceLabel: string
@@ -73,6 +73,6 @@
 
 	defineProps<Props>()
 	const { t } = useI18n({ useScope: 'global' })
-	const headerMotion = useMotionPreset('drawerSection')
-	const saveStateMotion = useMotionPreset('statusFeedback')
+	const headerMotion = useInteractionMotionPreset('drawerSection')
+	const saveStateMotion = useInteractionMotionPreset('statusFeedback')
 </script>

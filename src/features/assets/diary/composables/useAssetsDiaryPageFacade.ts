@@ -5,21 +5,22 @@ import {
 	getAppStaggerDelay,
 	resolveStaggeredEnterMotion,
 	toStaticMotionVariants,
-	useAppMotionPreset,
+	useAppContentMotionPreset,
+	useInteractionMotionPreset,
+	useInteractionMotionPresetWithDelay,
 	useMotionPreset,
-	useMotionPresetWithDelay,
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
 import { useAssetsDiaryPage } from './useAssetsDiaryPage'
 
 export function useAssetsDiaryPageFacade() {
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const timelineMotion = useAppMotionPreset('drawerSection', 'sectionBase', 20)
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
+	const timelineMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 20)
 	const diaryItemPreset = useMotionPreset('card')
 	const diaryItemStaticMotion = computed(() => toStaticMotionVariants(diaryItemPreset.value))
-	const modalBodyMotion = useMotionPreset('modalSection')
-	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const modalBodyMotion = useInteractionMotionPreset('modalSection')
+	const modalFooterMotion = useInteractionMotionPresetWithDelay('statusFeedback', 20)
 	const {
 		t,
 		loading,

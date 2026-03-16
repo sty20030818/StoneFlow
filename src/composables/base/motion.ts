@@ -132,6 +132,10 @@ export function useMotionPreset(name: MotionPresetName, options: MotionPresetOpt
 	return useLayeredMotionPreset(name, options)
 }
 
+export function useContentMotionPreset(name: MotionPresetName = 'drawerSection') {
+	return useLayeredMotionPreset(name, { layer: 'content' })
+}
+
 export function useShellMotionPreset(name: MotionPresetName = 'drawerSection') {
 	return useLayeredMotionPreset(name, { layer: 'shell' })
 }
@@ -345,6 +349,11 @@ export function getAppStaggerDelay(
 // delay 使用毫秒，与 @vueuse/motion 的 transition.duration/delay 单位保持一致。
 export function useMotionPresetWithDelay(name: MotionPresetName, delay = 0, options: MotionPresetOptions = {}) {
 	const preset = useMotionPreset(name, options)
+	return computed(() => withMotionDelay(preset.value, delay))
+}
+
+export function useContentMotionPresetWithDelay(name: MotionPresetName, delay = 0) {
+	const preset = useContentMotionPreset(name)
 	return computed(() => withMotionDelay(preset.value, delay))
 }
 

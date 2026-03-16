@@ -1,7 +1,7 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useAppMotionPreset, useMotionPresetWithDelay } from '@/composables/base/motion'
+import { useAppContentMotionPreset, useInteractionMotionPresetWithDelay } from '@/composables/base/motion'
 import { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
 import { createModalLayerUi } from '@/config/ui-layer'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
@@ -112,12 +112,12 @@ export function useRemoteSyncPageFacade() {
 	})
 
 	const remoteSyncModalUi = createModalLayerUi()
-	const actionsCardMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase', 16)
-	const contentGridMotion = useAppMotionPreset('drawerSection', 'sectionBase', 30)
-	const profilesCardMotion = useAppMotionPreset('drawerSection', 'sectionBase', 48)
-	const modalBodyMotion = useMotionPresetWithDelay('modalSection', 24)
-	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
+	const actionsCardMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 16)
+	const contentGridMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 30)
+	const profilesCardMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 48)
+	const modalBodyMotion = useInteractionMotionPresetWithDelay('modalSection', 24)
+	const modalFooterMotion = useInteractionMotionPresetWithDelay('statusFeedback', 44)
 
 	return {
 		t,

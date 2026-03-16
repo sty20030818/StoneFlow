@@ -4,20 +4,21 @@ import {
 	DEFAULT_STAGGER_MOTION_LIMIT,
 	createStaggeredEnterMotions,
 	getAppStaggerDelay,
-	useAppMotionPreset,
+	useAppContentMotionPreset,
+	useInteractionMotionPreset,
+	useInteractionMotionPresetWithDelay,
 	useMotionPreset,
-	useMotionPresetWithDelay,
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
 import { useAssetsNotesPage } from './useAssetsNotesPage'
 
 export function useAssetsNotesPageFacade() {
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
+	const layoutMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 18)
 	const noteItemPreset = useMotionPreset('listItem')
-	const modalBodyMotion = useMotionPreset('modalSection')
-	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const modalBodyMotion = useInteractionMotionPreset('modalSection')
+	const modalFooterMotion = useInteractionMotionPresetWithDelay('statusFeedback', 20)
 	const {
 		t,
 		loading,

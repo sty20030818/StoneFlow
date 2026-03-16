@@ -4,20 +4,20 @@ import {
 	DEFAULT_STAGGER_MOTION_LIMIT,
 	createStaggeredEnterMotions,
 	getAppStaggerDelay,
-	useAppMotionPreset,
+	useAppContentMotionPreset,
 	useCardHoverMotionPreset,
-	useMotionPresetWithDelay,
+	useInteractionMotionPresetWithDelay,
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
 import { useReviewFinishList } from './useReviewFinishList'
 
 export function useReviewFinishListPageFacade() {
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const filtersMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
+	const filtersMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 18)
 	const groupItemMotionPreset = useCardHoverMotionPreset()
-	const reflectionBodyMotion = useMotionPresetWithDelay('modalSection', 24)
-	const reflectionFooterMotion = useMotionPresetWithDelay('statusFeedback', 44)
+	const reflectionBodyMotion = useInteractionMotionPresetWithDelay('modalSection', 24)
+	const reflectionFooterMotion = useInteractionMotionPresetWithDelay('statusFeedback', 44)
 	const {
 		t,
 		loading,

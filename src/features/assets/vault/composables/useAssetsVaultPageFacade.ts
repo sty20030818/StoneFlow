@@ -4,22 +4,23 @@ import {
 	DEFAULT_STAGGER_MOTION_LIMIT,
 	createStaggeredEnterMotions,
 	getAppStaggerDelay,
-	useAppMotionPreset,
+	useAppContentMotionPreset,
+	useInteractionMotionPreset,
+	useInteractionMotionPresetWithDelay,
 	useMotionPreset,
-	useMotionPresetWithDelay,
 } from '@/composables/base/motion'
 import { createModalLayerUi } from '@/config/ui-layer'
 
 import { useAssetsVaultPage } from './useAssetsVaultPage'
 
 export function useAssetsVaultPageFacade() {
-	const headerMotion = useAppMotionPreset('drawerSection', 'sectionBase')
-	const layoutMotion = useAppMotionPreset('drawerSection', 'sectionBase', 18)
-	const folderMotion = useAppMotionPreset('card', 'sectionBase', 30)
-	const listMotion = useAppMotionPreset('drawerSection', 'sectionBase', 42)
+	const headerMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
+	const layoutMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 18)
+	const folderMotion = useAppContentMotionPreset('card', 'sectionBase', 30)
+	const listMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 42)
 	const entryItemPreset = useMotionPreset('listItem')
-	const modalBodyMotion = useMotionPreset('modalSection')
-	const modalFooterMotion = useMotionPresetWithDelay('statusFeedback', 20)
+	const modalBodyMotion = useInteractionMotionPreset('modalSection')
+	const modalFooterMotion = useInteractionMotionPresetWithDelay('statusFeedback', 20)
 	const {
 		t,
 		loading,

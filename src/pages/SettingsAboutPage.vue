@@ -59,7 +59,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	import { createStaggeredEnterMotions, getAppStaggerDelay, useMotionPreset } from '@/composables/base/motion'
+	import { createStaggeredEnterMotions, getAppStaggerDelay, useContentMotionPreset } from '@/composables/base/motion'
 	import {
 		AboutChangelogSection,
 		// AboutDownloadInstallSection,
@@ -101,6 +101,6 @@
 		openUrl,
 		copy,
 	} = useSettingsAboutPage()
-	const aboutCardPreset = useMotionPreset('drawerSection')
+	const aboutCardPreset = useContentMotionPreset('drawerSection')
 	const aboutCardMotions = computed(() => createStaggeredEnterMotions(4, aboutCardPreset.value, getAppStaggerDelay))
 </script>
