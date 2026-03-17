@@ -106,7 +106,7 @@
 
 				<template v-if="!isDoneColumn && tasks.length > 0">
 					<DraggableTaskList
-						v-for="(p, priorityIndex) in priorityList"
+						v-for="(p, priorityIndex) in visiblePriorityList"
 						:key="p"
 						:tasks="tasksByPriority[p] || []"
 						:priority="p"
@@ -252,7 +252,7 @@
 	const stickyVisualClass = computed(() =>
 		props.isEditMode || !isStuck.value ? '' : 'shadow-[0_8px_16px_-14px_rgba(15,23,42,0.42)]',
 	)
-	const stickyDensityClass = computed(() => (isDoneColumn.value ? 'py-2.5' : 'pb-1 pt-2'))
+	const stickyDensityClass = computed(() => (isDoneColumn.value ? 'py-2' : 'pb-1 pt-2'))
 	const stickyContainerStyle = computed(() =>
 		props.isEditMode ? {} : { top: `${Math.max(props.stickyOffset ?? 0, 0)}px` },
 	)
@@ -286,6 +286,11 @@
 		})
 		return groups
 	})
+
+	// 仅渲染有任务的优先级分组，避免空拖拽容器占位撑开列表底部留白。
+	const visiblePriorityList = computed(() =>
+		priorityList.value.filter((priority) => (tasksByPriority.value[priority] ?? []).length > 0),
+	)
 
 	const doneTasks = computed(() => {
 		if (!isDoneColumn.value) return []

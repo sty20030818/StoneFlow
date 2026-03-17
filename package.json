@@ -16,7 +16,7 @@
 		"release:json": "bun scripts/release-prepare.mjs --json-only"
 	},
 	"dependencies": {
-		"@iconify-json/lucide": "^1.2.97",
+		"@iconify-json/lucide": "^1.2.98",
 		"@nuxt/ui": "^4.5.1",
 		"@pinia/colada": "^1.0.0",
 		"@tailwindcss/vite": "^4.2.1",
@@ -45,8 +45,8 @@
 		"@tauri-apps/cli": "^2.10.1",
 		"@types/node": "^25.5.0",
 		"@types/sortablejs": "^1.15.9",
-		"@typescript-eslint/eslint-plugin": "^8.57.0",
-		"@typescript-eslint/parser": "^8.57.0",
+		"@typescript-eslint/eslint-plugin": "^8.57.1",
+		"@typescript-eslint/parser": "^8.57.1",
 		"@vitejs/plugin-vue": "^6.0.5",
 		"eslint": "^10.0.3",
 		"eslint-config-prettier": "^10.1.8",

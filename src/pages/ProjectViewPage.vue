@@ -1,5 +1,5 @@
 <template>
-	<div class="space-y-8">
+	<div class="space-y-2">
 		<!-- Project Header Card（仅在 project 模式下显示） -->
 		<div
 			v-if="currentProject"

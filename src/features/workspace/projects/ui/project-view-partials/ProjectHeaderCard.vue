@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="project"
-		class="mb-6 rounded-[28px] pt-6 pr-6 pb-6 pl-8 border border-white/60 bg-white/85 backdrop-blur-2xl shadow-sm relative overflow-hidden"
+		class="rounded-[28px] p-6 border border-white/60 bg-white/85 backdrop-blur-2xl shadow-sm relative overflow-hidden"
 		:style="prioritySurfaceVars">
 		<div class="surface-tint"></div>
 		<div class="card-inner-border"></div>
@@ -20,7 +20,7 @@
 					<UBadge
 						size="sm"
 						variant="soft"
-						class="rounded-full px-[14px] py-[7px] text-[11px] font-semibold uppercase tracking-widest"
+						class="rounded-full px-3.5 py-1.75 text-[11px] font-semibold uppercase tracking-widest"
 						:color="statusColor">
 						<span class="inline-flex items-center gap-2">
 							<span
@@ -80,7 +80,7 @@
 				</div>
 				<div class="ml-auto flex items-end">
 					<div
-						class="flex items-center gap-3 rounded-[22px] px-[24px] py-[12px] shadow-md ring-1 ring-white/30"
+						class="flex items-center gap-3 rounded-[22px] px-6 py-3 shadow-md ring-1 ring-white/30"
 						:class="priorityPillClass">
 						<UIcon
 							:name="priorityIconName"
