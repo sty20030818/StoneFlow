@@ -14,6 +14,7 @@ const Diary = () => import('@/pages/AssetsDiaryPage.vue')
 const Trash = () => import('@/pages/TrashPage.vue')
 
 const Settings = () => import('@/pages/SettingsPage.vue')
+const SettingsAppearance = () => import('@/pages/SettingsAppearancePage.vue')
 const SettingsAbout = () => import('@/pages/SettingsAboutPage.vue')
 const SettingsRemoteSync = () => import('@/pages/SettingsRemoteSyncPage.vue')
 const StartupGate = () => import('@/startup/StartupGate.vue')
@@ -105,7 +106,18 @@ export const routes = [
 		children: [
 			{
 				path: '',
-				redirect: '/settings/about',
+				redirect: '/settings/appearance',
+			},
+			{
+				path: 'appearance',
+				component: SettingsAppearance,
+				meta: {
+					titleKey: 'routes.settingsAppearance.title',
+					icon: 'i-lucide-palette',
+					iconClass: 'text-violet-500',
+					pillClass: 'bg-violet-500',
+					descriptionKey: 'routes.settingsAppearance.description',
+				},
 			},
 			{
 				path: 'about',

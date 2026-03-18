@@ -1,4 +1,4 @@
-export type SettingsNavId = 'about' | 'remote-sync'
+export type SettingsNavId = 'appearance' | 'about' | 'remote-sync'
 
 export type SettingsNavConfigItem = {
 	id: SettingsNavId
@@ -17,6 +17,13 @@ export type SettingsNavItem = {
 }
 
 export const SETTINGS_NAV_ITEMS: ReadonlyArray<SettingsNavConfigItem> = [
+	{
+		id: 'appearance',
+		labelKey: 'nav.settings.appearance.title',
+		descriptionKey: 'nav.settings.appearance.description',
+		icon: 'i-lucide-palette',
+		to: '/settings/appearance',
+	},
 	{
 		id: 'about',
 		labelKey: 'nav.settings.about.title',

@@ -15,6 +15,19 @@ export default {
 			'en-US': 'English (US)',
 		},
 	},
+	theme: {
+		label: 'Theme',
+		switchTo: 'Switch to {mode}',
+		modes: {
+			light: 'Light',
+			dark: 'Dark',
+			system: 'System',
+		},
+		resolved: {
+			light: 'Currently using light mode',
+			dark: 'Currently using dark mode',
+		},
+	},
 	datePicker: {
 		ariaLabel: 'Choose date',
 	},
@@ -53,6 +66,10 @@ export default {
 		settingsAbout: {
 			title: 'About',
 			description: 'Version, updates, and app information',
+		},
+		settingsAppearance: {
+			title: 'Appearance',
+			description: 'Theme mode and display preferences',
 		},
 		settingsRemoteSync: {
 			title: 'Remote Sync',
@@ -115,6 +132,10 @@ export default {
 				title: 'About',
 				description: 'Version, updates, downloads, and links',
 			},
+			appearance: {
+				title: 'Appearance',
+				description: 'Theme mode and display preferences',
+			},
 			remoteSync: {
 				title: 'Remote Sync',
 				description: 'Neon config and upload/download',
@@ -133,6 +154,7 @@ export default {
 			snippets: 'Snippets',
 			vault: 'Vault',
 			notes: 'Notes',
+			appearance: 'Appearance',
 			about: 'About',
 			remoteSync: 'Remote Sync',
 		},
@@ -761,6 +783,38 @@ export default {
 		},
 	},
 	settings: {
+		appearance: {
+			title: 'Appearance',
+			description: 'Manage theme mode and display preferences',
+			theme: {
+				title: 'Theme Mode',
+				description: 'Choose a fixed app theme or let it follow the system appearance automatically.',
+				preferenceLabel: 'Preference',
+				resolvedLabel: 'Currently Applied',
+				manualHint: 'Your manual selection is applied to the whole app immediately.',
+				systemHint: 'When enabled, the app follows the device light / dark appearance automatically.',
+				optionDescription: {
+					light: 'Keep a bright canvas with crisp visual hierarchy.',
+					dark: 'Reduce glare and harsh contrast during long sessions.',
+					system: 'Match the current device color scheme automatically.',
+				},
+			},
+			locale: {
+				title: 'Display Language',
+				description: 'Choose the primary app language and switch page copy immediately.',
+				optionDescription: {
+					'zh-CN': 'Better suited for Chinese-first task management and review flows.',
+					'en-US': 'Great for bilingual workflows and English-first interface preference.',
+				},
+			},
+			shortcut: {
+				title: 'Quick Toggle',
+				description: 'A three-state shortcut remains on the right side of the sidebar logo for quick switching.',
+				nextMode: 'Next click will switch to: {mode}',
+				helper: 'The shortcut button and this page share the same setting; changing either one keeps them in sync.',
+				action: 'Switch Now',
+			},
+		},
 
 		about: {
 			header: {

@@ -15,6 +15,19 @@ export default {
 			'en-US': 'English (US)',
 		},
 	},
+	theme: {
+		label: '主题',
+		switchTo: '切换到{mode}',
+		modes: {
+			light: '浅色',
+			dark: '暗色',
+			system: '跟随系统',
+		},
+		resolved: {
+			light: '当前显示为浅色',
+			dark: '当前显示为暗色',
+		},
+	},
 	datePicker: {
 		ariaLabel: '选择日期',
 	},
@@ -53,6 +66,10 @@ export default {
 		settingsAbout: {
 			title: '关于',
 			description: '版本、更新与应用信息',
+		},
+		settingsAppearance: {
+			title: '外观',
+			description: '主题模式与显示偏好',
 		},
 		settingsRemoteSync: {
 			title: '远端同步',
@@ -115,6 +132,10 @@ export default {
 				title: '关于',
 				description: '版本、更新、下载与链接',
 			},
+			appearance: {
+				title: '外观',
+				description: '主题模式与显示偏好',
+			},
 			remoteSync: {
 				title: '远端同步',
 				description: 'Neon 配置与上传下载',
@@ -133,6 +154,7 @@ export default {
 			snippets: '代码片段',
 			vault: '密钥库',
 			notes: '笔记',
+			appearance: '外观',
 			about: '关于',
 			remoteSync: '远端同步',
 		},
@@ -761,6 +783,38 @@ export default {
 		},
 	},
 	settings: {
+		appearance: {
+			title: '外观',
+			description: '管理主题模式与显示偏好',
+			theme: {
+				title: '主题模式',
+				description: '为应用选择固定主题，或让它自动跟随系统外观。',
+				preferenceLabel: '偏好模式',
+				resolvedLabel: '当前生效',
+				manualHint: '已按你的手动选择立即应用到整个应用。',
+				systemHint: '启用后会跟随设备的浅色 / 暗色设置自动切换。',
+				optionDescription: {
+					light: '保持明亮界面和清晰层次。',
+					dark: '降低夜间使用时的眩光与对比刺激。',
+					system: '自动匹配设备当前的颜色方案。',
+				},
+			},
+			locale: {
+				title: '显示语言',
+				description: '选择应用主要使用的语言，页面文字会立即切换。',
+				optionDescription: {
+					'zh-CN': '更适合中文语境下的任务管理与复盘。',
+					'en-US': '适合中英混合工作流与英文界面偏好。',
+				},
+			},
+			shortcut: {
+				title: '快捷切换',
+				description: '侧边栏 Logo 右侧保留了一个三态快捷按钮，便于随时切换主题。',
+				nextMode: '下一次点击会切换到：{mode}',
+				helper: '快捷按钮与这里共享同一份设置；无论从哪里切换，状态都会自动保持一致。',
+				action: '立即切换',
+			},
+		},
 
 		about: {
 			header: {

@@ -87,6 +87,7 @@ export function useAppGlobalOverlays() {
 			id: 'settings',
 			label: t('nav.groups.settings'),
 			items: [
+				{ label: t('commandPalette.items.appearance'), icon: 'i-lucide-palette', to: '/settings/appearance' },
 				{ label: t('commandPalette.items.about'), icon: 'i-lucide-info', to: '/settings/about' },
 				{ label: t('commandPalette.items.remoteSync'), icon: 'i-lucide-cloud', to: '/settings/remote-sync' },
 			],

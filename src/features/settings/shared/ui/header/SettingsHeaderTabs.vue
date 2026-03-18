@@ -44,7 +44,7 @@
 	)
 	const activeSettingsTab = computed(() => {
 		const matched = settingsNavItems.value.find((item) => isSettingsNavActive(item.to))
-		return matched?.to ?? '/settings/about'
+		return matched?.to ?? '/settings/appearance'
 	})
 
 	function onSettingsTabChange(value: string | number) {

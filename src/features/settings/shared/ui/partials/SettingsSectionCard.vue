@@ -29,11 +29,13 @@
 			title?: string
 			description?: string
 			cardClass?: string
+			bodyClass?: string
 		}>(),
 		{
 			title: '',
 			description: '',
 			cardClass: '',
+			bodyClass: '',
 		},
 	)
 
@@ -41,10 +43,10 @@
 
 	const hasHeader = computed(() => Boolean(props.title || slots.header))
 
-	const cardUi = {
+	const cardUi = computed(() => ({
 		header: 'px-4 py-3 sm:px-5 sm:py-4',
-		body: 'px-4 py-4 sm:px-5 sm:py-5',
-	}
+		body: ['px-4 py-4 sm:px-5 sm:py-5', props.bodyClass],
+	}))
 
 	const mergedClass = computed(() => ['rounded-3xl border border-default/70 bg-default', props.cardClass])
 </script>
