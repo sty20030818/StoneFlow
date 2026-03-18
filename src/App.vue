@@ -15,7 +15,10 @@
 </template>
 
 <script setup lang="ts">
+	import { useAppTheme } from '@/composables/app/useAppTheme'
 	import { appNuxtUiLocale } from '@/plugins/i18n'
 	import { AppGlobalOverlays } from '@/features/app-shell'
 	import AppShell from '@/layouts/AppShell.vue'
+
+	useAppTheme()
 </script>

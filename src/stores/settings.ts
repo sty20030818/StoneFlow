@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 
+import { normalizeThemePreference } from '@/config/theme'
 import { SPACE_IDS } from '@/config/space'
 import { normalizeAppLocale } from '@/i18n/messages'
 import { readUiNavigationStateSnapshot, writeUiNavigationActiveSpaceId } from '@/stores/ui-navigation-storage'
@@ -33,6 +34,7 @@ export const useSettingsStore = defineStore('settings', () => {
 			...stored,
 			activeSpaceId: normalizeSpaceId(stored.activeSpaceId),
 			locale: normalizeAppLocale(stored.locale),
+			themePreference: normalizeThemePreference(stored.themePreference),
 		}
 		Object.assign(state, next)
 		writeUiNavigationActiveSpaceId(next.activeSpaceId)
@@ -75,6 +77,9 @@ export const useSettingsStore = defineStore('settings', () => {
 		}
 		if (patch.locale !== undefined) {
 			nextPatch.locale = normalizeAppLocale(patch.locale)
+		}
+		if (patch.themePreference !== undefined) {
+			nextPatch.themePreference = normalizeThemePreference(patch.themePreference)
 		}
 		Object.assign(state, nextPatch)
 		if (patch.activeSpaceId !== undefined) {

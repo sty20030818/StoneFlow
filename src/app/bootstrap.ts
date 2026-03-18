@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 
 import App from '@/App.vue'
 import { createAppProviders, installAppProviders } from '@/app/providers'
+import { preloadAppThemePreference } from '@/composables/app/useAppTheme'
 import { markMotionStartupBooting, markMotionStartupReady } from '@/composables/base/motion'
 import { installAppLifecyclePlugin } from '@/plugins/app-lifecycle'
 import { initializeAppLocale } from '@/plugins/i18n'
@@ -13,6 +14,12 @@ function readLaunchHashAtBoot() {
 }
 
 export async function bootstrapApp(): Promise<void> {
+	try {
+		await preloadAppThemePreference()
+	} catch (error) {
+		console.warn('[startup] theme preload skipped', error)
+	}
+
 	const app = createApp(App)
 	const providers = createAppProviders()
 	const launchHashAtBoot = readLaunchHashAtBoot()

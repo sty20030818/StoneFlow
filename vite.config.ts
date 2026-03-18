@@ -12,6 +12,7 @@ export default defineConfig(async () => ({
 		vue(),
 		ui({
 			router: false,
+			colorMode: true,
 			ui: {
 				modal: {
 					slots: {

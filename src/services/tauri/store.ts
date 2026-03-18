@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: SettingsModel = {
 	autoStart: true,
 	activeSpaceId: 'work',
 	locale: null,
+	themePreference: 'light',
 	updaterAutoCheck: true,
 	updaterPromptInstall: true,
 }
