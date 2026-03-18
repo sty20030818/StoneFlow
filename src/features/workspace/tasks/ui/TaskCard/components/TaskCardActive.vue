@@ -31,7 +31,10 @@
 					v-if="isEditModeActive"
 					type="button"
 					class="no-drag flex size-6 cursor-pointer items-center justify-center rounded-full border-2 transition-colors hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-500/12"
-					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50 dark:bg-red-500/16' : 'border-slate-300 dark:border-neutral-600']"
+					:class="[
+						selectRingClass,
+						selected ? 'border-red-500 bg-red-50 dark:bg-red-500/16' : 'border-slate-300 dark:border-neutral-600',
+					]"
 					@click.stop="onToggleSelect">
 					<UIcon
 						v-if="selected"

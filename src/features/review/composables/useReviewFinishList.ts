@@ -4,7 +4,11 @@ import { useI18n } from 'vue-i18n'
 
 import { getUnknownProjectLabel } from '@/config/project'
 import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
-import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, type WorkspaceProject } from '@/features/workspace'
+import {
+	getWorkspaceProjectsSnapshot,
+	refreshWorkspaceProjectsQuery,
+	type WorkspaceProject,
+} from '@/features/workspace'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { formatDate as formatDateByLocale, formatTimeOfDay } from '@/utils/time'
 

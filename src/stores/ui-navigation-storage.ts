@@ -102,8 +102,7 @@ export function sanitizeUiNavigationState(value: unknown): UiNavigationState {
 	return {
 		schemaVersion: UI_NAVIGATION_STATE_SCHEMA_VERSION,
 		activeSpaceId: normalizeSpaceId(maybe.activeSpaceId),
-		libraryCollapsed:
-			typeof maybe.libraryCollapsed === 'boolean' ? maybe.libraryCollapsed : DEFAULT_LIBRARY_COLLAPSED,
+		libraryCollapsed: typeof maybe.libraryCollapsed === 'boolean' ? maybe.libraryCollapsed : DEFAULT_LIBRARY_COLLAPSED,
 		workspaceLastViews: sanitizeWorkspaceLastViews(maybe.workspaceLastViews),
 		libraryLastView: sanitizeLibraryLastView(maybe.libraryLastView),
 		lastExitMode: isExitMode(maybe.lastExitMode) ? maybe.lastExitMode : DEFAULT_LAST_EXIT_MODE,

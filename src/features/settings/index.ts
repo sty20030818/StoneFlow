@@ -6,7 +6,13 @@ export {
 	SettingsSectionCard,
 } from './shared'
 export type { SettingsNavConfigItem, SettingsNavId, SettingsNavItem } from './shared'
-export { AboutChangelogSection, AboutHeaderCard, AboutLegalSection, AboutLinksSection, useSettingsAboutPage } from './about'
+export {
+	AboutChangelogSection,
+	AboutHeaderCard,
+	AboutLegalSection,
+	AboutLinksSection,
+	useSettingsAboutPage,
+} from './about'
 export {
 	RemoteSyncActionsCard,
 	RemoteSyncCreateForm,

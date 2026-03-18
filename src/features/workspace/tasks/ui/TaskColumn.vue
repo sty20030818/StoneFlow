@@ -254,7 +254,9 @@
 	)
 	const stickyContainerClass = computed(() => (props.isEditMode ? 'relative' : 'sticky relative'))
 	const stickyVisualClass = computed(() =>
-		props.isEditMode || !isStuck.value ? '' : 'shadow-[0_8px_16px_-14px_rgba(15,23,42,0.42)] dark:shadow-[0_12px_24px_-18px_rgba(0,0,0,0.72)]',
+		props.isEditMode || !isStuck.value
+			? ''
+			: 'shadow-[0_8px_16px_-14px_rgba(15,23,42,0.42)] dark:shadow-[0_12px_24px_-18px_rgba(0,0,0,0.72)]',
 	)
 	const stickyDensityClass = computed(() => (isDoneColumn.value ? 'py-2' : 'pb-1 pt-2'))
 	const stickyContainerStyle = computed(() =>

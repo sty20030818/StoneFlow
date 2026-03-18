@@ -30,9 +30,7 @@ function cloneWorkspaceLinks(links: WorkspaceLinkDto[]): WorkspaceEntityLink[] {
 	return links.map(cloneWorkspaceLink)
 }
 
-function cloneWorkspaceCustomFields(
-	customFields: WorkspaceCustomFieldsDto | null,
-): WorkspaceEntityCustomFields | null {
+function cloneWorkspaceCustomFields(customFields: WorkspaceCustomFieldsDto | null): WorkspaceEntityCustomFields | null {
 	if (!customFields) return null
 	return {
 		fields: customFields.fields.map((field) => ({

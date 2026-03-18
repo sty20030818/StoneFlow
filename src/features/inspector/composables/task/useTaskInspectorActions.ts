@@ -78,9 +78,7 @@ export function useTaskInspectorActions(params: {
 
 		if (shouldRefreshProjectQueries(patch)) {
 			const affectedSpaceIds = new Set([previousTask.spaceId, nextTask.spaceId])
-			await Promise.all(
-				[...affectedSpaceIds].map((spaceId) => refreshWorkspaceProjectsQuery(spaceId, { force: true })),
-			)
+			await Promise.all([...affectedSpaceIds].map((spaceId) => refreshWorkspaceProjectsQuery(spaceId, { force: true })))
 			return
 		}
 
@@ -416,10 +414,7 @@ export function useTaskInspectorActions(params: {
 		const nextProjectId = resolveDefaultProjectId(value)
 		state.projectIdLocal.value = nextProjectId
 
-		queueImmediateUpdate(
-			{ spaceId: value, projectId: nextProjectId },
-			{ spaceId: value, projectId: nextProjectId },
-		)
+		queueImmediateUpdate({ spaceId: value, projectId: nextProjectId }, { spaceId: value, projectId: nextProjectId })
 		await processQueuedUpdates()
 	}
 

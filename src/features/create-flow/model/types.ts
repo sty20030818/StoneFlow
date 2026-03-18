@@ -109,8 +109,4 @@ export function mapCreateFlowTaskPatchToDto(patch: UpdateTaskPatch): UpdateTaskP
 	}
 }
 
-export {
-	type TaskDoneReason,
-	type TaskPriorityValue,
-	type TaskStatus,
-}
+export { type TaskDoneReason, type TaskPriorityValue, type TaskStatus }

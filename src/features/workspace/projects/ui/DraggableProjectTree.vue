@@ -137,7 +137,11 @@
 	import { useProjectInspectorStore } from '@/stores/projectInspector'
 	import { resolveErrorMessage } from '@/utils/error-message'
 	import { calculateInsertRank } from '@/utils/rank'
-	import { getWorkspaceProjectById, refreshWorkspaceProjectsQuery, refreshWorkspaceTaskScopes } from '../../shared/queries'
+	import {
+		getWorkspaceProjectById,
+		refreshWorkspaceProjectsQuery,
+		refreshWorkspaceTaskScopes,
+	} from '../../shared/queries'
 	import { getWorkspaceProjectEntityByIdSnapshot, useWorkspaceEntityRepository } from '../../entities'
 	import { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from '../mutations'
 

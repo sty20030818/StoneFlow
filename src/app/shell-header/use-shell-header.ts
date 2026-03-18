@@ -1,12 +1,4 @@
-import {
-	inject,
-	onScopeDispose,
-	provide,
-	toValue,
-	watchEffect,
-	type InjectionKey,
-	type MaybeRefOrGetter,
-} from 'vue'
+import { inject, onScopeDispose, provide, toValue, watchEffect, type InjectionKey, type MaybeRefOrGetter } from 'vue'
 
 import { createShellHeaderController } from './controller'
 import type { ShellHeaderContribution, ShellHeaderController, ShellHeaderLayerRegistration } from './types'

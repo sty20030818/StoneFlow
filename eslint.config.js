@@ -311,7 +311,8 @@ export default [
 								'@/features/workspace/ui/*',
 								'@/features/workspace/ui/**',
 							],
-							message: '旧 workspace 根层内部目录已废弃，请改用 @/features/workspace 或 @/features/workspace/shared/model。',
+							message:
+								'旧 workspace 根层内部目录已废弃，请改用 @/features/workspace 或 @/features/workspace/shared/model。',
 						},
 						{
 							regex: '^@/features/workspace/(?!index(?:\\.ts)?$|shared/model(?:/index(?:\\.ts)?)?$).+',

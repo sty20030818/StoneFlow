@@ -261,7 +261,13 @@
 						<div class="min-w-0">
 							<div class="font-medium truncate">{{ g.projectName }}</div>
 							<div class="text-[11px] text-muted">
-								{{ t('review.logs.aggregate.changeSummary', { spaceId: g.spaceId, count: g.count, completed: g.completedCount }) }}
+								{{
+									t('review.logs.aggregate.changeSummary', {
+										spaceId: g.spaceId,
+										count: g.count,
+										completed: g.completedCount,
+									})
+								}}
 							</div>
 						</div>
 						<UBadge

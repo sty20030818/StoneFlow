@@ -151,12 +151,12 @@ export const TASK_PRIORITY_STYLES: Record<
 	}
 > = {
 	P0: {
-		cardClass: 'bg-red-50/50 border-red-200 hover:bg-red-50/80 dark:bg-red-500/10 dark:border-red-500/20 dark:hover:bg-red-500/16',
+		cardClass:
+			'bg-red-50/50 border-red-200 hover:bg-red-50/80 dark:bg-red-500/10 dark:border-red-500/20 dark:hover:bg-red-500/16',
 		iconClass: 'text-red-500 dark:text-red-300',
 		textClass: 'text-red-600 dark:text-red-200',
 		cardBorderClass: 'hover:border-red-500/60 dark:hover:border-red-400/55',
-		cardShadowClass:
-			'hover:shadow-[0_0_20px_rgba(239,68,68,0.15)] dark:hover:shadow-[0_0_24px_rgba(248,113,113,0.18)]',
+		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(239,68,68,0.15)] dark:hover:shadow-[0_0_24px_rgba(248,113,113,0.18)]',
 		badgeColor: 'red',
 		badgeClass: 'bg-red-200 text-red-600 dark:bg-red-500/15 dark:text-red-200',
 	},
@@ -166,18 +166,17 @@ export const TASK_PRIORITY_STYLES: Record<
 		iconClass: 'text-amber-500 dark:text-amber-300',
 		textClass: 'text-amber-600 dark:text-amber-200',
 		cardBorderClass: 'hover:border-amber-500/60 dark:hover:border-amber-400/55',
-		cardShadowClass:
-			'hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] dark:hover:shadow-[0_0_24px_rgba(251,191,36,0.18)]',
+		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] dark:hover:shadow-[0_0_24px_rgba(251,191,36,0.18)]',
 		badgeColor: 'orange',
 		badgeClass: 'bg-amber-200 text-amber-600 dark:bg-amber-500/15 dark:text-amber-200',
 	},
 	P2: {
-		cardClass: 'bg-blue-50/50 border-blue-200 hover:bg-blue-50/80 dark:bg-blue-500/10 dark:border-blue-500/20 dark:hover:bg-blue-500/16',
+		cardClass:
+			'bg-blue-50/50 border-blue-200 hover:bg-blue-50/80 dark:bg-blue-500/10 dark:border-blue-500/20 dark:hover:bg-blue-500/16',
 		iconClass: 'text-blue-500 dark:text-blue-300',
 		textClass: 'text-blue-600 dark:text-blue-200',
 		cardBorderClass: 'hover:border-blue-500/60 dark:hover:border-blue-400/55',
-		cardShadowClass:
-			'hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] dark:hover:shadow-[0_0_24px_rgba(96,165,250,0.2)]',
+		cardShadowClass: 'hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] dark:hover:shadow-[0_0_24px_rgba(96,165,250,0.2)]',
 		badgeColor: 'blue',
 		badgeClass: 'bg-blue-200 text-blue-600 dark:bg-blue-500/15 dark:text-blue-200',
 	},

@@ -165,9 +165,7 @@ export function useWorkspaceProjectView() {
 		try {
 			const ids = deleteTargetIds.value ?? Array.from(selectedTaskIds.value)
 			const affectedSpaceIds = new Set(
-				[...todo.value, ...doneAll.value]
-					.filter((task) => ids.includes(task.id))
-					.map((task) => task.spaceId),
+				[...todo.value, ...doneAll.value].filter((task) => ids.includes(task.id)).map((task) => task.spaceId),
 			)
 			const deletedCount = await deleteWorkspaceTasks(ids)
 			workspaceRepository.removeTasks(ids)

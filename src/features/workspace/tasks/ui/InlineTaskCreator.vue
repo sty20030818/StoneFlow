@@ -44,7 +44,12 @@
 	import { refDebounced, useEventListener } from '@vueuse/core'
 
 	import { MOTION_TOKENS } from '@/config/motion'
-	import { useInteractionMotionPreset, useMotionPreset, useMotionPresetWithDelay, withMotionDelay } from '@/composables/base/motion'
+	import {
+		useInteractionMotionPreset,
+		useMotionPreset,
+		useMotionPresetWithDelay,
+		withMotionDelay,
+	} from '@/composables/base/motion'
 	import { useTaskCreateWorkflow } from '@/features/create-flow'
 	import type { TaskPriorityValue } from '@/config/task'
 	import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'

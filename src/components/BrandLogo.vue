@@ -19,7 +19,7 @@
 			</div>
 			<div class="flex min-w-0 flex-col gap-0.5">
 				<span class="text-sm font-semibold text-default tracking-tight">StoneFlow</span>
-				<span class="text-[11px] text-muted">v0.1.5</span>
+				<span class="text-[11px] text-muted">v0.1.6</span>
 			</div>
 		</div>
 

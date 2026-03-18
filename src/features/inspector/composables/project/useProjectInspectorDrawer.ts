@@ -242,7 +242,12 @@ export function useProjectInspectorDrawer() {
 	}
 
 	function shouldForceRefreshAfterCommit(patch: InspectorProjectPatch): boolean {
-		return patch.title !== undefined || patch.parentId !== undefined || patch.spaceId !== undefined || patch.links !== undefined
+		return (
+			patch.title !== undefined ||
+			patch.parentId !== undefined ||
+			patch.spaceId !== undefined ||
+			patch.links !== undefined
+		)
 	}
 
 	function stageUpdateForCurrentProject(patch: InspectorProjectPatch): boolean {

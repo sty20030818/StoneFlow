@@ -134,7 +134,9 @@
 		return PROJECT_LEVEL_CARD_CLASSES[Math.min(option.depth, PROJECT_LEVEL_CARD_CLASSES.length - 1)]
 	})
 
-	const projectIconClass = computed(() => currentProjectOption.value?.iconClass ?? 'text-slate-500 dark:text-neutral-300')
+	const projectIconClass = computed(
+		() => currentProjectOption.value?.iconClass ?? 'text-slate-500 dark:text-neutral-300',
+	)
 	const onSpaceChange = (value: string) => {
 		props.onSpaceChange(value)
 		spacePopoverOpen.value = false

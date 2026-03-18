@@ -28,13 +28,18 @@
 							@click="void setPreference(option.value)">
 							<div
 								class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300"
-								:class="[option.overlayClass, option.value === preference ? 'opacity-100' : 'group-hover:opacity-55']"></div>
+								:class="[
+									option.overlayClass,
+									option.value === preference ? 'opacity-100' : 'group-hover:opacity-55',
+								]"></div>
 
 							<div class="relative flex items-center justify-between gap-4">
 								<div class="flex min-w-0 items-center gap-3.5">
 									<div
 										class="flex size-10 shrink-0 items-center justify-center rounded-[14px] border transition-colors duration-200"
-										:class="option.value === preference ? option.activeVisualShellClass : option.inactiveVisualShellClass">
+										:class="
+											option.value === preference ? option.activeVisualShellClass : option.inactiveVisualShellClass
+										">
 										<UIcon
 											:name="option.icon"
 											class="size-5"
@@ -93,13 +98,18 @@
 							@click="selectedLocale = option.value">
 							<div
 								class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300"
-								:class="[option.overlayClass, option.value === selectedLocale ? 'opacity-100' : 'group-hover:opacity-55']"></div>
+								:class="[
+									option.overlayClass,
+									option.value === selectedLocale ? 'opacity-100' : 'group-hover:opacity-55',
+								]"></div>
 
 							<div class="relative flex items-center justify-between gap-4">
 								<div class="flex min-w-0 items-center gap-3.5">
 									<div
 										class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] border transition-colors duration-200"
-										:class="option.value === selectedLocale ? option.activeVisualShellClass : option.inactiveVisualShellClass">
+										:class="
+											option.value === selectedLocale ? option.activeVisualShellClass : option.inactiveVisualShellClass
+										">
 										<LocaleFlag
 											:locale="option.value"
 											class="size-6" />
@@ -127,8 +137,9 @@
 					</div>
 
 					<div class="mt-auto pt-2.5">
-						<div class="rounded-[18px] border border-default/70 bg-elevated/45 px-4 py-3 text-[12px] leading-5 text-muted">
-						{{ t('locale.trayRestartNotice') }}
+						<div
+							class="rounded-[18px] border border-default/70 bg-elevated/45 px-4 py-3 text-[12px] leading-5 text-muted">
+							{{ t('locale.trayRestartNotice') }}
 						</div>
 					</div>
 				</div>

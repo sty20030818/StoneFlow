@@ -96,7 +96,10 @@ export const PAGE_NAV_CONFIG = {
 
 export type PageNavKey = keyof typeof PAGE_NAV_CONFIG
 
-type RouteMetaConfig = Pick<PageNavConfig, 'titleKey' | 'descriptionKey' | 'icon' | 'iconClass' | 'pillClass' | 'leadingMode'>
+type RouteMetaConfig = Pick<
+	PageNavConfig,
+	'titleKey' | 'descriptionKey' | 'icon' | 'iconClass' | 'pillClass' | 'leadingMode'
+>
 
 type LibraryNavItem = {
 	to: string

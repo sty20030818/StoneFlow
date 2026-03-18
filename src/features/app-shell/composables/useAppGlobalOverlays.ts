@@ -3,17 +3,17 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import type { CommandPaletteItem } from '@nuxt/ui'
 
-import {
-	COMMAND_PALETTE_KEY,
-	OPEN_CREATE_PROJECT_MODAL_KEY,
-	OPEN_CREATE_TASK_MODAL_KEY,
-} from '@/app/injection-keys'
+import { COMMAND_PALETTE_KEY, OPEN_CREATE_PROJECT_MODAL_KEY, OPEN_CREATE_TASK_MODAL_KEY } from '@/app/injection-keys'
 import { useAppShortcuts } from '@/composables/app/useAppShortcuts'
 import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
 import { createModalLayerUi } from '@/config/ui-layer'
 import type { CreateFlowProject, CreateFlowTask } from '@/features/create-flow'
-import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, useSpaceProjectsState } from '@/features/workspace'
+import {
+	getWorkspaceProjectsSnapshot,
+	refreshWorkspaceProjectsQuery,
+	useSpaceProjectsState,
+} from '@/features/workspace'
 import { useInlineCreateFocusStore } from '@/stores/inline-create-focus'
 import { useProjectTreeStore } from '@/stores/project-tree'
 import { useSettingsStore } from '@/stores/settings'
@@ -121,11 +121,7 @@ export function useAppGlobalOverlays() {
 			path: `/space/${targetSpaceId}`,
 			query: { project: project.id },
 		})
-		await projectTreeStore.ensureProjectVisible(
-			targetSpaceId,
-			project.id,
-			getWorkspaceProjectsSnapshot(targetSpaceId),
-		)
+		await projectTreeStore.ensureProjectVisible(targetSpaceId, project.id, getWorkspaceProjectsSnapshot(targetSpaceId))
 	}
 
 	function openCreateProjectModal(spaceId?: string) {

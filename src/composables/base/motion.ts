@@ -258,7 +258,11 @@ export function createSegmentSwitchMotionVariants(
 	}
 }
 
-export function useProjectShellMotionPreset(phase: ProjectMotionPhaseName, offset = 0, name: MotionPresetName = 'drawerSection') {
+export function useProjectShellMotionPreset(
+	phase: ProjectMotionPhaseName,
+	offset = 0,
+	name: MotionPresetName = 'drawerSection',
+) {
 	const preset = useShellMotionPreset(name)
 	return computed(() => {
 		const phaseDelay = getProjectMotionPhaseDelay(phase) + offset
@@ -266,7 +270,11 @@ export function useProjectShellMotionPreset(phase: ProjectMotionPhaseName, offse
 	})
 }
 
-export function useAppShellMotionPreset(phase: AppMotionPhaseName, offset = 0, name: MotionPresetName = 'drawerSection') {
+export function useAppShellMotionPreset(
+	phase: AppMotionPhaseName,
+	offset = 0,
+	name: MotionPresetName = 'drawerSection',
+) {
 	const preset = useShellMotionPreset(name)
 	return computed(() => {
 		const phaseDelay = getAppMotionPhaseDelay(phase) + offset

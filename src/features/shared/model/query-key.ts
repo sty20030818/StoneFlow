@@ -7,7 +7,7 @@ export type StoneFlowQueryKey<
 	D extends string = string,
 	R extends string = string,
 	S extends string = string,
-> = (readonly [domain: D, resource: R, scope: S, params: QueryKeyParams]) & EntryKey
+> = readonly [domain: D, resource: R, scope: S, params: QueryKeyParams] & EntryKey
 
 const EMPTY_QUERY_PARAMS: QueryKeyParams = Object.freeze({})
 

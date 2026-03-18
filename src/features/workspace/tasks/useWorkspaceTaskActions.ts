@@ -7,7 +7,10 @@ import { completeWorkspaceTask, updateWorkspaceTask, type WorkspaceTaskUpdatePat
 /**
  * Workspace 任务写操作编排（complete/update + 实体回写 + 定向同步）。
  */
-type WorkspaceTaskLocalPatch = Pick<WorkspaceTaskUpdatePatch, 'title' | 'status' | 'doneReason' | 'spaceId' | 'projectId'>
+type WorkspaceTaskLocalPatch = Pick<
+	WorkspaceTaskUpdatePatch,
+	'title' | 'status' | 'doneReason' | 'spaceId' | 'projectId'
+>
 
 export function useWorkspaceTaskActions() {
 	const { handleApiError, handleSuccess } = useErrorHandler()
@@ -28,7 +31,7 @@ export function useWorkspaceTaskActions() {
 				: nextStatus === 'done'
 					? (currentTask.doneReason ?? 'completed')
 					: null
-		const nextCompletedAt = nextStatus === 'done' ? currentTask.completedAt ?? now : null
+		const nextCompletedAt = nextStatus === 'done' ? (currentTask.completedAt ?? now) : null
 
 		return {
 			...currentTask,

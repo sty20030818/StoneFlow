@@ -2,7 +2,12 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { createStaggeredEnterMotions, getAppStaggerDelay, useAppContentMotionPreset, useMotionPreset } from '@/composables/base/motion'
+import {
+	createStaggeredEnterMotions,
+	getAppStaggerDelay,
+	useAppContentMotionPreset,
+	useMotionPreset,
+} from '@/composables/base/motion'
 
 import { useReviewStats } from './useReviewStats'
 

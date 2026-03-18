@@ -1,11 +1,6 @@
 import { createNote, deleteNote, updateNote } from '@/services/api/notes'
 
-import {
-	mapAssetNoteDtoToDomain,
-	mapAssetNotePatchToDto,
-	type AssetNote,
-	type AssetNotePatch,
-} from './model'
+import { mapAssetNoteDtoToDomain, mapAssetNotePatchToDto, type AssetNote, type AssetNotePatch } from './model'
 
 type SaveNotePayload = {
 	title: string

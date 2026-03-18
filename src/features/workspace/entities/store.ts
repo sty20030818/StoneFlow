@@ -131,9 +131,7 @@ export const useWorkspaceEntitiesStore = defineStore('workspace-entities', () =>
 	function removeTaskEntities(taskIds: string[]) {
 		if (taskIds.length === 0) return
 		const targetIds = new Set(taskIds)
-		tasksById.value = Object.fromEntries(
-			Object.entries(tasksById.value).filter(([taskId]) => !targetIds.has(taskId)),
-		)
+		tasksById.value = Object.fromEntries(Object.entries(tasksById.value).filter(([taskId]) => !targetIds.has(taskId)))
 		syncTaskIndexes()
 	}
 

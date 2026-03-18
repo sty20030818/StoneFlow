@@ -11,7 +11,9 @@
 			v-motion="resolvedCardMotionPreset"
 			class="relative flex w-full cursor-default items-center gap-4 rounded-2xl border border-transparent bg-elevated/55 p-4 opacity-60 select-none transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300"
 			:class="[
-				isEditModeActive && selected ? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm dark:border-red-500/25 dark:bg-red-500/12' : '',
+				isEditModeActive && selected
+					? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm dark:border-red-500/25 dark:bg-red-500/12'
+					: '',
 				isEditModeActive && !selected ? 'opacity-40' : '',
 				isEditModeActive ? 'task-card-edit-static' : '',
 				!isEditModeActive ? 'hover:border-slate-200 hover:opacity-100 dark:hover:border-neutral-700' : '',

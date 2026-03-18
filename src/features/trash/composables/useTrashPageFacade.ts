@@ -1,7 +1,12 @@
 import { computed } from 'vue'
 
 import { useRegisterShellHeader } from '@/app/shell-header'
-import { useAppContentMotionPreset, useAppInteractionMotionPreset, useMotionPreset, withMotionDelay } from '@/composables/base/motion'
+import {
+	useAppContentMotionPreset,
+	useAppInteractionMotionPreset,
+	useMotionPreset,
+	withMotionDelay,
+} from '@/composables/base/motion'
 import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
 import { useSettingsStore } from '@/stores/settings'
 

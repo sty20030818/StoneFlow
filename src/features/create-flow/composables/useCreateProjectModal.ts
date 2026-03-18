@@ -91,9 +91,12 @@ export function useCreateProjectModal(props: CreateProjectModalProps, emit: Crea
 		tags: [],
 		links: [],
 	})
-	const projectsState = useSpaceProjectsState(computed(() => form.spaceId), {
-		enabled: isOpen,
-	})
+	const projectsState = useSpaceProjectsState(
+		computed(() => form.spaceId),
+		{
+			enabled: isOpen,
+		},
+	)
 
 	const canSubmit = computed(() => form.title.trim().length > 0)
 

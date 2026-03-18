@@ -25,7 +25,11 @@ import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/config/space'
 import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/config/task'
 import { validateWithZod } from '@/composables/base/zod'
 import { taskSubmitSchema } from '@/composables/domain/validation/forms'
-import { getWorkspaceProjectsSnapshot, refreshWorkspaceProjectsQuery, useSpaceProjectsState } from '@/features/workspace'
+import {
+	getWorkspaceProjectsSnapshot,
+	refreshWorkspaceProjectsQuery,
+	useSpaceProjectsState,
+} from '@/features/workspace'
 import { resolveErrorMessage } from '@/utils/error-message'
 import { statusOptions } from '@/utils/task'
 import { getCreateFlowDefaultProject } from '../queries'
@@ -116,9 +120,12 @@ export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTask
 		note: '',
 		customFields: [],
 	})
-	const projectsState = useSpaceProjectsState(computed(() => form.value.spaceId), {
-		enabled: isOpen,
-	})
+	const projectsState = useSpaceProjectsState(
+		computed(() => form.value.spaceId),
+		{
+			enabled: isOpen,
+		},
+	)
 
 	const tagInput = ref('')
 	const advancedOpen = ref(false)
