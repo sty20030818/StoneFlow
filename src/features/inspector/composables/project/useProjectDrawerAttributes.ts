@@ -81,13 +81,13 @@ export function useProjectDrawerAttributes(params: {
 	const statusCardClass = computed(() => {
 		switch (params.statusDisplayValue.value) {
 			case 'done':
-				return 'bg-emerald-50/40 border-emerald-200'
+				return 'bg-emerald-50/40 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20'
 			case 'archived':
-				return 'bg-slate-50/70 border-slate-200'
+				return 'bg-slate-50/70 border-slate-200 dark:bg-neutral-800/70 dark:border-neutral-700'
 			case 'deleted':
-				return 'bg-rose-50/40 border-rose-200'
+				return 'bg-rose-50/40 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20'
 			default:
-				return 'bg-amber-50/40 border-amber-200'
+				return 'bg-amber-50/40 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20'
 		}
 	})
 
@@ -107,26 +107,26 @@ export function useProjectDrawerAttributes(params: {
 	const statusIconClass = computed(() => {
 		switch (params.statusDisplayValue.value) {
 			case 'done':
-				return 'text-emerald-500'
+				return 'text-emerald-500 dark:text-emerald-300'
 			case 'archived':
-				return 'text-slate-500'
+				return 'text-slate-500 dark:text-neutral-300'
 			case 'deleted':
-				return 'text-rose-500'
+				return 'text-rose-500 dark:text-rose-300'
 			default:
-				return 'text-amber-500'
+				return 'text-amber-500 dark:text-amber-300'
 		}
 	})
 
 	const statusTextClass = computed(() => {
 		switch (params.statusDisplayValue.value) {
 			case 'done':
-				return 'text-emerald-600'
+				return 'text-emerald-600 dark:text-emerald-200'
 			case 'archived':
-				return 'text-slate-600'
+				return 'text-slate-600 dark:text-neutral-200'
 			case 'deleted':
-				return 'text-rose-600'
+				return 'text-rose-600 dark:text-rose-200'
 			default:
-				return 'text-amber-600'
+				return 'text-amber-600 dark:text-amber-200'
 		}
 	})
 
@@ -138,8 +138,8 @@ export function useProjectDrawerAttributes(params: {
 				value: 'archive',
 				label: t('inspector.project.actions.archive'),
 				icon: 'i-lucide-archive',
-				iconClass: 'text-amber-500',
-				labelClass: 'text-amber-600',
+				iconClass: 'text-amber-500 dark:text-amber-300',
+				labelClass: 'text-amber-600 dark:text-amber-200',
 				disabled: params.isLifecycleBusy.value && !params.isArchivingProject.value,
 				loading: params.isArchivingProject.value,
 			})
@@ -149,8 +149,8 @@ export function useProjectDrawerAttributes(params: {
 				value: 'delete',
 				label: t('inspector.project.actions.delete'),
 				icon: 'i-lucide-trash-2',
-				iconClass: 'text-rose-500',
-				labelClass: 'text-rose-600',
+				iconClass: 'text-rose-500 dark:text-rose-300',
+				labelClass: 'text-rose-600 dark:text-rose-200',
 				disabled: params.isLifecycleBusy.value && !params.isDeletingProject.value,
 				loading: params.isDeletingProject.value,
 			})
@@ -194,18 +194,20 @@ export function useProjectDrawerAttributes(params: {
 	}
 
 	function getParentOptionCardClass(value: string | null, depth: number): string {
-		if (value === null) return 'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60'
+		if (value === null) {
+			return 'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60 dark:bg-amber-500/10 dark:border-amber-500/20 dark:hover:bg-amber-500/16'
+		}
 		switch (Math.min(depth, PROJECT_LEVEL_TEXT_CLASSES.length - 1)) {
 			case 0:
-				return 'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60'
+				return 'bg-amber-50/40 border-amber-200 hover:bg-amber-50/60 dark:bg-amber-500/10 dark:border-amber-500/20 dark:hover:bg-amber-500/16'
 			case 1:
-				return 'bg-sky-50/40 border-sky-200 hover:bg-sky-50/60'
+				return 'bg-sky-50/40 border-sky-200 hover:bg-sky-50/60 dark:bg-sky-500/10 dark:border-sky-500/20 dark:hover:bg-sky-500/16'
 			case 2:
-				return 'bg-violet-50/40 border-violet-200 hover:bg-violet-50/60'
+				return 'bg-violet-50/40 border-violet-200 hover:bg-violet-50/60 dark:bg-violet-500/10 dark:border-violet-500/20 dark:hover:bg-violet-500/16'
 			case 3:
-				return 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/60'
+				return 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/60 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:hover:bg-emerald-500/16'
 			default:
-				return 'bg-rose-50/40 border-rose-200 hover:bg-rose-50/60'
+				return 'bg-rose-50/40 border-rose-200 hover:bg-rose-50/60 dark:bg-rose-500/10 dark:border-rose-500/20 dark:hover:bg-rose-500/16'
 		}
 	}
 

@@ -6,7 +6,7 @@
 		:ui="popoverUi"
 		@update:open="onOpenChange">
 		<div
-			class="no-drag inline-flex items-center gap-1 rounded border border-slate-100 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-400"
+			class="no-drag inline-flex items-center gap-1 rounded border border-default/70 bg-elevated/65 px-1.5 py-0.5 text-[10px] text-muted"
 			:aria-label="`${label} ${count}`">
 			<UIcon
 				:name="icon"

@@ -6,10 +6,10 @@
 				v-for="tag in tags"
 				:key="tag"
 				v-motion="tagHoverMotion"
-				class="group relative px-3 py-1.5 bg-white rounded-lg text-xs font-bold shadow-sm border border-default/40 text-default flex items-center justify-center cursor-default hover:border-primary/50 transition-colors overflow-hidden">
+				class="group relative flex cursor-default items-center justify-center overflow-hidden rounded-lg border border-default/40 bg-default px-3 py-1.5 text-xs font-bold text-default shadow-sm transition-colors hover:border-primary/50 dark:shadow-[0_12px_24px_-18px_rgba(0,0,0,0.6)]">
 				<span>#{{ tag }}</span>
 				<div
-					class="hidden group-hover:flex absolute inset-0 bg-white/95 items-center justify-center cursor-pointer transition-opacity"
+					class="absolute inset-0 hidden cursor-pointer items-center justify-center bg-white/95 transition-opacity group-hover:flex dark:bg-neutral-900/92"
 					@click="onRemoveTag(tag)">
 					<UIcon
 						name="i-lucide-x"

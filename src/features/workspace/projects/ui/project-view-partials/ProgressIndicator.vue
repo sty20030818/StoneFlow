@@ -33,15 +33,15 @@
 	<div
 		v-else
 		class="flex-1">
-		<div class="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">
+		<div class="mb-2 flex justify-between text-xs font-bold uppercase tracking-wide text-muted">
 			<span>Progress</span>
 			<span>{{ percent }}% Done</span>
 		</div>
-		<div class="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
+		<div class="h-3 w-full overflow-hidden rounded-full bg-elevated/90 ring-1 ring-default/60">
 			<div
-				class="h-full bg-slate-900 rounded-full relative transition-[width] duration-300"
+				class="relative h-full rounded-full bg-primary transition-[width] duration-300"
 				:style="{ width: `${percent}%` }">
-				<div class="absolute inset-0 bg-white/20"></div>
+				<div class="absolute inset-0 bg-white/20 dark:bg-white/10"></div>
 			</div>
 		</div>
 	</div>

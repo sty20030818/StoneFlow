@@ -7,18 +7,18 @@
 			<RouterLink
 				v-if="item.to"
 				:to="item.to"
-				class="px-3 py-2 rounded-full bg-slate-50 border border-slate-100 text-xs font-bold text-slate-500 hover:bg-slate-100 cursor-pointer transition-colors">
+				class="cursor-pointer rounded-full border border-default/70 bg-default/80 px-3 py-2 text-xs font-bold text-muted transition-colors hover:bg-elevated/70 hover:text-default">
 				{{ item.label }}
 			</RouterLink>
 			<span
 				v-else
-				class="text-lg font-bold text-slate-800">
+				class="text-lg font-bold text-default">
 				{{ item.label }}
 			</span>
 			<UIcon
 				v-if="index < items.length - 1"
 				name="i-lucide-chevron-right"
-				class="size-3 text-slate-300" />
+				class="size-3 text-muted/60" />
 		</span>
 	</div>
 </template>

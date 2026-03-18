@@ -40,7 +40,7 @@
 					:ui="popoverUi">
 					<button
 						type="button"
-						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default opacity-0 group-hover:opacity-100 outline-none focus:outline-none"
+						class="project-menu absolute top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted opacity-0 outline-none transition-colors duration-150 group-hover:opacity-100 hover:bg-neutral-300/60 hover:text-default focus:outline-none dark:hover:bg-neutral-700/60"
 						:class="item.children && item.children.length > 0 ? 'right-7' : 'right-1'"
 						@pointerdown.stop.prevent
 						@click.stop>
@@ -68,7 +68,7 @@
 				<button
 					v-if="item.children && item.children.length > 0"
 					type="button"
-					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default"
+					class="expand-toggle absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors duration-150 hover:bg-neutral-300/60 hover:text-default dark:hover:bg-neutral-700/60"
 					@pointerdown.stop.prevent
 					@click.stop.prevent="toggleExpand(item.id)">
 					<UIcon

@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="project"
-		class="rounded-[28px] p-6 border border-white/60 bg-white/85 backdrop-blur-2xl shadow-sm relative overflow-hidden"
+		class="relative overflow-hidden rounded-[28px] border border-white/60 bg-white/85 p-6 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-neutral-900/80 dark:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.72)]"
 		:style="prioritySurfaceVars">
 		<div class="surface-tint"></div>
 		<div class="card-inner-border"></div>
@@ -11,7 +11,7 @@
 		<div class="relative z-10 space-y-3">
 			<div class="flex items-start justify-between gap-4">
 				<div class="min-w-0 pl-3">
-					<h1 class="text-3xl font-semibold text-slate-900 tracking-tight truncate">
+					<h1 class="truncate text-3xl font-semibold tracking-tight text-slate-900 dark:text-neutral-50">
 						{{ project.title }}
 					</h1>
 				</div>
@@ -35,7 +35,7 @@
 						size="xs"
 						square
 						icon="i-lucide-settings-2"
-						class="bg-white/72 text-slate-700 ring-1 ring-white/45 transition-transform duration-200 ease-out hover:scale-105 hover:bg-white active:scale-100"
+						class="bg-white/72 text-default ring-1 ring-white/45 transition-transform duration-200 ease-out hover:scale-105 hover:bg-white active:scale-100 dark:bg-white/8 dark:ring-white/10 dark:hover:bg-white/12"
 						:ui="{
 							base: 'size-8 rounded-full p-0 inline-flex items-center justify-center',
 							leadingIcon: 'size-3.5',
@@ -45,7 +45,7 @@
 				</div>
 			</div>
 
-			<div class="pl-5 pr-12 text-base text-slate-500 font-medium leading-relaxed line-clamp-2 max-w-[78%]">
+			<div class="max-w-[78%] pl-5 pr-12 text-base font-medium leading-relaxed text-muted line-clamp-2">
 				{{ project.note || t('projectView.header.noNotes') }}
 			</div>
 
@@ -55,26 +55,26 @@
 						size="sm"
 						color="neutral"
 						variant="soft"
-						class="rounded-full px-3.5 py-1.5 text-[12px] font-bold tracking-wide bg-slate-100/80 text-slate-400 border border-slate-200/50">
+						class="rounded-full border border-slate-200/50 bg-slate-100/80 px-3.5 py-1.5 text-[12px] font-bold tracking-wide text-slate-500 dark:border-white/8 dark:bg-white/6 dark:text-neutral-300">
 						<span class="inline-flex items-center gap-2">
 							<UIcon
 								name="i-lucide-clock"
-								class="size-3.5 text-slate-400/70" />
+								class="size-3.5 text-slate-400/70 dark:text-neutral-400" />
 							<span>{{ t('projectView.header.createdAt') }}</span>
-							<span class="text-slate-700 font-extrabold">{{ createdAtLabel }}</span>
+							<span class="font-extrabold text-slate-700 dark:text-neutral-100">{{ createdAtLabel }}</span>
 						</span>
 					</UBadge>
 					<UBadge
 						size="sm"
 						color="info"
 						variant="soft"
-						class="rounded-full px-3.5 py-1.5 text-[12px] font-bold tracking-wide bg-blue-50/80 text-blue-400 border border-blue-100/50">
+						class="rounded-full border border-blue-100/50 bg-blue-50/80 px-3.5 py-1.5 text-[12px] font-bold tracking-wide text-blue-500 dark:border-blue-400/15 dark:bg-blue-500/10 dark:text-blue-200">
 						<span class="inline-flex items-center gap-2">
 							<UIcon
 								name="i-lucide-edit"
-								class="size-3.5 text-blue-400/80" />
+								class="size-3.5 text-blue-400/80 dark:text-blue-200/80" />
 							<span>{{ t('projectView.header.updatedAt') }}</span>
-							<span class="text-blue-700 font-extrabold">{{ updatedAtRelative }}</span>
+							<span class="font-extrabold text-blue-700 dark:text-blue-100">{{ updatedAtRelative }}</span>
 						</span>
 					</UBadge>
 				</div>
@@ -86,7 +86,7 @@
 							:name="priorityIconName"
 							class="size-4 text-white/90" />
 						<span class="text-sm font-black uppercase tracking-[0.12em] text-white">{{ priorityValue }}</span>
-						<div class="h-3.5 w-px rounded-full bg-white/35"></div>
+						<div class="h-3.5 w-px rounded-full bg-white/35 dark:bg-white/25"></div>
 						<span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">
 							{{ priorityDisplayLabel.split(' ')[1] }}
 						</span>
@@ -228,7 +228,11 @@
 		left: 24px;
 		right: 24px;
 		height: 1px;
-		background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.7), transparent);
+		background: linear-gradient(to right, transparent, var(--priority-top-rim, rgba(255, 255, 255, 0.7)), transparent);
 		z-index: 10;
+	}
+
+	:global(.dark) .top-rim {
+		background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.12), transparent);
 	}
 </style>

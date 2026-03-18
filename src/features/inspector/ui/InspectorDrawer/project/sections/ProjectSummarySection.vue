@@ -1,6 +1,6 @@
 <template>
 	<section
-		class="rounded-2xl border border-default/80 bg-elevated/35 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.55)]">
+		class="rounded-2xl border border-default/80 bg-elevated/35 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.55)] dark:shadow-[0_16px_36px_-28px_rgba(0,0,0,0.72)]">
 		<div class="flex items-center justify-between gap-4">
 			<div class="min-w-0 space-y-2">
 				<div class="flex items-center pl-5 gap-2">
@@ -170,5 +170,9 @@
 <style scoped>
 	.progress-ring {
 		filter: drop-shadow(0 0 3px rgb(16 185 129 / 0.35));
+	}
+
+	:global(.dark) .progress-ring {
+		filter: drop-shadow(0 0 4px rgb(52 211 153 / 0.28));
 	}
 </style>

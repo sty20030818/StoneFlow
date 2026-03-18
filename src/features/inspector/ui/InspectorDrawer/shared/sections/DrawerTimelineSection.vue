@@ -47,8 +47,10 @@
 
 			<div
 				v-else-if="timelineErrorMessage"
-				class="rounded-xl border border-red-200/70 bg-red-50/50 px-3 py-2.5 space-y-2">
-				<div class="text-xs text-red-600">{{ t('inspector.timeline.loadFailed') }}: {{ timelineErrorMessage }}</div>
+				class="space-y-2 rounded-xl border border-red-200/70 bg-red-50/50 px-3 py-2.5 dark:border-red-500/25 dark:bg-red-500/10">
+				<div class="text-xs text-red-600 dark:text-red-200">
+					{{ t('inspector.timeline.loadFailed') }}: {{ timelineErrorMessage }}
+				</div>
 				<UButton
 					color="neutral"
 					variant="soft"

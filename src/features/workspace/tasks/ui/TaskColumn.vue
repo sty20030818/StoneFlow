@@ -2,12 +2,12 @@
 	<section>
 		<div
 			ref="stickyRef"
-			class="z-20 isolate -mx-4 bg-white px-4"
+			class="z-20 isolate -mx-4 bg-default/95 px-4 backdrop-blur-xl"
 			:class="[stickyContainerClass, stickyVisualClass, stickyDensityClass]"
 			:style="stickyContainerStyle">
 			<div
 				v-if="showStickyDivider"
-				class="pointer-events-none absolute -bottom-px -left-2 -right-2 h-px bg-slate-200/80"></div>
+				class="pointer-events-none absolute -bottom-px -left-2 -right-2 h-px bg-default/80"></div>
 			<div
 				v-motion="columnHeaderMotion"
 				class="flex items-center justify-between gap-3 px-2">
@@ -59,7 +59,11 @@
 					color="secondary"
 					variant="solid"
 					icon="i-lucide-plus"
-					class="shrink-0 cursor-pointer rounded-full"
+					class="shrink-0 cursor-pointer rounded-full text-white dark:text-white"
+					:ui="{
+						label: 'text-white dark:text-white',
+						leadingIcon: 'text-white dark:text-white',
+					}"
 					:aria-label="t('taskColumn.createTaskAria')"
 					@click="handleCreateTask">
 					{{ t('taskColumn.createTask') }}
@@ -250,7 +254,7 @@
 	)
 	const stickyContainerClass = computed(() => (props.isEditMode ? 'relative' : 'sticky relative'))
 	const stickyVisualClass = computed(() =>
-		props.isEditMode || !isStuck.value ? '' : 'shadow-[0_8px_16px_-14px_rgba(15,23,42,0.42)]',
+		props.isEditMode || !isStuck.value ? '' : 'shadow-[0_8px_16px_-14px_rgba(15,23,42,0.42)] dark:shadow-[0_12px_24px_-18px_rgba(0,0,0,0.72)]',
 	)
 	const stickyDensityClass = computed(() => (isDoneColumn.value ? 'py-2' : 'pb-1 pt-2'))
 	const stickyContainerStyle = computed(() =>

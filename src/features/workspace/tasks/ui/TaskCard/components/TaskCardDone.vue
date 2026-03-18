@@ -9,19 +9,19 @@
 		<div
 			:key="isEditModeActive ? 'edit-card' : 'normal-card'"
 			v-motion="resolvedCardMotionPreset"
-			class="relative w-full flex gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 opacity-60 cursor-default items-center select-none"
+			class="relative flex w-full cursor-default items-center gap-4 rounded-2xl border border-transparent bg-elevated/55 p-4 opacity-60 select-none transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300"
 			:class="[
-				isEditModeActive && selected ? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm' : '',
+				isEditModeActive && selected ? 'border-red-200 bg-red-50/50 opacity-100 shadow-sm dark:border-red-500/25 dark:bg-red-500/12' : '',
 				isEditModeActive && !selected ? 'opacity-40' : '',
 				isEditModeActive ? 'task-card-edit-static' : '',
-				!isEditModeActive ? 'hover:border-slate-200 hover:opacity-100' : '',
+				!isEditModeActive ? 'hover:border-slate-200 hover:opacity-100 dark:hover:border-neutral-700' : '',
 				editActionVisible ? 'mr-14' : '',
 			]"
 			@click="onCardClick">
 			<!-- 编辑模式：选中遮罩 -->
 			<div
 				v-if="isEditModeActive && selected"
-				class="pointer-events-none absolute inset-0 z-10 rounded-2xl ring-2 ring-red-500/20 bg-red-500/5"></div>
+				class="pointer-events-none absolute inset-0 z-10 rounded-2xl bg-red-500/5 ring-2 ring-red-500/20 dark:bg-red-500/8 dark:ring-red-400/25"></div>
 
 			<!-- 左侧操作区 -->
 			<div class="shrink-0 flex items-center">
@@ -29,13 +29,13 @@
 				<button
 					v-if="isEditModeActive"
 					type="button"
-					class="no-drag size-5 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer"
-					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50' : '']"
+					class="no-drag flex size-5 cursor-pointer items-center justify-center rounded-full border-2 transition-colors"
+					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50 dark:bg-red-500/16' : '']"
 					@click.stop="onToggleSelect">
 					<UIcon
 						v-if="selected"
 						name="i-lucide-check"
-						class="size-3 text-white" />
+						class="size-3 text-red-500 dark:text-red-200" />
 				</button>
 
 				<!-- 完成状态图标 -->
@@ -53,14 +53,14 @@
 			<div class="grow min-w-0 flex items-center justify-between gap-4">
 				<!-- 左侧：标题 | 状态徽章 -->
 				<div class="flex items-center gap-2 min-w-0">
-					<span class="text-slate-500 font-medium line-through truncate">
+					<span class="truncate font-medium text-muted line-through">
 						{{ task.title }}
 					</span>
 
 					<UBadge
 						v-if="isCancelled"
 						size="xs"
-						color="gray"
+						color="neutral"
 						variant="soft"
 						class="px-1.5 py-0 rounded text-[10px]">
 						{{ doneReasonStyle.badgeLabel }}
@@ -72,7 +72,7 @@
 					<!-- 完成时间 (使用绝对时间，便于复盘) -->
 					<span
 						v-if="showTime && task.completedAt"
-						class="text-[10px] font-medium text-slate-400">
+						class="text-[10px] font-medium text-muted">
 						{{ formatAbsoluteTime(task.completedAt) }}
 					</span>
 				</div>
@@ -83,7 +83,7 @@
 		<button
 			v-if="isEditModeActive"
 			type="button"
-			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md z-10"
+			class="no-drag absolute right-1 z-10 flex size-10 items-center justify-center rounded-full bg-red-100 text-red-500 shadow-sm transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-red-500 hover:text-white hover:shadow-md dark:bg-red-500/15 dark:text-red-200"
 			:class="editActionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
 			@click.stop="onRequestDelete">
 			<UIcon

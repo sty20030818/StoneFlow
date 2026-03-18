@@ -139,7 +139,7 @@ export function useAppHeaderPresentation() {
 	const editButtonIcon = computed(() => (isEditMode.value ? 'i-lucide-x' : 'i-lucide-pencil'))
 	const editButtonClass = computed(() => {
 		if (isEditMode.value) {
-			return 'bg-zinc-200 text-default hover:bg-zinc-300'
+			return 'bg-elevated text-default hover:bg-default'
 		}
 		return 'bg-error text-white shadow-error/40 hover:bg-error/90'
 	})

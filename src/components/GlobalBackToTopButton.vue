@@ -10,7 +10,7 @@
 			variant="soft"
 			:aria-label="t('common.actions.backToTop')"
 			:tabindex="isVisible ? 0 : -1"
-			class="size-12 cursor-pointer rounded-full border border-default/70 bg-default/85 text-default shadow-[0_12px_28px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:bg-default hover:text-primary"
+			class="size-12 cursor-pointer rounded-full border border-default/70 bg-default/85 text-default shadow-[0_12px_28px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:bg-default hover:text-primary dark:shadow-[0_14px_30px_-18px_rgba(0,0,0,0.7)]"
 			:ui="{
 				base: 'justify-center transition-colors duration-200',
 				leadingIcon: 'size-5',

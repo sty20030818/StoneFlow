@@ -9,10 +9,10 @@
 		<div
 			:key="isEditModeActive ? 'edit-card' : 'normal-card'"
 			v-motion="resolvedCardMotionPreset"
-			class="relative w-full rounded-2xl border bg-white p-4 transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 ease-out flex gap-4 items-start cursor-default overflow-hidden select-none"
+			class="relative flex w-full cursor-default gap-4 overflow-hidden rounded-2xl border bg-default p-4 select-none transition-[color,background-color,border-color,box-shadow,opacity,margin] duration-300 ease-out"
 			:class="[
 				cardBorderClass,
-				isEditModeActive && selected ? 'bg-red-50/50' : 'bg-white',
+				isEditModeActive && selected ? 'bg-red-50/50 dark:bg-red-500/12' : 'bg-default',
 				isEditModeActive && !selected ? 'opacity-80' : '',
 				isEditModeActive ? 'task-card-edit-static' : '',
 				!isEditModeActive ? 'hover:shadow-md' : '',
@@ -22,7 +22,7 @@
 			<!-- 编辑模式：选中遮罩 -->
 			<div
 				v-if="isEditModeActive && selected"
-				class="pointer-events-none absolute inset-0 z-10 rounded-2xl ring-2 ring-red-500/20 bg-red-500/5"></div>
+				class="pointer-events-none absolute inset-0 z-10 rounded-2xl bg-red-500/5 ring-2 ring-red-500/20 dark:bg-red-500/8 dark:ring-red-400/25"></div>
 
 			<!-- 左侧操作区:垂直布局 (圆圈 + 拖拽手柄) - 保持不动 -->
 			<div class="shrink-0 flex flex-col items-center gap-1">
@@ -30,20 +30,20 @@
 				<button
 					v-if="isEditModeActive"
 					type="button"
-					class="no-drag size-6 rounded-full border-2 hover:border-red-500 hover:bg-red-50 transition-colors flex items-center justify-center cursor-pointer"
-					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50' : 'border-slate-300']"
+					class="no-drag flex size-6 cursor-pointer items-center justify-center rounded-full border-2 transition-colors hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-500/12"
+					:class="[selectRingClass, selected ? 'border-red-500 bg-red-50 dark:bg-red-500/16' : 'border-slate-300 dark:border-neutral-600']"
 					@click.stop="onToggleSelect">
 					<UIcon
 						v-if="selected"
 						name="i-lucide-check"
-						class="size-3 text-red-500" />
+						class="size-3 text-red-500 dark:text-red-300" />
 				</button>
 
 				<!-- 普通模式完成复选框 -->
 				<button
 					v-else
 					@click.stop="onComplete"
-					class="no-drag size-6 rounded-full border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-center cursor-pointer"></button>
+					class="no-drag flex size-6 cursor-pointer items-center justify-center rounded-full border-2 border-slate-300 transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-neutral-600 dark:hover:bg-blue-500/12"></button>
 			</div>
 
 			<!-- 内容区域 -->
@@ -67,8 +67,8 @@
 							size="xs" />
 
 						<h3
-							class="min-w-0 flex-1 font-bold text-slate-800 line-clamp-2 leading-tight"
-							:class="{ 'text-slate-400': isEditModeActive && !selected }">
+							class="min-w-0 flex-1 font-bold text-default line-clamp-2 leading-tight"
+							:class="{ 'text-muted': isEditModeActive && !selected }">
 							{{ task.title }}
 						</h3>
 					</div>
@@ -81,12 +81,16 @@
 							<span
 								v-if="task.deadlineAt"
 								class="px-1.5 py-0.5 rounded font-bold transition-colors"
-								:class="isOverdue(task.deadlineAt) ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'">
+								:class="
+									isOverdue(task.deadlineAt)
+										? 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-200'
+										: 'bg-slate-100 text-slate-500 dark:bg-neutral-800 dark:text-neutral-300'
+								">
 								{{ formatRelativeTime(task.deadlineAt) }}
 							</span>
 
 							<!-- 创建时间：使用绝对时间 (HH:mm / MM-DD) -->
-							<span class="text-slate-400 font-medium">
+							<span class="font-medium text-muted">
 								{{ formatAbsoluteTime(task.createdAt) }}
 							</span>
 						</div>
@@ -95,7 +99,7 @@
 
 				<!-- 第二行:备注 | 元信息徽章 | 标签 -->
 				<div class="flex items-center justify-between gap-4 min-h-[20px]">
-					<p class="text-xs text-slate-400 truncate grow pr-4 font-medium">
+					<p class="grow truncate pr-4 text-xs font-medium text-muted">
 						{{ task.note || t('taskCard.noNote') }}
 					</p>
 
@@ -107,7 +111,7 @@
 							<span
 								v-for="tag in task.tags"
 								:key="tag"
-								class="text-[9px] font-bold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded border border-blue-100/30">
+								class="rounded border border-blue-100/30 bg-blue-50/50 px-1.5 py-0.5 text-[9px] font-bold text-blue-600 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200">
 								#{{ tag }}
 							</span>
 						</div>
@@ -120,7 +124,7 @@
 		<button
 			v-if="isEditModeActive"
 			type="button"
-			class="no-drag absolute right-1 size-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-red-500 hover:text-white shadow-sm hover:shadow-md z-10"
+			class="no-drag absolute right-1 z-10 flex size-10 items-center justify-center rounded-full bg-red-100 text-red-500 shadow-sm transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-red-500 hover:text-white hover:shadow-md dark:bg-red-500/15 dark:text-red-200"
 			:class="editActionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
 			@click.stop="onRequestDelete">
 			<UIcon
@@ -182,10 +186,10 @@
 	})
 
 	const cardBorderClass = computed(() => {
-		if (isEditModeActive.value && props.selected) return 'border-red-200'
-		const base = 'border-slate-200'
+		if (isEditModeActive.value && props.selected) return 'border-red-200 dark:border-red-500/25'
+		const base = 'border-slate-200 dark:border-neutral-800'
 
-		if (!priorityConfig.value) return base + ' hover:border-slate-300'
+		if (!priorityConfig.value) return base + ' hover:border-slate-300 dark:hover:border-neutral-700'
 
 		return {
 			[base]: true,
