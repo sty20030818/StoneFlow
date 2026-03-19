@@ -1,5 +1,11 @@
 import type { SpaceId } from '@/types/domain/space'
 import { tGlobal } from '@/utils/i18n'
+import {
+	HEADER_CAPSULE_TONE_BLUE,
+	HEADER_CAPSULE_TONE_EMERALD,
+	HEADER_CAPSULE_TONE_PURPLE,
+	HEADER_CAPSULE_TONE_SLATE,
+} from '@/config/ui/capsule'
 
 export const SPACE_IDS = ['work', 'personal', 'study'] as const satisfies readonly SpaceId[]
 
@@ -32,7 +38,7 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 		icon: 'i-lucide-briefcase',
 		iconClass: 'text-blue-500 dark:text-blue-300',
 		iconMutedClass: 'text-blue-500/70 dark:text-blue-300/75',
-		pillClass: 'bg-blue-500',
+		pillClass: HEADER_CAPSULE_TONE_BLUE,
 		cardClass: 'bg-blue-50/50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20',
 		cardLabelClass: 'text-blue-400 dark:text-blue-300',
 		cardValueClass: 'text-blue-600 dark:text-blue-200',
@@ -48,7 +54,7 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 		icon: 'i-lucide-user',
 		iconClass: 'text-purple-500 dark:text-purple-300',
 		iconMutedClass: 'text-purple-500/70 dark:text-purple-300/75',
-		pillClass: 'bg-purple-500',
+		pillClass: HEADER_CAPSULE_TONE_PURPLE,
 		cardClass: 'bg-purple-50/50 border-purple-200 dark:bg-purple-500/10 dark:border-purple-500/20',
 		cardLabelClass: 'text-purple-400 dark:text-purple-300',
 		cardValueClass: 'text-purple-600 dark:text-purple-200',
@@ -64,7 +70,7 @@ export const SPACE_DISPLAY: Record<SpaceId, SpaceDisplay> = {
 		icon: 'i-lucide-book-open',
 		iconClass: 'text-emerald-500 dark:text-emerald-300',
 		iconMutedClass: 'text-emerald-500/70 dark:text-emerald-300/75',
-		pillClass: 'bg-emerald-500',
+		pillClass: HEADER_CAPSULE_TONE_EMERALD,
 		cardClass: 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20',
 		cardLabelClass: 'text-emerald-400 dark:text-emerald-300',
 		cardValueClass: 'text-emerald-600 dark:text-emerald-200',
@@ -82,7 +88,7 @@ export const DEFAULT_SPACE_DISPLAY: SpaceDisplay = {
 	icon: 'i-lucide-folder',
 	iconClass: 'text-gray-500 dark:text-neutral-400',
 	iconMutedClass: 'text-gray-500/70 dark:text-neutral-400/75',
-	pillClass: 'bg-slate-500',
+	pillClass: HEADER_CAPSULE_TONE_SLATE,
 	cardClass: 'bg-elevated/50 border-default/60',
 	cardLabelClass: 'text-muted',
 	cardValueClass: 'text-default',

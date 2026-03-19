@@ -3,20 +3,18 @@
 		<RouterLink
 			v-if="leadingPill?.to"
 			:to="leadingPill.to"
-			class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-			:class="leadingPill.pillClass">
+			:class="[HEADER_CAPSULE_BASE, leadingPill.pillClass]">
 			<UIcon
 				:name="leadingPill.icon"
-				class="size-3.5 shrink-0 text-white" />
+				:class="HEADER_CAPSULE_ICON" />
 			<span>{{ leadingPill.label }}</span>
 		</RouterLink>
 		<span
 			v-else-if="leadingPill"
-			class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-			:class="leadingPill.pillClass">
+			:class="[HEADER_CAPSULE_BASE, leadingPill.pillClass]">
 			<UIcon
 				:name="leadingPill.icon"
-				class="size-3.5 shrink-0 text-white" />
+				:class="HEADER_CAPSULE_ICON" />
 			<span>{{ leadingPill.label }}</span>
 		</span>
 
@@ -30,22 +28,20 @@
 				<RouterLink
 					v-if="index < items.length - 1 && item.to"
 					:to="item.to"
-					class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-					:class="pillClass(index)">
+					:class="[HEADER_CAPSULE_BASE, pillClass(index)]">
 					<UIcon
 						v-if="item.icon"
 						:name="item.icon"
-						class="size-3.5 shrink-0 text-white" />
+						:class="HEADER_CAPSULE_ICON" />
 					<span class="truncate max-w-40">{{ item.label }}</span>
 				</RouterLink>
 				<span
 					v-else-if="index < items.length - 1"
-					class="px-3 py-2 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-					:class="pillClass(index)">
+					:class="[HEADER_CAPSULE_BASE, pillClass(index)]">
 					<UIcon
 						v-if="item.icon"
 						:name="item.icon"
-						class="size-3.5 shrink-0 text-white" />
+						:class="HEADER_CAPSULE_ICON" />
 					<span class="truncate max-w-40">{{ item.label }}</span>
 				</span>
 				<span
@@ -74,6 +70,7 @@
 
 <script setup lang="ts">
 	import type { ShellHeaderBreadcrumbItem } from '@/app/shell-header'
+	import { HEADER_CAPSULE_BASE, HEADER_CAPSULE_ICON } from '@/config/ui/capsule'
 
 	import type { AppHeaderLeadingPill } from './types'
 

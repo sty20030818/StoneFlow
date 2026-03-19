@@ -1,4 +1,11 @@
 import { PRIORITY_ICON_MAP, PRIORITY_LABELS, PRIORITY_OPTIONS } from '@/config/priority'
+import {
+	HEADER_CAPSULE_TONE_AMBER,
+	HEADER_CAPSULE_TONE_EMERALD,
+	HEADER_CAPSULE_TONE_ROSE,
+	HEADER_CAPSULE_TONE_SKY,
+	HEADER_CAPSULE_TONE_VIOLET,
+} from '@/config/ui/capsule'
 import type { ProjectComputedStatusValue, ProjectPriorityValue } from '@/types/domain/project'
 import { tGlobal } from '@/utils/i18n'
 
@@ -20,11 +27,11 @@ export const PROJECT_LEVEL_TEXT_CLASSES = [
 ]
 
 export const PROJECT_LEVEL_PILL_CLASSES = [
-	'bg-amber-500',
-	'bg-sky-500',
-	'bg-violet-500',
-	'bg-emerald-500',
-	'bg-rose-500',
+	HEADER_CAPSULE_TONE_AMBER,
+	HEADER_CAPSULE_TONE_SKY,
+	HEADER_CAPSULE_TONE_VIOLET,
+	HEADER_CAPSULE_TONE_EMERALD,
+	HEADER_CAPSULE_TONE_ROSE,
 ]
 
 export const DEFAULT_PROJECT_ID_SUFFIX = '_default'

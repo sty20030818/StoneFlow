@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { PAGE_NAV_CONFIG, toRouteMeta } from '@/config/page-nav'
+import { HEADER_CAPSULE_TONE_SLATE } from '@/config/ui/capsule'
 
 const ProjectView = () => import('@/pages/ProjectViewPage.vue')
 
@@ -42,7 +43,7 @@ export const routes = [
 			titleKey: 'routes.space.title',
 			icon: 'i-lucide-folder',
 			iconClass: 'text-gray-500',
-			pillClass: 'bg-gray-500',
+			pillClass: HEADER_CAPSULE_TONE_SLATE,
 			descriptionKey: 'routes.space.description',
 		},
 	},
@@ -99,7 +100,7 @@ export const routes = [
 			titleKey: 'routes.settings.title',
 			icon: 'i-lucide-settings',
 			iconClass: 'text-gray-500',
-			pillClass: 'bg-gray-500',
+			pillClass: HEADER_CAPSULE_TONE_SLATE,
 			descriptionKey: 'routes.settings.description',
 			leadingMode: 'root',
 		},

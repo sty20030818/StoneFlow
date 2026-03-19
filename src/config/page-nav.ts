@@ -1,3 +1,14 @@
+import {
+	HEADER_CAPSULE_TONE_BLUE,
+	HEADER_CAPSULE_TONE_CYAN,
+	HEADER_CAPSULE_TONE_GREEN,
+	HEADER_CAPSULE_TONE_INDIGO,
+	HEADER_CAPSULE_TONE_ORANGE,
+	HEADER_CAPSULE_TONE_PINK,
+	HEADER_CAPSULE_TONE_RED,
+	HEADER_CAPSULE_TONE_YELLOW,
+} from '@/config/ui/capsule'
+
 type PageNavConfig = {
 	path: string
 	titleKey: string
@@ -17,7 +28,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.allTasks.description',
 		icon: 'i-lucide-list-checks',
 		iconClass: 'text-pink-500',
-		pillClass: 'bg-pink-500',
+		pillClass: HEADER_CAPSULE_TONE_PINK,
 		leadingMode: 'page',
 	},
 	finishList: {
@@ -26,7 +37,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.finishList.description',
 		icon: 'i-lucide-check-circle',
 		iconClass: 'text-green-500',
-		pillClass: 'bg-green-500',
+		pillClass: HEADER_CAPSULE_TONE_GREEN,
 		leadingMode: 'page',
 	},
 	stats: {
@@ -35,7 +46,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.stats.description',
 		icon: 'i-lucide-bar-chart-3',
 		iconClass: 'text-blue-500',
-		pillClass: 'bg-blue-500',
+		pillClass: HEADER_CAPSULE_TONE_BLUE,
 		leadingMode: 'page',
 	},
 	logs: {
@@ -44,7 +55,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.logs.description',
 		icon: 'i-lucide-scroll-text',
 		iconClass: 'text-orange-500',
-		pillClass: 'bg-orange-500',
+		pillClass: HEADER_CAPSULE_TONE_ORANGE,
 		leadingMode: 'page',
 	},
 	snippets: {
@@ -53,7 +64,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.snippets.description',
 		icon: 'i-lucide-code',
 		iconClass: 'text-cyan-500',
-		pillClass: 'bg-cyan-500',
+		pillClass: HEADER_CAPSULE_TONE_CYAN,
 		leadingMode: 'page',
 	},
 	vault: {
@@ -62,7 +73,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.vault.description',
 		icon: 'i-lucide-lock',
 		iconClass: 'text-yellow-500',
-		pillClass: 'bg-yellow-500',
+		pillClass: HEADER_CAPSULE_TONE_YELLOW,
 		leadingMode: 'page',
 	},
 	notes: {
@@ -71,7 +82,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.notes.description',
 		icon: 'i-lucide-notebook',
 		iconClass: 'text-pink-500',
-		pillClass: 'bg-pink-500',
+		pillClass: HEADER_CAPSULE_TONE_PINK,
 		leadingMode: 'page',
 	},
 	diary: {
@@ -80,7 +91,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.diary.description',
 		icon: 'i-lucide-book-open-text',
 		iconClass: 'text-indigo-500',
-		pillClass: 'bg-indigo-500',
+		pillClass: HEADER_CAPSULE_TONE_INDIGO,
 		leadingMode: 'page',
 	},
 	trash: {
@@ -89,7 +100,7 @@ export const PAGE_NAV_CONFIG = {
 		descriptionKey: 'nav.pages.trash.description',
 		icon: 'i-lucide-trash-2',
 		iconClass: 'text-red-500',
-		pillClass: 'bg-red-500',
+		pillClass: HEADER_CAPSULE_TONE_RED,
 		leadingMode: 'page',
 	},
 } as const satisfies Record<string, PageNavConfig>

@@ -13,13 +13,12 @@
 			<button
 				type="button"
 				v-motion="editButtonMotion"
-				class="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold shadow-sm"
-				:class="editButtonClass"
+				class="ml-1"
+				:class="[HEADER_CAPSULE_BASE, editButtonClass]"
 				@click="onToggleEditMode">
 				<UIcon
 					:name="editButtonIcon"
-					class="size-3.5"
-					:class="editButtonIconClass" />
+					:class="[HEADER_CAPSULE_ICON, editButtonIconClass]" />
 				<span>{{ editButtonLabel }}</span>
 			</button>
 		</template>
@@ -28,6 +27,7 @@
 
 <script setup lang="ts">
 	import type { Component } from 'vue'
+	import { HEADER_CAPSULE_BASE, HEADER_CAPSULE_ICON } from '@/config/ui/capsule'
 
 	import GlobalHeaderSearch from './GlobalHeaderSearch.vue'
 

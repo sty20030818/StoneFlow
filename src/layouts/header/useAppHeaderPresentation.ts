@@ -6,6 +6,7 @@ import { useShellHeaderController } from '@/app/shell-header'
 import type { HeaderLeadingMode } from '@/config/page-nav'
 import { PROJECT_LEVEL_PILL_CLASSES } from '@/config/project'
 import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/config/space'
+import { HEADER_CAPSULE_DANGER, HEADER_CAPSULE_NEUTRAL } from '@/config/ui/capsule'
 import { useProjectInteractionMotionPreset, useProjectShellMotionPreset } from '@/composables/base/motion'
 import { useSettingsStore } from '@/stores/settings'
 import { useWorkspaceEditStore } from '@/stores/workspace-edit'
@@ -139,11 +140,11 @@ export function useAppHeaderPresentation() {
 	const editButtonIcon = computed(() => (isEditMode.value ? 'i-lucide-x' : 'i-lucide-pencil'))
 	const editButtonClass = computed(() => {
 		if (isEditMode.value) {
-			return 'bg-elevated text-default hover:bg-default'
+			return HEADER_CAPSULE_NEUTRAL
 		}
-		return 'bg-error text-white shadow-error/40 hover:bg-error/90'
+		return HEADER_CAPSULE_DANGER
 	})
-	const editButtonIconClass = computed(() => (isEditMode.value ? 'text-default' : 'text-white'))
+	const editButtonIconClass = computed(() => 'text-current')
 	const deleteGlowClass = computed(() => 'shadow-[0_18px_36px_-20px_rgba(239,68,68,0.85)]')
 
 	function onToggleEditMode() {

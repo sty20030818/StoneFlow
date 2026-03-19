@@ -4,11 +4,10 @@
 		class="px-5 py-4 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
 		<div class="flex items-center gap-1.5 min-w-0 flex-1 leading-tight">
 			<span
-				class="px-2.5 py-1 rounded-full text-[12px] font-semibold shrink-0 flex items-center gap-1.5 text-white shadow-sm"
-				:class="spacePillClass">
+				:class="[HEADER_CAPSULE_BASE, spacePillClass]">
 				<UIcon
 					:name="currentSpaceIcon"
-					class="size-3.5 shrink-0 text-white" />
+					:class="HEADER_CAPSULE_ICON" />
 				<span>{{ currentSpaceLabel }}</span>
 			</span>
 
@@ -56,6 +55,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
+	import { HEADER_CAPSULE_BASE, HEADER_CAPSULE_ICON } from '@/config/ui/capsule'
 	import { useInteractionMotionPreset } from '@/composables/base/motion'
 
 	type Props = {

@@ -1,20 +1,25 @@
 <template>
-	<div class="relative shrink-0">
+	<div class="relative w-64 shrink-0">
 		<UInput
 			v-model="searchQuery"
 			:placeholder="t('header.searchPlaceholder')"
 			icon="i-lucide-search"
 			size="sm"
+			variant="none"
 			:ui="{
-				width: 'w-64',
+				root: 'w-full',
+				base: HEADER_CAPSULE_INPUT,
+				leading: 'ps-4',
+				leadingIcon: HEADER_CAPSULE_INPUT_ICON,
 			}"
-			class="rounded-full! [&>div]:rounded-full! [&_input]:rounded-full!" />
+			class="w-full" />
 	</div>
 </template>
 
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import { HEADER_CAPSULE_INPUT, HEADER_CAPSULE_INPUT_ICON } from '@/config/ui/capsule'
 
 	const { t } = useI18n({ useScope: 'global' })
 	const searchQuery = ref('')
