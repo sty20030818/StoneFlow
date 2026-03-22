@@ -1,15 +1,23 @@
 //! 关系表同步。
 //!
-//! 当前这些表都没有 `updated_at`，因此没法做真正的增量覆盖。
-//! 当前策略选择“全量读取 + 主键去重插入”，优先保证实现简单和结果幂等。
+//! 关系表现在带有 `updated_at` 和 `deleted_at`，
+//! 因此可以按增量读取并把 tombstone 传播到目标端，保证最终一致。
 
-use sea_orm::{sea_query::OnConflict, DatabaseConnection, EntityTrait};
+use std::collections::HashMap;
+
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, sea_query::OnConflict,
+};
 
 use crate::db::entities::{
     prelude::{ProjectLinks, ProjectTags, TaskLinks, TaskTags},
     project_links, project_tags, task_links, task_tags,
 };
-use crate::services::sync::{error::SyncError, report::DedupStats};
+use crate::services::sync::{
+    error::SyncError,
+    helpers::{UpsertDecision, decide_upsert},
+    report::UpsertStats,
+};
 
 use super::{RelationSyncStats, SyncDirection};
 
@@ -17,145 +25,323 @@ use super::{RelationSyncStats, SyncDirection};
 pub(super) async fn sync(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
     direction: SyncDirection,
 ) -> Result<RelationSyncStats, SyncError> {
-    // 这里串行执行是为了让统计逻辑和错误定位更直接。
     Ok(RelationSyncStats {
-        task_tags: sync_task_tags(source_db, target_db, direction).await?,
-        task_links: sync_task_links(source_db, target_db, direction).await?,
-        project_tags: sync_project_tags(source_db, target_db, direction).await?,
-        project_links: sync_project_links(source_db, target_db, direction).await?,
+        task_tags: sync_task_tags(
+            source_db,
+            target_db,
+            since_ms,
+            conflict_guard_enabled,
+            direction,
+        )
+        .await?,
+        task_links: sync_task_links(
+            source_db,
+            target_db,
+            since_ms,
+            conflict_guard_enabled,
+            direction,
+        )
+        .await?,
+        project_tags: sync_project_tags(
+            source_db,
+            target_db,
+            since_ms,
+            conflict_guard_enabled,
+            direction,
+        )
+        .await?,
+        project_links: sync_project_links(
+            source_db,
+            target_db,
+            since_ms,
+            conflict_guard_enabled,
+            direction,
+        )
+        .await?,
     })
 }
 
-/// 同步任务与标签的关联关系。
 async fn sync_task_tags(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<DedupStats, SyncError> {
-    // 关系表没有版本列，所以直接全量取出源端数据。
+) -> Result<UpsertStats, SyncError> {
     let source_items = TaskTags::find()
+        .filter(task_tags::Column::UpdatedAt.gt(since_ms))
         .all(source_db)
         .await
         .map_err(|error| SyncError::source_read(direction.as_str(), "TaskTags", error))?;
 
-    let mut stats = DedupStats {
-        total: source_items.len(),
+    let total = source_items.len();
+    let existing_versions: HashMap<(String, String), i64> = if source_items.is_empty() {
+        HashMap::new()
+    } else {
+        TaskTags::find()
+            .select_only()
+            .columns([
+                task_tags::Column::TaskId,
+                task_tags::Column::TagId,
+                task_tags::Column::UpdatedAt,
+            ])
+            .filter(task_tags::Column::TaskId.is_in(source_items.iter().map(|item| item.task_id.clone())))
+            .filter(task_tags::Column::TagId.is_in(source_items.iter().map(|item| item.tag_id.clone())))
+            .into_tuple::<(String, String, i64)>()
+            .all(target_db)
+            .await
+            .map_err(|error| SyncError::target_state_read(direction.as_str(), "TaskTags", error))?
+            .into_iter()
+            .map(|(task_id, tag_id, updated_at)| ((task_id, tag_id), updated_at))
+            .collect()
+    };
+
+    let mut stats = UpsertStats {
+        total,
         ..Default::default()
     };
     for item in source_items {
-        // 复合主键冲突时直接忽略，保证多次同步是幂等的。
+        let relation_key = (item.task_id.clone(), item.tag_id.clone());
+        match decide_upsert(
+            existing_versions.get(&relation_key).copied(),
+            item.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => stats.inserted += 1,
+            UpsertDecision::Update => stats.updated += 1,
+            UpsertDecision::ConflictSkip => {
+                stats.conflicted += 1;
+                continue;
+            }
+        }
+
         let active_model: task_tags::ActiveModel = item.into();
-        let inserted = task_tags::Entity::insert(active_model)
+        task_tags::Entity::insert(active_model)
             .on_conflict(
                 OnConflict::columns([task_tags::Column::TaskId, task_tags::Column::TagId])
-                    .do_nothing()
+                    .update_columns([task_tags::Column::UpdatedAt, task_tags::Column::DeletedAt])
                     .to_owned(),
             )
-            .exec_without_returning(target_db)
+            .exec(target_db)
             .await
             .map_err(|error| SyncError::write_target(direction.as_str(), "TaskTag", error))?;
-        stats.inserted += inserted as usize;
     }
 
     Ok(stats)
 }
 
-/// 同步任务与链接的关联关系。
 async fn sync_task_links(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<DedupStats, SyncError> {
+) -> Result<UpsertStats, SyncError> {
     let source_items = TaskLinks::find()
+        .filter(task_links::Column::UpdatedAt.gt(since_ms))
         .all(source_db)
         .await
         .map_err(|error| SyncError::source_read(direction.as_str(), "TaskLinks", error))?;
 
-    let mut stats = DedupStats {
-        total: source_items.len(),
+    let total = source_items.len();
+    let existing_versions: HashMap<(String, String), i64> = if source_items.is_empty() {
+        HashMap::new()
+    } else {
+        TaskLinks::find()
+            .select_only()
+            .columns([
+                task_links::Column::TaskId,
+                task_links::Column::LinkId,
+                task_links::Column::UpdatedAt,
+            ])
+            .filter(task_links::Column::TaskId.is_in(source_items.iter().map(|item| item.task_id.clone())))
+            .filter(task_links::Column::LinkId.is_in(source_items.iter().map(|item| item.link_id.clone())))
+            .into_tuple::<(String, String, i64)>()
+            .all(target_db)
+            .await
+            .map_err(|error| SyncError::target_state_read(direction.as_str(), "TaskLinks", error))?
+            .into_iter()
+            .map(|(task_id, link_id, updated_at)| ((task_id, link_id), updated_at))
+            .collect()
+    };
+
+    let mut stats = UpsertStats {
+        total,
         ..Default::default()
     };
     for item in source_items {
+        let relation_key = (item.task_id.clone(), item.link_id.clone());
+        match decide_upsert(
+            existing_versions.get(&relation_key).copied(),
+            item.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => stats.inserted += 1,
+            UpsertDecision::Update => stats.updated += 1,
+            UpsertDecision::ConflictSkip => {
+                stats.conflicted += 1;
+                continue;
+            }
+        }
+
         let active_model: task_links::ActiveModel = item.into();
-        let inserted = task_links::Entity::insert(active_model)
+        task_links::Entity::insert(active_model)
             .on_conflict(
                 OnConflict::columns([task_links::Column::TaskId, task_links::Column::LinkId])
-                    .do_nothing()
+                    .update_columns([task_links::Column::UpdatedAt, task_links::Column::DeletedAt])
                     .to_owned(),
             )
-            .exec_without_returning(target_db)
+            .exec(target_db)
             .await
             .map_err(|error| SyncError::write_target(direction.as_str(), "TaskLink", error))?;
-        stats.inserted += inserted as usize;
     }
 
     Ok(stats)
 }
 
-/// 同步项目与标签的关联关系。
 async fn sync_project_tags(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<DedupStats, SyncError> {
+) -> Result<UpsertStats, SyncError> {
     let source_items = ProjectTags::find()
+        .filter(project_tags::Column::UpdatedAt.gt(since_ms))
         .all(source_db)
         .await
         .map_err(|error| SyncError::source_read(direction.as_str(), "ProjectTags", error))?;
 
-    let mut stats = DedupStats {
-        total: source_items.len(),
+    let total = source_items.len();
+    let existing_versions: HashMap<(String, String), i64> = if source_items.is_empty() {
+        HashMap::new()
+    } else {
+        ProjectTags::find()
+            .select_only()
+            .columns([
+                project_tags::Column::ProjectId,
+                project_tags::Column::TagId,
+                project_tags::Column::UpdatedAt,
+            ])
+            .filter(project_tags::Column::ProjectId.is_in(source_items.iter().map(|item| item.project_id.clone())))
+            .filter(project_tags::Column::TagId.is_in(source_items.iter().map(|item| item.tag_id.clone())))
+            .into_tuple::<(String, String, i64)>()
+            .all(target_db)
+            .await
+            .map_err(|error| SyncError::target_state_read(direction.as_str(), "ProjectTags", error))?
+            .into_iter()
+            .map(|(project_id, tag_id, updated_at)| ((project_id, tag_id), updated_at))
+            .collect()
+    };
+
+    let mut stats = UpsertStats {
+        total,
         ..Default::default()
     };
     for item in source_items {
+        let relation_key = (item.project_id.clone(), item.tag_id.clone());
+        match decide_upsert(
+            existing_versions.get(&relation_key).copied(),
+            item.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => stats.inserted += 1,
+            UpsertDecision::Update => stats.updated += 1,
+            UpsertDecision::ConflictSkip => {
+                stats.conflicted += 1;
+                continue;
+            }
+        }
+
         let active_model: project_tags::ActiveModel = item.into();
-        let inserted = project_tags::Entity::insert(active_model)
+        project_tags::Entity::insert(active_model)
             .on_conflict(
                 OnConflict::columns([project_tags::Column::ProjectId, project_tags::Column::TagId])
-                    .do_nothing()
+                    .update_columns([project_tags::Column::UpdatedAt, project_tags::Column::DeletedAt])
                     .to_owned(),
             )
-            .exec_without_returning(target_db)
+            .exec(target_db)
             .await
             .map_err(|error| SyncError::write_target(direction.as_str(), "ProjectTag", error))?;
-        stats.inserted += inserted as usize;
     }
 
     Ok(stats)
 }
 
-/// 同步项目与链接的关联关系。
 async fn sync_project_links(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
     direction: SyncDirection,
-) -> Result<DedupStats, SyncError> {
+) -> Result<UpsertStats, SyncError> {
     let source_items = ProjectLinks::find()
+        .filter(project_links::Column::UpdatedAt.gt(since_ms))
         .all(source_db)
         .await
         .map_err(|error| SyncError::source_read(direction.as_str(), "ProjectLinks", error))?;
 
-    let mut stats = DedupStats {
-        total: source_items.len(),
+    let total = source_items.len();
+    let existing_versions: HashMap<(String, String), i64> = if source_items.is_empty() {
+        HashMap::new()
+    } else {
+        ProjectLinks::find()
+            .select_only()
+            .columns([
+                project_links::Column::ProjectId,
+                project_links::Column::LinkId,
+                project_links::Column::UpdatedAt,
+            ])
+            .filter(project_links::Column::ProjectId.is_in(source_items.iter().map(|item| item.project_id.clone())))
+            .filter(project_links::Column::LinkId.is_in(source_items.iter().map(|item| item.link_id.clone())))
+            .into_tuple::<(String, String, i64)>()
+            .all(target_db)
+            .await
+            .map_err(|error| SyncError::target_state_read(direction.as_str(), "ProjectLinks", error))?
+            .into_iter()
+            .map(|(project_id, link_id, updated_at)| ((project_id, link_id), updated_at))
+            .collect()
+    };
+
+    let mut stats = UpsertStats {
+        total,
         ..Default::default()
     };
     for item in source_items {
+        let relation_key = (item.project_id.clone(), item.link_id.clone());
+        match decide_upsert(
+            existing_versions.get(&relation_key).copied(),
+            item.updated_at,
+            conflict_guard_enabled,
+        ) {
+            UpsertDecision::Insert => stats.inserted += 1,
+            UpsertDecision::Update => stats.updated += 1,
+            UpsertDecision::ConflictSkip => {
+                stats.conflicted += 1;
+                continue;
+            }
+        }
+
         let active_model: project_links::ActiveModel = item.into();
-        let inserted = project_links::Entity::insert(active_model)
+        project_links::Entity::insert(active_model)
             .on_conflict(
                 OnConflict::columns([
                     project_links::Column::ProjectId,
                     project_links::Column::LinkId,
                 ])
-                .do_nothing()
+                .update_columns([
+                    project_links::Column::UpdatedAt,
+                    project_links::Column::DeletedAt,
+                ])
                 .to_owned(),
             )
-            .exec_without_returning(target_db)
+            .exec(target_db)
             .await
             .map_err(|error| SyncError::write_target(direction.as_str(), "ProjectLink", error))?;
-        stats.inserted += inserted as usize;
     }
 
     Ok(stats)

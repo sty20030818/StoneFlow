@@ -31,7 +31,7 @@ impl SyncTableReport {
         }
     }
 
-    /// 适用于 append-only 或全量去重表的统计构造器。
+    /// 适用于 append-only 表的统计构造器。
     pub fn dedup(total: usize, inserted: usize) -> Self {
         Self {
             total,
@@ -53,6 +53,7 @@ pub struct SyncTablesReport {
     pub links: SyncTableReport,
     pub tasks: SyncTableReport,
     pub task_activity_logs: SyncTableReport,
+    pub project_activity_logs: SyncTableReport,
     pub task_tags: SyncTableReport,
     pub task_links: SyncTableReport,
     pub project_tags: SyncTableReport,

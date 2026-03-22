@@ -10,6 +10,8 @@ pub struct Model {
     pub task_id: String,
     #[sea_orm(primary_key, auto_increment = false)]
     pub link_id: String,
+    pub updated_at: i64,
+    pub deleted_at: Option<i64>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -37,15 +37,16 @@ impl SyncDirection {
 pub(super) struct AppendOnlySyncStats {
     pub tags: DedupStats,
     pub task_activity_logs: DedupStats,
+    pub project_activity_logs: DedupStats,
 }
 
-/// 关系表统计：这些表没有 `updated_at`，所以都走去重插入路径。
+/// 关系表统计也统一走版本比较和 tombstone 覆盖。
 #[derive(Debug, Default, Clone, Copy)]
 pub(super) struct RelationSyncStats {
-    pub task_tags: DedupStats,
-    pub task_links: DedupStats,
-    pub project_tags: DedupStats,
-    pub project_links: DedupStats,
+    pub task_tags: UpsertStats,
+    pub task_links: UpsertStats,
+    pub project_tags: UpsertStats,
+    pub project_links: UpsertStats,
 }
 
 /// 对外暴露按表同步函数，避免上层直接依赖具体文件路径。
@@ -130,11 +131,20 @@ pub(super) async fn sync_append_only(
     append_only::sync(source_db, target_db, since_ms, direction).await
 }
 
-/// 关系表集中放在一起，便于统一解释“全量去重”策略。
+/// 关系表集中放在一起，便于统一解释 tombstone 增量同步策略。
 pub(super) async fn sync_relations(
     source_db: &DatabaseConnection,
     target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
     direction: SyncDirection,
 ) -> Result<RelationSyncStats, SyncError> {
-    relations::sync(source_db, target_db, direction).await
+    relations::sync(
+        source_db,
+        target_db,
+        since_ms,
+        conflict_guard_enabled,
+        direction,
+    )
+    .await
 }

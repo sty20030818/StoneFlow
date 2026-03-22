@@ -19,7 +19,6 @@ pub async fn find_by_id<C>(conn: &C, id: &str) -> Result<tasks::Model, AppError>
 where
     C: ConnectionTrait,
 {
-    // 查询原语只负责“找到或报不存在”，不在这里追加业务副作用。
     tasks::Entity::find_by_id(id)
         .one(conn)
         .await
@@ -34,7 +33,6 @@ pub async fn find_not_deleted_by_ids<C>(
 where
     C: ConnectionTrait,
 {
-    // 供批量删除/恢复等用例复用，只返回未软删除任务。
     tasks::Entity::find()
         .filter(tasks::Column::Id.is_in(ids.iter().cloned()))
         .filter(tasks::Column::DeletedAt.is_null())
@@ -47,7 +45,6 @@ pub async fn find_deleted_by_ids<C>(conn: &C, ids: &[String]) -> Result<Vec<task
 where
     C: ConnectionTrait,
 {
-    // 和 `find_not_deleted_by_ids` 对称，供恢复流程使用。
     tasks::Entity::find()
         .filter(tasks::Column::Id.is_in(ids.iter().cloned()))
         .filter(tasks::Column::DeletedAt.is_not_null())
@@ -65,7 +62,6 @@ pub async fn next_rank_in_bucket<C>(
 where
     C: ConnectionTrait,
 {
-    // rank 采用稀疏分布，默认每次尾插时加 1024，便于后续在中间插入。
     let max_rank_task = tasks::Entity::find()
         .filter(tasks::Column::SpaceId.eq(space_id))
         .filter(tasks::Column::Status.eq(status.clone()))
@@ -83,12 +79,12 @@ pub async fn load_task_tags_for_log<C>(conn: &C, task_id: &str) -> Result<Vec<St
 where
     C: ConnectionTrait,
 {
-    // 日志显示希望拿到稳定顺序的标签名，因此在查询层就排好序。
     task_tags::Entity::find()
         .select_only()
         .column(tag_entities::Column::Name)
         .join(JoinType::InnerJoin, task_tags::Relation::Tags.def())
         .filter(task_tags::Column::TaskId.eq(task_id))
+        .filter(task_tags::Column::DeletedAt.is_null())
         .order_by_asc(tag_entities::Column::Name)
         .order_by_asc(tag_entities::Column::CreatedAt)
         .into_tuple()
@@ -101,7 +97,6 @@ pub async fn load_task_links_for_log<C>(conn: &C, task_id: &str) -> Result<Vec<S
 where
     C: ConnectionTrait,
 {
-    // 链接日志既要读标题和 URL，也要按 rank 稳定排序，方便前后值比较。
     let rows: Vec<(String, String, LinkKind, i64, i64)> = task_links::Entity::find()
         .select_only()
         .column(link_entities::Column::Title)
@@ -111,6 +106,7 @@ where
         .column(link_entities::Column::CreatedAt)
         .join(JoinType::InnerJoin, task_links::Relation::Links.def())
         .filter(task_links::Column::TaskId.eq(task_id))
+        .filter(task_links::Column::DeletedAt.is_null())
         .order_by_asc(link_entities::Column::Rank)
         .order_by_asc(link_entities::Column::CreatedAt)
         .into_tuple()
@@ -126,7 +122,6 @@ where
         .collect())
 }
 
-/// 把链接 kind 枚举转成前端和日志都能复用的字符串。
 fn link_kind_to_value(kind: &LinkKind) -> &'static str {
     match kind {
         LinkKind::Doc => "doc",
@@ -138,7 +133,6 @@ fn link_kind_to_value(kind: &LinkKind) -> &'static str {
     }
 }
 
-/// 统一活动日志里的链接文本格式，避免不同入口拼接方式不一致。
 fn format_link_for_log(kind: &str, title: &str, url: &str) -> String {
     format!("{}:{}<{}>", kind, title.trim(), url.trim())
 }

@@ -2,13 +2,13 @@
 //!
 //! 重点：
 //! - Link 主表 + junction 表的两层结构
-//! - 同步流程：删旧关联 -> upsert 链接 -> 插入新关联
+//! - 同步流程改为 tombstone 集合同步，保证关系删除能传播
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
-    QuerySelect, RelationTrait, Set, Statement,
+    QuerySelect, RelationTrait, Set,
 };
 use uuid::Uuid;
 
@@ -24,20 +24,9 @@ pub enum LinkEntity {
     Project,
 }
 
-impl LinkEntity {
-    fn junction_table(&self) -> &'static str {
-        match self {
-            LinkEntity::Task => "task_links",
-            LinkEntity::Project => "project_links",
-        }
-    }
-
-    fn owner_column(&self) -> &'static str {
-        match self {
-            LinkEntity::Task => "task_id",
-            LinkEntity::Project => "project_id",
-        }
-    }
+struct LinkRelationState {
+    link_id: String,
+    deleted_at: Option<i64>,
 }
 
 struct NormalizedLinkInput {
@@ -57,15 +46,12 @@ pub async fn load_links(
         return Ok(HashMap::new());
     }
 
-    // 统一加载接口，按 entity 选择不同关联表。
     let rows: Vec<(String, links::Model)> = match entity {
         LinkEntity::Task => task_links::Entity::find()
-            .join(
-                sea_orm::JoinType::InnerJoin,
-                task_links::Relation::Links.def(),
-            )
+            .join(sea_orm::JoinType::InnerJoin, task_links::Relation::Links.def())
             .select_also(links::Entity)
             .filter(task_links::Column::TaskId.is_in(owner_ids.iter().cloned()))
+            .filter(task_links::Column::DeletedAt.is_null())
             .all(conn)
             .await
             .map_err(AppError::from)?
@@ -79,6 +65,7 @@ pub async fn load_links(
             )
             .select_also(links::Entity)
             .filter(project_links::Column::ProjectId.is_in(owner_ids.iter().cloned()))
+            .filter(project_links::Column::DeletedAt.is_null())
             .all(conn)
             .await
             .map_err(AppError::from)?
@@ -108,7 +95,6 @@ pub async fn load_links(
         map.entry(owner_id).or_default().push(dto);
     }
 
-    // 排序逻辑：rank 升序，再按创建时间稳定排序。
     for list in map.values_mut() {
         list.sort_by(|a, b| {
             a.rank
@@ -131,29 +117,12 @@ where
 {
     let now = now_ms();
     let normalized = normalize_link_inputs(links)?;
+    let existing_relations = load_existing_relations(conn, &entity, owner_id).await?;
+    let mut desired_link_ids = HashSet::new();
 
-    // 1) 删除旧关联关系。
-    let sql = format!(
-        "DELETE FROM {} WHERE {} = $1",
-        entity.junction_table(),
-        entity.owner_column()
-    );
-    conn.execute(Statement::from_sql_and_values(
-        sea_orm::DatabaseBackend::Sqlite,
-        &sql,
-        [owner_id.into()],
-    ))
-    .await
-    .map_err(AppError::from)?;
-
-    // 2) 处理链接：有 id 则更新，无 id 则新建。
     for link_input in normalized {
         let link_id = if let Some(id) = &link_input.id {
-            // 更新现有链接
             let kind_enum = parse_kind(&link_input.kind)?;
-
-            // 检查是否存在逻辑，或直接更新
-            // 尝试更新
             let update_res = links::ActiveModel {
                 id: Set(id.clone()),
                 title: Set(link_input.title.clone()),
@@ -169,37 +138,33 @@ where
             match update_res {
                 Ok(_) => id.clone(),
                 Err(sea_orm::DbErr::RecordNotFound(_)) => {
-                    // 如果未找到则创建 (兜底)
                     create_new_link(conn, id, &link_input, now).await?
                 }
                 Err(e) => return Err(AppError::from(e)),
             }
         } else {
-            // 创建新链接
             let id = Uuid::new_v4().to_string();
             create_new_link(conn, &id, &link_input, now).await?
         };
 
-        // 3) 建立新关联关系。
-        match entity {
-            LinkEntity::Task => {
-                task_links::ActiveModel {
-                    task_id: Set(owner_id.to_string()),
-                    link_id: Set(link_id),
-                }
-                .insert(conn)
-                .await
-                .ok();
+        desired_link_ids.insert(link_id.clone());
+        match existing_relations
+            .iter()
+            .find(|relation| relation.link_id == link_id)
+        {
+            Some(relation) if relation.deleted_at.is_some() => {
+                apply_link_relation_state(conn, &entity, owner_id, &link_id, now, None).await?;
             }
-            LinkEntity::Project => {
-                project_links::ActiveModel {
-                    project_id: Set(owner_id.to_string()),
-                    link_id: Set(link_id),
-                }
-                .insert(conn)
-                .await
-                .ok();
+            Some(_) => {}
+            None => {
+                insert_link_relation(conn, &entity, owner_id, &link_id, now).await?;
             }
+        }
+    }
+
+    for relation in existing_relations.iter().filter(|relation| relation.deleted_at.is_none()) {
+        if !desired_link_ids.contains(&relation.link_id) {
+            apply_link_relation_state(conn, &entity, owner_id, &relation.link_id, now, Some(now)).await?;
         }
     }
 
@@ -231,8 +196,130 @@ where
     Ok(id.to_string())
 }
 
+async fn load_existing_relations<C>(
+    conn: &C,
+    entity: &LinkEntity,
+    owner_id: &str,
+) -> Result<Vec<LinkRelationState>, AppError>
+where
+    C: ConnectionTrait,
+{
+    match entity {
+        LinkEntity::Task => task_links::Entity::find()
+            .select_only()
+            .column(task_links::Column::LinkId)
+            .column(task_links::Column::DeletedAt)
+            .filter(task_links::Column::TaskId.eq(owner_id))
+            .into_tuple::<(String, Option<i64>)>()
+            .all(conn)
+            .await
+            .map(|rows| {
+                rows.into_iter()
+                    .map(|(link_id, deleted_at)| LinkRelationState {
+                        link_id,
+                        deleted_at,
+                    })
+                    .collect()
+            })
+            .map_err(AppError::from),
+        LinkEntity::Project => project_links::Entity::find()
+            .select_only()
+            .column(project_links::Column::LinkId)
+            .column(project_links::Column::DeletedAt)
+            .filter(project_links::Column::ProjectId.eq(owner_id))
+            .into_tuple::<(String, Option<i64>)>()
+            .all(conn)
+            .await
+            .map(|rows| {
+                rows.into_iter()
+                    .map(|(link_id, deleted_at)| LinkRelationState {
+                        link_id,
+                        deleted_at,
+                    })
+                    .collect()
+            })
+            .map_err(AppError::from),
+    }
+}
+
+async fn insert_link_relation<C>(
+    conn: &C,
+    entity: &LinkEntity,
+    owner_id: &str,
+    link_id: &str,
+    now: i64,
+) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
+    match entity {
+        LinkEntity::Task => {
+            task_links::ActiveModel {
+                task_id: Set(owner_id.to_string()),
+                link_id: Set(link_id.to_string()),
+                updated_at: Set(now),
+                deleted_at: Set(None),
+            }
+            .insert(conn)
+            .await
+            .map_err(AppError::from)?;
+        }
+        LinkEntity::Project => {
+            project_links::ActiveModel {
+                project_id: Set(owner_id.to_string()),
+                link_id: Set(link_id.to_string()),
+                updated_at: Set(now),
+                deleted_at: Set(None),
+            }
+            .insert(conn)
+            .await
+            .map_err(AppError::from)?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn apply_link_relation_state<C>(
+    conn: &C,
+    entity: &LinkEntity,
+    owner_id: &str,
+    link_id: &str,
+    updated_at: i64,
+    deleted_at: Option<i64>,
+) -> Result<(), AppError>
+where
+    C: ConnectionTrait,
+{
+    match entity {
+        LinkEntity::Task => {
+            task_links::ActiveModel {
+                task_id: Set(owner_id.to_string()),
+                link_id: Set(link_id.to_string()),
+                updated_at: Set(updated_at),
+                deleted_at: Set(deleted_at),
+            }
+            .update(conn)
+            .await
+            .map_err(AppError::from)?;
+        }
+        LinkEntity::Project => {
+            project_links::ActiveModel {
+                project_id: Set(owner_id.to_string()),
+                link_id: Set(link_id.to_string()),
+                updated_at: Set(updated_at),
+                deleted_at: Set(deleted_at),
+            }
+            .update(conn)
+            .await
+            .map_err(AppError::from)?;
+        }
+    }
+
+    Ok(())
+}
+
 fn parse_kind(k: &str) -> Result<LinkKind, AppError> {
-    // 重点：字符串字段在边界处尽早转为强类型枚举，减少“字符串协议”扩散。
     match k {
         "doc" => Ok(LinkKind::Doc),
         "repoLocal" => Ok(LinkKind::RepoLocal),
@@ -273,3 +360,4 @@ fn normalize_link_inputs(links: &[LinkInputDto]) -> Result<Vec<NormalizedLinkInp
 
     Ok(normalized)
 }
+

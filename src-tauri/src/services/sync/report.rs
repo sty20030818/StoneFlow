@@ -30,10 +30,11 @@ pub(crate) struct SyncRunStats {
     pub links: UpsertStats,
     pub tasks: UpsertStats,
     pub task_activity_logs: DedupStats,
-    pub task_tags: DedupStats,
-    pub task_links: DedupStats,
-    pub project_tags: DedupStats,
-    pub project_links: DedupStats,
+    pub project_activity_logs: DedupStats,
+    pub task_tags: UpsertStats,
+    pub task_links: UpsertStats,
+    pub project_tags: UpsertStats,
+    pub project_links: UpsertStats,
 }
 
 impl From<UpsertStats> for SyncTableReport {
@@ -65,6 +66,7 @@ impl SyncRunStats {
                 links: self.links.into(),
                 tasks: self.tasks.into(),
                 task_activity_logs: self.task_activity_logs.into(),
+                project_activity_logs: self.project_activity_logs.into(),
                 task_tags: self.task_tags.into(),
                 task_links: self.task_links.into(),
                 project_tags: self.project_tags.into(),

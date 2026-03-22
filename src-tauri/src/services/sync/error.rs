@@ -5,7 +5,7 @@
 //! - 在命令层再统一映射成 `ApiError`
 //! - 给前端稳定的 `code`，避免再靠 message 文本做分支
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::types::error::ApiError;
 
@@ -53,7 +53,11 @@ impl SyncError {
     }
 
     /// 读取水位失败会直接阻断同步，因为无法确定增量起点。
-    pub(super) fn watermark_read(key: &'static str, error: impl std::fmt::Display) -> Self {
+    pub(super) fn watermark_read(
+        key: impl Into<String>,
+        error: impl std::fmt::Display,
+    ) -> Self {
+        let key = key.into();
         Self::new(
             "SYNC_WATERMARK_READ_ERROR",
             format!("读取本地 {} 失败: {}", key, error),
@@ -62,7 +66,11 @@ impl SyncError {
     }
 
     /// 更新水位失败同样要算整轮失败，否则下次会出现重复或错位同步。
-    pub(super) fn watermark_write(key: &'static str, error: impl std::fmt::Display) -> Self {
+    pub(super) fn watermark_write(
+        key: impl Into<String>,
+        error: impl std::fmt::Display,
+    ) -> Self {
+        let key = key.into();
         Self::new(
             "SYNC_WATERMARK_WRITE_ERROR",
             format!("更新 {} 失败: {}", key, error),
