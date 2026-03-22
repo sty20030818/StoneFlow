@@ -1,36 +1,16 @@
 import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
+import { i18n } from '@/plugins/i18n'
 import { tauriInvoke } from '@/services/tauri/invoke'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
-import type { RemoteDbProfile, RemoteSyncCommandReport } from '@/types/shared/remote-sync'
-import { resolveErrorMessage } from '@/utils/error-message'
-
-type RemoteSyncSummaryStatus = 'success' | 'failed' | 'skipped'
-type RemoteSyncSummaryAction = 'push' | 'pull' | 'syncNow'
-type RemoteSyncSummaryStepType = 'ensure' | 'pull' | 'push'
-
-export type RemoteSyncStepSummary = {
-	type: RemoteSyncSummaryStepType
-	status: RemoteSyncSummaryStatus
-	error: string | null
-	report: RemoteSyncCommandReport | null
-	fromCache: boolean | null
-}
-
-export type RemoteSyncExecutionSummary = {
-	action: RemoteSyncSummaryAction
-	status: RemoteSyncSummaryStatus
-	profileId: string | null
-	profileName: string
-	usedConnectionCache: boolean
-	errorSummary: string | null
-	reports: {
-		push: RemoteSyncCommandReport | null
-		pull: RemoteSyncCommandReport | null
-	}
-	steps: RemoteSyncStepSummary[]
-}
+import type {
+	RemoteDbProfile,
+	RemoteSyncCommandReport,
+	RemoteSyncExecutionSummary,
+	RemoteSyncSummaryAction,
+	RemoteSyncSummaryStepType,
+} from '@/types/shared/remote-sync'
+import { resolveErrorDetails } from '@/utils/error-message'
 
 type EnsureConnectionResult = {
 	profile: RemoteDbProfile
@@ -40,18 +20,30 @@ type EnsureConnectionResult = {
 
 type RemoteSyncDirection = 'push' | 'pull'
 
-export function useRemoteSyncActions() {
+type RemoteSyncActionsController = ReturnType<typeof createRemoteSyncActions>
+
+let remoteSyncActionsSingleton: RemoteSyncActionsController | null = null
+
+function translate(key: string, params?: Record<string, unknown>) {
+	return params ? i18n.global.t(key, params) : i18n.global.t(key)
+}
+
+function createRemoteSyncActions() {
 	const remoteSyncStore = useRemoteSyncStore()
-	const { t } = useI18n({ useScope: 'global' })
 	let syncQueue: Promise<unknown> = Promise.resolve()
 
 	const isPushing = ref(false)
 	const isPulling = ref(false)
 	const isSyncingNow = ref(false)
 	const syncError = ref<string | null>(null)
-	const syncHistory = computed(() => remoteSyncStore.syncHistory)
-	const lastPushReport = computed(() => syncHistory.value.find((entry) => entry.direction === 'push')?.report ?? null)
-	const lastPullReport = computed(() => syncHistory.value.find((entry) => entry.direction === 'pull')?.report ?? null)
+	const lastPushReport = computed(() => {
+		const latestResult = remoteSyncStore.getLatestResult(remoteSyncStore.activeProfileId)
+		return latestResult?.reports.push ?? null
+	})
+	const lastPullReport = computed(() => {
+		const latestResult = remoteSyncStore.getLatestResult(remoteSyncStore.activeProfileId)
+		return latestResult?.reports.pull ?? null
+	})
 	const lastPushedAt = computed(() => remoteSyncStore.getLastSyncAt(remoteSyncStore.activeProfileId, 'push'))
 	const lastPulledAt = computed(() => remoteSyncStore.getLastSyncAt(remoteSyncStore.activeProfileId, 'pull'))
 
@@ -64,11 +56,17 @@ export function useRemoteSyncActions() {
 	}
 
 	function normalizeSyncError(error: unknown, fallbackKey: string) {
-		const message = resolveErrorMessage(error, t, { fallbackKey })
-		if (/pool timed out while waiting for an open connection/i.test(message)) {
-			return new Error(t('settings.remoteSync.errors.connectionPoolTimeout'))
+		const details = resolveErrorDetails(error, translate, { fallbackKey })
+		if (/pool timed out while waiting for an open connection/i.test(details.message)) {
+			return {
+				code: details.code,
+				message: translate('settings.remoteSync.errors.connectionPoolTimeout'),
+			}
 		}
-		return new Error(message)
+		return {
+			code: details.code,
+			message: details.message,
+		}
 	}
 
 	function createSummary(action: RemoteSyncSummaryAction): RemoteSyncExecutionSummary {
@@ -79,6 +77,7 @@ export function useRemoteSyncActions() {
 			profileName: '',
 			usedConnectionCache: false,
 			errorSummary: null,
+			errorCode: null,
 			reports: {
 				push: null,
 				pull: null,
@@ -101,15 +100,19 @@ export function useRemoteSyncActions() {
 		await remoteSyncStore.load()
 	}
 
-	async function resolveActiveProfileAndUrl() {
+	async function resolveProfileAndUrl(profileId?: string | null) {
 		await ensureStoreLoaded()
-		const profile = remoteSyncStore.activeProfile
+		const resolvedProfileId = profileId ?? remoteSyncStore.activeProfileId
+		if (!resolvedProfileId) {
+			throw new Error(translate('settings.remoteSync.errors.noActiveProfile'))
+		}
+		const profile = remoteSyncStore.profiles.find((item) => item.id === resolvedProfileId) ?? null
 		if (!profile) {
-			throw new Error(t('settings.remoteSync.errors.noActiveProfile'))
+			throw new Error(translate('settings.remoteSync.errors.noActiveProfile'))
 		}
 		const url = await remoteSyncStore.getProfileUrl(profile.id)
 		if (!url) {
-			throw new Error(t('settings.remoteSync.errors.noDatabaseUrl'))
+			throw new Error(translate('settings.remoteSync.errors.noDatabaseUrl'))
 		}
 		return {
 			profile,
@@ -117,8 +120,11 @@ export function useRemoteSyncActions() {
 		}
 	}
 
-	async function ensureConnectionReady(fallbackKey: string): Promise<EnsureConnectionResult> {
-		const { profile, databaseUrl } = await resolveActiveProfileAndUrl()
+	async function ensureConnectionReady(
+		fallbackKey: string,
+		profileId?: string | null,
+	): Promise<EnsureConnectionResult> {
+		const { profile, databaseUrl } = await resolveProfileAndUrl(profileId)
 		if (remoteSyncStore.isConnectionHealthy(profile.id, databaseUrl)) {
 			return {
 				profile,
@@ -156,28 +162,18 @@ export function useRemoteSyncActions() {
 			} catch (cacheError) {
 				logError('ensureConnectionReady:cache:error:error', cacheError)
 			}
-			throw normalizedError
+			const e = new Error(normalizedError.message)
+			;(e as Error & { code?: string | null }).code = normalizedError.code
+			throw e
 		}
 	}
 
 	async function runSyncDirection(
 		direction: RemoteSyncDirection,
-		profile: RemoteDbProfile,
 		databaseUrl: string,
 	): Promise<RemoteSyncCommandReport> {
 		const command = direction === 'push' ? 'push_to_neon' : 'pull_from_neon'
-		const report = await tauriInvoke<RemoteSyncCommandReport>(command, { args: { databaseUrl } })
-		try {
-			await remoteSyncStore.appendSyncHistory({
-				direction,
-				profileId: profile.id,
-				profileName: profile.name,
-				report,
-			})
-		} catch (error) {
-			logError(`appendSyncHistory:${direction}:error`, error)
-		}
-		return report
+		return tauriInvoke<RemoteSyncCommandReport>(command, { args: { databaseUrl } })
 	}
 
 	function appendFailedStep(
@@ -191,12 +187,23 @@ export function useRemoteSyncActions() {
 			type,
 			status: 'failed',
 			error: normalizedError.message,
+			errorCode: normalizedError.code,
 			report: null,
 			fromCache: type === 'ensure' ? false : null,
 		})
 		summary.status = 'failed'
 		summary.errorSummary = normalizedError.message
+		summary.errorCode = normalizedError.code
 		syncError.value = normalizedError.message
+	}
+
+	async function persistExecutionSummary(summary: RemoteSyncExecutionSummary) {
+		try {
+			await remoteSyncStore.recordSyncExecution(summary)
+		} catch (error) {
+			logError('recordSyncExecution:error', error)
+		}
+		return summary
 	}
 
 	async function runSingleDirection(
@@ -204,6 +211,7 @@ export function useRemoteSyncActions() {
 		action: RemoteSyncSummaryAction,
 		loadingFlag: typeof isPushing,
 		fallbackKey: string,
+		profileId?: string | null,
 	): Promise<RemoteSyncExecutionSummary> {
 		return enqueueSync(async () => {
 			const summary = createSummary(action)
@@ -211,7 +219,7 @@ export function useRemoteSyncActions() {
 			syncError.value = null
 
 			try {
-				const ready = await ensureConnectionReady(fallbackKey)
+				const ready = await ensureConnectionReady(fallbackKey, profileId)
 				summary.profileId = ready.profile.id
 				summary.profileName = ready.profile.name
 				summary.usedConnectionCache = ready.fromCache
@@ -219,21 +227,23 @@ export function useRemoteSyncActions() {
 					type: 'ensure',
 					status: 'success',
 					error: null,
+					errorCode: null,
 					report: null,
 					fromCache: ready.fromCache,
 				})
 
-				const report = await runSyncDirection(direction, ready.profile, ready.databaseUrl)
+				const report = await runSyncDirection(direction, ready.databaseUrl)
 				summary.reports[direction] = report
 				summary.steps.push({
 					type: direction,
 					status: 'success',
 					error: null,
+					errorCode: null,
 					report,
 					fromCache: null,
 				})
 				summary.status = 'success'
-				return summary
+				return persistExecutionSummary(summary)
 			} catch (error) {
 				const hasEnsureStep = summary.steps.some((step) => step.type === 'ensure')
 				if (hasEnsureStep) {
@@ -241,29 +251,29 @@ export function useRemoteSyncActions() {
 				} else {
 					appendFailedStep(summary, 'ensure', error, fallbackKey)
 				}
-				return summary
+				return persistExecutionSummary(summary)
 			} finally {
 				loadingFlag.value = false
 			}
 		})
 	}
 
-	async function pushToRemote() {
-		return runSingleDirection('push', 'push', isPushing, 'settings.remoteSync.toast.pushFailedTitle')
+	async function pushToRemote(profileId?: string | null) {
+		return runSingleDirection('push', 'push', isPushing, 'settings.remoteSync.toast.pushFailedTitle', profileId)
 	}
 
-	async function pullFromRemote() {
-		return runSingleDirection('pull', 'pull', isPulling, 'settings.remoteSync.toast.pullFailedTitle')
+	async function pullFromRemote(profileId?: string | null) {
+		return runSingleDirection('pull', 'pull', isPulling, 'settings.remoteSync.toast.pullFailedTitle', profileId)
 	}
 
-	async function syncNow() {
+	async function syncNow(profileId?: string | null) {
 		return enqueueSync(async () => {
 			const summary = createSummary('syncNow')
 			isSyncingNow.value = true
 			syncError.value = null
 
 			try {
-				const ready = await ensureConnectionReady('settings.remoteSync.toast.connectionFailedTitle')
+				const ready = await ensureConnectionReady('settings.remoteSync.toast.connectionFailedTitle', profileId)
 				summary.profileId = ready.profile.id
 				summary.profileName = ready.profile.name
 				summary.usedConnectionCache = ready.fromCache
@@ -271,17 +281,19 @@ export function useRemoteSyncActions() {
 					type: 'ensure',
 					status: 'success',
 					error: null,
+					errorCode: null,
 					report: null,
 					fromCache: ready.fromCache,
 				})
 
 				try {
-					const pullReport = await runSyncDirection('pull', ready.profile, ready.databaseUrl)
+					const pullReport = await runSyncDirection('pull', ready.databaseUrl)
 					summary.reports.pull = pullReport
 					summary.steps.push({
 						type: 'pull',
 						status: 'success',
 						error: null,
+						errorCode: null,
 						report: pullReport,
 						fromCache: null,
 					})
@@ -291,27 +303,29 @@ export function useRemoteSyncActions() {
 						type: 'push',
 						status: 'skipped',
 						error: null,
+						errorCode: null,
 						report: null,
 						fromCache: null,
 					})
-					return summary
+					return persistExecutionSummary(summary)
 				}
 
 				try {
-					const pushReport = await runSyncDirection('push', ready.profile, ready.databaseUrl)
+					const pushReport = await runSyncDirection('push', ready.databaseUrl)
 					summary.reports.push = pushReport
 					summary.steps.push({
 						type: 'push',
 						status: 'success',
 						error: null,
+						errorCode: null,
 						report: pushReport,
 						fromCache: null,
 					})
 					summary.status = 'success'
-					return summary
+					return persistExecutionSummary(summary)
 				} catch (error) {
 					appendFailedStep(summary, 'push', error, 'settings.remoteSync.toast.pushFailedTitle')
-					return summary
+					return persistExecutionSummary(summary)
 				}
 			} catch (error) {
 				appendFailedStep(summary, 'ensure', error, 'settings.remoteSync.toast.connectionFailedTitle')
@@ -319,6 +333,7 @@ export function useRemoteSyncActions() {
 					type: 'pull',
 					status: 'skipped',
 					error: null,
+					errorCode: null,
 					report: null,
 					fromCache: null,
 				})
@@ -326,10 +341,11 @@ export function useRemoteSyncActions() {
 					type: 'push',
 					status: 'skipped',
 					error: null,
+					errorCode: null,
 					report: null,
 					fromCache: null,
 				})
-				return summary
+				return persistExecutionSummary(summary)
 			} finally {
 				isSyncingNow.value = false
 			}
@@ -344,7 +360,6 @@ export function useRemoteSyncActions() {
 		syncError,
 		lastPushedAt,
 		lastPulledAt,
-		syncHistory,
 		lastPushReport,
 		lastPullReport,
 		hasActiveProfile,
@@ -353,4 +368,9 @@ export function useRemoteSyncActions() {
 		pullFromRemote,
 		syncNow,
 	}
+}
+
+export function useRemoteSyncActions() {
+	remoteSyncActionsSingleton ??= createRemoteSyncActions()
+	return remoteSyncActionsSingleton
 }

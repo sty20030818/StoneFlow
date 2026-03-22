@@ -2,7 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 
 import { validateWithZod } from '@/composables/base/zod'
 import { postgresUrlSchema, remoteImportListSchema, remoteProfileSchema } from '@/composables/domain/validation/forms'
-import { tauriInvoke } from '@/services/tauri/invoke'
+import { testRemoteSyncConnection } from '@/services/remote-sync/remote-sync-runtime'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 import type { RemoteDbProfile, RemoteDbProfileInput } from '@/types/shared/remote-sync'
 import { resolveErrorMessage } from '@/utils/error-message'
@@ -15,31 +15,28 @@ type Logger = (...args: unknown[]) => void
 export function useRemoteSyncProfilesPanel(options: {
 	t: Translate
 	locale: Ref<string>
-	profiles: Ref<RemoteDbProfile[]>
 	setStatus: (status: 'missing' | 'ok' | 'error' | 'testing' | 'syncing') => void
 	refreshStatusByActiveProfileCache: () => Promise<void>
 	persistConnectionHealthSafely: (
 		input: Parameters<ReturnType<typeof useRemoteSyncStore>['setConnectionHealth']>[0],
 		logTag: string,
 	) => Promise<void>
-	onProfilesMutated: () => Promise<void>
 	log: Logger
 	logError: Logger
 }) {
 	const {
 		t,
 		locale,
-		profiles,
 		setStatus,
 		refreshStatusByActiveProfileCache,
 		persistConnectionHealthSafely,
-		onProfilesMutated,
 		log,
 		logError,
 	} = options
 	const remoteSyncStore = useRemoteSyncStore()
 	const toast = useToast()
 
+	const profiles = computed(() => remoteSyncStore.profiles)
 	const activeProfileId = computed(() => remoteSyncStore.activeProfileId)
 	const activeProfile = computed(() => remoteSyncStore.activeProfile)
 
@@ -135,7 +132,7 @@ export function useRemoteSyncProfilesPanel(options: {
 			log('test:new:start')
 			testingNew.value = true
 			setStatus('testing')
-			await tauriInvoke('test_neon_connection', { args: { databaseUrl: newUrl.value.trim() } })
+			await testRemoteSyncConnection(newUrl.value.trim())
 			setStatus('ok')
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionOkTitle'),
@@ -167,7 +164,6 @@ export function useRemoteSyncProfilesPanel(options: {
 			log('create:start', { name: newName.value })
 			savingNew.value = true
 			await remoteSyncStore.addProfile({ name: newName.value.trim(), url: newUrl.value.trim() }, 'manual')
-			await onProfilesMutated()
 			newName.value = ''
 			newUrl.value = ''
 			createOpen.value = false
@@ -202,7 +198,7 @@ export function useRemoteSyncProfilesPanel(options: {
 			log('test:edit:start', { profileId: editProfileId.value })
 			testingEdit.value = true
 			setStatus('testing')
-			await tauriInvoke('test_neon_connection', { args: { databaseUrl: editUrl.value.trim() } })
+			await testRemoteSyncConnection(editUrl.value.trim())
 			await persistConnectionHealthSafely(
 				{
 					profileId: editProfileId.value,
@@ -253,7 +249,6 @@ export function useRemoteSyncProfilesPanel(options: {
 			savingEdit.value = true
 			await remoteSyncStore.updateProfileName(editProfileId.value, editName.value.trim())
 			await remoteSyncStore.updateProfileUrl(editProfileId.value, editUrl.value.trim())
-			await onProfilesMutated()
 			editOpen.value = false
 			await refreshStatusByActiveProfileCache()
 			toast.add({
@@ -278,7 +273,6 @@ export function useRemoteSyncProfilesPanel(options: {
 		log('setActive:start', { profileId })
 		try {
 			await remoteSyncStore.setActiveProfile(profileId)
-			await onProfilesMutated()
 			await refreshStatusByActiveProfileCache()
 			log('setActive:done', { profileId })
 		} catch (error) {
@@ -297,7 +291,6 @@ export function useRemoteSyncProfilesPanel(options: {
 			log('delete:start', { profileId: deleteTarget.value.id })
 			deleting.value = true
 			await remoteSyncStore.removeProfile(deleteTarget.value.id)
-			await onProfilesMutated()
 			deleteTarget.value = null
 			setStatus(remoteSyncStore.activeProfileId ? 'ok' : 'missing')
 			toast.add({ title: t('settings.remoteSync.toast.deletedProfileTitle'), color: 'success' })
@@ -331,7 +324,6 @@ export function useRemoteSyncProfilesPanel(options: {
 				url: item.url,
 			}))
 			await remoteSyncStore.importProfiles(items)
-			await onProfilesMutated()
 			importText.value = ''
 			importOpen.value = false
 			await refreshStatusByActiveProfileCache()

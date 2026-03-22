@@ -1,5 +1,5 @@
 /**
- * Remote Sync 功能域公开模型入口。
+ * Remote Sync 功能域当前没有独立模型导出。
+ * 保留入口文件，避免外部路径抖动。
  */
-export * from './query-invalidation'
-export * from './query-keys'
+export {}

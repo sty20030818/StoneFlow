@@ -1045,7 +1045,8 @@ export default {
 					tags: 'Tags',
 					links: 'Links',
 					tasks: 'Tasks',
-					taskActivityLogs: 'Activity Logs',
+					taskActivityLogs: 'Task Logs',
+					projectActivityLogs: 'Project Logs',
 					taskTags: 'Task Tags',
 					taskLinks: 'Task Links',
 					projectTags: 'Project Tags',
@@ -1114,3 +1115,4 @@ export default {
 		unknownError: 'Unknown error',
 	},
 } as const
+

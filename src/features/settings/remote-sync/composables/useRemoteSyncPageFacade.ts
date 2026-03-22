@@ -7,8 +7,6 @@ import { createModalLayerUi } from '@/config/ui-layer'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 import { resolveErrorMessage } from '@/utils/error-message'
 
-import { invalidateRemoteSyncQueries } from '../model'
-import { useRemoteSyncHistoryQuery, useRemoteSyncProfilesQuery } from '../queries'
 import { useRemoteSyncAutoSync } from './useRemoteSyncAutoSync'
 import { useRemoteSyncHistoryPanel } from './useRemoteSyncHistoryPanel'
 import { useRemoteSyncProfilesPanel } from './useRemoteSyncProfilesPanel'
@@ -31,12 +29,6 @@ export function useRemoteSyncPageFacade() {
 	}
 
 	const remoteSyncActions = useRemoteSyncActions()
-	const profilesQuery = useRemoteSyncProfilesQuery()
-	const historyQuery = useRemoteSyncHistoryQuery()
-
-	async function refreshRemoteSyncQueries() {
-		await invalidateRemoteSyncQueries()
-	}
 
 	const statusPanel = useRemoteSyncStatus({
 		t,
@@ -46,11 +38,9 @@ export function useRemoteSyncPageFacade() {
 	const profilesPanel = useRemoteSyncProfilesPanel({
 		t,
 		locale,
-		profiles: profilesQuery.profiles,
 		setStatus: statusPanel.setStatus,
 		refreshStatusByActiveProfileCache: statusPanel.refreshStatusByActiveProfileCache,
 		persistConnectionHealthSafely: statusPanel.persistConnectionHealthSafely,
-		onProfilesMutated: refreshRemoteSyncQueries,
 		log,
 		logError,
 	})
@@ -76,17 +66,11 @@ export function useRemoteSyncPageFacade() {
 		lastPulledAt: syncPanel.lastPulledAt,
 		lastPushReport: syncPanel.lastPushReport,
 		lastPullReport: syncPanel.lastPullReport,
-		syncHistory: historyQuery.syncHistory,
-		onHistoryMutated: refreshRemoteSyncQueries,
-		logError,
 	})
 
 	const autoSyncPanel = useRemoteSyncAutoSync({
 		t,
 		locale,
-		isSyncing: syncPanel.isSyncing,
-		isTestingAnyConnection: syncPanel.isTestingAnyConnection,
-		runSyncNowSilently: syncPanel.runSyncNowSilently,
 		logError,
 	})
 
@@ -94,11 +78,7 @@ export function useRemoteSyncPageFacade() {
 		log('mount:load:start')
 		try {
 			await remoteSyncStore.load()
-			await refreshRemoteSyncQueries()
 			await statusPanel.refreshStatusByActiveProfileCache()
-			if (autoSyncPanel.syncPreferences.value.enabled && autoSyncPanel.syncPreferences.value.runOnAppStart) {
-				void autoSyncPanel.triggerAutoSync('appStart')
-			}
 			log('mount:load:done', { activeProfileId: remoteSyncStore.activeProfileId })
 		} catch (error) {
 			statusPanel.setStatus('error')

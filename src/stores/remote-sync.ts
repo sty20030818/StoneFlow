@@ -1,40 +1,40 @@
 import { defineStore } from 'pinia'
-import { computed, reactive, ref, toRaw } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 import {
 	DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS,
-	DEFAULT_REMOTE_SYNC_PREFERENCES,
+	DEFAULT_REMOTE_SYNC_POLICY,
 	DEFAULT_REMOTE_SYNC_SETTINGS,
 	remoteSyncStore,
 } from '@/services/tauri/remote-sync-store'
 import { getRemoteSyncSecret, removeRemoteSyncSecret, setRemoteSyncSecret } from '@/services/tauri/stronghold'
+import {
+	buildProfileStateFromLegacy,
+	cloneSettings,
+	createDefaultProfileState,
+	EMPTY_PROFILE_SYNC_TIME,
+	hashDatabaseUrl,
+	normalizeConnectionHealthMap,
+	isRecord,
+	normalizeName,
+	normalizeProfileSyncTimes,
+	normalizeSyncPolicy,
+	nowIso,
+	sanitizeByProfiles,
+	toNonNegativeNumber,
+	toPositiveNumber,
+} from '@/stores/remote-sync-support'
 import type {
 	RemoteDbProfile,
 	RemoteDbProfileInput,
-	RemoteSyncCommandReport,
 	RemoteSyncConnectionHealth,
 	RemoteSyncConnectionHealthResult,
 	RemoteSyncDirection,
-	RemoteSyncHistoryItem,
-	RemoteSyncPreferences,
+	RemoteSyncExecutionSummary,
+	RemoteSyncPolicy,
 	RemoteSyncProfileSyncTime,
 	RemoteSyncSettings,
 } from '@/types/shared/remote-sync'
-
-const SYNC_HISTORY_LIMIT = 12
-
-const EMPTY_PROFILE_SYNC_TIME: RemoteSyncProfileSyncTime = {
-	lastPushedAt: 0,
-	lastPulledAt: 0,
-}
-
-function nowIso() {
-	return new Date().toISOString()
-}
-
-function normalizeName(name: string) {
-	return name.trim()
-}
 
 function log(...args: unknown[]) {
 	// console.log('[remote-sync-store]', ...args)
@@ -46,133 +46,6 @@ function logError(...args: unknown[]) {
 	void args
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function toNonNegativeNumber(value: unknown, fallback: number) {
-	return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback
-}
-
-function toPositiveNumber(value: unknown, fallback: number) {
-	return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback
-}
-
-function hashDatabaseUrl(url: string) {
-	const normalized = url.trim().toLowerCase()
-	let hash = 0x811c9dc5
-	for (let index = 0; index < normalized.length; index += 1) {
-		hash ^= normalized.charCodeAt(index)
-		hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)
-	}
-	return `fnv1a_${(hash >>> 0).toString(16)}`
-}
-
-function normalizeConnectionHealthResult(input: unknown): RemoteSyncConnectionHealthResult {
-	return input === 'error' ? 'error' : 'ok'
-}
-
-function normalizeSyncPreferences(input: unknown): RemoteSyncPreferences {
-	if (!isRecord(input)) {
-		return structuredClone(DEFAULT_REMOTE_SYNC_PREFERENCES)
-	}
-	return {
-		enabled: Boolean(input.enabled),
-		intervalMinutes: toPositiveNumber(input.intervalMinutes, DEFAULT_REMOTE_SYNC_PREFERENCES.intervalMinutes),
-		runOnAppStart: Boolean(input.runOnAppStart),
-		runOnWindowFocus: Boolean(input.runOnWindowFocus),
-		retryCount: toNonNegativeNumber(input.retryCount, DEFAULT_REMOTE_SYNC_PREFERENCES.retryCount),
-	}
-}
-
-function normalizeProfileSyncTime(input: unknown): RemoteSyncProfileSyncTime {
-	if (!isRecord(input)) {
-		return { ...EMPTY_PROFILE_SYNC_TIME }
-	}
-	return {
-		lastPushedAt: toNonNegativeNumber(input.lastPushedAt, 0),
-		lastPulledAt: toNonNegativeNumber(input.lastPulledAt, 0),
-	}
-}
-
-function normalizeProfileSyncTimes(input: unknown) {
-	if (!isRecord(input)) return {} as Record<string, RemoteSyncProfileSyncTime>
-	const normalized: Record<string, RemoteSyncProfileSyncTime> = {}
-	for (const [profileId, item] of Object.entries(input)) {
-		if (!profileId) continue
-		normalized[profileId] = normalizeProfileSyncTime(item)
-	}
-	return normalized
-}
-
-function normalizeConnectionHealthEntry(profileId: string, input: unknown): RemoteSyncConnectionHealth | null {
-	if (!isRecord(input)) return null
-	if (typeof input.urlHash !== 'string' || !input.urlHash) return null
-	return {
-		profileId,
-		urlHash: input.urlHash,
-		lastTestedAt: toNonNegativeNumber(input.lastTestedAt, 0),
-		result: normalizeConnectionHealthResult(input.result),
-		errorDigest: typeof input.errorDigest === 'string' ? input.errorDigest : null,
-		ttlMs: toPositiveNumber(input.ttlMs, DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS),
-	}
-}
-
-function normalizeConnectionHealthMap(input: unknown) {
-	if (!isRecord(input)) return {} as Record<string, RemoteSyncConnectionHealth>
-	const normalized: Record<string, RemoteSyncConnectionHealth> = {}
-	for (const [profileId, item] of Object.entries(input)) {
-		if (!profileId) continue
-		const parsed = normalizeConnectionHealthEntry(profileId, item)
-		if (!parsed) continue
-		normalized[profileId] = parsed
-	}
-	return normalized
-}
-
-function cloneSettings(input: RemoteSyncSettings): RemoteSyncSettings {
-	const rawSettings = toRaw(input)
-	const clonedConnectionHealth: RemoteSyncSettings['connectionHealth'] = {}
-	for (const [profileId, item] of Object.entries(toRaw(rawSettings.connectionHealth))) {
-		clonedConnectionHealth[profileId] = { ...toRaw(item) }
-	}
-	const clonedProfileSyncTimes: RemoteSyncSettings['profileSyncTimes'] = {}
-	for (const [profileId, item] of Object.entries(toRaw(rawSettings.profileSyncTimes))) {
-		clonedProfileSyncTimes[profileId] = { ...toRaw(item) }
-	}
-
-	return {
-		profiles: toRaw(rawSettings.profiles).map((profile) => ({ ...toRaw(profile) })),
-		activeProfileId: rawSettings.activeProfileId,
-		connectionHealth: clonedConnectionHealth,
-		syncPreferences: { ...toRaw(rawSettings.syncPreferences) },
-		profileSyncTimes: clonedProfileSyncTimes,
-		syncHistory: toRaw(rawSettings.syncHistory).map((item) => ({
-			...toRaw(item),
-			report: structuredClone(toRaw(item.report)),
-		})),
-	}
-}
-
-function sanitizeByProfiles(input: RemoteSyncSettings): RemoteSyncSettings {
-	const next = cloneSettings(input)
-	const validIds = new Set(next.profiles.map((profile) => profile.id))
-	for (const profileId of Object.keys(next.connectionHealth)) {
-		if (!validIds.has(profileId)) {
-			delete next.connectionHealth[profileId]
-		}
-	}
-	for (const profileId of Object.keys(next.profileSyncTimes)) {
-		if (!validIds.has(profileId)) {
-			delete next.profileSyncTimes[profileId]
-		}
-	}
-	if (next.activeProfileId && !validIds.has(next.activeProfileId)) {
-		next.activeProfileId = next.profiles[0]?.id ?? null
-	}
-	return next
-}
-
 export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	const loaded = ref(false)
 	const state = reactive<RemoteSyncSettings>(structuredClone(DEFAULT_REMOTE_SYNC_SETTINGS))
@@ -181,18 +54,28 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	const activeProfileId = computed(() => state.activeProfileId)
 	const activeProfile = computed(() => state.profiles.find((p) => p.id === state.activeProfileId) ?? null)
 	const hasProfiles = computed(() => state.profiles.length > 0)
-	const syncHistory = computed(() => state.syncHistory)
-	const connectionHealth = computed(() => state.connectionHealth)
-	const syncPreferences = computed(() => state.syncPreferences)
-	const profileSyncTimes = computed(() => state.profileSyncTimes)
+	const profileStates = computed(() => state.profileStates)
+	const syncPreferences = computed(() => getSyncPolicy(state.activeProfileId))
+	const profileSyncTimes = computed<Record<string, RemoteSyncProfileSyncTime>>(() => {
+		const result: Record<string, RemoteSyncProfileSyncTime> = {}
+		for (const [profileId, profileState] of Object.entries(state.profileStates)) {
+			result[profileId] = { ...profileState.syncTime }
+		}
+		return result
+	})
+	const connectionHealth = computed<Record<string, RemoteSyncConnectionHealth>>(() => {
+		const result: Record<string, RemoteSyncConnectionHealth> = {}
+		for (const [profileId, profileState] of Object.entries(state.profileStates)) {
+			if (!profileState.connectionHealth) continue
+			result[profileId] = { ...profileState.connectionHealth }
+		}
+		return result
+	})
 
 	function applySettings(next: RemoteSyncSettings) {
 		state.profiles = next.profiles
 		state.activeProfileId = next.activeProfileId
-		state.connectionHealth = next.connectionHealth
-		state.syncPreferences = next.syncPreferences
-		state.profileSyncTimes = next.profileSyncTimes
-		state.syncHistory = next.syncHistory
+		state.profileStates = next.profileStates
 	}
 
 	async function persistSettings(next: RemoteSyncSettings) {
@@ -209,16 +92,27 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 	async function load() {
 		log('load:start')
 		try {
-			const stored = await remoteSyncStore.get<RemoteSyncSettings>('remoteSync')
-			const storedProfiles = stored?.profiles
-			const storedSyncHistory = stored?.syncHistory
+			const stored = (await remoteSyncStore.get('remoteSync')) as Record<string, unknown> | null
+			const storedProfiles = Array.isArray(stored?.profiles) ? (stored?.profiles as RemoteDbProfile[]) : []
+			const legacyConnectionHealth = normalizeConnectionHealthMap(stored?.connectionHealth)
+			const legacyProfileSyncTimes = normalizeProfileSyncTimes(stored?.profileSyncTimes)
+			const legacySyncPolicy = normalizeSyncPolicy(stored?.syncPreferences)
+			const storedProfileStates: Record<string, unknown> = isRecord(stored?.profileStates) ? stored.profileStates : {}
 			const next: RemoteSyncSettings = sanitizeByProfiles({
-				profiles: Array.isArray(storedProfiles) ? storedProfiles : [],
-				activeProfileId: stored?.activeProfileId ?? null,
-				connectionHealth: normalizeConnectionHealthMap(stored?.connectionHealth),
-				syncPreferences: normalizeSyncPreferences(stored?.syncPreferences),
-				profileSyncTimes: normalizeProfileSyncTimes(stored?.profileSyncTimes),
-				syncHistory: Array.isArray(storedSyncHistory) ? storedSyncHistory : [],
+				profiles: storedProfiles,
+				activeProfileId: typeof stored?.activeProfileId === 'string' ? stored.activeProfileId : null,
+				profileStates: Object.fromEntries(
+					storedProfiles.map((profile) => [
+						profile.id,
+						buildProfileStateFromLegacy({
+							profile,
+							storedState: storedProfileStates[profile.id],
+							legacyConnectionHealth,
+							legacyProfileSyncTimes,
+							legacySyncPolicy,
+						}),
+					]),
+				),
 			})
 			applySettings(next)
 			loaded.value = true
@@ -243,8 +137,26 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		}
 	}
 
+	function getProfileState(profileId: string | null) {
+		if (!profileId) return null
+		return state.profileStates[profileId] ?? null
+	}
+
+	function getSyncPolicy(profileId: string | null) {
+		const profileState = getProfileState(profileId)
+		return profileState ? profileState.syncPolicy : structuredClone(DEFAULT_REMOTE_SYNC_POLICY)
+	}
+
+	function getLatestResult(profileId: string | null) {
+		return getProfileState(profileId)?.latestResult ?? null
+	}
+
+	function getLatestDiagnostic(profileId: string | null) {
+		return getProfileState(profileId)?.latestDiagnostic ?? null
+	}
+
 	function getConnectionHealth(profileId: string, databaseUrl?: string) {
-		const entry = state.connectionHealth[profileId]
+		const entry = state.profileStates[profileId]?.connectionHealth ?? null
 		if (!entry) return null
 		if (databaseUrl && entry.urlHash !== hashDatabaseUrl(databaseUrl)) {
 			return null
@@ -267,7 +179,8 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		ttlMs?: number
 	}) {
 		const next = cloneSettings(state)
-		next.connectionHealth[input.profileId] = {
+		const profileState = next.profileStates[input.profileId] ?? createDefaultProfileState(input.profileId)
+		profileState.connectionHealth = {
 			profileId: input.profileId,
 			urlHash: hashDatabaseUrl(input.databaseUrl),
 			lastTestedAt: toNonNegativeNumber(input.lastTestedAt, Date.now()),
@@ -275,22 +188,24 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 			errorDigest: input.errorDigest ?? null,
 			ttlMs: toPositiveNumber(input.ttlMs, DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS),
 		}
+		next.profileStates[input.profileId] = profileState
 		await commitSettings(next)
 	}
 
 	async function clearConnectionHealth(profileId?: string) {
 		const next = cloneSettings(state)
 		if (!profileId) {
-			next.connectionHealth = {}
-		} else {
-			delete next.connectionHealth[profileId]
+			for (const id of Object.keys(next.profileStates)) {
+				next.profileStates[id].connectionHealth = null
+			}
+		} else if (next.profileStates[profileId]) {
+			next.profileStates[profileId].connectionHealth = null
 		}
 		await commitSettings(next)
 	}
 
 	function getProfileSyncTime(profileId: string | null) {
-		if (!profileId) return { ...EMPTY_PROFILE_SYNC_TIME }
-		return state.profileSyncTimes[profileId] ?? { ...EMPTY_PROFILE_SYNC_TIME }
+		return getProfileState(profileId)?.syncTime ?? { ...EMPTY_PROFILE_SYNC_TIME }
 	}
 
 	function getLastSyncAt(profileId: string | null, direction: RemoteSyncDirection) {
@@ -300,26 +215,30 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 
 	async function setLastSyncAt(profileId: string, direction: RemoteSyncDirection, syncedAt: number) {
 		const next = cloneSettings(state)
-		const current = next.profileSyncTimes[profileId] ?? { ...EMPTY_PROFILE_SYNC_TIME }
-		next.profileSyncTimes[profileId] =
+		const profileState = next.profileStates[profileId] ?? createDefaultProfileState(profileId)
+		profileState.syncTime =
 			direction === 'push'
 				? {
-						lastPushedAt: toNonNegativeNumber(syncedAt, 0),
-						lastPulledAt: current.lastPulledAt,
-					}
+					lastPushedAt: toNonNegativeNumber(syncedAt, 0),
+					lastPulledAt: profileState.syncTime.lastPulledAt,
+				}
 				: {
-						lastPushedAt: current.lastPushedAt,
-						lastPulledAt: toNonNegativeNumber(syncedAt, 0),
-					}
+					lastPushedAt: profileState.syncTime.lastPushedAt,
+					lastPulledAt: toNonNegativeNumber(syncedAt, 0),
+				}
+		next.profileStates[profileId] = profileState
 		await commitSettings(next)
 	}
 
-	async function updateSyncPreferences(input: Partial<RemoteSyncPreferences>) {
+	async function updateSyncPreferences(input: Partial<RemoteSyncPolicy>, profileId = state.activeProfileId) {
+		if (!profileId) return
 		const next = cloneSettings(state)
-		next.syncPreferences = normalizeSyncPreferences({
-			...next.syncPreferences,
+		const profileState = next.profileStates[profileId] ?? createDefaultProfileState(profileId)
+		profileState.syncPolicy = normalizeSyncPolicy({
+			...profileState.syncPolicy,
 			...input,
 		})
+		next.profileStates[profileId] = profileState
 		await commitSettings(next)
 	}
 
@@ -340,7 +259,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		}
 		const next = cloneSettings(state)
 		next.profiles.push(profile)
-		next.profileSyncTimes[id] = { ...EMPTY_PROFILE_SYNC_TIME }
+		next.profileStates[id] = createDefaultProfileState(id)
 		if (options?.activate ?? true) {
 			next.activeProfileId = id
 		}
@@ -391,8 +310,8 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		const normalizedInputUrl = url.trim()
 		const normalizedPreviousUrl = previousSecret?.trim() ?? ''
 		const shouldInvalidateHealth = !previousSecretLoaded || normalizedPreviousUrl !== normalizedInputUrl
-		if (shouldInvalidateHealth) {
-			delete next.connectionHealth[profileId]
+		if (shouldInvalidateHealth && next.profileStates[profileId]) {
+			next.profileStates[profileId].connectionHealth = null
 		}
 
 		try {
@@ -444,8 +363,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 
 		const next = cloneSettings(state)
 		next.profiles = next.profiles.filter((p) => p.id !== profileId)
-		delete next.connectionHealth[profileId]
-		delete next.profileSyncTimes[profileId]
+		delete next.profileStates[profileId]
 		if (next.activeProfileId === profileId) {
 			next.activeProfileId = next.profiles[0]?.id ?? null
 		}
@@ -508,45 +426,54 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		}
 	}
 
-	async function appendSyncHistory(input: {
-		direction: RemoteSyncDirection
-		profileId: string | null
-		profileName: string
-		report: RemoteSyncCommandReport
-	}) {
-		log('appendSyncHistory:start', { direction: input.direction, profileId: input.profileId })
-		const item: RemoteSyncHistoryItem = {
-			id: crypto.randomUUID(),
-			profileId: input.profileId,
-			profileName: normalizeName(input.profileName),
-			direction: input.direction,
-			syncedAt: input.report.syncedAt,
-			report: input.report,
-			createdAt: nowIso(),
-		}
+	async function recordSyncExecution(summary: RemoteSyncExecutionSummary) {
+		if (!summary.profileId) return
 		const next = cloneSettings(state)
-		next.syncHistory = [item, ...next.syncHistory].slice(0, SYNC_HISTORY_LIMIT)
-		if (input.profileId) {
-			const profileSyncTime = next.profileSyncTimes[input.profileId] ?? { ...EMPTY_PROFILE_SYNC_TIME }
-			next.profileSyncTimes[input.profileId] =
-				input.direction === 'push'
-					? { lastPushedAt: input.report.syncedAt, lastPulledAt: profileSyncTime.lastPulledAt }
-					: { lastPushedAt: profileSyncTime.lastPushedAt, lastPulledAt: input.report.syncedAt }
+		const profileState = next.profileStates[summary.profileId] ?? createDefaultProfileState(summary.profileId)
+		const syncedAt = Math.max(
+			summary.reports.push?.syncedAt ?? 0,
+			summary.reports.pull?.syncedAt ?? 0,
+			Date.now(),
+		)
+		profileState.lastRunAt = syncedAt
+		profileState.latestDiagnostic = structuredClone(summary)
+		if (summary.reports.push) {
+			profileState.syncTime.lastPushedAt = summary.reports.push.syncedAt
 		}
-		await commitSettings(next)
-		log('appendSyncHistory:done', { total: state.syncHistory.length })
-	}
-
-	async function clearSyncHistory(direction?: RemoteSyncDirection) {
-		log('clearSyncHistory:start', { direction: direction ?? 'all' })
-		const next = cloneSettings(state)
-		if (!direction) {
-			next.syncHistory = []
-		} else {
-			next.syncHistory = next.syncHistory.filter((item) => item.direction !== direction)
+		if (summary.reports.pull) {
+			profileState.syncTime.lastPulledAt = summary.reports.pull.syncedAt
 		}
+		if (summary.status === 'success') {
+			profileState.lastSuccessAt = syncedAt
+			profileState.consecutiveFailures = 0
+			profileState.latestResult = {
+				action: summary.action,
+				status: 'success',
+				syncedAt,
+				errorCode: null,
+				errorMessage: null,
+				reports: {
+					push: summary.reports.push ? structuredClone(summary.reports.push) : null,
+					pull: summary.reports.pull ? structuredClone(summary.reports.pull) : null,
+				},
+			}
+		} else if (summary.status === 'failed') {
+			profileState.lastFailureAt = syncedAt
+			profileState.consecutiveFailures += 1
+			profileState.latestResult = {
+				action: summary.action,
+				status: 'failed',
+				syncedAt,
+				errorCode: summary.errorCode ?? null,
+				errorMessage: summary.errorSummary,
+				reports: {
+					push: summary.reports.push ? structuredClone(summary.reports.push) : null,
+					pull: summary.reports.pull ? structuredClone(summary.reports.pull) : null,
+				},
+			}
+		}
+		next.profileStates[summary.profileId] = profileState
 		await commitSettings(next)
-		log('clearSyncHistory:done', { total: state.syncHistory.length })
 	}
 
 	return {
@@ -555,7 +482,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		activeProfileId,
 		activeProfile,
 		hasProfiles,
-		syncHistory,
+		profileStates,
 		connectionHealth,
 		syncPreferences,
 		profileSyncTimes,
@@ -569,6 +496,10 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		importProfiles,
 		getProfileUrl,
 		getActiveProfileUrl,
+		getProfileState,
+		getSyncPolicy,
+		getLatestResult,
+		getLatestDiagnostic,
 		getConnectionHealth,
 		isConnectionHealthy,
 		setConnectionHealth,
@@ -577,7 +508,6 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		getLastSyncAt,
 		setLastSyncAt,
 		updateSyncPreferences,
-		appendSyncHistory,
-		clearSyncHistory,
+		recordSyncExecution,
 	}
 })

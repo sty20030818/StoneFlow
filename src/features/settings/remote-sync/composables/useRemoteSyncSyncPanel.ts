@@ -1,14 +1,11 @@
 import { computed, ref, type Ref } from 'vue'
 
 import type { useRemoteSyncActions } from '@/composables/useRemoteSyncActions'
-import { invalidateWorkspaceTaskAndProjectQueries } from '@/features/workspace'
-import { tauriInvoke } from '@/services/tauri/invoke'
+import { testRemoteSyncConnection, invalidateAfterRemoteSync } from '@/services/remote-sync/remote-sync-runtime'
 import { useRemoteSyncStore } from '@/stores/remote-sync'
 import type { RemoteSyncCommandReport } from '@/types/shared/remote-sync'
 import { summarizeRemoteSyncReport } from '@/utils/remote-sync-report'
 import { formatDateTime } from '@/utils/time'
-import { resolveErrorMessage } from '@/utils/error-message'
-import { invalidateRemoteSyncQueries } from '../model'
 
 type Translate = (key: string, params?: Record<string, unknown>) => string
 
@@ -17,6 +14,17 @@ type Logger = (...args: unknown[]) => void
 type SyncActionResult = {
 	status: 'success' | 'failed'
 	errorMessage: string | null
+}
+
+type SyncCompletionOptions = {
+	summary: Awaited<ReturnType<ReturnType<typeof useRemoteSyncActions>['syncNow']>>
+	successTitle: string
+	successDescription: string
+	failedTitle: string
+	logTag: 'sync:push' | 'sync:pull' | 'sync:now'
+	refreshWorkspace?: boolean
+	successSyncedAt?: number
+	showToast?: boolean
 }
 
 export function useRemoteSyncSyncPanel(options: {
@@ -86,8 +94,53 @@ export function useRemoteSyncSyncPanel(options: {
 		})
 	}
 
-	async function invalidateRemoteSyncAfterSync() {
-		await invalidateRemoteSyncQueries()
+	async function completeSyncAction(options: SyncCompletionOptions): Promise<SyncActionResult> {
+		const {
+			summary,
+			successTitle,
+			successDescription,
+			failedTitle,
+			logTag,
+			refreshWorkspace = false,
+			successSyncedAt,
+			showToast = true,
+		} = options
+
+		const hasSuccessfulReports = Boolean(summary.reports.pull || summary.reports.push)
+		if (summary.status === 'success' && hasSuccessfulReports) {
+			await invalidateAfterRemoteSync({ refreshWorkspace })
+			setStatus('ok')
+			if (showToast) {
+				toast.add({
+					title: successTitle,
+					description: successDescription,
+					color: 'success',
+				})
+			}
+			log(`${logTag}:done`, {
+				syncedAt: successSyncedAt ?? Date.now(),
+				fromCache: summary.usedConnectionCache,
+			})
+			return {
+				status: 'success',
+				errorMessage: null,
+			}
+		}
+
+		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
+		setStatusByErrorMessage(errorMessage)
+		if (showToast) {
+			toast.add({
+				title: failedTitle,
+				description: errorMessage,
+				color: 'error',
+			})
+		}
+		logError(`${logTag}:error`, errorMessage)
+		return {
+			status: 'failed',
+			errorMessage,
+		}
 	}
 
 	async function handleTestCurrent() {
@@ -98,7 +151,7 @@ export function useRemoteSyncSyncPanel(options: {
 			setStatus('testing')
 			const url = await remoteSyncStore.getActiveProfileUrl()
 			if (!url) throw new Error(t('settings.remoteSync.errors.noDatabaseUrl'))
-			await tauriInvoke('test_neon_connection', { args: { databaseUrl: url } })
+			await testRemoteSyncConnection(url)
 			await persistConnectionHealthSafely(
 				{
 					profileId: remoteSyncStore.activeProfileId,
@@ -126,7 +179,7 @@ export function useRemoteSyncSyncPanel(options: {
 						profileId: currentProfileId,
 						databaseUrl: currentProfileUrl,
 						result: 'error',
-						errorDigest: resolveErrorMessage(error, t),
+						errorDigest: error instanceof Error ? error.message : String(error),
 					},
 					'test:current:cache:error',
 				)
@@ -134,7 +187,7 @@ export function useRemoteSyncSyncPanel(options: {
 			setStatus('error')
 			toast.add({
 				title: t('settings.remoteSync.toast.connectionFailedTitle'),
-				description: resolveErrorMessage(error, t),
+				description: error instanceof Error ? error.message : String(error),
 				color: 'error',
 			})
 			logError('test:current:error', error)
@@ -146,24 +199,17 @@ export function useRemoteSyncSyncPanel(options: {
 	async function runSyncNowSilently(): Promise<SyncActionResult> {
 		setStatus('syncing')
 		const summary = await remoteSyncActions.syncNow()
-		const pullReport = summary.reports.pull
-		const pushReport = summary.reports.push
-
-		if (summary.status === 'success' && (pullReport || pushReport)) {
-			await Promise.all([invalidateRemoteSyncAfterSync(), invalidateWorkspaceTaskAndProjectQueries()])
-			setStatus('ok')
-			return {
-				status: 'success',
-				errorMessage: null,
-			}
-		}
-
-		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
-		setStatusByErrorMessage(errorMessage)
-		return {
-			status: 'failed',
-			errorMessage,
-		}
+		const syncedAt = summary.reports.push?.syncedAt ?? summary.reports.pull?.syncedAt ?? Date.now()
+		return completeSyncAction({
+			summary,
+			successTitle: '',
+			successDescription: '',
+			failedTitle: '',
+			logTag: 'sync:now',
+			refreshWorkspace: true,
+			successSyncedAt: syncedAt,
+			showToast: false,
+		})
 	}
 
 	async function handlePush() {
@@ -175,29 +221,19 @@ export function useRemoteSyncSyncPanel(options: {
 		log('sync:push:start', { profileId: remoteSyncStore.activeProfileId })
 		const summary = await remoteSyncActions.pushToRemote()
 		const report = summary.reports.push
-		if (summary.status === 'success' && report) {
-			await invalidateRemoteSyncAfterSync()
-			setStatus('ok')
-			toast.add({
-				title: t('settings.remoteSync.toast.pushSuccessTitle'),
-				description: t('settings.remoteSync.toast.syncAtDescription', {
+		await completeSyncAction({
+			summary,
+			successTitle: t('settings.remoteSync.toast.pushSuccessTitle'),
+			successDescription: report
+				? t('settings.remoteSync.toast.syncAtDescription', {
 					time: formatDateTime(report.syncedAt, { locale: locale.value }),
 					summary: summarizeRemoteSyncReport(report, '', t),
-				}),
-				color: 'success',
-			})
-			log('sync:push:done', { syncedAt: report.syncedAt, fromCache: summary.usedConnectionCache })
-			return
-		}
-
-		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
-		setStatusByErrorMessage(errorMessage)
-		toast.add({
-			title: t('settings.remoteSync.toast.pushFailedTitle'),
-			description: errorMessage,
-			color: 'error',
+				})
+				: '',
+			failedTitle: t('settings.remoteSync.toast.pushFailedTitle'),
+			logTag: 'sync:push',
+			successSyncedAt: report?.syncedAt ?? Date.now(),
 		})
-		logError('sync:push:error', errorMessage)
 	}
 
 	async function handlePull() {
@@ -209,29 +245,20 @@ export function useRemoteSyncSyncPanel(options: {
 		log('sync:pull:start', { profileId: remoteSyncStore.activeProfileId })
 		const summary = await remoteSyncActions.pullFromRemote()
 		const report = summary.reports.pull
-		if (summary.status === 'success' && report) {
-			await Promise.all([invalidateRemoteSyncAfterSync(), invalidateWorkspaceTaskAndProjectQueries()])
-			setStatus('ok')
-			toast.add({
-				title: t('settings.remoteSync.toast.pullSuccessTitle'),
-				description: t('settings.remoteSync.toast.syncAtDescription', {
+		await completeSyncAction({
+			summary,
+			successTitle: t('settings.remoteSync.toast.pullSuccessTitle'),
+			successDescription: report
+				? t('settings.remoteSync.toast.syncAtDescription', {
 					time: formatDateTime(report.syncedAt, { locale: locale.value }),
 					summary: summarizeRemoteSyncReport(report, '', t),
-				}),
-				color: 'success',
-			})
-			log('sync:pull:done', { syncedAt: report.syncedAt, fromCache: summary.usedConnectionCache })
-			return
-		}
-
-		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
-		setStatusByErrorMessage(errorMessage)
-		toast.add({
-			title: t('settings.remoteSync.toast.pullFailedTitle'),
-			description: errorMessage,
-			color: 'error',
+				})
+				: '',
+			failedTitle: t('settings.remoteSync.toast.pullFailedTitle'),
+			logTag: 'sync:pull',
+			refreshWorkspace: true,
+			successSyncedAt: report?.syncedAt ?? Date.now(),
 		})
-		logError('sync:pull:error', errorMessage)
 	}
 
 	async function handleSyncNow() {
@@ -245,31 +272,19 @@ export function useRemoteSyncSyncPanel(options: {
 		const summary = await remoteSyncActions.syncNow()
 		const pullReport = summary.reports.pull
 		const pushReport = summary.reports.push
-
-		if (summary.status === 'success' && (pullReport || pushReport)) {
-			await Promise.all([invalidateRemoteSyncAfterSync(), invalidateWorkspaceTaskAndProjectQueries()])
-			setStatus('ok')
-			const syncedAt = pushReport?.syncedAt ?? pullReport?.syncedAt ?? Date.now()
-			toast.add({
-				title: t('settings.remoteSync.toast.syncNowSuccessTitle'),
-				description: t('settings.remoteSync.toast.syncAtDescription', {
-					time: formatDateTime(syncedAt, { locale: locale.value }),
-					summary: summarizeSyncNowResult(pullReport, pushReport),
-				}),
-				color: 'success',
-			})
-			log('sync:now:done', { syncedAt, fromCache: summary.usedConnectionCache })
-			return
-		}
-
-		const errorMessage = resolveSyncSummaryError(summary.errorSummary)
-		setStatusByErrorMessage(errorMessage)
-		toast.add({
-			title: t('settings.remoteSync.toast.syncNowFailedTitle'),
-			description: errorMessage,
-			color: 'error',
+		const syncedAt = pushReport?.syncedAt ?? pullReport?.syncedAt ?? Date.now()
+		await completeSyncAction({
+			summary,
+			successTitle: t('settings.remoteSync.toast.syncNowSuccessTitle'),
+			successDescription: t('settings.remoteSync.toast.syncAtDescription', {
+				time: formatDateTime(syncedAt, { locale: locale.value }),
+				summary: summarizeSyncNowResult(pullReport, pushReport),
+			}),
+			failedTitle: t('settings.remoteSync.toast.syncNowFailedTitle'),
+			logTag: 'sync:now',
+			refreshWorkspace: true,
+			successSyncedAt: syncedAt,
 		})
-		logError('sync:now:error', errorMessage)
 	}
 
 	return {

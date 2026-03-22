@@ -8,6 +8,7 @@ import { installAppLifecyclePlugin } from '@/plugins/app-lifecycle'
 import { initializeAppLocale } from '@/plugins/i18n'
 import { installStartupPlugin, warmupStartupPlugin } from '@/plugins/startup'
 import { router } from '@/router'
+import { installRemoteSyncCoordinator } from '@/services/remote-sync/remote-sync-coordinator'
 
 function readLaunchHashAtBoot() {
 	return window.location.hash ?? ''
@@ -33,6 +34,10 @@ export async function bootstrapApp(): Promise<void> {
 	} catch (error) {
 		console.warn('[startup] degraded boot path', error)
 	}
+
+	void installRemoteSyncCoordinator().catch((error) => {
+		console.warn('[startup] remote sync coordinator skipped', error)
+	})
 
 	app.mount('#app')
 	if (typeof window !== 'undefined') {

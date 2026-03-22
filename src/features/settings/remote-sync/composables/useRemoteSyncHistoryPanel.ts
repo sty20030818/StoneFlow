@@ -1,31 +1,21 @@
-import { useNow } from '@vueuse/core'
-import { computed, ref, type Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 
 import { useRemoteSyncStore } from '@/stores/remote-sync'
-import type { RemoteSyncCommandReport, RemoteSyncDirection, RemoteSyncHistoryItem } from '@/types/shared/remote-sync'
-import {
-	type RemoteSyncTableViewItem,
-	summarizeRemoteSyncReport,
-	toRemoteSyncTableViewItems,
-} from '@/utils/remote-sync-report'
-import { resolveErrorMessage } from '@/utils/error-message'
-import { formatDateTime, formatRelativeDistance } from '@/utils/time'
+import type { RemoteSyncCommandReport } from '@/types/shared/remote-sync'
+import { summarizeRemoteSyncReport } from '@/utils/remote-sync-report'
+import { formatRelativeDistance } from '@/utils/time'
 
-export type RemoteSyncHistoryFilter = 'all' | RemoteSyncDirection
-
-export type RemoteSyncHistoryViewItem = {
+export type RemoteSyncDiagnosticStepViewItem = {
 	id: string
-	direction: RemoteSyncDirection
-	directionText: string
-	profileName: string
-	syncedAtText: string
-	summary: string
-	tables: RemoteSyncTableViewItem[]
+	label: string
+	status: 'success' | 'failed' | 'skipped'
+	error: string | null
+	errorCode: string | null
+	summary: string | null
+	fromCacheText: string | null
 }
 
 type Translate = (key: string, params?: Record<string, unknown>) => string
-
-type Logger = (...args: unknown[]) => void
 
 export function useRemoteSyncHistoryPanel(options: {
 	t: Translate
@@ -34,42 +24,38 @@ export function useRemoteSyncHistoryPanel(options: {
 	lastPulledAt: Ref<number>
 	lastPushReport: Ref<RemoteSyncCommandReport | null>
 	lastPullReport: Ref<RemoteSyncCommandReport | null>
-	syncHistory: Ref<RemoteSyncHistoryItem[]>
-	onHistoryMutated: () => Promise<void>
-	logError: Logger
 }) {
-	const {
-		t,
-		locale,
-		lastPushedAt,
-		lastPulledAt,
-		lastPushReport,
-		lastPullReport,
-		syncHistory,
-		onHistoryMutated,
-		logError,
-	} = options
+	const { t, locale, lastPushedAt, lastPulledAt, lastPushReport, lastPullReport } = options
 	const remoteSyncStore = useRemoteSyncStore()
-	const toast = useToast()
-	const now = useNow({ interval: 60_000 })
 
-	const isClearingHistory = ref(false)
-	const historyFilter = ref<RemoteSyncHistoryFilter>('all')
+	const activeProfileId = computed(() => remoteSyncStore.activeProfileId)
+	const latestDiagnostic = computed(() => remoteSyncStore.getLatestDiagnostic(activeProfileId.value))
 
-	const historyFilterOptions = computed(() => [
-		{ label: t('settings.remoteSync.history.filters.all'), value: 'all' as const },
-		{ label: t('settings.remoteSync.history.filters.pushOnly'), value: 'push' as const },
-		{ label: t('settings.remoteSync.history.filters.pullOnly'), value: 'pull' as const },
-	])
-
-	const filteredSyncHistory = computed(() => {
-		if (historyFilter.value === 'all') return syncHistory.value
-		return syncHistory.value.filter((item) => item.direction === historyFilter.value)
+	const latestDiagnosticSteps = computed<RemoteSyncDiagnosticStepViewItem[]>(() => {
+		const diagnostic = latestDiagnostic.value
+		if (!diagnostic) return []
+		return diagnostic.steps.map((step, index) => ({
+			id: `${diagnostic.action}-${step.type}-${index}`,
+			label:
+				step.type === 'ensure'
+					? t('settings.remoteSync.actions.testCurrent')
+					: step.type === 'pull'
+						? t('common.actions.download')
+						: t('common.actions.upload'),
+			status: step.status,
+			error: step.error,
+			errorCode: step.errorCode ?? null,
+			summary: step.report ? summarizeRemoteSyncReport(step.report, t('settings.remoteSync.history.noStats'), t) : null,
+			fromCacheText:
+				step.fromCache === null
+					? null
+					: step.fromCache
+						? t('settings.remoteSync.status.label.ok')
+						: t('settings.remoteSync.status.label.testing'),
+		}))
 	})
 
-	const recentSyncHistory = computed<RemoteSyncHistoryViewItem[]>(() =>
-		filteredSyncHistory.value.slice(0, 6).map((item) => toHistoryViewItem(item)),
-	)
+	const hasDiagnostic = computed(() => latestDiagnosticSteps.value.length > 0)
 
 	const lastPushedText = computed(() =>
 		formatRelativeTime(lastPushedAt.value, t('settings.remoteSync.history.neverPushed')),
@@ -92,73 +78,21 @@ export function useRemoteSyncHistoryPanel(options: {
 		summarizeRemoteSyncReport(lastPullReport.value, t('settings.remoteSync.history.noPullStats'), t),
 	)
 
-	function toHistoryViewItem(item: RemoteSyncHistoryItem): RemoteSyncHistoryViewItem {
-		return {
-			id: item.id,
-			direction: item.direction,
-			directionText:
-				item.direction === 'push'
-					? t('settings.remoteSync.history.direction.push')
-					: t('settings.remoteSync.history.direction.pull'),
-			profileName: item.profileName || t('settings.remoteSync.profile.unnamed'),
-			syncedAtText: formatDateTime(item.syncedAt, { locale: locale.value }),
-			summary: summarizeRemoteSyncReport(item.report, t('settings.remoteSync.history.noStats'), t),
-			tables: toRemoteSyncTableViewItems(item.report, t),
-		}
-	}
-
 	function formatRelativeTime(timestamp: number, fallback: string) {
 		if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback
-		void now.value
 		return formatRelativeDistance(timestamp, {
 			locale: locale.value,
 			fallback,
 		})
 	}
 
-	function setHistoryFilter(filter: RemoteSyncHistoryFilter) {
-		historyFilter.value = filter
-	}
-
-	async function handleClearSyncHistory() {
-		if (syncHistory.value.length === 0 || isClearingHistory.value) return
-		try {
-			isClearingHistory.value = true
-			const direction = historyFilter.value === 'all' ? undefined : historyFilter.value
-			await remoteSyncStore.clearSyncHistory(direction)
-			await onHistoryMutated()
-			toast.add({
-				title: t('settings.remoteSync.toast.clearedHistoryTitle'),
-				description: direction
-					? direction === 'push'
-						? t('settings.remoteSync.toast.clearedPushHistoryDescription')
-						: t('settings.remoteSync.toast.clearedPullHistoryDescription')
-					: t('settings.remoteSync.toast.clearedAllHistoryDescription'),
-				color: 'success',
-			})
-		} catch (error) {
-			toast.add({
-				title: t('settings.remoteSync.toast.clearFailedTitle'),
-				description: resolveErrorMessage(error, t),
-				color: 'error',
-			})
-			logError('sync:history:clear:error', error)
-		} finally {
-			isClearingHistory.value = false
-		}
-	}
-
 	return {
-		historyFilter,
-		historyFilterOptions,
-		isClearingHistory,
-		recentSyncHistory,
+		latestDiagnosticSteps,
+		hasDiagnostic,
 		lastPushedText,
 		lastPulledText,
 		lastSyncedText,
 		lastPushSummaryText,
 		lastPullSummaryText,
-		setHistoryFilter,
-		handleClearSyncHistory,
 	}
 }

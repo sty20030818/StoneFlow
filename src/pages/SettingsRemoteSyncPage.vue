@@ -20,12 +20,19 @@
 				:last-pulled-text="lastPulledText"
 				:last-push-summary-text="lastPushSummaryText"
 				:last-pull-summary-text="lastPullSummaryText"
-				:history-filter="historyFilter"
-				:history-filter-options="historyFilterOptions"
-				:is-clearing-history="isClearingHistory"
-				:recent-sync-history="recentSyncHistory"
-				:on-update-history-filter="setHistoryFilter"
-				:on-clear-history="handleClearSyncHistory"
+				:sync-preferences="syncPreferences"
+				:auto-sync-interval-options="autoSyncIntervalOptions"
+				:auto-sync-retry-options="autoSyncRetryOptions"
+				:auto-sync-status-text="autoSyncStatusText"
+				:auto-sync-meta-text="autoSyncMetaText"
+				:auto-sync-last-error="autoSyncLastError"
+				:has-diagnostic="hasDiagnostic"
+				:latest-diagnostic-steps="latestDiagnosticSteps"
+				:on-update-auto-sync-enabled="handleUpdateAutoSyncEnabled"
+				:on-update-auto-sync-interval-minutes="handleUpdateAutoSyncIntervalMinutes"
+				:on-update-auto-sync-retry-count="handleUpdateAutoSyncRetryCount"
+				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
+				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus"
 				:on-test-current="handleTestCurrent"
 				:on-sync-now="handleSyncNow"
 				:on-push="handlePush"
@@ -243,12 +250,19 @@
 		lastPulledText,
 		lastPushSummaryText,
 		lastPullSummaryText,
-		historyFilter,
-		historyFilterOptions,
-		isClearingHistory,
-		recentSyncHistory,
-		setHistoryFilter,
-		handleClearSyncHistory,
+		syncPreferences,
+		autoSyncIntervalOptions,
+		autoSyncRetryOptions,
+		autoSyncStatusText,
+		autoSyncMetaText,
+		autoSyncLastError,
+		hasDiagnostic,
+		latestDiagnosticSteps,
+		handleUpdateAutoSyncEnabled,
+		handleUpdateAutoSyncIntervalMinutes,
+		handleUpdateAutoSyncRetryCount,
+		handleUpdateAutoSyncRunOnAppStart,
+		handleUpdateAutoSyncRunOnWindowFocus,
 		handleSyncNow,
 		handlePush,
 		handlePull,

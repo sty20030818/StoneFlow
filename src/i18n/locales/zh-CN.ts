@@ -1045,7 +1045,8 @@ export default {
 					tags: '标签',
 					links: '关联',
 					tasks: '任务',
-					taskActivityLogs: '日志',
+					taskActivityLogs: '任务日志',
+					projectActivityLogs: '项目日志',
 					taskTags: '任务标签',
 					taskLinks: '任务关联',
 					projectTags: '项目标签',
@@ -1114,3 +1115,4 @@ export default {
 		unknownError: '未知错误',
 	},
 } as const
+

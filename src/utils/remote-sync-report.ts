@@ -17,6 +17,7 @@ export type RemoteSyncTableViewItem = {
 const REMOTE_SYNC_TABLE_ORDER: RemoteSyncTableKey[] = [
 	'tasks',
 	'taskActivityLogs',
+	'projectActivityLogs',
 	'spaces',
 	'projects',
 	'tags',
@@ -44,9 +45,10 @@ export function summarizeRemoteSyncReport(
 	const totalConflicted = tableValues.reduce((acc, item) => acc + item.conflicted, 0)
 	const totalSkipped = tableValues.reduce((acc, item) => acc + item.skipped, 0)
 	const tasksMetrics = normalizeTableReportMetrics(report.tables.tasks)
-	const logsMetrics = normalizeTableReportMetrics(report.tables.taskActivityLogs)
+	const taskLogsMetrics = normalizeTableReportMetrics(report.tables.taskActivityLogs)
+	const projectLogsMetrics = normalizeTableReportMetrics(report.tables.projectActivityLogs)
 	const tasksWrites = tasksMetrics.inserted + tasksMetrics.updated
-	const logsWrites = logsMetrics.inserted + logsMetrics.updated
+	const logsWrites = taskLogsMetrics.inserted + taskLogsMetrics.updated + projectLogsMetrics.inserted + projectLogsMetrics.updated
 	return t('settings.remoteSync.report.summary', {
 		tasks: tasksWrites,
 		logs: logsWrites,

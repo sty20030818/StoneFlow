@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="project"
-		class="relative overflow-hidden rounded-[28px] border border-white/60 bg-white/85 p-6 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-neutral-900/80 dark:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.72)]"
+		class="relative overflow-hidden rounded-[28px] border border-white/60 bg-white/85 p-6 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-neutral-900/80 dark:shadow-[0_14px_32px_-26px_rgba(0,0,0,0.52)]"
 		:style="prioritySurfaceVars">
 		<div class="surface-tint"></div>
 		<div class="card-inner-border"></div>
