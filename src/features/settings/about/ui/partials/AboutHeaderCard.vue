@@ -30,7 +30,7 @@
 					</div>
 				</div>
 
-				<div class="w-full max-w-md space-y-3">
+				<div class="w-full max-w-md">
 					<div class="rounded-3xl border border-default/60 bg-elevated/50 p-4">
 						<div class="flex items-start justify-between gap-4">
 							<div class="space-y-1">
@@ -74,43 +74,6 @@
 								@click="onOpenChangelog">
 								{{ t('settings.about.actions.openChangelog') }}
 							</UButton>
-						</div>
-					</div>
-
-					<div class="rounded-3xl border border-default/60 bg-elevated/30 p-3">
-						<button
-							type="button"
-							class="flex w-full items-center justify-between text-left"
-							@click="onToggleAdvanced">
-							<span class="text-sm font-medium text-default">{{ t('settings.about.preferences.title') }}</span>
-							<UIcon
-								name="i-lucide-chevron-down"
-								class="size-4 text-muted transition-transform duration-200 ease-out"
-								:class="props.advancedOpen ? 'rotate-180' : 'rotate-0'" />
-						</button>
-						<div
-							v-if="props.advancedOpen"
-							class="mt-3 space-y-3 text-sm">
-							<label class="flex items-center justify-between gap-3">
-								<span class="text-muted">{{ t('settings.about.preferences.autoCheck') }}</span>
-								<input
-									:checked="autoCheckEnabled"
-									type="checkbox"
-									class="h-4 w-4 rounded"
-									@change="onAutoCheckChange" />
-							</label>
-							<label class="flex items-center justify-between gap-3">
-								<span class="text-muted">{{ t('settings.about.preferences.promptInstall') }}</span>
-								<input
-									:checked="promptInstallEnabled"
-									type="checkbox"
-									class="h-4 w-4 rounded"
-									@change="onPromptInstallChange" />
-							</label>
-							<div class="flex items-center justify-between gap-3">
-								<span class="text-muted">{{ t('settings.about.preferences.updateChannel') }}</span>
-								<span class="text-default">{{ t('settings.about.preferences.updateChannelValue') }}</span>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -176,20 +139,13 @@
 		lastCheckedText: string
 		updateStateLabel: string
 		state: UpdateState
-		advancedOpen: boolean
-		autoCheckEnabled: boolean
-		promptInstallEnabled: boolean
 		isChecking: boolean
 		isDownloading: boolean
-		onToggleAdvanced: () => void
 		onCheckUpdate: () => void
-		onPreviewUpdateModal: () => void
 		onDownloadUpdate: () => void
 		onRestart: () => void
 		onOpenReleasePage: () => void
 		onOpenChangelog: () => void
-		onAutoCheckChange: (event: Event) => void
-		onPromptInstallChange: (event: Event) => void
 	}>()
 
 	const progressUi = {

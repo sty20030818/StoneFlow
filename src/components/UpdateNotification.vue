@@ -87,15 +87,13 @@
 	import { useI18n } from 'vue-i18n'
 	import DOMPurify from 'dompurify'
 	import { createMarkdownExit } from 'markdown-exit'
-	import { computed, watchEffect } from 'vue'
+	import { computed } from 'vue'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useUpdater } from '@/composables/useUpdater'
 
-	const { state, promptInstallEnabled, downloadAndInstall, restartApp, dismiss } = useUpdater()
+	const { state, shouldPromptInstall, downloadAndInstall, restartApp, dismiss } = useUpdater()
 	const { t } = useI18n({ useScope: 'global' })
 	const updateModalUi = createModalLayerUi()
-	// 临时预览开关，确认弹窗样式后删除。
-	const forcePreview = false
 	const markdown = createMarkdownExit({
 		html: false,
 		linkify: true,
@@ -117,27 +115,14 @@
 	const downloadProgressValue = computed(() => state.value.progress)
 	const downloadProgressText = computed(() => `${state.value.progress}%`)
 
-	watchEffect(() => {
-		if (!forcePreview) return
-		if (state.value.available && state.value.status === 'downloading') return
-
-		state.value.available = true
-		state.value.version = '0.0.0'
-		state.value.notes = ''
-		state.value.progress = 0
-		state.value.status = 'downloading'
-		state.value.error = null
-	})
-
 	async function handleDownloadAndInstall() {
 		await downloadAndInstall()
 	}
 
 	const isOpen = computed({
-		get: () =>
-			forcePreview || (promptInstallEnabled.value && state.value.available && state.value.status !== 'checking'),
+		get: () => shouldPromptInstall.value,
 		set: (v) => {
-			if (!v && !forcePreview) dismiss()
+			if (!v) dismiss()
 		},
 	})
 </script>

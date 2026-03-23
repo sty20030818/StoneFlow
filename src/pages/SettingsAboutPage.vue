@@ -8,20 +8,13 @@
 				:last-checked-text="lastCheckedText"
 				:update-state-label="updateStateLabel"
 				:state="state"
-				:advanced-open="advancedOpen"
-				:auto-check-enabled="autoCheckEnabled"
-				:prompt-install-enabled="promptInstallEnabled"
 				:is-checking="state.status === 'checking'"
 				:is-downloading="state.status === 'downloading'"
-				:on-toggle-advanced="toggleAdvanced"
 				:on-check-update="handleCheckUpdate"
-				:on-preview-update-modal="handlePreviewUpdateModal"
 				:on-download-update="handleDownloadUpdate"
 				:on-restart="handleRestart"
 				:on-open-release-page="openReleasePage"
-				:on-open-changelog="openChangelog"
-				:on-auto-check-change="handleAutoCheckChange"
-				:on-prompt-install-change="handlePromptInstallChange" />
+				:on-open-changelog="openChangelog" />
 		</div>
 
 		<!-- <AboutDownloadInstallSection
@@ -71,14 +64,11 @@
 
 	const {
 		state,
-		autoCheckEnabled,
-		promptInstallEnabled,
 		appName,
 		currentVersion,
 		buildNumber,
 		// installPath,
 		// dataPath,
-		advancedOpen,
 		aboutLinks,
 		changelogSummary,
 		licenseUrl,
@@ -86,7 +76,6 @@
 		lastCheckedText,
 		updateStateLabel,
 		handleCheckUpdate,
-		handlePreviewUpdateModal,
 		handleDownloadUpdate,
 		handleRestart,
 		openReleasePage,
@@ -95,9 +84,6 @@
 		// openInstallPath,
 		// openDataPath,
 		// exportDiagnostic,
-		handleAutoCheckChange,
-		handlePromptInstallChange,
-		toggleAdvanced,
 		openUrl,
 		copy,
 	} = useSettingsAboutPage()

@@ -64,13 +64,9 @@ export function useSettingsAboutPage() {
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const {
 		state,
-		autoCheckEnabled,
-		promptInstallEnabled,
 		checkForUpdate,
 		downloadAndInstall,
 		restartApp,
-		setAutoCheckEnabled,
-		setPromptInstallEnabled,
 	} = useUpdater()
 	const { copy, openUrl, openPath } = useSettingsSystemActions()
 
@@ -81,7 +77,6 @@ export function useSettingsAboutPage() {
 	const installPath = ref('')
 	const dataPath = ref('')
 
-	const advancedOpen = ref(false)
 	const now = useNow({ interval: 60_000 })
 	const parsedChangelogEntries = parseChangelogSummary(changelogSource)
 
@@ -101,10 +96,6 @@ export function useSettingsAboutPage() {
 	})
 	const licenseUrl = LICENSE_URL
 	const privacyUrl = PRIVACY_URL
-	const previewNotesFallback = computed(() => {
-		return changelogSummary.value[0]?.items?.trim() || t('settings.about.changelog.empty')
-	})
-
 	const lastCheckedText = computed(() => {
 		if (!state.value.lastCheckedAt) return t('settings.about.header.lastCheckedNever')
 		// 显式依赖 now，保证相对时间文案自动刷新。
@@ -144,17 +135,6 @@ export function useSettingsAboutPage() {
 				color: 'success',
 			})
 		}
-	}
-
-	function handlePreviewUpdateModal() {
-		const notes = state.value.notes.trim() || previewNotesFallback.value
-		state.value.available = true
-		state.value.version = state.value.version || currentVersion.value
-		state.value.notes = notes
-		state.value.date = new Date().toISOString()
-		state.value.progress = 0
-		state.value.status = 'idle'
-		state.value.error = null
 	}
 
 	async function handleRestart() {
@@ -212,20 +192,6 @@ export function useSettingsAboutPage() {
 		await copy(JSON.stringify(payload, null, 2), t('settings.about.toast.diagnosticCopied'))
 	}
 
-	function handleAutoCheckChange(event: Event) {
-		const target = event.target as HTMLInputElement
-		setAutoCheckEnabled(target.checked)
-	}
-
-	function handlePromptInstallChange(event: Event) {
-		const target = event.target as HTMLInputElement
-		setPromptInstallEnabled(target.checked)
-	}
-
-	function toggleAdvanced() {
-		advancedOpen.value = !advancedOpen.value
-	}
-
 	onMounted(async () => {
 		try {
 			appName.value = await getName()
@@ -256,14 +222,11 @@ export function useSettingsAboutPage() {
 
 	return {
 		state,
-		autoCheckEnabled,
-		promptInstallEnabled,
 		appName,
 		currentVersion,
 		buildNumber,
 		installPath,
 		dataPath,
-		advancedOpen,
 		aboutLinks,
 		changelogSummary,
 		licenseUrl,
@@ -271,7 +234,6 @@ export function useSettingsAboutPage() {
 		lastCheckedText,
 		updateStateLabel,
 		handleCheckUpdate,
-		handlePreviewUpdateModal,
 		handleDownloadUpdate,
 		handleRestart,
 		openReleasePage,
@@ -280,9 +242,6 @@ export function useSettingsAboutPage() {
 		openInstallPath,
 		openDataPath,
 		exportDiagnostic,
-		handleAutoCheckChange,
-		handlePromptInstallChange,
-		toggleAdvanced,
 		openUrl,
 		copy,
 	}
