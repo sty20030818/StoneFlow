@@ -47,7 +47,7 @@
 
 	import { useAppTheme } from '@/composables/app/useAppTheme'
 	import { useActionIconHoverMotion } from '@/composables/base/motion'
-	import avatarUrl from '@/assets/avatar.png'
+	import avatarUrl from '@/assets/stoneflow.png'
 
 	const { t } = useI18n({ useScope: 'global' })
 	const { currentIcon, nextPreference, cyclePreference } = useAppTheme()
