@@ -126,3 +126,78 @@ pub struct ActivityLogDto {
     pub project_id: Option<String>,
     pub project_name: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetSnippetDto {
+    pub id: String,
+    pub title: String,
+    pub language: String,
+    pub content: String,
+    pub description: Option<String>,
+    pub folder: Option<String>,
+    pub tags: Vec<String>,
+    pub favorite: bool,
+    pub linked_task_id: Option<String>,
+    pub linked_project_id: Option<String>,
+    pub sync_state: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetNoteDto {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub excerpt: Option<String>,
+    pub tags: Vec<String>,
+    pub favorite: bool,
+    pub linked_project_id: Option<String>,
+    pub linked_task_id: Option<String>,
+    pub sync_state: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetDiaryEntryDto {
+    pub id: String,
+    pub date: String,
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub content: String,
+    pub tags: Vec<String>,
+    pub favorite: bool,
+    pub linked_task_ids: Vec<String>,
+    pub linked_project_id: Option<String>,
+    pub sync_state: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetVaultEntryDto {
+    pub id: String,
+    pub name: String,
+    pub r#type: String,
+    pub environment: Option<String>,
+    pub value: String,
+    pub folder: Option<String>,
+    pub note: Option<String>,
+    pub tags: Vec<String>,
+    pub favorite: bool,
+    pub sync_state: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetsMigrationStatusDto {
+    pub done: bool,
+    pub migrated_at: Option<i64>,
+}

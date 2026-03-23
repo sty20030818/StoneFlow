@@ -118,9 +118,13 @@ export function useAssetsVaultPage() {
 			id: '',
 			name: '',
 			type: 'api_key',
+			environment: null,
 			value: '',
 			folder: null,
 			note: null,
+			tags: [],
+			favorite: false,
+			syncState: 'local',
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 		})

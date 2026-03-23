@@ -3,6 +3,7 @@ import type { Router } from 'vue-router'
 
 import { SPACE_IDS } from '@/config/space'
 import { warmupWorkspaceProjectsQuery } from '@/features/workspace'
+import { initializeAssetsMigration } from '@/services/api/assets-migration'
 import {
 	resolveLaunchHashTarget,
 	toLibraryRouteTarget,
@@ -94,7 +95,7 @@ export async function initializeAppStartup(router: Router, options: InitializeSt
 		const viewStateStore = useViewStateStore()
 
 		// 启动恢复只依赖应用设置与轻量 UI 记忆，不再依赖页面数据快照。
-		await Promise.allSettled([settingsStore.load(), viewStateStore.load()])
+		await Promise.allSettled([settingsStore.load(), viewStateStore.load(), initializeAssetsMigration()])
 
 		const activeSpaceId = normalizeSpaceId(settingsStore.settings.activeSpaceId)
 		const launchTarget = resolveLaunchHashTarget(options.launchHashAtBoot)

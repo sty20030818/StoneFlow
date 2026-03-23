@@ -4,8 +4,12 @@ export type AssetNote = {
 	id: string
 	title: string
 	content: string
+	excerpt: string | null
+	tags: string[]
+	favorite: boolean
 	linkedProjectId: string | null
 	linkedTaskId: string | null
+	syncState: string
 	createdAt: number
 	updatedAt: number
 }

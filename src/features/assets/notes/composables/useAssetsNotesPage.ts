@@ -78,8 +78,12 @@ export function useAssetsNotesPage() {
 			id: '',
 			title: '',
 			content: '',
+			excerpt: null,
+			tags: [],
+			favorite: false,
 			linkedProjectId: null,
 			linkedTaskId: null,
+			syncState: 'local',
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 		})

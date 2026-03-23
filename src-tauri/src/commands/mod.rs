@@ -11,6 +11,7 @@
 //! - 不管理事务边界
 //! - 不直接操作数据库实体
 
+pub mod assets;
 pub mod hello;
 pub mod logs;
 pub mod projects;

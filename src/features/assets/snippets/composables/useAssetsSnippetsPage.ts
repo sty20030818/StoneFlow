@@ -99,10 +99,13 @@ export function useAssetsSnippetsPage() {
 			title: '',
 			language: 'plaintext',
 			content: '',
+			description: null,
 			folder: null,
 			tags: [],
+			favorite: false,
 			linkedTaskId: null,
 			linkedProjectId: null,
+			syncState: 'local',
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 		})

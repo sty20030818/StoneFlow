@@ -5,9 +5,13 @@ export type AssetDiaryEntry = {
 	id: string
 	date: string
 	title: string
+	subtitle: string | null
 	content: string
+	tags: string[]
+	favorite: boolean
 	linkedTaskIds: string[]
 	linkedProjectId: string | null
+	syncState: string
 	createdAt: number
 	updatedAt: number
 }

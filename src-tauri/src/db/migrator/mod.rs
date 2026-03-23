@@ -7,6 +7,7 @@ mod m01_init;
 mod m02_task_activity_logs;
 mod m03_project_activity_logs;
 mod m04_relation_sync_tracking;
+mod m05_assets_library_v2;
 
 pub struct Migrator;
 
@@ -19,6 +20,7 @@ impl MigratorTrait for Migrator {
             Box::new(m02_task_activity_logs::Migration),
             Box::new(m03_project_activity_logs::Migration),
             Box::new(m04_relation_sync_tracking::Migration),
+            Box::new(m05_assets_library_v2::Migration),
         ]
     }
 }

@@ -7,10 +7,17 @@
 //!
 //! 纯查询命令不强制经过 service，避免制造空壳透传层。
 
+pub mod assets;
 pub mod project;
 pub mod sync;
 pub mod task;
 
+#[allow(unused_imports)]
+pub use assets::{
+    AssetDiaryEntryCreateInput, AssetDiaryEntryUpdatePatch, AssetNoteCreateInput,
+    AssetNoteUpdatePatch, AssetService, AssetSnippetCreateInput, AssetSnippetUpdatePatch,
+    AssetVaultEntryCreateInput, AssetVaultEntryUpdatePatch, LegacyAssetsBundle,
+};
 #[allow(unused_imports)]
 pub use project::ProjectService;
 pub use project::{ProjectCreateInput, ProjectUpdateInput, ProjectUpdatePatch};

@@ -2,6 +2,10 @@
 #![allow(unused_imports)]
 
 pub use super::app_settings::Entity as AppSettings;
+pub use super::asset_diary_entries::Entity as AssetDiaryEntries;
+pub use super::asset_notes::Entity as AssetNotes;
+pub use super::asset_snippets::Entity as AssetSnippets;
+pub use super::asset_vault_entries::Entity as AssetVaultEntries;
 pub use super::links::Entity as Links;
 pub use super::project_activity_logs::Entity as ProjectActivityLogs;
 pub use super::project_links::Entity as ProjectLinks;

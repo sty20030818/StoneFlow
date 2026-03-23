@@ -11,6 +11,7 @@
 //! - 不决定跨实体副作用触发时机
 
 pub mod activity_log_repo;
+pub mod asset_repo;
 pub mod common_task_utils;
 pub mod link_repo;
 pub mod project_repo;

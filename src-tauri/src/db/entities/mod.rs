@@ -2,6 +2,10 @@ pub mod prelude;
 pub mod sea_orm_active_enums;
 
 pub mod app_settings;
+pub mod asset_diary_entries;
+pub mod asset_notes;
+pub mod asset_snippets;
+pub mod asset_vault_entries;
 pub mod links;
 pub mod project_activity_logs;
 pub mod project_links;

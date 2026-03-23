@@ -5,10 +5,13 @@ export type AssetSnippet = {
 	title: string
 	language: string
 	content: string
+	description: string | null
 	folder: string | null
 	tags: string[]
+	favorite: boolean
 	linkedTaskId: string | null
 	linkedProjectId: string | null
+	syncState: string
 	createdAt: number
 	updatedAt: number
 }

@@ -22,6 +22,12 @@ mod types;
 
 use commands::hello::hello;
 use commands::logs::list_activity_logs;
+use commands::assets::{
+    create_diary_entry, create_note, create_snippet, create_vault_entry, delete_diary_entry,
+    delete_note, delete_snippet, delete_vault_entry, get_assets_migration_status,
+    import_legacy_assets, list_diary_entries, list_notes, list_snippets, list_vault_entries,
+    update_diary_entry, update_note, update_snippet, update_vault_entry,
+};
 use commands::projects::{
     archive_project, create_project, delete_project, get_default_project, list_deleted_projects,
     list_projects, rebalance_project_ranks, reorder_project, restore_project, unarchive_project,
@@ -189,6 +195,24 @@ pub fn run() {
         // invoke_handler 把前端可调用的 command 显式列在这里，便于审计接口边界。
         .invoke_handler(tauri::generate_handler![
             hello,
+            list_snippets,
+            create_snippet,
+            update_snippet,
+            delete_snippet,
+            list_notes,
+            create_note,
+            update_note,
+            delete_note,
+            list_diary_entries,
+            create_diary_entry,
+            update_diary_entry,
+            delete_diary_entry,
+            list_vault_entries,
+            create_vault_entry,
+            update_vault_entry,
+            delete_vault_entry,
+            get_assets_migration_status,
+            import_legacy_assets,
             list_projects,
             list_deleted_projects,
             create_project,
