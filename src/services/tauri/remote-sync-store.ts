@@ -9,8 +9,8 @@ export const DEFAULT_REMOTE_SYNC_POLICY: RemoteSyncPolicy = {
 	enabled: false,
 	runOnInterval: true,
 	intervalMinutes: 15,
-	runOnAppStart: false,
-	runOnWindowFocus: true,
+	runOnAppStart: true,
+	runOnWindowFocus: false,
 	retryCount: 1,
 }
 

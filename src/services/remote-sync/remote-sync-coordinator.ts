@@ -5,6 +5,8 @@ import type { RemoteDbProfile, RemoteSyncPolicy } from '@/types/shared/remote-sy
 import { invalidateAfterRemoteSync } from './remote-sync-runtime'
 
 const COORDINATOR_TICK_MS = 60_000
+const STARTUP_SYNC_SESSION_KEY = 'remote-sync:start-sync-ran'
+const STARTUP_FOCUS_SUPPRESS_MS = 3_000
 
 type RemoteSyncTriggerSource = 'appStart' | 'focus' | 'interval' | 'online'
 
@@ -71,6 +73,25 @@ function createRemoteSyncCoordinator(deps: RemoteSyncCoordinatorDeps) {
 	let installed = false
 	let tickTimer: IntervalHandle | null = null
 	let bootPromise: Promise<void> | null = null
+	let suppressFocusUntil = 0
+
+	function hasStartupSyncRanInSession() {
+		if (typeof window === 'undefined') return false
+		try {
+			return window.sessionStorage.getItem(STARTUP_SYNC_SESSION_KEY) === '1'
+		} catch {
+			return false
+		}
+	}
+
+	function markStartupSyncRanInSession() {
+		if (typeof window === 'undefined') return
+		try {
+			window.sessionStorage.setItem(STARTUP_SYNC_SESSION_KEY, '1')
+		} catch {
+			// 忽略浏览器存储异常，协调器继续按无缓存模式运行。
+		}
+	}
 
 	async function ensureStoreLoaded() {
 		const remoteSyncStore = deps.createStore()
@@ -148,6 +169,7 @@ function createRemoteSyncCoordinator(deps: RemoteSyncCoordinatorDeps) {
 	function installCoordinatorListeners() {
 		if (!deps.eventTarget) return
 		deps.eventTarget.addEventListener('focus', () => {
+			if (Date.now() < suppressFocusUntil) return
 			void runProfilesBySource('focus')
 		})
 		deps.eventTarget.addEventListener('online', () => {
@@ -167,6 +189,11 @@ function createRemoteSyncCoordinator(deps: RemoteSyncCoordinatorDeps) {
 	async function boot() {
 		await ensureStoreLoaded()
 		installCoordinatorTimer()
+		// 启动或前端刷新后的短时间内忽略 focus，避免把刷新当成“回到前台”。
+		suppressFocusUntil = Date.now() + STARTUP_FOCUS_SUPPRESS_MS
+		if (hasStartupSyncRanInSession()) return
+		// 同一应用会话里只执行一次启动同步；前端刷新不应重复触发。
+		markStartupSyncRanInSession()
 		void runProfilesBySource('appStart')
 	}
 

@@ -31,8 +31,7 @@
 				:on-update-auto-sync-run-on-interval="handleUpdateAutoSyncRunOnInterval"
 				:on-update-auto-sync-interval-minutes="handleUpdateAutoSyncIntervalMinutes"
 				:on-update-auto-sync-retry-count="handleUpdateAutoSyncRetryCount"
-				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
-				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus" />
+				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart" />
 		</div>
 
 		<div
@@ -271,7 +270,6 @@
 		handleUpdateAutoSyncIntervalMinutes,
 		handleUpdateAutoSyncRetryCount,
 		handleUpdateAutoSyncRunOnAppStart,
-		handleUpdateAutoSyncRunOnWindowFocus,
 		handleSyncNow,
 		handlePush,
 		handlePull,

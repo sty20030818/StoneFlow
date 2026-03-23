@@ -80,20 +80,6 @@
 					</div>
 				</div>
 
-				<div class="rounded-2xl border border-default/70 bg-default px-3 py-3">
-					<div class="flex items-start justify-between gap-3">
-						<div class="min-w-0">
-							<div class="text-sm font-medium text-default">{{ t('settings.remoteSync.autoSync.runOnWindowFocus') }}</div>
-							<div class="mt-0.5 text-[11px] leading-5 text-muted/80">
-								{{ t('settings.remoteSync.autoSync.runOnWindowFocusDescription') }}
-							</div>
-						</div>
-						<USwitch
-							:model-value="props.syncPreferences.runOnWindowFocus"
-							:disabled="!props.hasActiveProfile || !props.syncPreferences.enabled"
-							@update:model-value="props.onUpdateAutoSyncRunOnWindowFocus" />
-					</div>
-				</div>
 			</div>
 
 			<div class="rounded-2xl border border-default/70 bg-elevated/20 px-3 py-3">
@@ -206,7 +192,6 @@
 		onUpdateAutoSyncIntervalMinutes: (value: number) => void
 		onUpdateAutoSyncRetryCount: (value: number) => void
 		onUpdateAutoSyncRunOnAppStart: (value: boolean) => void
-		onUpdateAutoSyncRunOnWindowFocus: (value: boolean) => void
 	}>()
 
 	const popoverUi = createPopoverLayerUi()
