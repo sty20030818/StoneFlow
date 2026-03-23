@@ -798,9 +798,11 @@ export default {
 		},
 		diary: {
 			title: '日记',
-			subtitle: '按天记录工作轨迹',
+			subtitle: '围绕日期展开，记录当天进展、问题、决策和第二天计划',
 			newAction: '新建日记',
 			empty: '还没有日记记录',
+			emptyTitle: '还没有日记',
+			emptyDescription: '从今天开始写第一篇日记，后面回看会很有价值。',
 			entriesCount: '{count} 篇',
 			tasksCount: '{count} 个任务',
 			dayTasks: '当天任务',
@@ -812,13 +814,29 @@ export default {
 			fields: {
 				date: '日期',
 				title: '标题',
+				titlePrefix: '固定前缀',
+				subtitle: '副标题',
 				contentMarkdown: '内容（Markdown）',
 				linkedProjectOptional: '关联 Project（可选）',
 			},
 			placeholders: {
 				title: '输入日记标题',
+				subtitle: '例如：工作日记 / 复盘 / 阶段总结',
 				content: '写下今天的记录...',
 				linkedProject: '输入 Project ID',
+			},
+			actions: {
+				todayShortcut: '今天',
+				createToday: '创建今日日记',
+				openFinishList: '打开完成列表',
+				openWorkspace: '回到工作台',
+			},
+			labels: {
+				defaultSubtitle: '工作日记',
+				noPreview: '暂无摘要内容',
+				noSelectionDescription: '选择一篇日记开始编辑，或者创建今天的记录。',
+				noTasks: '这一天还没有完成任务上下文。',
+				updatedAt: '最近更新于 {date}',
 			},
 			toast: {
 				loadFailedTitle: '加载日记失败',

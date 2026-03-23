@@ -10,7 +10,10 @@ import {
 type SaveDiaryPayload = {
 	date: string
 	title: string
+	subtitle?: string | null
 	content: string
+	favorite?: boolean
+	tags?: string[]
 	linkedTaskIds?: string[]
 	linkedProjectId?: string | null
 }

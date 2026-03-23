@@ -798,9 +798,11 @@ export default {
 		},
 		diary: {
 			title: 'Diary',
-			subtitle: 'Track your day-by-day work journey',
+			subtitle: 'Center the experience around each day so progress, issues, and next steps stay reviewable',
 			newAction: 'New Diary Entry',
 			empty: 'No diary entries yet',
+			emptyTitle: 'No diary entries yet',
+			emptyDescription: 'Start with today and your future reviews will have much better context.',
 			entriesCount: '{count} entries',
 			tasksCount: '{count} tasks',
 			dayTasks: 'Tasks of the Day',
@@ -812,13 +814,29 @@ export default {
 			fields: {
 				date: 'Date',
 				title: 'Title',
+				titlePrefix: 'Fixed Prefix',
+				subtitle: 'Subtitle',
 				contentMarkdown: 'Content (Markdown)',
 				linkedProjectOptional: 'Linked Project (Optional)',
 			},
 			placeholders: {
 				title: 'Enter diary title',
+				subtitle: 'e.g. Work Log / Review / Milestone Notes',
 				content: "Write today's notes...",
 				linkedProject: 'Enter Project ID',
+			},
+			actions: {
+				todayShortcut: 'Today',
+				createToday: "Create Today's Entry",
+				openFinishList: 'Open Finish List',
+				openWorkspace: 'Back to Workspace',
+			},
+			labels: {
+				defaultSubtitle: 'Work Log',
+				noPreview: 'No preview yet',
+				noSelectionDescription: 'Select an entry to edit, or create one for today.',
+				noTasks: 'No completed-task context for this day yet.',
+				updatedAt: 'Last updated {date}',
 			},
 			toast: {
 				loadFailedTitle: 'Failed to load diary',
