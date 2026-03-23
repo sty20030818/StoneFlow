@@ -1,27 +1,40 @@
 <template>
-	<section class="h-full flex flex-col">
-		<!-- 顶部：标题 + 搜索 + 新建 -->
-		<header
-			v-motion="headerMotion"
-			class="flex flex-col gap-3 border-b border-default pb-3 lg:flex-row lg:items-center lg:justify-between">
-			<div class="space-y-1">
-				<div class="flex items-center gap-2 text-sm font-semibold">
-					<UIcon
-						name="i-lucide-lock"
-						class="text-yellow-500" />
-					<span>{{ t('assets.vault.title') }}</span>
-				</div>
-				<div class="text-xs text-muted">{{ t('assets.vault.subtitle') }}</div>
-			</div>
+	<section class="vault-library-page">
+		<AssetLibraryToolbar
+			v-motion="toolbarMotion"
+			v-model:search="searchKeyword"
+			:title="t('assets.vault.title')"
+			:description="t('assets.vault.subtitle')"
+			:search-placeholder="t('assets.vault.searchPlaceholder')">
+			<template #eyebrow>
+				<UIcon
+					name="i-lucide-shield-keyhole"
+					class="size-4" />
+				<span>{{ t('assets.vault.labels.repository') }}</span>
+			</template>
 
-			<div class="flex items-center gap-2">
-				<UInput
-					v-model="searchKeyword"
-					icon="i-lucide-search"
-					:placeholder="t('assets.vault.searchPlaceholder')"
+			<template #actions>
+				<UBadge
+					color="neutral"
+					variant="soft"
+					size="sm">
+					{{ filteredEntries.length }} {{ t('assets.vault.labels.items') }}
+				</UBadge>
+				<UBadge
+					color="warning"
+					variant="soft"
+					size="sm">
+					{{ favoriteCount }} {{ t('assets.vault.labels.favorites') }}
+				</UBadge>
+				<UButton
+					v-if="hasActiveFilters"
+					color="neutral"
+					variant="ghost"
 					size="sm"
-					class="w-64" />
-
+					icon="i-lucide-filter-x"
+					@click="resetFilters">
+					{{ t('assets.vault.actions.clearFilters') }}
+				</UButton>
 				<UButton
 					color="primary"
 					size="sm"
@@ -29,63 +42,60 @@
 					@click="onCreateNew">
 					{{ t('common.actions.new') }}
 				</UButton>
-			</div>
-		</header>
+			</template>
 
-		<!-- 主体：左侧分组 + 列表 -->
+			<template #filters>
+				<USelectMenu
+					v-model="selectedType"
+					:items="typeFilterOptions"
+					value-key="value"
+					label-key="label"
+					size="sm"
+					class="vault-library-page__filter"
+					:search-input="false"
+					:ui="assetModalSelectMenuUi" />
+				<USelectMenu
+					v-model="selectedEnvironment"
+					:items="environmentOptions"
+					value-key="value"
+					label-key="label"
+					size="sm"
+					class="vault-library-page__filter"
+					:search-input="false"
+					:ui="assetModalSelectMenuUi" />
+				<USelectMenu
+					v-model="selectedFavoriteFilter"
+					:items="favoriteOptions"
+					value-key="value"
+					label-key="label"
+					size="sm"
+					class="vault-library-page__filter"
+					:search-input="false"
+					:ui="assetModalSelectMenuUi" />
+				<USelectMenu
+					v-model="selectedSort"
+					:items="sortOptions"
+					value-key="value"
+					label-key="label"
+					size="sm"
+					class="vault-library-page__filter"
+					:search-input="false"
+					:ui="assetModalSelectMenuUi" />
+			</template>
+		</AssetLibraryToolbar>
+
 		<div
-			v-motion="layoutMotion"
-			class="mt-4 flex flex-1 min-h-0 gap-4">
-			<aside
-				v-motion="folderMotion"
-				class="w-48 shrink-0 border-r border-default pr-4">
-				<div class="space-y-2">
-					<button
-						type="button"
-						class="w-full rounded-lg px-2 py-1.5 text-left text-sm transition"
-						:class="selectedFolder === null ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60'"
-						@click="selectedFolder = null">
-						<div class="flex items-center gap-2">
-							<UIcon
-								name="i-lucide-folder"
-								class="size-4" />
-							<span>{{ t('assets.vault.allItems') }}</span>
-						</div>
-					</button>
-
-					<div
-						v-for="folder in folders"
-						:key="folder"
-						class="space-y-0.5">
-						<button
-							type="button"
-							class="w-full rounded-lg px-2 py-1.5 text-left text-sm transition"
-							:class="selectedFolder === folder ? 'bg-elevated text-default' : 'text-muted hover:bg-elevated/60'"
-							@click="selectedFolder = folder">
-							<div class="flex items-center gap-2">
-								<UIcon
-									name="i-lucide-folder-open"
-									class="size-4" />
-								<span class="truncate">{{ folder }}</span>
-							</div>
-						</button>
-					</div>
-				</div>
-			</aside>
-
-			<main
-				v-motion="listMotion"
-				class="flex-1 min-w-0 overflow-y-auto">
-				<div
-					v-if="showLoadErrorState"
-					class="py-8">
-					<EmptyState
-						:text="t('assets.vault.toast.loadFailedTitle')"
-						icon="i-lucide-triangle-alert"
-						stacked>
-						<p>{{ loadErrorMessage }}</p>
+			v-motion="gridMotion"
+			class="vault-library-page__content">
+			<div
+				v-if="showLoadErrorState"
+				class="vault-library-page__state">
+				<AssetLibraryEmptyState
+					icon="i-lucide-triangle-alert"
+					:title="t('assets.vault.toast.loadFailedTitle')"
+					:description="loadErrorMessage">
+					<template #action>
 						<UButton
-							class="mt-3"
 							color="neutral"
 							variant="soft"
 							size="sm"
@@ -93,76 +103,133 @@
 							@click="refresh">
 							{{ t('common.actions.retry') }}
 						</UButton>
-					</EmptyState>
-				</div>
+					</template>
+				</AssetLibraryEmptyState>
+			</div>
 
-				<div
-					v-else-if="filteredEntries.length === 0 && !loading"
-					class="py-8 text-center text-sm text-muted">
-					{{ t('assets.vault.empty') }}
-				</div>
+			<div
+				v-else-if="loading && filteredEntries.length === 0"
+				class="vault-library-page__state">
+				<AssetLibraryEmptyState
+					icon="i-lucide-loader-circle"
+					:title="t('common.status.loading')"
+					:description="t('assets.vault.emptyLoadingDescription')" />
+			</div>
 
-				<div
-					v-else
-					class="space-y-2">
-					<div
-						v-for="(entry, index) in filteredEntries"
-						:key="entry.id"
-						v-motion="entryItemMotions[index]"
-						class="cursor-pointer rounded-lg border border-default bg-elevated/80 p-3 transition hover:bg-default"
-						:class="selectedEntry?.id === entry.id && editOpen ? 'ring-2 ring-primary' : ''"
-						@click="openEditor(entry)">
-						<div class="flex items-start justify-between gap-2">
-							<div class="min-w-0 flex-1">
-								<div class="mb-1 flex items-center gap-2">
-									<span class="truncate text-sm font-medium">{{ entry.name }}</span>
-									<UBadge
-										color="neutral"
-										variant="soft"
-										size="2xs">
-										{{ typeLabel(entry.type) }}
-									</UBadge>
-									<UBadge
-										v-if="entry.folder"
-										color="primary"
-										variant="soft"
-										size="2xs">
-										{{ entry.folder }}
-									</UBadge>
-								</div>
-								<div class="line-clamp-1 text-xs text-muted">
-									{{ entry.value.substring(0, 30) }}{{ entry.value.length > 30 ? '...' : '' }}
-								</div>
-								<div
-									v-if="entry.note"
-									class="mt-1 line-clamp-1 text-xs text-muted">
-									{{ entry.note }}
-								</div>
+			<div
+				v-else-if="filteredEntries.length === 0"
+				class="vault-library-page__state">
+				<AssetLibraryEmptyState
+					icon="i-lucide-lock-keyhole-open"
+					:title="t('assets.vault.emptyTitle')"
+					:description="hasActiveFilters ? t('assets.vault.emptyFilteredDescription') : t('assets.vault.emptyIdleDescription')">
+					<template #action>
+						<UButton
+							v-if="hasActiveFilters"
+							color="neutral"
+							variant="soft"
+							size="sm"
+							icon="i-lucide-filter-x"
+							@click="resetFilters">
+							{{ t('assets.vault.actions.clearFilters') }}
+						</UButton>
+						<UButton
+							v-else
+							color="primary"
+							size="sm"
+							icon="i-lucide-plus"
+							@click="onCreateNew">
+							{{ t('assets.vault.actions.createFirst') }}
+						</UButton>
+					</template>
+				</AssetLibraryEmptyState>
+			</div>
+
+			<div
+				v-else
+				class="vault-library-page__grid">
+				<article
+					v-for="(entry, index) in filteredEntries"
+					:key="entry.id"
+					v-motion="entryItemMotions[index]"
+					class="vault-card"
+					:class="entry.favorite ? 'vault-card--favorite' : ''"
+					@click="openEditor(entry)">
+					<div class="vault-card__header">
+						<div class="vault-card__meta">
+							<div class="vault-card__title-row">
+								<h3 class="vault-card__title">{{ entry.name }}</h3>
+								<UBadge
+									color="neutral"
+									variant="soft"
+									size="sm">
+									{{ typeLabel(entry.type) }}
+								</UBadge>
 							</div>
-							<UButton
-								color="neutral"
-								variant="ghost"
-								size="2xs"
-								icon="i-lucide-trash-2"
-								@click.stop="onDelete(entry.id)">
-								<span class="sr-only">{{ t('common.actions.delete') }}</span>
-							</UButton>
+							<div class="vault-card__caption">
+								{{ t('assets.vault.labels.updatedAt', { date: formatEntryDate(entry.updatedAt) }) }}
+							</div>
 						</div>
+
+						<AssetCardActions
+							:favorite="entry.favorite"
+							:revealed="isEntryRevealed(entry)"
+							:show-reveal="true"
+							@favorite="onToggleFavorite(entry)"
+							@reveal="toggleEntryReveal(entry)"
+							@copy="onCopyEntry(entry)" />
 					</div>
-				</div>
-			</main>
+
+					<div class="vault-card__chips">
+						<UBadge
+							v-if="entry.environment"
+							color="warning"
+							variant="soft"
+							size="sm">
+							{{ entry.environment }}
+						</UBadge>
+						<UBadge
+							v-for="tag in entry.tags.slice(0, 3)"
+							:key="tag"
+							color="neutral"
+							variant="subtle"
+							size="sm">
+							#{{ tag }}
+						</UBadge>
+						<span
+							v-if="entry.tags.length > 3"
+							class="vault-card__tag-overflow">
+							+{{ entry.tags.length - 3 }}
+						</span>
+					</div>
+
+					<div class="vault-card__secret">
+						{{ isEntryRevealed(entry) ? entry.value : maskValue(entry.value) }}
+					</div>
+
+					<p
+						v-if="entry.note"
+						class="vault-card__note">
+						{{ entry.note }}
+					</p>
+
+					<div class="vault-card__footer">
+						<span>{{ t('assets.vault.labels.createdAt', { date: formatEntryDate(entry.createdAt) }) }}</span>
+						<span>{{ t('assets.vault.labels.valueLength', { count: entry.value.length }) }}</span>
+					</div>
+				</article>
+			</div>
 		</div>
 
-		<UModal
+		<AssetWorkbenchModal
 			v-model:open="editOpen"
 			:title="selectedEntry?.id ? t('assets.vault.modal.editTitle') : t('assets.vault.modal.newTitle')"
-			:description="t('assets.vault.modal.description')"
-			:ui="vaultModalUi">
-			<template #body>
-				<div
-					v-motion="modalBodyMotion"
-					class="space-y-4">
-					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+			:description="t('assets.vault.modal.description')">
+			<div
+				v-motion="modalBodyMotion"
+				class="vault-workbench">
+				<section class="vault-workbench__meta">
+					<div class="vault-workbench__meta-grid">
 						<UFormField
 							:label="t('assets.vault.fields.name')"
 							required>
@@ -173,6 +240,7 @@
 								class="w-full"
 								:ui="assetModalInputUi" />
 						</UFormField>
+
 						<UFormField :label="t('assets.vault.fields.type')">
 							<USelectMenu
 								v-model="editForm.type"
@@ -184,88 +252,178 @@
 								:search-input="false"
 								:ui="assetModalSelectMenuUi" />
 						</UFormField>
-					</div>
 
-					<UFormField :label="t('assets.vault.fields.folderOptional')">
-						<UInput
-							v-model="editForm.folder"
-							:placeholder="t('assets.vault.placeholders.folderOptional')"
-							size="md"
-							class="w-full"
-							:ui="assetModalInputUi" />
-					</UFormField>
-
-					<UFormField
-						:label="t('assets.vault.fields.value')"
-						required>
-						<div class="relative">
+						<UFormField :label="t('assets.vault.fields.environmentOptional')">
 							<UInput
-								v-model="editForm.value"
-								:type="showValue ? 'text' : 'password'"
-								:placeholder="t('assets.vault.placeholders.value')"
+								v-model="editForm.environment"
+								:placeholder="t('assets.vault.placeholders.environmentOptional')"
 								size="md"
 								class="w-full"
 								:ui="assetModalInputUi" />
+						</UFormField>
+
+						<UFormField :label="t('assets.vault.fields.tagsOptional')">
+							<UInput
+								v-model="tagsInput"
+								:placeholder="t('assets.vault.placeholders.tagsOptional')"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi"
+								@blur="onTagsBlur" />
+						</UFormField>
+
+						<UFormField :label="t('assets.vault.fields.folderOptional')">
+							<UInput
+								v-model="editForm.folder"
+								:placeholder="t('assets.vault.placeholders.folderOptional')"
+								size="md"
+								class="w-full"
+								:ui="assetModalInputUi" />
+						</UFormField>
+
+						<UFormField :label="t('assets.vault.fields.noteOptional')">
+							<UTextarea
+								v-model="editForm.note"
+								:placeholder="t('assets.vault.placeholders.noteOptional')"
+								:rows="4"
+								size="md"
+								class="w-full"
+								autoresize
+								:ui="assetModalTextareaUi" />
+						</UFormField>
+					</div>
+
+					<div class="vault-workbench__meta-summary">
+						<UBadge
+							color="neutral"
+							variant="soft"
+							size="sm">
+							{{ typeLabel(editForm.type) }}
+						</UBadge>
+						<UBadge
+							v-if="editForm.environment"
+							color="warning"
+							variant="soft"
+							size="sm">
+							{{ editForm.environment }}
+						</UBadge>
+						<UBadge
+							v-if="editForm.favorite"
+							color="warning"
+							variant="soft"
+							size="sm">
+							{{ t('assets.vault.labels.favorite') }}
+						</UBadge>
+						<div class="vault-workbench__timestamps">
+							<div v-if="selectedEntry">
+								{{ t('assets.vault.labels.createdAt', { date: formatEntryDate(selectedEntry.createdAt) }) }}
+							</div>
+							<div v-if="selectedEntry">
+								{{ t('assets.vault.labels.updatedAt', { date: formatEntryDate(selectedEntry.updatedAt) }) }}
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section class="vault-workbench__secret">
+					<div class="vault-workbench__secret-toolbar">
+						<div class="vault-workbench__secret-title">
+							{{ t('assets.vault.fields.value') }}
+						</div>
+						<div class="vault-workbench__secret-actions">
 							<UButton
 								color="neutral"
 								variant="ghost"
-								size="2xs"
+								size="xs"
 								:icon="showValue ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-								class="absolute top-1/2 right-1 -translate-y-1/2"
-								@click="showValue = !showValue">
-								<span class="sr-only">{{ t('assets.vault.toggleSensitive') }}</span>
+								@click="toggleSensitiveValue">
+								{{ showValue ? t('assets.vault.actions.hideValue') : t('assets.vault.actions.showValue') }}
+							</UButton>
+							<UButton
+								color="neutral"
+								variant="ghost"
+								size="xs"
+								icon="i-lucide-copy"
+								@click="onCopyDraft">
+								{{ t('common.actions.copy') }}
 							</UButton>
 						</div>
-					</UFormField>
+					</div>
 
-					<UFormField :label="t('assets.vault.fields.noteOptional')">
-						<UTextarea
-							v-model="editForm.note"
-							:placeholder="t('assets.vault.placeholders.noteOptional')"
-							:rows="3"
-							size="md"
-							class="w-full"
-							autoresize
-							:ui="assetModalTextareaUi" />
-					</UFormField>
-				</div>
-			</template>
+					<div
+						v-if="selectedEntry?.id && !showValue"
+						class="vault-workbench__secret-mask">
+						<div class="vault-workbench__secret-mask-value">{{ maskValue(editForm.value) }}</div>
+						<p class="vault-workbench__secret-mask-copy">
+							{{ t('assets.vault.labels.hiddenHint') }}
+						</p>
+					</div>
+
+					<UTextarea
+						v-else
+						v-model="editForm.value"
+						:placeholder="t('assets.vault.placeholders.value')"
+						:rows="14"
+						size="md"
+						class="w-full"
+						autoresize
+						:ui="assetModalTextareaUi" />
+				</section>
+			</div>
 
 			<template #footer>
 				<div
 					v-motion="modalFooterMotion"
-					class="flex items-center justify-end gap-2">
-					<UButton
-						color="neutral"
-						variant="ghost"
-						size="sm"
-						@click="closeEditor">
-						{{ t('common.actions.cancel') }}
-					</UButton>
-					<UButton
-						color="primary"
-						variant="soft"
-						size="sm"
-						icon="i-lucide-copy"
-						@click="onCopy">
-						{{ t('assets.vault.copyValueAction') }}
-					</UButton>
-					<UButton
-						color="primary"
-						size="sm"
-						@click="onSave">
-						{{ t('common.actions.save') }}
-					</UButton>
+					class="vault-workbench__footer">
+					<div class="vault-workbench__footer-meta">
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="sm"
+							:icon="editForm.favorite ? 'i-lucide-star' : 'i-lucide-star-off'"
+							@click="editForm.favorite = !editForm.favorite">
+							{{ editForm.favorite ? t('assets.vault.actions.unfavorite') : t('assets.vault.actions.favorite') }}
+						</UButton>
+						<UButton
+							v-if="selectedEntry?.id"
+							color="error"
+							variant="ghost"
+							size="sm"
+							icon="i-lucide-trash-2"
+							@click="onDelete(selectedEntry.id)">
+							{{ t('common.actions.delete') }}
+						</UButton>
+					</div>
+
+					<div class="vault-workbench__footer-actions">
+						<UButton
+							color="neutral"
+							variant="ghost"
+							size="sm"
+							@click="closeEditor">
+							{{ t('common.actions.cancel') }}
+						</UButton>
+						<UButton
+							color="primary"
+							size="sm"
+							icon="i-lucide-save"
+							@click="onSave">
+							{{ t('common.actions.save') }}
+						</UButton>
+					</div>
 				</div>
 			</template>
-		</UModal>
+		</AssetWorkbenchModal>
 	</section>
 </template>
 
 <script setup lang="ts">
 	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
-	import EmptyState from '@/components/base/EmptyState.vue'
 	import {
+		AssetCardActions,
+		AssetLibraryEmptyState,
+		AssetLibraryToolbar,
+		AssetWorkbenchModal,
 		assetModalInputUi,
 		assetModalSelectMenuUi,
 		assetModalTextareaUi,
@@ -276,33 +434,321 @@
 
 	const {
 		t,
-		headerMotion,
-		layoutMotion,
-		folderMotion,
-		loadErrorMessage,
-		listMotion,
+		toolbarMotion,
+		gridMotion,
 		modalBodyMotion,
 		modalFooterMotion,
 		loading,
+		loadErrorMessage,
 		showLoadErrorState,
 		selectedEntry,
 		editOpen,
-		selectedFolder,
 		searchKeyword,
+		selectedType,
+		selectedEnvironment,
+		selectedFavoriteFilter,
+		selectedSort,
 		showValue,
 		editForm,
+		tagsInput,
 		typeOptions,
-		folders,
+		typeFilterOptions,
+		environmentOptions,
+		favoriteOptions,
+		sortOptions,
+		hasActiveFilters,
+		favoriteCount,
 		filteredEntries,
 		typeLabel,
-		vaultModalUi,
+		maskValue,
+		formatEntryDate,
 		entryItemMotions,
-		refresh,
+		onTagsBlur,
 		openEditor,
 		onCreateNew,
 		closeEditor,
-		onCopy,
+		resetFilters,
+		isEntryRevealed,
+		toggleEntryReveal,
+		toggleSensitiveValue,
+		refresh,
+		onCopyEntry,
+		onCopyDraft,
 		onSave,
 		onDelete,
+		onToggleFavorite,
 	} = useAssetsVaultPageFacade()
 </script>
+
+<style scoped>
+	.vault-library-page {
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr);
+		gap: 1rem;
+		height: 100%;
+		min-height: 0;
+	}
+
+	.vault-library-page__content {
+		min-height: 0;
+		overflow-y: auto;
+		padding-right: 0.2rem;
+	}
+
+	.vault-library-page__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+		gap: 1rem;
+		padding-bottom: 0.35rem;
+	}
+
+	.vault-library-page__state {
+		padding-top: 0.25rem;
+	}
+
+	.vault-library-page__filter {
+		min-width: 11rem;
+	}
+
+	.vault-card {
+		display: grid;
+		gap: 0.85rem;
+		padding: 1rem;
+		border: 1px solid rgb(203 213 225 / 0.8);
+		border-radius: 1.6rem;
+		background:
+			linear-gradient(180deg, rgb(255 255 255 / 0.97), rgb(248 250 252 / 0.94)),
+			radial-gradient(circle at top right, rgb(251 191 36 / 0.12), transparent 34%),
+			radial-gradient(circle at bottom left, rgb(34 197 94 / 0.08), transparent 38%);
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.85),
+			0 18px 36px rgb(15 23 42 / 0.08);
+		cursor: pointer;
+		transition:
+			transform 160ms ease,
+			box-shadow 160ms ease,
+			border-color 160ms ease;
+	}
+
+	.vault-card:hover {
+		transform: translateY(-2px);
+		border-color: rgb(250 204 21 / 0.55);
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.88),
+			0 24px 48px rgb(120 53 15 / 0.12);
+	}
+
+	.vault-card--favorite {
+		border-color: rgb(250 204 21 / 0.55);
+		background:
+			linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(255 251 235 / 0.94)),
+			radial-gradient(circle at top right, rgb(245 158 11 / 0.16), transparent 36%);
+	}
+
+	.vault-card__header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.vault-card__meta {
+		min-width: 0;
+		display: grid;
+		gap: 0.45rem;
+	}
+
+	.vault-card__title-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.vault-card__title {
+		font-size: 0.98rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: rgb(15 23 42);
+	}
+
+	.vault-card__caption {
+		font-size: 0.74rem;
+		color: rgb(71 85 105);
+	}
+
+	.vault-card__chips {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.vault-card__tag-overflow {
+		font-size: 0.72rem;
+		color: rgb(71 85 105);
+	}
+
+	.vault-card__secret {
+		padding: 0.95rem 1rem;
+		border-radius: 1.2rem;
+		background:
+			linear-gradient(180deg, rgb(15 23 42), rgb(30 41 59)),
+			radial-gradient(circle at top, rgb(250 204 21 / 0.14), transparent 46%);
+		font-family: 'Iosevka Comfy', 'Fira Code', 'JetBrains Mono', monospace;
+		font-size: 0.78rem;
+		line-height: 1.6;
+		color: rgb(226 232 240);
+		word-break: break-all;
+	}
+
+	.vault-card__note {
+		font-size: 0.79rem;
+		line-height: 1.6;
+		color: rgb(71 85 105);
+	}
+
+	.vault-card__footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+		font-size: 0.72rem;
+		color: rgb(100 116 139);
+	}
+
+	.vault-workbench {
+		display: grid;
+		grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr);
+		gap: 1rem;
+		min-height: min(70vh, 40rem);
+	}
+
+	.vault-workbench__meta,
+	.vault-workbench__secret {
+		display: grid;
+		align-content: start;
+		gap: 1rem;
+		padding: 1rem;
+		border: 1px solid rgb(226 232 240 / 0.92);
+		border-radius: 1.5rem;
+		background:
+			linear-gradient(180deg, rgb(255 255 255 / 0.97), rgb(248 250 252 / 0.94)),
+			radial-gradient(circle at top, rgb(250 204 21 / 0.08), transparent 44%);
+	}
+
+	.vault-workbench__meta-grid {
+		display: grid;
+		gap: 0.95rem;
+	}
+
+	.vault-workbench__meta-summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		padding-top: 0.35rem;
+		border-top: 1px solid rgb(226 232 240 / 0.85);
+	}
+
+	.vault-workbench__timestamps {
+		display: grid;
+		gap: 0.25rem;
+		width: 100%;
+		font-size: 0.74rem;
+		line-height: 1.55;
+		color: rgb(100 116 139);
+	}
+
+	.vault-workbench__secret-toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.vault-workbench__secret-title {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: rgb(15 23 42);
+	}
+
+	.vault-workbench__secret-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.vault-workbench__secret-mask {
+		display: grid;
+		place-items: center;
+		min-height: 18rem;
+		padding: 1.25rem;
+		border: 1px dashed rgb(245 158 11 / 0.35);
+		border-radius: 1.35rem;
+		background:
+			linear-gradient(180deg, rgb(15 23 42), rgb(30 41 59)),
+			radial-gradient(circle at top, rgb(250 204 21 / 0.16), transparent 44%);
+		text-align: center;
+	}
+
+	.vault-workbench__secret-mask-value {
+		font-family: 'Iosevka Comfy', 'Fira Code', 'JetBrains Mono', monospace;
+		font-size: 0.95rem;
+		line-height: 1.7;
+		color: rgb(248 250 252);
+		word-break: break-all;
+	}
+
+	.vault-workbench__secret-mask-copy {
+		margin-top: 0.85rem;
+		font-size: 0.76rem;
+		line-height: 1.6;
+		color: rgb(226 232 240 / 0.8);
+	}
+
+	.vault-workbench__footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		width: 100%;
+	}
+
+	.vault-workbench__footer-meta,
+	.vault-workbench__footer-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	@media (max-width: 1120px) {
+		.vault-workbench {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.vault-library-page__filter {
+			min-width: 100%;
+		}
+
+		.vault-library-page__grid {
+			grid-template-columns: 1fr;
+		}
+
+		.vault-workbench__secret-toolbar,
+		.vault-workbench__footer {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.vault-workbench__footer-meta,
+		.vault-workbench__footer-actions {
+			justify-content: space-between;
+		}
+	}
+</style>
