@@ -180,6 +180,34 @@ export default {
 	},
 	sidebar: {
 		projectsEmpty: '当前 Space 暂无项目',
+		autoSyncCard: {
+			title: '自动同步',
+			status: {
+				booting: '加载中',
+				missing: '未配置',
+				idle: '待命',
+				disabled: '已关闭',
+				syncing: '同步中',
+				error: '异常',
+				success: '已同步',
+			},
+			summary: {
+				booting: '正在读取同步状态...',
+				missing: '未配置远端同步',
+				idle: '等待首次同步',
+				disabled: '自动同步已关闭',
+				syncing: '正在同步内容...',
+				error: '最近一次同步失败',
+				loadFailed: '无法读取同步状态',
+				lastSynced: '上次同步 {text}',
+				justNow: '刚刚',
+			},
+			actions: {
+				syncNow: '立即同步',
+				openRemoteSync: '前往远端同步设置',
+				openSettings: '打开全局设置',
+			},
+		},
 	},
 	modals: {
 		createTask: {

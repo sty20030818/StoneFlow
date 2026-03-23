@@ -180,6 +180,34 @@ export default {
 	},
 	sidebar: {
 		projectsEmpty: 'No projects in this space yet',
+		autoSyncCard: {
+			title: 'Auto Sync',
+			status: {
+				booting: 'Loading',
+				missing: 'Setup',
+				idle: 'Idle',
+				disabled: 'Paused',
+				syncing: 'Syncing',
+				error: 'Error',
+				success: 'Synced',
+			},
+			summary: {
+				booting: 'Reading sync status...',
+				missing: 'Remote sync is not configured',
+				idle: 'Waiting for first sync',
+				disabled: 'Auto sync is turned off',
+				syncing: 'Syncing your content...',
+				error: 'The most recent sync failed',
+				loadFailed: 'Unable to read sync status',
+				lastSynced: 'Last synced {text}',
+				justNow: 'just now',
+			},
+			actions: {
+				syncNow: 'Sync now',
+				openRemoteSync: 'Open remote sync settings',
+				openSettings: 'Open global settings',
+			},
+		},
 	},
 	modals: {
 		createTask: {

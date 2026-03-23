@@ -20,5 +20,6 @@ export {
 	RemoteSyncEditForm,
 	RemoteSyncImportForm,
 	RemoteSyncProfilesCard,
+	useRemoteSyncOverview,
 	useRemoteSyncPageFacade,
 } from './remote-sync'

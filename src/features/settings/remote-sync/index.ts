@@ -1,4 +1,4 @@
-export { useRemoteSyncPageFacade } from './composables'
+export { useRemoteSyncOverview, useRemoteSyncPageFacade } from './composables'
 export {
 	RemoteSyncActionsCard,
 	RemoteSyncCreateForm,

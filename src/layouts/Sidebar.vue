@@ -110,7 +110,7 @@
 			</section>
 		</div>
 
-		<!-- 底部：Library + User Capsule -->
+		<!-- 底部：Library + Auto Sync Card -->
 		<div class="shrink-0 border-t border-default/80 bg-default/80">
 			<!-- Library：Collapsible -->
 			<div class="px-3">
@@ -151,14 +151,14 @@
 				</section>
 			</div>
 
-			<!-- User Capsule -->
+			<!-- Auto Sync Card -->
 			<div
 				class="p-3"
 				:class="isLibraryCollapsed ? 'pt-0' : 'pt-3'">
 				<div
 					v-motion="userCardMotion"
 					class="pt-1.5">
-					<UserCard />
+					<AutoSyncCard />
 				</div>
 			</div>
 		</div>
@@ -173,10 +173,10 @@
 
 	import { OPEN_CREATE_PROJECT_MODAL_KEY } from '@/app/injection-keys'
 	import { useProjectShellMotionPreset } from '@/composables/base/motion'
+	import AutoSyncCard from '@/components/AutoSyncCard.vue'
 	import { useNullableStringRouteQuery } from '@/composables/base/route-query'
 	import BrandLogo from '@/components/BrandLogo.vue'
 	import { DraggableProjectTree, type ProjectTreeItem, useSpaceProjectsState } from '@/features/workspace'
-	import UserCard from '@/components/UserCard.vue'
 	import { LIBRARY_NAV_ITEMS, PAGE_NAV_CONFIG } from '@/config/page-nav'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/config/space'
