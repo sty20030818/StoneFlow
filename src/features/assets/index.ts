@@ -1,3 +1,4 @@
+export * from './shared'
 export { assetModalInputUi, assetModalSelectMenuUi, assetModalTextareaUi } from './shared'
 export { useAssetsDiaryPageFacade } from './diary'
 export { useAssetsNotesPageFacade } from './notes'
