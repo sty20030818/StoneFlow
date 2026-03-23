@@ -5,6 +5,9 @@ import { mapAssetNoteDtoToDomain, mapAssetNotePatchToDto, type AssetNote, type A
 type SaveNotePayload = {
 	title: string
 	content: string
+	excerpt?: string | null
+	tags?: string[]
+	favorite?: boolean
 	linkedProjectId?: string | null
 	linkedTaskId?: string | null
 }
