@@ -7,6 +7,7 @@ export const DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS = 5 * 60 * 1000
 
 export const DEFAULT_REMOTE_SYNC_POLICY: RemoteSyncPolicy = {
 	enabled: false,
+	runOnInterval: true,
 	intervalMinutes: 15,
 	runOnAppStart: false,
 	runOnWindowFocus: true,

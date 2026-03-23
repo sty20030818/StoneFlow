@@ -20,6 +20,7 @@ export function useRemoteSyncAutoSync(options: {
 	const online = useOnline()
 
 	const syncPreferences = computed(() => remoteSyncStore.syncPreferences)
+	const hasActiveProfile = computed(() => Boolean(remoteSyncStore.activeProfileId))
 	const activeProfileState = computed(() => remoteSyncStore.getProfileState(remoteSyncStore.activeProfileId))
 	const latestResult = computed(() => activeProfileState.value?.latestResult ?? null)
 	const autoSyncIntervalOptions = computed(() =>
@@ -36,21 +37,26 @@ export function useRemoteSyncAutoSync(options: {
 	)
 
 	const autoSyncStatusText = computed(() => {
+		if (!hasActiveProfile.value) return t('settings.remoteSync.autoSync.status.noProfile')
 		if (!syncPreferences.value.enabled) return t('settings.remoteSync.autoSync.meta.disabled')
+		if (!syncPreferences.value.runOnInterval && !syncPreferences.value.runOnAppStart && !syncPreferences.value.runOnWindowFocus) {
+			return t('settings.remoteSync.autoSync.status.noTrigger')
+		}
 		if (latestResult.value?.status === 'failed') return t('settings.remoteSync.autoSync.status.failed')
 		if (latestResult.value?.status === 'success') return t('settings.remoteSync.autoSync.status.success')
 		return t('settings.remoteSync.autoSync.status.idle')
 	})
 
 	const autoSyncMetaText = computed(() => {
+		if (!hasActiveProfile.value) return t('settings.remoteSync.autoSync.meta.noProfile')
 		if (!syncPreferences.value.enabled) return t('settings.remoteSync.autoSync.meta.disabled')
 		if (!online.value) return t('settings.remoteSync.autoSync.meta.offline')
+		if (!syncPreferences.value.runOnInterval && !syncPreferences.value.runOnAppStart && !syncPreferences.value.runOnWindowFocus) {
+			return t('settings.remoteSync.autoSync.meta.noTrigger')
+		}
 		const lastRunAt = activeProfileState.value?.lastRunAt ?? 0
 		if (lastRunAt <= 0) return t('settings.remoteSync.autoSync.meta.neverRun')
-		return t('settings.remoteSync.autoSync.meta.lastRun', {
-			source: t('settings.remoteSync.autoSync.trigger.interval'),
-			time: formatDateTime(lastRunAt, { locale: locale.value }),
-		})
+		return t('settings.remoteSync.autoSync.meta.lastRun', { time: formatDateTime(lastRunAt, { locale: locale.value }) })
 	})
 
 	const autoSyncLastError = computed(() => latestResult.value?.errorMessage ?? null)
@@ -70,6 +76,10 @@ export function useRemoteSyncAutoSync(options: {
 
 	function handleUpdateAutoSyncEnabled(value: boolean) {
 		void updateSyncPreferencesPatch({ enabled: value })
+	}
+
+	function handleUpdateAutoSyncRunOnInterval(value: boolean) {
+		void updateSyncPreferencesPatch({ runOnInterval: value })
 	}
 
 	function handleUpdateAutoSyncIntervalMinutes(value: number) {
@@ -93,12 +103,14 @@ export function useRemoteSyncAutoSync(options: {
 	return {
 		online,
 		syncPreferences,
+		hasActiveProfile,
 		autoSyncIntervalOptions,
 		autoSyncRetryOptions,
 		autoSyncStatusText,
 		autoSyncMetaText,
 		autoSyncLastError,
 		handleUpdateAutoSyncEnabled,
+		handleUpdateAutoSyncRunOnInterval,
 		handleUpdateAutoSyncIntervalMinutes,
 		handleUpdateAutoSyncRetryCount,
 		handleUpdateAutoSyncRunOnAppStart,

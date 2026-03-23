@@ -1,45 +1,6 @@
 <template>
 	<section class="mx-auto w-full max-w-6xl space-y-6">
 		<div
-			v-motion="actionsCardMotion"
-			class="space-y-6">
-			<RemoteSyncActionsCard
-				:is-pushing="isPushing"
-				:is-pulling="isPulling"
-				:testing-current="testingCurrent"
-				:is-syncing-now="isSyncingNow"
-				:is-syncing="isSyncing"
-				:has-active-profile="hasActiveProfile"
-				:status-badge-variant="statusBadgeVariant"
-				:status-badge-class="statusBadgeClass"
-				:status-label="statusLabel"
-				:status-message="statusMessage"
-				:sync-error="syncError"
-				:last-synced-text="lastSyncedText"
-				:last-pushed-text="lastPushedText"
-				:last-pulled-text="lastPulledText"
-				:last-push-summary-text="lastPushSummaryText"
-				:last-pull-summary-text="lastPullSummaryText"
-				:sync-preferences="syncPreferences"
-				:auto-sync-interval-options="autoSyncIntervalOptions"
-				:auto-sync-retry-options="autoSyncRetryOptions"
-				:auto-sync-status-text="autoSyncStatusText"
-				:auto-sync-meta-text="autoSyncMetaText"
-				:auto-sync-last-error="autoSyncLastError"
-				:has-diagnostic="hasDiagnostic"
-				:latest-diagnostic-steps="latestDiagnosticSteps"
-				:on-update-auto-sync-enabled="handleUpdateAutoSyncEnabled"
-				:on-update-auto-sync-interval-minutes="handleUpdateAutoSyncIntervalMinutes"
-				:on-update-auto-sync-retry-count="handleUpdateAutoSyncRetryCount"
-				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
-				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus"
-				:on-test-current="handleTestCurrent"
-				:on-sync-now="handleSyncNow"
-				:on-push="handlePush"
-				:on-pull="handlePull" />
-		</div>
-
-		<div
 			v-motion="contentGridMotion"
 			class="space-y-6">
 			<div v-motion="profilesCardMotion">
@@ -53,6 +14,52 @@
 					:on-open-edit="openEdit"
 					:on-open-delete="openDelete" />
 			</div>
+		</div>
+
+		<div
+			v-motion="actionsCardMotion"
+			class="space-y-6">
+			<RemoteSyncAutoSyncCard
+				:has-active-profile="hasActiveProfile"
+				:sync-preferences="syncPreferences"
+				:auto-sync-interval-options="autoSyncIntervalOptions"
+				:auto-sync-retry-options="autoSyncRetryOptions"
+				:auto-sync-status-text="autoSyncStatusText"
+				:auto-sync-meta-text="autoSyncMetaText"
+				:auto-sync-last-error="autoSyncLastError"
+				:on-update-auto-sync-enabled="handleUpdateAutoSyncEnabled"
+				:on-update-auto-sync-run-on-interval="handleUpdateAutoSyncRunOnInterval"
+				:on-update-auto-sync-interval-minutes="handleUpdateAutoSyncIntervalMinutes"
+				:on-update-auto-sync-retry-count="handleUpdateAutoSyncRetryCount"
+				:on-update-auto-sync-run-on-app-start="handleUpdateAutoSyncRunOnAppStart"
+				:on-update-auto-sync-run-on-window-focus="handleUpdateAutoSyncRunOnWindowFocus" />
+		</div>
+
+		<div
+			v-motion="actionsCardMotion"
+			class="space-y-6">
+			<RemoteSyncActionsCard
+				:is-pushing="isPushing"
+				:is-pulling="isPulling"
+				:testing-current="testingCurrent"
+				:is-syncing-now="isSyncingNow"
+				:is-syncing="isSyncing"
+				:has-active-profile="hasActiveProfile"
+				:status-badge-variant="statusBadgeVariant"
+				:status-badge-class="statusBadgeClass"
+				:status-label="statusLabel"
+				:sync-error="syncError"
+				:last-synced-text="lastSyncedText"
+				:last-pushed-text="lastPushedText"
+				:last-pulled-text="lastPulledText"
+				:last-push-summary-text="lastPushSummaryText"
+				:last-pull-summary-text="lastPullSummaryText"
+				:has-diagnostic="hasDiagnostic"
+				:latest-diagnostic-steps="latestDiagnosticSteps"
+				:on-test-current="handleTestCurrent"
+				:on-sync-now="handleSyncNow"
+				:on-push="handlePush"
+				:on-pull="handlePull" />
 		</div>
 	</section>
 
@@ -223,6 +230,7 @@
 <script setup lang="ts">
 	import {
 		RemoteSyncActionsCard,
+		RemoteSyncAutoSyncCard,
 		RemoteSyncCreateForm,
 		RemoteSyncDeleteBody,
 		RemoteSyncEditForm,
@@ -256,6 +264,7 @@
 		autoSyncStatusText,
 		autoSyncMetaText,
 		autoSyncLastError,
+		handleUpdateAutoSyncRunOnInterval,
 		hasDiagnostic,
 		latestDiagnosticSteps,
 		handleUpdateAutoSyncEnabled,
@@ -268,7 +277,6 @@
 		handlePull,
 		profiles,
 		activeProfileId,
-		statusMessage,
 		statusLabel,
 		statusBadgeVariant,
 		statusBadgeClass,

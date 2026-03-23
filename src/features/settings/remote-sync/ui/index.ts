@@ -1,4 +1,5 @@
 export { default as RemoteSyncActionsCard } from './partials/RemoteSyncActionsCard.vue'
+export { default as RemoteSyncAutoSyncCard } from './partials/RemoteSyncAutoSyncCard.vue'
 export { default as RemoteSyncCreateForm } from './partials/RemoteSyncCreateForm.vue'
 export { default as RemoteSyncDeleteBody } from './partials/RemoteSyncDeleteBody.vue'
 export { default as RemoteSyncEditForm } from './partials/RemoteSyncEditForm.vue'

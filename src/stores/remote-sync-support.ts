@@ -64,6 +64,7 @@ export function normalizeSyncPolicy(input: unknown): RemoteSyncPolicy {
 	}
 	return {
 		enabled: Boolean(input.enabled),
+		runOnInterval: input.runOnInterval === undefined ? true : Boolean(input.runOnInterval),
 		intervalMinutes: toPositiveNumber(input.intervalMinutes, DEFAULT_REMOTE_SYNC_POLICY.intervalMinutes),
 		runOnAppStart: Boolean(input.runOnAppStart),
 		runOnWindowFocus: Boolean(input.runOnWindowFocus),

@@ -63,6 +63,7 @@ function shouldRunForSource(syncPolicy: RemoteSyncPolicy, source: RemoteSyncTrig
 	if (!syncPolicy.enabled) return false
 	if (source === 'appStart') return syncPolicy.runOnAppStart
 	if (source === 'focus') return syncPolicy.runOnWindowFocus
+	if (source === 'interval') return syncPolicy.runOnInterval
 	return true
 }
 

@@ -15,6 +15,7 @@ export {
 } from './about'
 export {
 	RemoteSyncActionsCard,
+	RemoteSyncAutoSyncCard,
 	RemoteSyncCreateForm,
 	RemoteSyncDeleteBody,
 	RemoteSyncEditForm,

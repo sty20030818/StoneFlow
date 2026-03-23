@@ -83,6 +83,7 @@ export type RemoteSyncConnectionHealth = {
 
 export type RemoteSyncPolicy = {
 	enabled: boolean
+	runOnInterval: boolean
 	intervalMinutes: number
 	runOnAppStart: boolean
 	runOnWindowFocus: boolean
