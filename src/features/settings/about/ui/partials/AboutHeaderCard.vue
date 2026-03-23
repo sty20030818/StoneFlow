@@ -128,16 +128,17 @@
 					class="space-y-2">
 					<div class="flex items-center justify-between text-sm text-muted">
 						<span>{{ t('settings.about.updateState.downloading') }}</span>
-						<span>{{ state.progress }}%</span>
+						<span>{{ downloadProgressText }}</span>
 					</div>
 					<UProgress
-						:model-value="state.progress"
-						color="primary" />
+						:model-value="downloadProgressValue"
+						color="primary"
+						:ui="progressUi" />
 				</div>
 
 				<div class="flex flex-wrap gap-2">
 					<UButton
-						v-if="state.available"
+						v-if="showDownloadAction"
 						color="neutral"
 						variant="soft"
 						icon="i-lucide-download"
@@ -160,6 +161,7 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { UpdateState } from '@/composables/useUpdater'
 	import avatarUrl from '@/assets/avatar.png'
@@ -189,4 +191,13 @@
 		onAutoCheckChange: (event: Event) => void
 		onPromptInstallChange: (event: Event) => void
 	}>()
+
+	const progressUi = {
+		base: 'overflow-hidden rounded-full border border-default/60 bg-elevated/60',
+		indicator: 'rounded-full transition-[transform] duration-300 ease-out',
+	}
+
+	const showDownloadAction = computed(() => props.state.available && props.state.status !== 'ready')
+	const downloadProgressValue = computed(() => props.state.progress)
+	const downloadProgressText = computed(() => `${props.state.progress}%`)
 </script>

@@ -24,11 +24,12 @@
 					class="space-y-2">
 					<div class="flex justify-between text-sm">
 						<span>{{ t('updateNotification.downloading') }}...</span>
-						<span>{{ state.progress }}%</span>
+						<span>{{ downloadProgressText }}</span>
 					</div>
 					<UProgress
-						:model-value="state.progress"
-						color="primary" />
+						:model-value="downloadProgressValue"
+						color="primary"
+						:ui="progressUi" />
 				</div>
 
 				<!-- 错误提示 -->
@@ -86,18 +87,24 @@
 	import { useI18n } from 'vue-i18n'
 	import DOMPurify from 'dompurify'
 	import { createMarkdownExit } from 'markdown-exit'
-	import { computed } from 'vue'
+	import { computed, watchEffect } from 'vue'
 	import { createModalLayerUi } from '@/config/ui-layer'
 	import { useUpdater } from '@/composables/useUpdater'
 
 	const { state, promptInstallEnabled, downloadAndInstall, restartApp, dismiss } = useUpdater()
 	const { t } = useI18n({ useScope: 'global' })
 	const updateModalUi = createModalLayerUi()
+	// 临时预览开关，确认弹窗样式后删除。
+	const forcePreview = false
 	const markdown = createMarkdownExit({
 		html: false,
 		linkify: true,
 		breaks: true,
 	})
+	const progressUi = {
+		base: 'overflow-hidden rounded-full border border-default/60 bg-elevated/60',
+		indicator: 'rounded-full transition-[transform] duration-300 ease-out',
+	}
 
 	const renderedNotes = computed(() => {
 		const source = state.value.notes.trim()
@@ -107,14 +114,30 @@
 		return DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true } })
 	})
 
+	const downloadProgressValue = computed(() => state.value.progress)
+	const downloadProgressText = computed(() => `${state.value.progress}%`)
+
+	watchEffect(() => {
+		if (!forcePreview) return
+		if (state.value.available && state.value.status === 'downloading') return
+
+		state.value.available = true
+		state.value.version = '0.0.0'
+		state.value.notes = ''
+		state.value.progress = 0
+		state.value.status = 'downloading'
+		state.value.error = null
+	})
+
 	async function handleDownloadAndInstall() {
 		await downloadAndInstall()
 	}
 
 	const isOpen = computed({
-		get: () => promptInstallEnabled.value && state.value.available && state.value.status !== 'checking',
+		get: () =>
+			forcePreview || (promptInstallEnabled.value && state.value.available && state.value.status !== 'checking'),
 		set: (v) => {
-			if (!v) dismiss()
+			if (!v && !forcePreview) dismiss()
 		},
 	})
 </script>
