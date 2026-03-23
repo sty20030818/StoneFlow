@@ -1,1 +1,8 @@
+export { default as AssetCardActions } from './AssetCardActions.vue'
+export { default as AssetDocumentWorkspace } from './AssetDocumentWorkspace.vue'
+export { default as AssetEditorSurface } from './AssetEditorSurface.vue'
+export { default as AssetLibraryEmptyState } from './AssetLibraryEmptyState.vue'
+export { default as AssetLibraryToolbar } from './AssetLibraryToolbar.vue'
+export { default as AssetMarkdownPreview } from './AssetMarkdownPreview.vue'
+export { default as AssetWorkbenchModal } from './AssetWorkbenchModal.vue'
 export * from './modal-form-ui'
