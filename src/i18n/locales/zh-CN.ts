@@ -930,9 +930,9 @@ export default {
 				noProfile: '未选择配置',
 			},
 			actions: {
-				testCurrent: '测试当前配置',
+				testCurrent: '测试连接',
 				testConnection: '测试连接',
-				syncNow: '一键同步',
+				syncNow: '立即同步',
 				newProfile: '新建配置',
 				importProfiles: '导入配置',
 			},

@@ -1,3 +1,4 @@
+import { useNow } from '@vueuse/core'
 import { computed, type Ref } from 'vue'
 
 import { useRemoteSyncStore } from '@/stores/remote-sync'
@@ -12,7 +13,6 @@ export type RemoteSyncDiagnosticStepViewItem = {
 	error: string | null
 	errorCode: string | null
 	summary: string | null
-	fromCacheText: string | null
 }
 
 type Translate = (key: string, params?: Record<string, unknown>) => string
@@ -27,6 +27,7 @@ export function useRemoteSyncHistoryPanel(options: {
 }) {
 	const { t, locale, lastPushedAt, lastPulledAt, lastPushReport, lastPullReport } = options
 	const remoteSyncStore = useRemoteSyncStore()
+	const now = useNow({ interval: 60_000 })
 
 	const activeProfileId = computed(() => remoteSyncStore.activeProfileId)
 	const latestDiagnostic = computed(() => remoteSyncStore.getLatestDiagnostic(activeProfileId.value))
@@ -34,24 +35,18 @@ export function useRemoteSyncHistoryPanel(options: {
 	const latestDiagnosticSteps = computed<RemoteSyncDiagnosticStepViewItem[]>(() => {
 		const diagnostic = latestDiagnostic.value
 		if (!diagnostic) return []
-		return diagnostic.steps.map((step, index) => ({
+		return diagnostic.steps
+			.filter((step) => step.type !== 'ensure')
+			.map((step, index) => ({
 			id: `${diagnostic.action}-${step.type}-${index}`,
 			label:
-				step.type === 'ensure'
-					? t('settings.remoteSync.actions.testCurrent')
-					: step.type === 'pull'
-						? t('common.actions.download')
-						: t('common.actions.upload'),
+				step.type === 'pull'
+					? t('common.actions.download')
+					: t('common.actions.upload'),
 			status: step.status,
 			error: step.error,
 			errorCode: step.errorCode ?? null,
 			summary: step.report ? summarizeRemoteSyncReport(step.report, t('settings.remoteSync.history.noStats'), t) : null,
-			fromCacheText:
-				step.fromCache === null
-					? null
-					: step.fromCache
-						? t('settings.remoteSync.status.label.ok')
-						: t('settings.remoteSync.status.label.testing'),
 		}))
 	})
 
@@ -80,6 +75,8 @@ export function useRemoteSyncHistoryPanel(options: {
 
 	function formatRelativeTime(timestamp: number, fallback: string) {
 		if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback
+		// 显式依赖 now，保证“最近同步/上传/下载”会按分钟自动刷新。
+		void now.value
 		return formatRelativeDistance(timestamp, {
 			locale: locale.value,
 			fallback,

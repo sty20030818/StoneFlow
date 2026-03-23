@@ -1,3 +1,4 @@
+import { useNow } from '@vueuse/core'
 import { computed, onMounted, ref, type ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -30,6 +31,7 @@ export function useRemoteSyncOverview(): AutoSyncCardOverview {
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const isBooting = ref(!remoteSyncStore.loaded)
 	const loadFailed = ref(false)
+	const now = useNow({ interval: 60_000 })
 
 	const activeProfileId = computed(() => remoteSyncStore.activeProfileId)
 	const hasActiveProfile = computed(() => Boolean(activeProfileId.value))
@@ -96,6 +98,8 @@ export function useRemoteSyncOverview(): AutoSyncCardOverview {
 					? t('sidebar.autoSyncCard.summary.loadFailed')
 					: t('sidebar.autoSyncCard.summary.error')
 			case 'success':
+				// 显式依赖 now，保证“上次同步”相对时间会按分钟自动刷新。
+				void now.value
 				return t('sidebar.autoSyncCard.summary.lastSynced', {
 					text: formatRelativeDistance(latestResult.value?.syncedAt ?? null, {
 						locale: locale.value,

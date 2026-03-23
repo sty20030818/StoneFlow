@@ -129,7 +129,6 @@
 					{{ t('settings.remoteSync.history.empty') }}
 				</div>
 				<div v-if="latestDiagnosticSteps.length > 0" class="space-y-2">
-					<div class="text-[11px] text-muted">{{ t('settings.remoteSync.actions.syncNow') }}</div>
 					<div
 						v-for="step in latestDiagnosticSteps"
 						:key="step.id"
@@ -139,7 +138,6 @@
 							<div class="shrink-0">{{ step.status }}</div>
 						</div>
 						<div v-if="step.summary" class="mt-1 text-[10px] leading-5 text-muted/80">{{ step.summary }}</div>
-						<div v-if="step.fromCacheText" class="mt-1 text-[10px] text-muted/80">{{ step.fromCacheText }}</div>
 						<div v-if="step.error" class="mt-1 text-[10px] leading-5 text-error">
 							{{ step.error }}<span v-if="step.errorCode"> · {{ step.errorCode }}</span>
 						</div>
@@ -188,7 +186,6 @@
 			error: string | null
 			errorCode: string | null
 			summary: string | null
-			fromCacheText: string | null
 		}>
 		onTestCurrent: () => void
 		onSyncNow: () => void

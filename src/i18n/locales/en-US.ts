@@ -930,7 +930,7 @@ export default {
 				noProfile: 'No profile selected',
 			},
 			actions: {
-				testCurrent: 'Test Current Profile',
+				testCurrent: 'Test Connection',
 				testConnection: 'Test Connection',
 				syncNow: 'Sync Now',
 				newProfile: 'New Profile',
