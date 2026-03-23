@@ -16,6 +16,7 @@ export type RemoteSyncTableViewItem = {
 
 const REMOTE_SYNC_TABLE_ORDER: RemoteSyncTableKey[] = [
 	'tasks',
+	'vaultEntries',
 	'taskActivityLogs',
 	'projectActivityLogs',
 	'spaces',

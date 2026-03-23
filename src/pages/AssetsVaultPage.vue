@@ -27,6 +27,22 @@
 					{{ favoriteCount }} {{ t('assets.vault.labels.favorites') }}
 				</UBadge>
 				<UButton
+					color="neutral"
+					variant="soft"
+					size="sm"
+					icon="i-lucide-download"
+					@click="openExportModal">
+					{{ t('common.actions.export') }}
+				</UButton>
+				<UButton
+					color="neutral"
+					variant="soft"
+					size="sm"
+					icon="i-lucide-upload"
+					@click="openImportModal">
+					{{ t('common.actions.import') }}
+				</UButton>
+				<UButton
 					v-if="hasActiveFilters"
 					color="neutral"
 					variant="ghost"
@@ -108,12 +124,12 @@
 			</div>
 
 			<div
-				v-else-if="loading && filteredEntries.length === 0"
+				v-else-if="(unlocking || loading) && filteredEntries.length === 0"
 				class="vault-library-page__state">
 				<AssetLibraryEmptyState
 					icon="i-lucide-loader-circle"
-					:title="t('common.status.loading')"
-					:description="t('assets.vault.emptyLoadingDescription')" />
+					:title="unlocking ? t('assets.vault.unlock.title') : t('common.status.loading')"
+					:description="unlocking ? t('assets.vault.unlock.description') : t('assets.vault.emptyLoadingDescription')" />
 			</div>
 
 			<div
@@ -414,11 +430,125 @@
 				</div>
 			</template>
 		</AssetWorkbenchModal>
+
+		<UModal
+			v-model:open="exportOpen"
+			:title="t('assets.vault.export.title')"
+			:description="t('assets.vault.export.description')"
+			:ui="vaultTransferModalUi">
+			<template #body>
+				<div class="vault-transfer-modal">
+					<p class="vault-transfer-modal__hint">
+						{{ t('assets.vault.export.hint') }}
+					</p>
+					<UFormField :label="t('assets.vault.export.password')">
+						<UInput
+							v-model="exportPassword"
+							type="password"
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi" />
+					</UFormField>
+					<UFormField :label="t('assets.vault.export.confirmPassword')">
+						<UInput
+							v-model="exportPasswordConfirm"
+							type="password"
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi" />
+					</UFormField>
+				</div>
+			</template>
+
+			<template #footer>
+				<div class="vault-transfer-modal__footer">
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="sm"
+						@click="closeExportModal">
+						{{ t('common.actions.cancel') }}
+					</UButton>
+					<UButton
+						color="primary"
+						size="sm"
+						icon="i-lucide-download"
+						:loading="exporting"
+						:disabled="!canExport"
+						@click="onExportVault">
+						{{ t('assets.vault.export.action') }}
+					</UButton>
+				</div>
+			</template>
+		</UModal>
+
+		<UModal
+			v-model:open="importOpen"
+			:title="t('assets.vault.import.title')"
+			:description="t('assets.vault.import.description')"
+			:ui="vaultTransferModalUi">
+			<template #body>
+				<div class="vault-transfer-modal">
+					<p class="vault-transfer-modal__hint">
+						{{ t('assets.vault.import.hint') }}
+					</p>
+					<div class="vault-transfer-modal__file">
+						<UButton
+							color="neutral"
+							variant="soft"
+							size="sm"
+							icon="i-lucide-file-up"
+							@click="triggerImportFilePick">
+							{{ t('assets.vault.import.pickFile') }}
+						</UButton>
+						<span class="vault-transfer-modal__file-name">
+							{{ importFileName || t('assets.vault.import.noFileSelected') }}
+						</span>
+						<input
+							id="vault-import-file-input"
+							type="file"
+							accept="application/json,.json"
+							class="hidden"
+							@change="onImportFileChange" />
+					</div>
+					<UFormField :label="t('assets.vault.import.password')">
+						<UInput
+							v-model="importPassword"
+							type="password"
+							size="md"
+							class="w-full"
+							:ui="assetModalInputUi" />
+					</UFormField>
+				</div>
+			</template>
+
+			<template #footer>
+				<div class="vault-transfer-modal__footer">
+					<UButton
+						color="neutral"
+						variant="ghost"
+						size="sm"
+						@click="closeImportModal">
+						{{ t('common.actions.cancel') }}
+					</UButton>
+					<UButton
+						color="primary"
+						size="sm"
+						icon="i-lucide-upload"
+						:loading="importing"
+						:disabled="!canImport"
+						@click="onImportVault">
+						{{ t('assets.vault.import.action') }}
+					</UButton>
+				</div>
+			</template>
+		</UModal>
 	</section>
 </template>
 
 <script setup lang="ts">
 	import { useRouteMetaShellBreadcrumb } from '@/app/shell-header'
+	import { createModalLayerUi } from '@/config/ui-layer'
 	import {
 		AssetCardActions,
 		AssetLibraryEmptyState,
@@ -439,6 +569,7 @@
 		modalBodyMotion,
 		modalFooterMotion,
 		loading,
+		unlocking,
 		loadErrorMessage,
 		showLoadErrorState,
 		selectedEntry,
@@ -451,6 +582,16 @@
 		showValue,
 		editForm,
 		tagsInput,
+		exportOpen,
+		exportPassword,
+		exportPasswordConfirm,
+		exporting,
+		importOpen,
+		importPassword,
+		importFileName,
+		importing,
+		canExport,
+		canImport,
 		typeOptions,
 		typeFilterOptions,
 		environmentOptions,
@@ -477,7 +618,22 @@
 		onSave,
 		onDelete,
 		onToggleFavorite,
+		openExportModal,
+		closeExportModal,
+		openImportModal,
+		closeImportModal,
+		triggerImportFilePick,
+		onImportFileChange,
+		onExportVault,
+		onImportVault,
 	} = useAssetsVaultPageFacade()
+
+	const vaultTransferModalUi = createModalLayerUi({
+		width: 'sm:max-w-xl',
+		rounded: 'rounded-[1.75rem]',
+		content:
+			'border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] shadow-[0_28px_72px_rgba(15,23,42,0.18)]',
+	})
 </script>
 
 <style scoped>
@@ -725,6 +881,37 @@
 		gap: 0.5rem;
 	}
 
+	.vault-transfer-modal {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.vault-transfer-modal__hint {
+		font-size: 0.92rem;
+		line-height: 1.65;
+		color: rgb(71 85 105);
+	}
+
+	.vault-transfer-modal__file {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.vault-transfer-modal__file-name {
+		font-size: 0.9rem;
+		color: rgb(71 85 105);
+	}
+
+	.vault-transfer-modal__footer {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.65rem;
+		width: 100%;
+	}
+
 	@media (max-width: 1120px) {
 		.vault-workbench {
 			grid-template-columns: 1fr;
@@ -741,7 +928,8 @@
 		}
 
 		.vault-workbench__secret-toolbar,
-		.vault-workbench__footer {
+		.vault-workbench__footer,
+		.vault-transfer-modal__footer {
 			flex-direction: column;
 			align-items: stretch;
 		}

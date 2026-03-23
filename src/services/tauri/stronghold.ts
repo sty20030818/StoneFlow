@@ -13,6 +13,7 @@ const vaultStore = new LazyStore('stronghold.json', {
 const VAULT_FILE = 'remote-sync.hold'
 const CLIENT_NAME = 'stoneflow-remote-sync'
 const PROFILE_PREFIX = 'profile:'
+const VAULT_MASTER_KEY = 'vault:master-key'
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 const OP_TIMEOUT_MS = 20000
@@ -85,32 +86,59 @@ async function getClient() {
 	}
 }
 
-export async function setRemoteSyncSecret(profileId: string, url: string) {
-	log('secret:set:start', { profileId, length: url.trim().length })
+async function setSecret(key: string, value: string) {
 	const { stronghold, client } = await getClient()
 	const store = client.getStore()
-	const data = Array.from(encoder.encode(url))
-	await withTimeout(store.insert(`${PROFILE_PREFIX}${profileId}`, data), '写入凭据')
+	const data = Array.from(encoder.encode(value))
+	await withTimeout(store.insert(key, data), '写入 Stronghold 密钥')
 	await withTimeout(stronghold.save(), '保存 Stronghold')
+}
+
+async function getSecret(key: string) {
+	const { client } = await getClient()
+	const store = client.getStore()
+	const data = await withTimeout(store.get(key), '读取 Stronghold 密钥')
+	if (!data) return null
+	return decoder.decode(new Uint8Array(data))
+}
+
+async function removeSecret(key: string) {
+	const { stronghold, client } = await getClient()
+	const store = client.getStore()
+	await withTimeout(store.remove(key), '删除 Stronghold 密钥')
+	await withTimeout(stronghold.save(), '保存 Stronghold')
+}
+
+export async function setRemoteSyncSecret(profileId: string, url: string) {
+	log('secret:set:start', { profileId, length: url.trim().length })
+	await setSecret(`${PROFILE_PREFIX}${profileId}`, url)
 	log('secret:set:done', { profileId })
 }
 
 export async function getRemoteSyncSecret(profileId: string) {
 	log('secret:get:start', { profileId })
-	const { client } = await getClient()
-	const store = client.getStore()
-	const data = await withTimeout(store.get(`${PROFILE_PREFIX}${profileId}`), '读取凭据')
-	if (!data) return null
-	const result = decoder.decode(new Uint8Array(data))
+	const result = await getSecret(`${PROFILE_PREFIX}${profileId}`)
+	if (!result) return null
 	log('secret:get:done', { profileId, length: result.length })
 	return result
 }
 
 export async function removeRemoteSyncSecret(profileId: string) {
 	log('secret:remove:start', { profileId })
-	const { stronghold, client } = await getClient()
-	const store = client.getStore()
-	await withTimeout(store.remove(`${PROFILE_PREFIX}${profileId}`), '删除凭据')
-	await withTimeout(stronghold.save(), '保存 Stronghold')
+	await removeSecret(`${PROFILE_PREFIX}${profileId}`)
 	log('secret:remove:done', { profileId })
+}
+
+export async function getVaultMasterKey() {
+	return await getSecret(VAULT_MASTER_KEY)
+}
+
+export async function ensureVaultMasterKey() {
+	const existing = await getVaultMasterKey()
+	if (existing) return existing
+
+	const raw = crypto.getRandomValues(new Uint8Array(32))
+	const created = Array.from(raw, (item) => item.toString(16).padStart(2, '0')).join('')
+	await setSecret(VAULT_MASTER_KEY, created)
+	return created
 }

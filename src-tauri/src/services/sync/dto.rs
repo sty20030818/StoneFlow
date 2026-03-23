@@ -49,6 +49,7 @@ impl SyncTableReport {
 pub struct SyncTablesReport {
     pub spaces: SyncTableReport,
     pub projects: SyncTableReport,
+    pub vault_entries: SyncTableReport,
     pub tags: SyncTableReport,
     pub links: SyncTableReport,
     pub tasks: SyncTableReport,

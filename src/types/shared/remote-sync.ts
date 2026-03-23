@@ -24,6 +24,7 @@ export type RemoteSyncTableReport = {
 export type RemoteSyncTablesReport = {
 	spaces: RemoteSyncTableReport
 	projects: RemoteSyncTableReport
+	vaultEntries: RemoteSyncTableReport
 	tags: RemoteSyncTableReport
 	links: RemoteSyncTableReport
 	tasks: RemoteSyncTableReport

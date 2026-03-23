@@ -69,6 +69,15 @@ pub(super) async fn pull(
         SyncDirection::Pull,
     )
     .await?;
+    stats.vault_entries = upsert::sync_assets(
+        &remote_db,
+        local_db,
+        last_pulled_at,
+        conflict_guard_enabled,
+        SyncDirection::Pull,
+    )
+    .await?
+    .vault_entries;
 
     let append_only =
         upsert::sync_append_only(&remote_db, local_db, last_pulled_at, SyncDirection::Pull).await?;

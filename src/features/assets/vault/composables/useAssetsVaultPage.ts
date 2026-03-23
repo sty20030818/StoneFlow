@@ -6,6 +6,7 @@ import { useErrorHandler } from '@/composables/base/useErrorHandler'
 import { useLoadErrorFeedback } from '@/composables/base/useLoadErrorFeedback'
 import { validateWithZod } from '@/composables/base/zod'
 import { vaultSubmitSchema } from '@/composables/domain/validation/forms'
+import { ensureVaultUnlocked, exportVaultEntries, importVaultEntries } from '@/services/api/vault'
 
 import type { AssetVaultEntry, AssetVaultEntryType } from '../model'
 import { createAssetVaultEntry, deleteAssetVaultEntry, updateAssetVaultEntry } from '../mutations'
@@ -19,6 +20,7 @@ type VaultFilterOption = {
 
 type VaultFavoriteFilter = 'all' | 'favorites' | 'unstarred'
 type VaultSortOption = 'updated_desc' | 'created_desc' | 'name_asc'
+const IMPORT_FILE_INPUT_ID = 'vault-import-file-input'
 
 function createEmptyVaultEntry(): AssetVaultEntry {
 	const now = Date.now()
@@ -54,13 +56,26 @@ export function useAssetsVaultPage() {
 	const loadError = ref<unknown | null>(null)
 	const revealedEntryId = ref<string | null>(null)
 	const showValue = ref(false)
+	const unlocking = ref(false)
+	const unlocked = ref(false)
+
+	const exportOpen = ref(false)
+	const exportPassword = ref('')
+	const exportPasswordConfirm = ref('')
+	const exporting = ref(false)
+
+	const importOpen = ref(false)
+	const importPassword = ref('')
+	const importFileName = ref('')
+	const importFileContent = ref('')
+	const importing = ref(false)
 
 	const {
 		state: entries,
 		isLoading: loading,
 		execute: executeRefresh,
 	} = useAsyncState(() => listAssetVaultEntries(), [] as AssetVaultEntry[], {
-		immediate: true,
+		immediate: false,
 		resetOnExecute: false,
 		onSuccess: () => {
 			loadError.value = null
@@ -73,8 +88,20 @@ export function useAssetsVaultPage() {
 	const { loadErrorMessage, showLoadErrorState } = useLoadErrorFeedback({
 		error: loadError,
 		hasData: computed(() => entries.value.length > 0),
-		loading,
+		loading: computed(() => loading.value || unlocking.value),
 		toastTitle: computed(() => t('assets.vault.toast.loadFailedTitle')),
+	})
+
+	const canExport = computed(() => {
+		return (
+			exportPassword.value.trim().length > 0
+			&& exportPasswordConfirm.value.trim().length > 0
+			&& exportPassword.value === exportPasswordConfirm.value
+		)
+	})
+
+	const canImport = computed(() => {
+		return importPassword.value.trim().length > 0 && importFileContent.value.trim().length > 0
 	})
 
 	const { start: hideCardValueLater, stop: stopCardHideTimer } = useTimeoutFn(() => {
@@ -289,7 +316,24 @@ export function useAssetsVaultPage() {
 		hideModalValueLater()
 	}
 
+	async function ensureUnlocked() {
+		if (unlocked.value) return
+
+		try {
+			unlocking.value = true
+			await ensureVaultUnlocked()
+			unlocked.value = true
+			loadError.value = null
+		} catch (error) {
+			loadError.value = error
+			throw error
+		} finally {
+			unlocking.value = false
+		}
+	}
+
 	async function refresh() {
+		await ensureUnlocked()
 		await executeRefresh(0)
 	}
 
@@ -386,9 +430,118 @@ export function useAssetsVaultPage() {
 		}
 	}
 
+	function resetExportForm() {
+		exportPassword.value = ''
+		exportPasswordConfirm.value = ''
+	}
+
+	function openExportModal() {
+		resetExportForm()
+		exportOpen.value = true
+	}
+
+	function closeExportModal() {
+		exportOpen.value = false
+		resetExportForm()
+	}
+
+	function resetImportForm() {
+		importPassword.value = ''
+		importFileName.value = ''
+		importFileContent.value = ''
+		const input = document.getElementById(IMPORT_FILE_INPUT_ID) as HTMLInputElement | null
+		if (input) input.value = ''
+	}
+
+	function openImportModal() {
+		resetImportForm()
+		importOpen.value = true
+	}
+
+	function closeImportModal() {
+		importOpen.value = false
+		resetImportForm()
+	}
+
+	function triggerImportFilePick() {
+		const input = document.getElementById(IMPORT_FILE_INPUT_ID) as HTMLInputElement | null
+		input?.click()
+	}
+
+	async function onImportFileChange(event: Event) {
+		const target = event.target as HTMLInputElement | null
+		const file = target?.files?.[0]
+		if (!file) return
+
+		importFileName.value = file.name
+		importFileContent.value = await file.text()
+	}
+
+	function downloadExportBundle(content: string) {
+		const stamp = new Date().toISOString().slice(0, 10)
+		const blob = new Blob([content], {
+			type: 'application/json;charset=utf-8',
+		})
+		const url = window.URL.createObjectURL(blob)
+		const link = document.createElement('a')
+		link.href = url
+		link.download = `stoneflow-vault-${stamp}.json`
+		link.click()
+		window.URL.revokeObjectURL(url)
+	}
+
+	async function onExportVault() {
+		if (!canExport.value) {
+			handleValidationError(t('assets.vault.toast.exportPasswordMismatchTitle'))
+			return
+		}
+
+		try {
+			exporting.value = true
+			const content = await exportVaultEntries(exportPassword.value)
+			downloadExportBundle(content)
+			handleSuccess(t('assets.vault.toast.exportedTitle'))
+			closeExportModal()
+		} catch (error) {
+			handleApiError(error, {
+				title: t('assets.vault.toast.exportFailedTitle'),
+			})
+		} finally {
+			exporting.value = false
+		}
+	}
+
+	async function onImportVault() {
+		if (!canImport.value) {
+			handleValidationError(t('assets.vault.toast.importMissingFileTitle'))
+			return
+		}
+
+		try {
+			importing.value = true
+			const count = await importVaultEntries(importFileContent.value, importPassword.value)
+			handleSuccess({
+				title: t('assets.vault.toast.importedTitle'),
+				description: t('assets.vault.toast.importedDescription', { count }),
+			})
+			await refresh()
+			closeImportModal()
+		} catch (error) {
+			handleApiError(error, {
+				title: t('assets.vault.toast.importFailedTitle'),
+			})
+		} finally {
+			importing.value = false
+		}
+	}
+
+	void refresh()
+
 	return {
 		t,
 		loading,
+		unlocking,
+		unlocked,
 		loadErrorMessage,
 		showLoadErrorState,
 		entries,
@@ -403,6 +556,17 @@ export function useAssetsVaultPage() {
 		showValue,
 		editForm,
 		tagsInput,
+		exportOpen,
+		exportPassword,
+		exportPasswordConfirm,
+		exporting,
+		importOpen,
+		importPassword,
+		importFileName,
+		importFileContent,
+		importing,
+		canExport,
+		canImport,
 		typeOptions,
 		typeFilterOptions,
 		environmentOptions,
@@ -428,5 +592,13 @@ export function useAssetsVaultPage() {
 		onSave,
 		onDelete,
 		onToggleFavorite,
+		openExportModal,
+		closeExportModal,
+		openImportModal,
+		closeImportModal,
+		triggerImportFilePick,
+		onImportFileChange,
+		onExportVault,
+		onImportVault,
 	}
 }

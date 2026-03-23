@@ -26,6 +26,7 @@ pub(crate) struct DedupStats {
 pub(crate) struct SyncRunStats {
     pub spaces: UpsertStats,
     pub projects: UpsertStats,
+    pub vault_entries: UpsertStats,
     pub tags: DedupStats,
     pub links: UpsertStats,
     pub tasks: UpsertStats,
@@ -62,6 +63,7 @@ impl SyncRunStats {
             tables: SyncTablesReport {
                 spaces: self.spaces.into(),
                 projects: self.projects.into(),
+                vault_entries: self.vault_entries.into(),
                 tags: self.tags.into(),
                 links: self.links.into(),
                 tasks: self.tasks.into(),

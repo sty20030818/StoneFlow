@@ -1,4 +1,6 @@
 import { tauriInvoke } from '@/services/tauri/invoke'
+import { ensureVaultUnlocked } from '@/services/api/vault'
+import { encryptVaultValue } from '@/services/assets/vault-crypto'
 
 import type { DiaryEntryDto } from '@/services/api/diary'
 import type { NoteDto } from '@/services/api/notes'
@@ -184,13 +186,23 @@ export async function initializeAssetsMigration(): Promise<void> {
 	const vaultEntries = readLegacyJson(LEGACY_STORAGE_KEYS.vault)
 		.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
 		.map(normalizeLegacyVaultEntry)
+	const vaultMasterKey = vaultEntries.length > 0 ? await ensureVaultUnlocked() : null
+	const encryptedVaultEntries = vaultMasterKey
+		? await Promise.all(
+				vaultEntries.map(async (entry) => ({
+					...entry,
+					value: await encryptVaultValue(entry.value, vaultMasterKey),
+					syncState: 'local',
+				})),
+			)
+		: vaultEntries
 
 	await tauriInvoke<AssetsMigrationStatusDto>('import_legacy_assets', {
 		args: {
 			snippets,
 			notes,
 			diaryEntries,
-			vaultEntries,
+			vaultEntries: encryptedVaultEntries,
 		},
 	})
 }

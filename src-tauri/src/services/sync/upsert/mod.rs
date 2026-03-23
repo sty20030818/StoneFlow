@@ -11,6 +11,7 @@ mod projects;
 mod relations;
 mod spaces;
 mod tasks;
+mod vault_entries;
 
 use sea_orm::DatabaseConnection;
 
@@ -47,6 +48,11 @@ pub(super) struct RelationSyncStats {
     pub task_links: UpsertStats,
     pub project_tags: UpsertStats,
     pub project_links: UpsertStats,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub(super) struct AssetSyncStats {
+    pub vault_entries: UpsertStats,
 }
 
 /// 对外暴露按表同步函数，避免上层直接依赖具体文件路径。
@@ -147,4 +153,23 @@ pub(super) async fn sync_relations(
         direction,
     )
     .await
+}
+
+pub(super) async fn sync_assets(
+    source_db: &DatabaseConnection,
+    target_db: &DatabaseConnection,
+    since_ms: i64,
+    conflict_guard_enabled: bool,
+    direction: SyncDirection,
+) -> Result<AssetSyncStats, SyncError> {
+    Ok(AssetSyncStats {
+        vault_entries: vault_entries::sync(
+            source_db,
+            target_db,
+            since_ms,
+            conflict_guard_enabled,
+            direction,
+        )
+        .await?,
+    })
 }
