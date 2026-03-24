@@ -1,5 +1,5 @@
 import { refDebounced, useAsyncState } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useErrorHandler } from '@/composables/base/useErrorHandler'
@@ -10,14 +10,10 @@ import type { AssetSnippet } from '../model'
 import { createAssetSnippet, deleteAssetSnippet, updateAssetSnippet } from '../mutations'
 import { listAssetSnippets } from '../queries'
 import { useAssetClipboardFeedback } from '../../shared/composables'
-
-type SnippetFilterOption = {
-	label: string
-	value: string
-}
-
-type SnippetFavoriteFilter = 'all' | 'favorites' | 'unstarred'
-type SnippetSortOption = 'updated_desc' | 'created_desc' | 'title_asc'
+import {
+	useAssetsSnippetsHeaderBridge,
+	type SnippetFilterOption,
+} from './useAssetsSnippetsHeaderBridge'
 
 function createEmptySnippet(): AssetSnippet {
 	const now = Date.now()
@@ -38,19 +34,69 @@ function createEmptySnippet(): AssetSnippet {
 	}
 }
 
+const COMMON_EDITOR_LANGUAGES = [
+	'plaintext',
+	'typescript',
+	'javascript',
+	'tsx',
+	'jsx',
+	'json',
+	'html',
+	'css',
+	'scss',
+	'vue',
+	'python',
+	'rust',
+	'sql',
+] as const
+
+const EDITOR_LANGUAGE_LABELS: Record<string, string> = {
+	plaintext: 'Plaintext',
+	typescript: 'TypeScript',
+	javascript: 'JavaScript',
+	tsx: 'TSX',
+	jsx: 'JSX',
+	json: 'JSON',
+	html: 'HTML',
+	css: 'CSS',
+	scss: 'SCSS',
+	vue: 'Vue',
+	python: 'Python',
+	rust: 'Rust',
+	sql: 'SQL',
+}
+
+function normalizeEditorLanguageValue(language: string) {
+	const trimmed = language.trim()
+	if (!trimmed) return ''
+
+	const normalized = trimmed.toLowerCase()
+	if (normalized in EDITOR_LANGUAGE_LABELS) {
+		return normalized
+	}
+
+	return trimmed
+}
+
 export function useAssetsSnippetsPage() {
 	const { t, locale } = useI18n({ useScope: 'global' })
 	const { handleApiError, handleSuccess, handleValidationError } = useErrorHandler()
 	const { copyWithFeedback } = useAssetClipboardFeedback()
+	const {
+		searchKeyword,
+		selectedLanguage,
+		selectedTag,
+		selectedFavoriteFilter,
+		selectedSort,
+		hasActiveFilters,
+		resetSnippetHeaderFilters,
+		setSnippetHeaderOptions,
+		bindSnippetCreateAction,
+	} = useAssetsSnippetsHeaderBridge()
 
 	const selectedSnippet = ref<AssetSnippet | null>(null)
 	const editOpen = ref(false)
-	const searchKeyword = ref('')
 	const debouncedSearchKeyword = refDebounced(searchKeyword, 180)
-	const selectedLanguage = ref('all')
-	const selectedTag = ref('all')
-	const selectedFavoriteFilter = ref<SnippetFavoriteFilter>('all')
-	const selectedSort = ref<SnippetSortOption>('updated_desc')
 	const loadError = ref<unknown | null>(null)
 
 	const {
@@ -105,6 +151,28 @@ export function useAssetsSnippetsPage() {
 		]
 	})
 
+	const editorLanguageOptions = computed<SnippetFilterOption[]>(() => {
+		const items = new Map<string, string>()
+		for (const language of COMMON_EDITOR_LANGUAGES) {
+			const value = normalizeEditorLanguageValue(language)
+			items.set(value.toLowerCase(), value)
+		}
+
+		for (const snippet of snippets.value) {
+			const value = normalizeEditorLanguageValue(snippet.language)
+			if (value) {
+				items.set(value.toLowerCase(), value)
+			}
+		}
+
+		return Array.from(items.values())
+			.map((language) => ({
+				label: languageLabel(language),
+				value: language,
+			}))
+			.sort((left, right) => left.label.localeCompare(right.label))
+	})
+
 	const tagOptions = computed<SnippetFilterOption[]>(() => {
 		const items = new Set<string>()
 		for (const snippet of snippets.value) {
@@ -133,22 +201,10 @@ export function useAssetsSnippetsPage() {
 	])
 
 	const sortOptions = computed<SnippetFilterOption[]>(() => [
-		{ label: t('assets.snippets.filters.sortUpdated'), value: 'updated_desc' },
-		{ label: t('assets.snippets.filters.sortCreated'), value: 'created_desc' },
 		{ label: t('assets.snippets.filters.sortTitle'), value: 'title_asc' },
+		{ label: t('assets.snippets.filters.sortCreated'), value: 'created_desc' },
+		{ label: t('assets.snippets.filters.sortUpdated'), value: 'updated_desc' },
 	])
-
-	const hasActiveFilters = computed(() => {
-		return (
-			selectedLanguage.value !== 'all'
-			|| selectedTag.value !== 'all'
-			|| selectedFavoriteFilter.value !== 'all'
-			|| selectedSort.value !== 'updated_desc'
-			|| debouncedSearchKeyword.value.trim().length > 0
-		)
-	})
-
-	const favoriteCount = computed(() => snippets.value.filter((snippet) => snippet.favorite).length)
 
 	const filteredSnippets = computed(() => {
 		const keyword = debouncedSearchKeyword.value.trim().toLowerCase()
@@ -200,18 +256,14 @@ export function useAssetsSnippetsPage() {
 	})
 
 	function resetFilters() {
-		searchKeyword.value = ''
-		selectedLanguage.value = 'all'
-		selectedTag.value = 'all'
-		selectedFavoriteFilter.value = 'all'
-		selectedSort.value = 'updated_desc'
+		resetSnippetHeaderFilters()
 	}
 
 	function openEditor(snippet: AssetSnippet) {
 		selectedSnippet.value = snippet
 		editForm.value = {
 			title: snippet.title,
-			language: snippet.language || 'typescript',
+			language: normalizeEditorLanguageValue(snippet.language) || 'typescript',
 			content: snippet.content,
 			description: snippet.description ?? '',
 			folder: snippet.folder ?? '',
@@ -239,8 +291,12 @@ export function useAssetsSnippetsPage() {
 	}
 
 	function languageLabel(language: string) {
-		const normalized = language.trim()
-		return normalized || t('assets.snippets.labels.plaintext')
+		const normalized = normalizeEditorLanguageValue(language)
+		if (!normalized) {
+			return t('assets.snippets.labels.plaintext')
+		}
+
+		return EDITOR_LANGUAGE_LABELS[normalized.toLowerCase()] ?? normalized
 	}
 
 	function formatSnippetDate(timestamp: number) {
@@ -249,14 +305,6 @@ export function useAssetsSnippetsPage() {
 			month: 'short',
 			day: 'numeric',
 		}).format(timestamp)
-	}
-
-	function previewContent(content: string) {
-		return content
-			.split('\n')
-			.slice(0, 8)
-			.join('\n')
-			.trim()
 	}
 
 	async function refresh() {
@@ -276,7 +324,7 @@ export function useAssetsSnippetsPage() {
 			onTagsBlur()
 			const payload = {
 				title: editForm.value.title.trim(),
-				language: editForm.value.language.trim() || 'plaintext',
+				language: normalizeEditorLanguageValue(editForm.value.language) || 'plaintext',
 				content: editForm.value.content,
 				description: editForm.value.description.trim() || null,
 				folder: editForm.value.folder.trim() || null,
@@ -352,6 +400,21 @@ export function useAssetsSnippetsPage() {
 		})
 	}
 
+	watchEffect(() => {
+		setSnippetHeaderOptions({
+			languageOptions: languageOptions.value,
+			tagOptions: tagOptions.value,
+			favoriteOptions: favoriteOptions.value,
+			sortOptions: sortOptions.value,
+		})
+	})
+
+	const cleanupCreateAction = bindSnippetCreateAction(onCreateNew)
+
+	onUnmounted(() => {
+		cleanupCreateAction()
+	})
+
 	return {
 		t,
 		loading,
@@ -360,19 +423,10 @@ export function useAssetsSnippetsPage() {
 		snippets,
 		selectedSnippet,
 		editOpen,
-		searchKeyword,
-		selectedLanguage,
-		selectedTag,
-		selectedFavoriteFilter,
-		selectedSort,
 		editForm,
 		tagsInput,
-		languageOptions,
-		tagOptions,
-		favoriteOptions,
-		sortOptions,
+		editorLanguageOptions,
 		hasActiveFilters,
-		favoriteCount,
 		filteredSnippets,
 		currentLanguageLabel,
 		resetFilters,
@@ -387,7 +441,6 @@ export function useAssetsSnippetsPage() {
 		onCopySnippet,
 		onCopyDraft,
 		formatSnippetDate,
-		previewContent,
 		languageLabel,
 	}
 }

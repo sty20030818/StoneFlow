@@ -13,7 +13,6 @@ import {
 import { useAssetsSnippetsPage } from './useAssetsSnippetsPage'
 
 export function useAssetsSnippetsPageFacade() {
-	const toolbarMotion = useAppContentMotionPreset('drawerSection', 'sectionBase')
 	const gridMotion = useAppContentMotionPreset('drawerSection', 'sectionBase', 24)
 	const snippetCardPreset = useMotionPreset('listItem')
 	const modalBodyMotion = useInteractionMotionPreset('modalSection')
@@ -29,7 +28,6 @@ export function useAssetsSnippetsPageFacade() {
 
 	return {
 		...pageState,
-		toolbarMotion,
 		gridMotion,
 		modalBodyMotion,
 		modalFooterMotion,

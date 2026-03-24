@@ -1,89 +1,5 @@
 <template>
 	<section class="snippet-library-page">
-		<AssetLibraryToolbar
-			v-motion="toolbarMotion"
-			v-model:search="searchKeyword"
-			:title="t('assets.snippets.title')"
-			:description="t('assets.snippets.subtitle')"
-			:search-placeholder="t('assets.snippets.searchPlaceholder')">
-			<template #eyebrow>
-				<UIcon
-					name="i-lucide-code-xml"
-					class="size-4" />
-				<span>{{ t('assets.snippets.labels.repository') }}</span>
-			</template>
-
-			<template #actions>
-				<UBadge
-					color="neutral"
-					variant="soft"
-					size="sm">
-					{{ filteredSnippets.length }} {{ t('assets.snippets.labels.items') }}
-				</UBadge>
-				<UBadge
-					color="warning"
-					variant="soft"
-					size="sm">
-					{{ favoriteCount }} {{ t('assets.snippets.labels.favorites') }}
-				</UBadge>
-				<UButton
-					v-if="hasActiveFilters"
-					color="neutral"
-					variant="ghost"
-					size="sm"
-					icon="i-lucide-filter-x"
-					@click="resetFilters">
-					{{ t('assets.snippets.actions.clearFilters') }}
-				</UButton>
-				<UButton
-					color="primary"
-					size="sm"
-					icon="i-lucide-plus"
-					@click="onCreateNew">
-					{{ t('common.actions.new') }}
-				</UButton>
-			</template>
-
-			<template #filters>
-				<USelectMenu
-					v-model="selectedLanguage"
-					:items="languageOptions"
-					value-key="value"
-					label-key="label"
-					size="sm"
-					class="snippet-library-page__filter"
-					:search-input="false"
-					:ui="assetModalSelectMenuUi" />
-				<USelectMenu
-					v-model="selectedTag"
-					:items="tagOptions"
-					value-key="value"
-					label-key="label"
-					size="sm"
-					class="snippet-library-page__filter"
-					:search-input="false"
-					:ui="assetModalSelectMenuUi" />
-				<USelectMenu
-					v-model="selectedFavoriteFilter"
-					:items="favoriteOptions"
-					value-key="value"
-					label-key="label"
-					size="sm"
-					class="snippet-library-page__filter"
-					:search-input="false"
-					:ui="assetModalSelectMenuUi" />
-				<USelectMenu
-					v-model="selectedSort"
-					:items="sortOptions"
-					value-key="value"
-					label-key="label"
-					size="sm"
-					class="snippet-library-page__filter"
-					:search-input="false"
-					:ui="assetModalSelectMenuUi" />
-			</template>
-		</AssetLibraryToolbar>
-
 		<div
 			v-motion="gridMotion"
 			class="snippet-library-page__content">
@@ -122,7 +38,9 @@
 				<AssetLibraryEmptyState
 					icon="i-lucide-folder-search"
 					:title="t('assets.snippets.emptyTitle')"
-					:description="hasActiveFilters ? t('assets.snippets.emptyFilteredDescription') : t('assets.snippets.emptyIdleDescription')">
+					:description="
+						hasActiveFilters ? t('assets.snippets.emptyFilteredDescription') : t('assets.snippets.emptyIdleDescription')
+					">
 					<template #action>
 						<UButton
 							v-if="hasActiveFilters"
@@ -168,9 +86,6 @@
 									{{ languageLabel(snippet.language) }}
 								</UBadge>
 							</div>
-							<div class="snippet-card__caption">
-								{{ t('assets.snippets.labels.updatedAt', { date: formatSnippetDate(snippet.updatedAt) }) }}
-							</div>
 						</div>
 
 						<AssetCardActions
@@ -179,37 +94,56 @@
 							@copy="onCopySnippet(snippet)" />
 					</div>
 
-					<div
-						v-if="snippet.tags.length"
-						class="snippet-card__tags">
-						<UBadge
-							v-for="tag in snippet.tags.slice(0, 4)"
-							:key="tag"
-							color="neutral"
-							variant="subtle"
-							size="sm">
-							#{{ tag }}
-						</UBadge>
-						<span
-							v-if="snippet.tags.length > 4"
-							class="snippet-card__tag-overflow">
-							+{{ snippet.tags.length - 4 }}
-						</span>
-					</div>
-
 					<p
 						v-if="snippet.description"
 						class="snippet-card__description">
 						{{ snippet.description }}
 					</p>
 
-					<div class="snippet-card__code-frame">
-						<pre class="snippet-card__code"><code>{{ previewContent(snippet.content) || t('assets.snippets.labels.noPreview') }}</code></pre>
+					<div class="snippet-card__middle">
+						<div class="snippet-card__code-frame">
+							<SnippetCardCodePreview
+								v-if="snippet.content.trim()"
+								:content="snippet.content"
+								:language="snippet.language"
+								:max-lines="16" />
+							<div
+								v-else
+								class="snippet-card__code-empty">
+								{{ t('assets.snippets.labels.noPreview') }}
+							</div>
+						</div>
+
+						<div
+							v-if="snippet.tags.length"
+							class="snippet-card__tags">
+							<UBadge
+								v-for="tag in snippet.tags.slice(0, 3)"
+								:key="tag"
+								color="neutral"
+								variant="subtle"
+								size="sm">
+								#{{ tag }}
+							</UBadge>
+							<span
+								v-if="snippet.tags.length > 3"
+								class="snippet-card__tag-overflow">
+								+{{ snippet.tags.length - 3 }}
+							</span>
+						</div>
 					</div>
 
 					<div class="snippet-card__footer">
-						<span>{{ t('assets.snippets.labels.createdAt', { date: formatSnippetDate(snippet.createdAt) }) }}</span>
-						<span>{{ t('assets.snippets.labels.lineCount', { count: Math.max(snippet.content.split('\n').length, 1) }) }}</span>
+						<span>
+							{{
+								snippet.updatedAt > snippet.createdAt
+									? t('assets.snippets.labels.updatedAt', { date: formatSnippetDate(snippet.updatedAt) })
+									: t('assets.snippets.labels.createdAt', { date: formatSnippetDate(snippet.createdAt) })
+							}}
+						</span>
+						<span>
+							{{ t('assets.snippets.labels.lineCount', { count: Math.max(snippet.content.split('\n').length, 1) }) }}
+						</span>
 					</div>
 				</article>
 			</div>
@@ -217,8 +151,8 @@
 
 		<AssetWorkbenchModal
 			v-model:open="editOpen"
-			:title="selectedSnippet?.id ? t('assets.snippets.modal.editTitle') : t('assets.snippets.modal.newTitle')"
-			:description="t('assets.snippets.modal.description')">
+			:close="false"
+			prevent-auto-focus>
 			<div
 				v-motion="modalBodyMotion"
 				class="snippet-workbench">
@@ -236,12 +170,15 @@
 						</UFormField>
 
 						<UFormField :label="t('assets.snippets.fields.language')">
-							<UInput
+							<USelectMenu
 								v-model="editForm.language"
-								:placeholder="t('assets.snippets.placeholders.language')"
+								:items="editorLanguageOptions"
+								value-key="value"
+								label-key="label"
 								size="md"
 								class="w-full"
-								:ui="assetModalInputUi" />
+								:search-input="false"
+								:ui="assetModalSelectMenuUi" />
 						</UFormField>
 
 						<UFormField :label="t('assets.snippets.fields.descriptionOptional')">
@@ -303,11 +240,13 @@
 				<section class="snippet-workbench__editor">
 					<AssetEditorSurface
 						v-model="editForm.content"
+						fill-height
 						mode="code"
 						:language="editForm.language"
 						:language-label="currentLanguageLabel"
 						:label="t('assets.snippets.fields.content')"
 						:placeholder="t('assets.snippets.placeholders.content')"
+						sticky-header
 						min-height="32rem">
 						<template #toolbar>
 							<UButton
@@ -331,7 +270,7 @@
 						<UButton
 							color="neutral"
 							variant="ghost"
-							size="sm"
+							size="md"
 							:icon="editForm.favorite ? 'i-lucide-star' : 'i-lucide-star-off'"
 							@click="editForm.favorite = !editForm.favorite">
 							{{ editForm.favorite ? t('assets.snippets.actions.unfavorite') : t('assets.snippets.actions.favorite') }}
@@ -340,7 +279,7 @@
 							v-if="selectedSnippet?.id"
 							color="error"
 							variant="ghost"
-							size="sm"
+							size="md"
 							icon="i-lucide-trash-2"
 							@click="onDelete(selectedSnippet.id)">
 							{{ t('common.actions.delete') }}
@@ -351,13 +290,13 @@
 						<UButton
 							color="neutral"
 							variant="ghost"
-							size="sm"
+							size="md"
 							@click="closeEditor">
 							{{ t('common.actions.cancel') }}
 						</UButton>
 						<UButton
 							color="primary"
-							size="sm"
+							size="md"
 							icon="i-lucide-save"
 							@click="onSave">
 							{{ t('common.actions.save') }}
@@ -375,43 +314,39 @@
 		AssetCardActions,
 		AssetEditorSurface,
 		AssetLibraryEmptyState,
-		AssetLibraryToolbar,
 		AssetWorkbenchModal,
+		SnippetCardCodePreview,
 		assetModalInputUi,
 		assetModalSelectMenuUi,
 		assetModalTextareaUi,
 		useAssetsSnippetsPageFacade,
+		useAssetsSnippetsShellHeader,
 	} from '@/features/assets'
 
 	useRouteMetaShellBreadcrumb('assets-snippets-page')
+	useAssetsSnippetsShellHeader()
+
+	const pageFacade = useAssetsSnippetsPageFacade()
+
+	// 当前页的 v-motion 指令类型推断会递归爆炸，这里只在模板层截断类型计算，不影响运行时值。
+	const gridMotion = pageFacade.gridMotion as never
+	const modalBodyMotion = pageFacade.modalBodyMotion as never
+	const modalFooterMotion = pageFacade.modalFooterMotion as never
+	const snippetItemMotions = pageFacade.snippetItemMotions as never
 
 	const {
 		t,
-		toolbarMotion,
-		gridMotion,
-		modalBodyMotion,
-		modalFooterMotion,
 		loading,
 		loadErrorMessage,
 		showLoadErrorState,
 		selectedSnippet,
 		editOpen,
-		searchKeyword,
-		selectedLanguage,
-		selectedTag,
-		selectedFavoriteFilter,
-		selectedSort,
 		editForm,
 		tagsInput,
-		languageOptions,
-		tagOptions,
-		favoriteOptions,
-		sortOptions,
+		editorLanguageOptions,
 		hasActiveFilters,
-		favoriteCount,
 		filteredSnippets,
 		currentLanguageLabel,
-		snippetItemMotions,
 		resetFilters,
 		refresh,
 		openEditor,
@@ -424,16 +359,12 @@
 		onCopySnippet,
 		onCopyDraft,
 		formatSnippetDate,
-		previewContent,
 		languageLabel,
-	} = useAssetsSnippetsPageFacade()
+	} = pageFacade
 </script>
 
 <style scoped>
 	.snippet-library-page {
-		display: grid;
-		grid-template-rows: auto minmax(0, 1fr);
-		gap: 1rem;
 		height: 100%;
 		min-height: 0;
 	}
@@ -441,50 +372,49 @@
 	.snippet-library-page__content {
 		min-height: 0;
 		overflow-y: auto;
-		padding-right: 0.2rem;
+		padding-right: 0.35rem;
+		padding-bottom: 1rem;
 	}
 
 	.snippet-library-page__grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
 		gap: 1rem;
-		padding-bottom: 0.35rem;
+		padding-bottom: 0.8rem;
 	}
 
 	.snippet-library-page__state {
 		padding-top: 0.25rem;
 	}
 
-	.snippet-library-page__filter {
-		min-width: 11rem;
-	}
-
 	.snippet-card {
 		display: grid;
-		gap: 0.9rem;
+		grid-template-rows: auto auto minmax(0, 1fr) auto;
+		align-content: start;
+		gap: 0.72rem;
 		padding: 1rem;
+		height: 20rem;
+		max-height: 20rem;
 		border: 1px solid rgb(203 213 225 / 0.8);
 		border-radius: 1.6rem;
 		background:
-			linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(241 245 249 / 0.94)),
-			radial-gradient(circle at top right, rgb(34 211 238 / 0.12), transparent 32%),
-			radial-gradient(circle at bottom left, rgb(16 185 129 / 0.08), transparent 36%);
-		box-shadow:
-			inset 0 1px 0 rgb(255 255 255 / 0.85),
-			0 18px 36px rgb(15 23 42 / 0.08);
+			linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.94)),
+			radial-gradient(circle at top right, rgb(34 211 238 / 0.1), transparent 30%),
+			radial-gradient(circle at bottom left, rgb(16 185 129 / 0.06), transparent 34%);
 		cursor: pointer;
 		transition:
 			transform 160ms ease,
-			box-shadow 160ms ease,
-			border-color 160ms ease;
+			border-color 160ms ease,
+			background 160ms ease;
 	}
 
 	.snippet-card:hover {
 		transform: translateY(-2px);
 		border-color: rgb(34 211 238 / 0.55);
-		box-shadow:
-			inset 0 1px 0 rgb(255 255 255 / 0.9),
-			0 24px 48px rgb(8 47 73 / 0.12);
+		background:
+			linear-gradient(180deg, rgb(255 255 255 / 0.99), rgb(240 249 255 / 0.96)),
+			radial-gradient(circle at top right, rgb(34 211 238 / 0.14), transparent 28%),
+			radial-gradient(circle at bottom left, rgb(16 185 129 / 0.08), transparent 32%);
 	}
 
 	.snippet-card--favorite {
@@ -496,15 +426,13 @@
 
 	.snippet-card__header {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
 	}
 
 	.snippet-card__meta {
 		min-width: 0;
-		display: grid;
-		gap: 0.45rem;
 	}
 
 	.snippet-card__title-row {
@@ -522,16 +450,12 @@
 		color: rgb(15 23 42);
 	}
 
-	.snippet-card__caption {
-		font-size: 0.74rem;
-		color: rgb(71 85 105);
-	}
-
 	.snippet-card__tags {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.4rem;
+		min-height: 1.75rem;
 	}
 
 	.snippet-card__tag-overflow {
@@ -540,19 +464,36 @@
 	}
 
 	.snippet-card__description {
+		margin: 0;
 		font-size: 0.8rem;
-		line-height: 1.6;
+		line-height: 1.55;
 		color: rgb(71 85 105);
+		line-clamp: 1;
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 1;
+	}
+
+	.snippet-card__middle {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		min-height: 0;
+		height: 100%;
 	}
 
 	.snippet-card__code-frame {
+		flex: 1 1 auto;
 		position: relative;
+		min-height: 0;
+		height: 100%;
 		overflow: hidden;
 		border-radius: 1.25rem;
+		border: 1px solid rgb(30 41 59 / 0.75);
 		background:
 			linear-gradient(180deg, rgb(15 23 42), rgb(2 6 23)),
 			radial-gradient(circle at top, rgb(34 211 238 / 0.14), transparent 46%);
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
 	}
 
 	.snippet-card__code-frame::after {
@@ -561,19 +502,27 @@
 		right: 0;
 		bottom: 0;
 		left: 0;
-		height: 3rem;
+		height: 1.9rem;
 		background: linear-gradient(180deg, rgb(15 23 42 / 0), rgb(2 6 23 / 0.95));
 	}
 
-	.snippet-card__code {
-		min-height: 10rem;
-		padding: 1rem 1rem 1.3rem;
-		font-family: 'Iosevka Comfy', 'Fira Code', 'JetBrains Mono', monospace;
+	.snippet-card__code-frame :deep(.snippet-card-code-preview) {
+		height: 100%;
+		width: 100%;
+	}
+
+	.snippet-card__code-empty {
+		width: 100%;
+		height: 100%;
+		min-height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
 		font-size: 0.76rem;
-		line-height: 1.65;
+		line-height: 1.55;
 		color: rgb(226 232 240);
-		white-space: pre-wrap;
-		word-break: break-word;
+		text-align: center;
 	}
 
 	.snippet-card__footer {
@@ -581,6 +530,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
+		align-self: end;
 		gap: 0.6rem;
 		font-size: 0.72rem;
 		color: rgb(100 116 139);
@@ -590,11 +540,15 @@
 		display: grid;
 		grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
 		gap: 1rem;
-		min-height: min(72vh, 42rem);
+		height: min(72vh, 42rem);
+		min-height: 0;
+		overflow: hidden;
 	}
 
 	.snippet-workbench__meta {
 		display: grid;
+		height: 100%;
+		min-height: 0;
 		align-content: start;
 		gap: 1rem;
 		padding: 1rem;
@@ -627,6 +581,15 @@
 
 	.snippet-workbench__editor {
 		min-width: 0;
+		min-height: 0;
+		height: 100%;
+		padding: 1rem;
+		border: 1px solid rgb(226 232 240 / 0.92);
+		border-radius: 1.5rem;
+		background:
+			linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(248 250 252 / 0.94)),
+			radial-gradient(circle at top, rgb(14 165 233 / 0.08), transparent 44%);
+		overflow: hidden;
 	}
 
 	.snippet-workbench__footer {
@@ -648,14 +611,11 @@
 	@media (max-width: 1120px) {
 		.snippet-workbench {
 			grid-template-columns: 1fr;
+			grid-template-rows: auto minmax(0, 1fr);
 		}
 	}
 
 	@media (max-width: 768px) {
-		.snippet-library-page__filter {
-			min-width: 100%;
-		}
-
 		.snippet-library-page__grid {
 			grid-template-columns: 1fr;
 		}

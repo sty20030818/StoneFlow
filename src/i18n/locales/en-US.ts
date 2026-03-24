@@ -703,6 +703,13 @@ export default {
 				favorite: 'Favorite',
 				unfavorite: 'Unfavorite',
 			},
+			header: {
+				filterAction: 'Filters',
+				filterIdle: 'No filters',
+				filterActive: 'filters',
+				favoriteFilter: 'Favorite State',
+				sort: 'Sort Order',
+			},
 			labels: {
 				repository: 'Code Repository',
 				items: 'items',

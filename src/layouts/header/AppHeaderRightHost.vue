@@ -1,13 +1,13 @@
 <template>
 	<div class="flex items-center gap-2 shrink-0">
 		<component
-			:is="rightActionsComponent"
-			v-if="rightActionsComponent" />
-
-		<component
 			:is="rightPrimaryComponent"
 			v-if="rightPrimaryComponent" />
 		<GlobalHeaderSearch v-else-if="showDefaultSearch" />
+
+		<component
+			:is="rightActionsComponent"
+			v-if="rightActionsComponent" />
 
 		<template v-if="hasEditBridge">
 			<button

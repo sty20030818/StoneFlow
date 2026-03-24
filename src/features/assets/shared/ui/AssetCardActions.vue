@@ -4,9 +4,13 @@
 			v-if="showFavorite"
 			color="neutral"
 			variant="ghost"
-			size="xs"
+			size="sm"
 			:icon="favorite ? 'i-lucide-star' : 'i-lucide-star-off'"
-			:class="favorite ? 'asset-card-actions__btn--favorite' : ''"
+			:class="[
+				'asset-card-actions__btn',
+				'asset-card-actions__btn--favorite',
+				favorite ? 'asset-card-actions__btn--favorite-active' : '',
+			]"
 			@click.stop="emit('favorite')">
 			<span class="sr-only">{{ favorite ? '取消收藏' : '收藏' }}</span>
 		</UButton>
@@ -15,8 +19,9 @@
 			v-if="showReveal"
 			color="neutral"
 			variant="ghost"
-			size="xs"
+			size="sm"
 			:icon="revealed ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+			class="asset-card-actions__btn asset-card-actions__btn--reveal"
 			@click.stop="emit('reveal')">
 			<span class="sr-only">{{ revealed ? '隐藏' : '查看' }}</span>
 		</UButton>
@@ -25,8 +30,9 @@
 			v-if="showCopy"
 			color="neutral"
 			variant="ghost"
-			size="xs"
+			size="sm"
 			icon="i-lucide-copy"
+			class="asset-card-actions__btn asset-card-actions__btn--copy"
 			@click.stop="emit('copy')">
 			<span class="sr-only">复制</span>
 		</UButton>
@@ -61,19 +67,45 @@
 	.asset-card-actions {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.15rem;
-		padding: 0.15rem;
-		border-radius: 999px;
-		background:
-			linear-gradient(180deg, rgb(255 255 255 / 0.88), rgb(241 245 249 / 0.72)),
-			radial-gradient(circle at top, rgb(125 211 252 / 0.28), transparent 65%);
-		box-shadow:
-			inset 0 1px 0 rgb(255 255 255 / 0.8),
-			0 8px 18px rgb(15 23 42 / 0.08);
-		backdrop-filter: blur(10px);
+		gap: 0.2rem;
 	}
 
-	.asset-card-actions__btn--favorite :deep(.iconify) {
-		color: rgb(234 179 8);
+	.asset-card-actions__btn {
+		transition: transform 140ms ease;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn) {
+		border-radius: 999px;
+		color: rgb(100 116 139) !important;
+		min-width: 2rem;
+		min-height: 2rem;
+		padding: 0.3rem !important;
+		transition: color 140ms ease;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn .iconify) {
+		color: currentColor !important;
+		transition: color 140ms ease;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn:hover) {
+		background: transparent !important;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn--favorite:hover),
+	.asset-card-actions :deep(.asset-card-actions__btn--favorite-active) {
+		color: rgb(234 179 8) !important;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn--copy:hover) {
+		color: rgb(8 145 178) !important;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn--reveal:hover) {
+		color: rgb(59 130 246) !important;
+	}
+
+	.asset-card-actions :deep(.asset-card-actions__btn--favorite-active .iconify) {
+		color: rgb(234 179 8) !important;
 	}
 </style>

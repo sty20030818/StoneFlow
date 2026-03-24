@@ -1,5 +1,10 @@
 <template>
-	<div class="asset-editor-surface">
+	<div
+		class="asset-editor-surface"
+		:class="{
+			'asset-editor-surface--fill': props.fillHeight,
+			'asset-editor-surface--sticky-header': props.stickyHeader,
+		}">
 		<div
 			v-if="label || languageLabel"
 			class="asset-editor-surface__header">
@@ -16,7 +21,7 @@
 		<div
 			ref="hostRef"
 			class="asset-editor-surface__host"
-			:style="{ minHeight: props.minHeight }" />
+			:style="hostStyle" />
 	</div>
 </template>
 
@@ -46,6 +51,8 @@
 			readonly?: boolean
 			minHeight?: string
 			languageLabel?: string | null
+			fillHeight?: boolean
+			stickyHeader?: boolean
 		}>(),
 		{
 			mode: 'code',
@@ -55,6 +62,8 @@
 			readonly: false,
 			minHeight: '18rem',
 			languageLabel: null,
+			fillHeight: false,
+			stickyHeader: false,
 		},
 	)
 
@@ -67,6 +76,19 @@
 	const languageCompartment = new Compartment()
 	const readonlyCompartment = new Compartment()
 	const placeholderCompartment = new Compartment()
+
+	const hostStyle = computed(() => {
+		if (props.fillHeight) {
+			return {
+				height: '100%',
+				minHeight: '0',
+			}
+		}
+
+		return {
+			minHeight: props.minHeight,
+		}
+	})
 
 	function resolveLanguageExtension(mode: AssetEditorMode, language: string | null) {
 		if (mode === 'markdown') {
@@ -106,8 +128,8 @@
 	function createTheme(minHeight: string) {
 		return EditorView.theme({
 			'&': {
-				height: '100%',
-				minHeight,
+				height: props.fillHeight ? '100%' : 'auto',
+				minHeight: props.fillHeight ? '0' : minHeight,
 				fontSize: '13px',
 				borderRadius: '1rem',
 				overflow: 'hidden',
@@ -116,7 +138,9 @@
 			'.cm-scroller': {
 				fontFamily: '"Iosevka Comfy", "Fira Code", "JetBrains Mono", monospace',
 				lineHeight: '1.6',
-				minHeight,
+				height: '100%',
+				minHeight: props.fillHeight ? '0' : minHeight,
+				overflow: 'auto',
 			},
 			'.cm-content': {
 				padding: '1rem 1rem 1.4rem',
@@ -229,6 +253,12 @@
 	.asset-editor-surface {
 		display: grid;
 		gap: 0.6rem;
+		min-height: 0;
+	}
+
+	.asset-editor-surface--fill {
+		grid-template-rows: auto minmax(0, 1fr);
+		height: 100%;
 	}
 
 	.asset-editor-surface__header {
@@ -236,6 +266,14 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
+	}
+
+	.asset-editor-surface--sticky-header .asset-editor-surface__header {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		padding-bottom: 0.15rem;
+		background: inherit;
 	}
 
 	.asset-editor-surface__label {
@@ -258,5 +296,8 @@
 
 	.asset-editor-surface__host {
 		width: 100%;
+		min-height: 0;
+		height: 100%;
+		overflow: hidden;
 	}
 </style>

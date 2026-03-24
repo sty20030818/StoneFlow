@@ -1,8 +1,10 @@
 <template>
 	<UModal
 		v-model:open="openModel"
-		:title="title"
-		:description="description"
+		:title="title || undefined"
+		:description="description || undefined"
+		:close="close"
+		:content="contentProps"
 		:ui="modalUi">
 		<template #body>
 			<section class="asset-workbench-modal__body">
@@ -19,17 +21,38 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
+
 	import { createModalLayerUi } from '@/config/ui-layer'
 
 	type Props = {
-		title: string
+		title?: string
 		description?: string
+		close?: boolean
+		preventAutoFocus?: boolean
 	}
 
-	defineProps<Props>()
+	const props = withDefaults(defineProps<Props>(), {
+		title: '',
+		description: '',
+		close: true,
+		preventAutoFocus: false,
+	})
 
 	const openModel = defineModel<boolean>('open', {
 		default: false,
+	})
+
+	const contentProps = computed(() => {
+		if (!props.preventAutoFocus) {
+			return undefined
+		}
+
+		return {
+			onOpenAutoFocus: (event: Event) => {
+				event.preventDefault()
+			},
+		}
 	})
 
 	const modalUi = createModalLayerUi({
@@ -42,7 +65,9 @@
 
 <style scoped>
 	.asset-workbench-modal__body {
-		padding-top: 0.4rem;
+		min-height: 0;
+		padding-top: 0.2rem;
+		overflow: hidden;
 	}
 
 	.asset-workbench-modal__footer {

@@ -703,6 +703,13 @@ export default {
 				favorite: '收藏',
 				unfavorite: '取消收藏',
 			},
+			header: {
+				filterAction: '筛选',
+				filterIdle: '未启用筛选',
+				filterActive: '项筛选',
+				favoriteFilter: '收藏状态',
+				sort: '排序方式',
+			},
 			labels: {
 				repository: '代码仓库',
 				items: '个片段',
