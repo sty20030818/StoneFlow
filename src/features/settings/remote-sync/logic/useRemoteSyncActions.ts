@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 
 import { i18n } from '@/plugins/i18n'
 import { tauriInvoke } from '@/infra/tauri/invoke'
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncStore } from '../store'
 import type {
 	RemoteDbProfile,
 	RemoteSyncCommandReport,

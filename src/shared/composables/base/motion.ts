@@ -1,4 +1,4 @@
-import type { Transition, Variant } from '@vueuse/motion'
+import type { MotionVariants, Transition, Variant } from '@vueuse/motion'
 import { useReducedMotion } from '@vueuse/motion'
 import { createGlobalState } from '@vueuse/core'
 import { computed, ref } from 'vue'
@@ -11,9 +11,9 @@ import {
 	type MotionPresetName,
 } from '@/shared/config/motion'
 
-// `v-motion` 的模板类型在当前工程里会递归膨胀到不可表示，这里统一收窄为 `any`，
-// 保持运行时行为不变，同时避免大规模模板类型噪音阻塞构建。
-type MotionPresetVariants = any
+// 组合式层统一收窄到字符串键的 motion variants，既保留运行时行为，
+// 也避免把指令模板里的泛型细节继续向外扩散。
+type MotionPresetVariants = MotionVariants<string>
 export type MotionLayer = 'shell' | 'content' | 'interaction'
 export type MotionStartupPolicy = 'booting' | 'ready'
 

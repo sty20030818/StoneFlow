@@ -1,8 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
 
-import type { useRemoteSyncActions } from '@/features/settings/remote-sync/logic/useRemoteSyncActions'
+import type { useRemoteSyncActions } from './useRemoteSyncActions'
 import { testRemoteSyncConnection, invalidateAfterRemoteSync } from '@/infra/sync/remote-sync-runtime'
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncStore } from '../store'
 import type { RemoteSyncCommandReport } from '@/shared/types/shared/remote-sync'
 import { summarizeRemoteSyncReport } from '@/shared/lib/remote-sync-report'
 import { formatDateTime } from '@/shared/lib/time'

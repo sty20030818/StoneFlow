@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncStore } from '../store'
 
 export type RemoteSyncPageStatus = 'missing' | 'ok' | 'error' | 'testing' | 'syncing'
 

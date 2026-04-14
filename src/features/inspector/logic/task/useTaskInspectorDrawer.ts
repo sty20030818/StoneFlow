@@ -1,9 +1,9 @@
 import { useEventListener } from '@vueuse/core'
 import { computed } from 'vue'
 
+import { useTaskInspectorStore } from '../../store'
 import { getWorkspaceProjectsSnapshot, useSpaceProjectsState } from '@/features/workspace'
 import type { InspectorTask } from '../../model'
-import { useTaskInspectorStore } from '@/features/inspector/store'
 
 import { useTaskInspectorActions } from './useTaskInspectorActions'
 import { useTaskInspectorActivityLogs } from './useTaskInspectorActivityLogs'

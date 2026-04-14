@@ -9,6 +9,7 @@ export {
 export { listWorkspaceProjects } from './queries'
 export {
 	DraggableProjectTree,
+	ProjectViewPageScene,
 	ProjectBreadcrumb,
 	ProjectHeaderCard,
 	ProgressIndicator,

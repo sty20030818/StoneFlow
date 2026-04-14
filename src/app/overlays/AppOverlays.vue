@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 	import { UpdateNotification } from '@/features/system'
-	import { CreateProjectModal, CreateTaskModal } from '@/features/workspace/create-flow'
+	import { CreateProjectModal, CreateTaskModal } from '@/features/workspace'
 
 	import { useAppOverlays } from './useAppOverlays'
 

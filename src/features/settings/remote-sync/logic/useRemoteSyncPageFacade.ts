@@ -2,11 +2,11 @@ import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAppContentMotionPreset, useInteractionMotionPresetWithDelay } from '@/shared/composables/base/motion'
-import { useRemoteSyncActions } from '@/features/settings/remote-sync/logic/useRemoteSyncActions'
 import { createModalLayerUi } from '@/shared/config/ui-layer'
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncStore } from '../store'
 import { resolveErrorMessage } from '@/shared/lib/error-message'
 
+import { useRemoteSyncActions } from './useRemoteSyncActions'
 import { useRemoteSyncAutoSync } from './useRemoteSyncAutoSync'
 import { useRemoteSyncHistoryPanel } from './useRemoteSyncHistoryPanel'
 import { useRemoteSyncProfilesPanel } from './useRemoteSyncProfilesPanel'

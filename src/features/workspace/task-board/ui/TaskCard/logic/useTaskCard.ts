@@ -1,8 +1,8 @@
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 
+import { useTaskInspectorStore } from '@/features/inspector'
 import { TASK_DONE_REASON_CARD_STYLES, type TaskDoneReasonValue } from '@/shared/config/task'
-import { useTaskInspectorStore } from '@/features/inspector/store'
 import { getDisplayStatus } from '@/shared/lib/task'
 import { formatDate, formatDateTime, formatTimeOfDay } from '@/shared/lib/time'
 import { Menu } from '@tauri-apps/api/menu'

@@ -3,8 +3,8 @@ import { computed, onMounted, ref, type ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { useRemoteSyncActions } from '@/features/settings/remote-sync/logic/useRemoteSyncActions'
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncActions } from './useRemoteSyncActions'
+import { useRemoteSyncStore } from '../store'
 import { formatRelativeDistance } from '@/shared/lib/time'
 
 export type AutoSyncCardState = 'booting' | 'missing' | 'idle' | 'syncing' | 'error' | 'success'

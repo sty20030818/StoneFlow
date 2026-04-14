@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 	import TimeDisplay from '@/shared/ui/shared/TimeDisplay.vue'
-	import { useTrashPageFacade } from '@/features/workspace/trash'
+	import { useTrashPageFacade } from '..'
 
 	const {
 		t,

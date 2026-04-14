@@ -88,8 +88,8 @@
 	import DOMPurify from 'dompurify'
 	import { createMarkdownExit } from 'markdown-exit'
 	import { computed } from 'vue'
+	import { useUpdater } from '@/features/system'
 	import { createModalLayerUi } from '@/shared/config/ui-layer'
-	import { useUpdater } from '@/features/system/updater/logic/useUpdater'
 
 	const { state, shouldPromptInstall, downloadAndInstall, restartApp, dismiss } = useUpdater()
 	const { t } = useI18n({ useScope: 'global' })

@@ -12,7 +12,7 @@ import {
 import { usePatchQueue } from '../shared'
 import { updateInspectorTask } from '../../mutations'
 import type { InspectorLink, InspectorLinkInput, InspectorTask, InspectorTaskPatch } from '../../model'
-import type { useTaskInspectorStore } from '@/features/inspector/store'
+import type { useTaskInspectorStore } from '../../store'
 
 import type { TaskInspectorState, TextInteractionField } from './useTaskInspectorState'
 import {

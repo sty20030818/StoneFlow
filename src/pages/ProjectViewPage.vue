@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-	import ProjectViewPageScene from '@/features/workspace/project-view/ui/ProjectViewPageScene.vue'
+	import { ProjectViewPageScene } from '@/features/workspace'
 </script>

@@ -2,13 +2,6 @@ import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 
 import {
-	DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS,
-	DEFAULT_REMOTE_SYNC_POLICY,
-	DEFAULT_REMOTE_SYNC_SETTINGS,
-	remoteSyncStore,
-} from '@/infra/tauri/remote-sync-store'
-import { getRemoteSyncSecret, removeRemoteSyncSecret, setRemoteSyncSecret } from '@/infra/tauri/stronghold'
-import {
 	buildProfileStateFromLegacy,
 	cloneSettings,
 	createDefaultProfileState,
@@ -23,7 +16,14 @@ import {
 	sanitizeByProfiles,
 	toNonNegativeNumber,
 	toPositiveNumber,
-} from '@/features/settings/remote-sync/logic/remote-sync-support'
+} from './logic/remote-sync-support'
+import {
+	DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS,
+	DEFAULT_REMOTE_SYNC_POLICY,
+	DEFAULT_REMOTE_SYNC_SETTINGS,
+	remoteSyncStore,
+} from '@/infra/tauri/remote-sync-store'
+import { getRemoteSyncSecret, removeRemoteSyncSecret, setRemoteSyncSecret } from '@/infra/tauri/stronghold'
 import type {
 	RemoteDbProfile,
 	RemoteDbProfileInput,

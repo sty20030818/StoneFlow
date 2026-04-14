@@ -8,8 +8,9 @@ import { useAppShortcuts } from '@/app/logic/useAppShortcuts'
 import { useNullableStringRouteQuery } from '@/shared/composables/base/route-query'
 import { SPACE_DISPLAY, SPACE_IDS } from '@/shared/config/space'
 import { createModalLayerUi } from '@/shared/config/ui-layer'
-import type { CreateFlowProject, CreateFlowTask } from '@/features/workspace/create-flow'
 import {
+	type CreateFlowProject,
+	type CreateFlowTask,
 	getWorkspaceProjectsSnapshot,
 	refreshWorkspaceProjectsQuery,
 	useInlineCreateFocusStore,

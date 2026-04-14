@@ -133,8 +133,8 @@
 	import { VueDraggable } from 'vue-draggable-plus'
 	import type { ProjectTreeItem } from './project-tree-types'
 
+	import { useProjectInspectorStore } from '@/features/inspector'
 	import { createModalLayerUi, createPopoverLayerUi } from '@/shared/config/ui-layer'
-	import { useProjectInspectorStore } from '@/features/inspector/store'
 	import { resolveErrorMessage } from '@/shared/lib/error-message'
 	import { calculateInsertRank } from '@/shared/lib/rank'
 	import {

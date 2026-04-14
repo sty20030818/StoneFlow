@@ -2,6 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { useEventListener, watchDebounced } from '@vueuse/core'
 import { computed, reactive, ref, watch } from 'vue'
 
+import { useProjectInspectorStore } from '../../store'
 import { PROJECT_PRIORITY_OPTIONS, type ProjectPriorityValue, isDefaultProjectId } from '@/shared/config/project'
 import { usePatchQueue } from '../shared'
 import {
@@ -23,7 +24,6 @@ import {
 	type WorkspaceProject,
 } from '@/features/workspace'
 import { SPACE_OPTIONS } from '@/shared/config/space'
-import { useProjectInspectorStore } from '@/features/inspector/store'
 import { resolveErrorMessage } from '@/shared/lib/error-message'
 import { buildDrawerLinkKindOptions } from '../../ui/InspectorDrawer/shared/constants'
 

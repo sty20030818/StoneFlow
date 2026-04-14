@@ -1,7 +1,7 @@
 import { useNow } from '@vueuse/core'
 import { computed, type Ref } from 'vue'
 
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncStore } from '../store'
 import type { RemoteSyncCommandReport } from '@/shared/types/shared/remote-sync'
 import { summarizeRemoteSyncReport } from '@/shared/lib/remote-sync-report'
 import { formatRelativeDistance } from '@/shared/lib/time'

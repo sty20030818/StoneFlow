@@ -4,7 +4,14 @@
  */
 export { useSpaceProjectsState } from './spaces'
 export { useWorkspaceProjectView } from './project-view'
-export { DraggableProjectTree, ProjectHeaderCard, WorkspaceLayout, type ProjectTreeItem } from './project-view'
+export { CreateProjectModal, CreateTaskModal, type CreateFlowProject, type CreateFlowTask } from './create-flow'
+export {
+	DraggableProjectTree,
+	ProjectHeaderCard,
+	ProjectViewPageScene,
+	WorkspaceLayout,
+	type ProjectTreeItem,
+} from './project-view'
 export { TaskColumn } from './task-board'
 export { useProjectTreeStore } from './project-tree/store/project-tree'
 export { useInlineCreateFocusStore } from './task-board/store/inline-create-focus'

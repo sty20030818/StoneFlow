@@ -49,10 +49,10 @@
 		useMotionPresetWithDelay,
 		withMotionDelay,
 	} from '@/shared/composables/base/motion'
-	import { useTaskCreateWorkflow } from '@/features/workspace/create-flow'
 	import type { TaskPriorityValue } from '@/shared/config/task'
-	import { useInlineCreateFocusStore } from '@/features/workspace/task-board/store/inline-create-focus'
 	import { getPriorityClass } from '@/shared/lib/priority'
+	import { useTaskCreateWorkflow } from '../../create-flow'
+	import { useInlineCreateFocusStore } from '../store/inline-create-focus'
 	import type { WorkspaceTask } from '../../shared/model'
 
 	const props = withDefaults(

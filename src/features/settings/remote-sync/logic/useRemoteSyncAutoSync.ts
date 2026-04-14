@@ -1,7 +1,7 @@
 import { useOnline } from '@vueuse/core'
 import { computed, type Ref } from 'vue'
 
-import { useRemoteSyncStore } from '@/features/settings/remote-sync/store'
+import { useRemoteSyncStore } from '../store'
 import { formatDateTime } from '@/shared/lib/time'
 import { resolveErrorMessage } from '@/shared/lib/error-message'
 
