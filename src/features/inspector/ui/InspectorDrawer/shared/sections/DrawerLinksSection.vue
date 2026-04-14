@@ -177,7 +177,7 @@
 	import { computed, ref } from 'vue'
 
 	import { DRAWER_LINK_KIND_FALLBACK_KEY, DRAWER_LINK_SELECT_MENU_UI, DRAWER_LINKS_EMPTY_TEXT_KEY } from '../constants'
-	import { useDrawerEditableListController, useDrawerLinkKindLabelMap } from '../../../../composables/shared'
+	import { useDrawerEditableListController, useDrawerLinkKindLabelMap } from '../../../../logic/shared'
 	import type { DrawerEditInteractionHandlers, DrawerLinkFormItem, DrawerLinkKindOption } from '../types'
 
 	const linksModel = defineModel<DrawerLinkFormItem[]>('links', { required: true })

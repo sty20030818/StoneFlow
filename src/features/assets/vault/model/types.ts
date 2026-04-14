@@ -1,4 +1,4 @@
-import type { VaultEntryDto, VaultEntryType } from '@/services/api/vault'
+import type { VaultEntryDto, VaultEntryType } from '@/infra/api/vault'
 
 export type AssetVaultEntryType = VaultEntryType
 

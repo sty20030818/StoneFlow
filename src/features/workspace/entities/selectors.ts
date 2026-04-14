@@ -1,5 +1,5 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import type { TaskStatus } from '@/types/domain/task'
+import type { TaskStatus } from '@/shared/types/domain/task'
 
 import {
 	mapWorkspaceProjectDtoToDomain,

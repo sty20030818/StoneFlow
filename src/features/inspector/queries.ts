@@ -1,4 +1,4 @@
-import { listActivityLogs, type ListActivityLogsArgs } from '@/services/api/logs'
+import { listActivityLogs, type ListActivityLogsArgs } from '@/infra/api/logs'
 
 import { mapInspectorActivityLogsDtoToDomain, type InspectorActivityLog, type InspectorActivityLogsArgs } from './model'
 

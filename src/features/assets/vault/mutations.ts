@@ -1,4 +1,4 @@
-import { createVaultEntry, deleteVaultEntry, updateVaultEntry } from '@/services/api/vault'
+import { createVaultEntry, deleteVaultEntry, updateVaultEntry } from '@/infra/api/vault'
 
 import {
 	mapAssetVaultEntryDtoToDomain,

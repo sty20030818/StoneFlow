@@ -145,7 +145,7 @@
 		useProjectInspectorActivityLogs,
 		useProjectInspectorDrawer,
 		useProjectLifecycleActions,
-	} from '../../../composables/project'
+	} from '../../../logic/project'
 	const { t } = useI18n({ useScope: 'global' })
 
 	function onProjectDrawerOpenAutoFocus(event: Event) {

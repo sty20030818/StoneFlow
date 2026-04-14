@@ -1,4 +1,4 @@
-import { useSettingsStore } from '@/stores/settings'
+import { useSettingsStore } from '@/app/stores/settings'
 
 export async function installAppLifecyclePlugin() {
 	const settingsStore = useSettingsStore()

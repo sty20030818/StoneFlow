@@ -1,5 +1,5 @@
-import type { ProjectDto } from '@/services/api/projects'
-import type { TaskDto, TaskStatus } from '@/services/api/tasks'
+import type { ProjectDto } from '@/infra/api/projects'
+import type { TaskDto, TaskStatus } from '@/infra/api/tasks'
 
 import { createWorkspaceProjectScopeKey, createWorkspaceTaskScopeKey } from './indexes'
 import { useWorkspaceEntitiesStore } from './store'

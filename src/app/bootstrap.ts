@@ -2,13 +2,13 @@ import { createApp } from 'vue'
 
 import App from '@/App.vue'
 import { createAppProviders, installAppProviders } from '@/app/providers'
-import { preloadAppThemePreference } from '@/composables/app/useAppTheme'
-import { markMotionStartupBooting, markMotionStartupReady } from '@/composables/base/motion'
+import { preloadAppThemePreference } from '@/app/logic/useAppTheme'
+import { markMotionStartupBooting, markMotionStartupReady } from '@/shared/composables/base/motion'
 import { installAppLifecyclePlugin } from '@/plugins/app-lifecycle'
 import { initializeAppLocale } from '@/plugins/i18n'
 import { installStartupPlugin, warmupStartupPlugin } from '@/plugins/startup'
-import { router } from '@/router'
-import { installRemoteSyncCoordinator } from '@/services/remote-sync/remote-sync-coordinator'
+import { router } from '@/app/router'
+import { installRemoteSyncCoordinator } from '@/infra/sync/remote-sync-coordinator'
 
 function readLaunchHashAtBoot() {
 	return window.location.hash ?? ''

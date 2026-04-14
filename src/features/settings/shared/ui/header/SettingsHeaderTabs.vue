@@ -21,7 +21,7 @@
 	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 
-	import { useSettingsNav } from '../../composables/useSettingsNav'
+	import { useSettingsNav } from '../../logic/useSettingsNav'
 
 	const route = useRoute()
 	const router = useRouter()

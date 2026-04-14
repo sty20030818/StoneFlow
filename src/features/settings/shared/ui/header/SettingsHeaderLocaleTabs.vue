@@ -19,9 +19,9 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	import LocaleFlag from '@/components/shared/LocaleFlag.vue'
+	import LocaleFlag from '@/shared/ui/shared/LocaleFlag.vue'
 
-	import { useSettingsLocaleControl } from '../../composables/useSettingsLocaleControl'
+	import { useSettingsLocaleControl } from '../../logic/useSettingsLocaleControl'
 
 	const { selectedLocale, t } = useSettingsLocaleControl()
 

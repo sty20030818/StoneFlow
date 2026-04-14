@@ -1,4 +1,4 @@
-import { listActivityLogs } from '@/services/api/logs'
+import { listActivityLogs } from '@/infra/api/logs'
 
 import {
 	mapInspectorActivityLogsDtoToDomain,

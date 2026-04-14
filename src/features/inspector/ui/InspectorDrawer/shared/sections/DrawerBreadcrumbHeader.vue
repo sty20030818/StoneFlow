@@ -55,8 +55,8 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { HEADER_CAPSULE_BASE, HEADER_CAPSULE_ICON } from '@/config/ui/capsule'
-	import { useInteractionMotionPreset } from '@/composables/base/motion'
+	import { HEADER_CAPSULE_BASE, HEADER_CAPSULE_ICON } from '@/shared/config/ui/capsule'
+	import { useInteractionMotionPreset } from '@/shared/composables/base/motion'
 
 	type Props = {
 		currentSpaceLabel: string

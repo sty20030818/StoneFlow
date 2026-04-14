@@ -100,8 +100,8 @@
 	} from '../../shared/attributes/DrawerAttributeOptionList.vue'
 	import DrawerAttributePopoverCard from '../../shared/attributes/DrawerAttributePopoverCard.vue'
 	import { DrawerAttributeGridSection } from '../../shared/sections'
-	import { useCardHoverMotionPreset } from '@/composables/base/motion'
-	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
+	import { useCardHoverMotionPreset } from '@/shared/composables/base/motion'
+	import { createDrawerPopoverLayerUi } from '@/shared/config/ui-layer'
 
 	type Props = {
 		isStructureLocked: boolean

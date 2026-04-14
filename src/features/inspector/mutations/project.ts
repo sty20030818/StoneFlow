@@ -1,4 +1,4 @@
-import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/services/api/projects'
+import { archiveProject, deleteProject, restoreProject, unarchiveProject, updateProject } from '@/infra/api/projects'
 
 import { mapInspectorProjectPatchToDto, type InspectorProjectPatch } from '../model'
 

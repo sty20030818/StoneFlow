@@ -1,8 +1,8 @@
 import { useQuery } from '@pinia/colada'
 import { toValue, type MaybeRefOrGetter } from 'vue'
 
-import { listProjects } from '@/services/api/projects'
-import { useStoneFlowQueryCache } from '@/features/shared'
+import { listProjects } from '@/infra/api/projects'
+import { useStoneFlowQueryCache } from '@/shared/query'
 import { useWorkspaceEntityRepository } from '../../entities/repository'
 import {
 	getWorkspaceProjectByIdSnapshot,

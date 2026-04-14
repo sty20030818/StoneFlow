@@ -1,0 +1,418 @@
+import { useToggle, useVModel, watchDebounced } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+import type {
+	CreateFlowCustomField,
+	CreateFlowLink,
+	CreateFlowLinkInput,
+	CreateFlowProject,
+	CreateFlowTask,
+	TaskDoneReason,
+	TaskStatus,
+} from '@/features/workspace/create-flow/model'
+import {
+	findDefaultProject,
+	getDefaultProjectId,
+	getDefaultProjectLabel,
+	PROJECT_ICON,
+	PROJECT_LEVEL_TEXT_CLASSES,
+	PROJECT_UNCATEGORIZED_ICON,
+	PROJECT_UNCATEGORIZED_ICON_CLASS,
+	isDefaultProjectId,
+} from '@/shared/config/project'
+import { SPACE_IDS, SPACE_OPTIONS, type SpaceId } from '@/shared/config/space'
+import { TASK_DONE_REASON_OPTIONS, TASK_PRIORITY_OPTIONS, type TaskPriorityValue } from '@/shared/config/task'
+import { validateWithZod } from '@/shared/composables/base/zod'
+import { taskSubmitSchema } from '@/shared/composables/domain/validation/forms'
+import {
+	getWorkspaceProjectsSnapshot,
+	refreshWorkspaceProjectsQuery,
+	useSpaceProjectsState,
+} from '@/features/workspace'
+import { resolveErrorMessage } from '@/shared/lib/error-message'
+import { statusOptions } from '@/shared/lib/task'
+import { getCreateFlowDefaultProject } from '../queries'
+import { useTaskCreateWorkflow } from './useTaskCreateWorkflow'
+
+export type CreateTaskModalProps = {
+	modelValue: boolean
+	spaceId?: string
+	projectId?: string
+	projects?: CreateFlowProject[]
+}
+
+export type CreateTaskModalEmits = {
+	(e: 'update:modelValue', value: boolean): void
+	(e: 'created', task: CreateFlowTask): void
+}
+
+export type TaskLinkFormItem = {
+	id?: string
+	title: string
+	url: string
+	kind: CreateFlowLink['kind']
+}
+
+export type TaskCustomFieldFormItem = {
+	rank: number
+	title: string
+	value: string
+}
+
+export type CreateTaskFormState = {
+	title: string
+	spaceId: SpaceId
+	projectId: string
+	status: TaskStatus
+	doneReason: TaskDoneReason
+	priority: TaskPriorityValue
+	deadlineDate: string
+	tags: string[]
+	links: TaskLinkFormItem[]
+	note: string
+	customFields: TaskCustomFieldFormItem[]
+}
+
+export type ProjectOption = {
+	value: string
+	label: string
+	icon: string
+	iconClass: string
+	depth: number
+}
+
+export type LinkKindOption = {
+	value: CreateFlowLink['kind']
+	label: string
+}
+
+const TASK_LINK_KIND_VALUES: CreateFlowLink['kind'][] = ['web', 'doc', 'design', 'repoLocal', 'repoRemote', 'other']
+
+export function useCreateTaskModal(props: CreateTaskModalProps, emit: CreateTaskModalEmits) {
+	const toast = useToast()
+	const { t } = useI18n({ useScope: 'global' })
+	const { createTaskFromModal } = useTaskCreateWorkflow()
+
+	const loading = ref(false)
+	const initialSpaceId = normalizeSpaceId(props.spaceId)
+	const defaultProjectId = ref<string>(getDefaultProjectId(initialSpaceId))
+	const isOpen = useVModel(props, 'modelValue', emit)
+
+	const statusOptionsArray = [...statusOptions]
+
+	function normalizeSpaceId(value?: string): SpaceId {
+		const candidate = value as SpaceId | undefined
+		if (candidate && SPACE_IDS.includes(candidate)) return candidate
+		return 'work'
+	}
+
+	const form = ref<CreateTaskFormState>({
+		title: '',
+		spaceId: initialSpaceId,
+		projectId: defaultProjectId.value,
+		status: 'todo',
+		doneReason: 'completed',
+		priority: 'P1',
+		deadlineDate: '',
+		tags: [],
+		links: [],
+		note: '',
+		customFields: [],
+	})
+	const projectsState = useSpaceProjectsState(
+		computed(() => form.value.spaceId),
+		{
+			enabled: isOpen,
+		},
+	)
+
+	const tagInput = ref('')
+	const advancedOpen = ref(false)
+	const toggleAdvanced = useToggle(advancedOpen)
+
+	const canSubmit = computed(() => form.value.title.trim().length > 0)
+
+	const spaceOptions = computed(() =>
+		SPACE_OPTIONS.map((item) => ({
+			...item,
+			label: t(`spaces.${item.value}`),
+		})),
+	)
+	const priorityOptions = TASK_PRIORITY_OPTIONS
+	const doneReasonOptions = TASK_DONE_REASON_OPTIONS
+	const linkKindOptions = computed<LinkKindOption[]>(() => {
+		return TASK_LINK_KIND_VALUES.map((value) => ({
+			value,
+			label: t(`linkKind.${value}`),
+		}))
+	})
+
+	const levelColors = PROJECT_LEVEL_TEXT_CLASSES
+	const defaultProjectLabel = computed(() => getDefaultProjectLabel())
+
+	function normalizeTags(values: string[]): string[] {
+		const seen = new Set<string>()
+		const result: string[] = []
+		for (const raw of values) {
+			const tag = raw.trim()
+			if (!tag || seen.has(tag)) continue
+			seen.add(tag)
+			result.push(tag)
+		}
+		return result
+	}
+
+	function normalizeLinks(values: TaskLinkFormItem[]): CreateFlowLinkInput[] {
+		const result: CreateFlowLinkInput[] = []
+		for (const link of values) {
+			const url = link.url.trim()
+			if (!url) continue
+			const title = link.title.trim()
+			result.push({
+				id: link.id,
+				title,
+				url,
+				kind: link.kind,
+			})
+		}
+		return result
+	}
+
+	function normalizeCustomFields(values: TaskCustomFieldFormItem[]): CreateFlowCustomField[] {
+		return values
+			.map((item, index) => ({ item, index }))
+			.sort((left, right) => {
+				const rankDiff = left.item.rank - right.item.rank
+				if (rankDiff !== 0) return rankDiff
+				return left.index - right.index
+			})
+			.flatMap(({ item }, normalizedRank) => {
+				const title = item.title.trim()
+				if (!title) return []
+				const rawValue = item.value.trim()
+				return [
+					{
+						rank: normalizedRank,
+						title,
+						value: rawValue ? rawValue : null,
+					},
+				]
+			})
+	}
+
+	function addTag() {
+		const tag = tagInput.value.trim()
+		if (!tag || form.value.tags.includes(tag)) return
+		form.value.tags.push(tag)
+		tagInput.value = ''
+	}
+
+	function removeTag(tag: string) {
+		form.value.tags = form.value.tags.filter((t) => t !== tag)
+	}
+
+	function addLink() {
+		form.value.links.push({
+			title: '',
+			url: '',
+			kind: 'web',
+		})
+	}
+
+	function removeLink(index: number) {
+		if (index < 0 || index >= form.value.links.length) return
+		form.value.links.splice(index, 1)
+	}
+
+	function addCustomField() {
+		const nextRank = form.value.customFields.length
+			? Math.max(...form.value.customFields.map((item, index) => (Number.isFinite(item.rank) ? item.rank : index))) + 1
+			: 0
+		form.value.customFields.push({
+			rank: nextRank,
+			title: '',
+			value: '',
+		})
+	}
+
+	function removeCustomField(index: number) {
+		if (index < 0 || index >= form.value.customFields.length) return
+		form.value.customFields.splice(index, 1)
+	}
+
+	const projectOptions = computed<ProjectOption[]>(() => {
+		const storeProjects = projectsState.projects.value
+		const fallbackProjects = (props.projects ?? []).filter((p) => p.spaceId === form.value.spaceId)
+		const projectsList = storeProjects.length > 0 ? storeProjects : fallbackProjects
+		const defaultProject = findDefaultProject(projectsList)
+		const options: ProjectOption[] = [
+			{
+				value: defaultProject?.id ?? defaultProjectId.value,
+				label: defaultProject?.title ?? defaultProjectLabel.value,
+				icon: PROJECT_UNCATEGORIZED_ICON,
+				iconClass: PROJECT_UNCATEGORIZED_ICON_CLASS,
+				depth: 0,
+			},
+		]
+		if (!projectsList.length) return options
+
+		function buildTree(parentId: string | null, depth: number) {
+			const children = projectsList.filter((p) => p.parentId === parentId && !isDefaultProjectId(p.id))
+			for (const project of children) {
+				options.push({
+					value: project.id,
+					label: project.title,
+					icon: PROJECT_ICON,
+					iconClass: levelColors[depth % levelColors.length],
+					depth,
+				})
+				buildTree(project.id, depth + 1)
+			}
+		}
+
+		if (defaultProject) {
+			buildTree(defaultProject.id, 1)
+		}
+		buildTree(null, 0)
+		return options
+	})
+
+	watchDebounced(
+		() => form.value.spaceId,
+		async (newSpaceId) => {
+			const fallbackDefaultProjectId = getDefaultProjectId(newSpaceId)
+			defaultProjectId.value = fallbackDefaultProjectId
+			form.value.projectId = fallbackDefaultProjectId
+			await refreshWorkspaceProjectsQuery(newSpaceId)
+			try {
+				const defaultProject = await getCreateFlowDefaultProject(newSpaceId)
+				defaultProjectId.value = defaultProject.id
+				form.value.projectId = defaultProject.id
+			} catch (error) {
+				console.error('加载默认项目失败:', error)
+				form.value.projectId = fallbackDefaultProjectId
+			}
+		},
+		{ debounce: 80, maxWait: 240 },
+	)
+
+	watch(
+		() => props.spaceId,
+		(newSpaceId) => {
+			form.value.spaceId = normalizeSpaceId(newSpaceId)
+		},
+		{ immediate: true },
+	)
+
+	watch(isOpen, async (open) => {
+		if (!open) return
+
+		form.value.title = ''
+		form.value.status = 'todo'
+		form.value.doneReason = 'completed'
+		form.value.priority = 'P1'
+		form.value.deadlineDate = ''
+		form.value.tags = []
+		form.value.links = []
+		form.value.note = ''
+		form.value.customFields = []
+		tagInput.value = ''
+		advancedOpen.value = false
+		form.value.spaceId = normalizeSpaceId(props.spaceId)
+		defaultProjectId.value = getDefaultProjectId(form.value.spaceId)
+		form.value.projectId = defaultProjectId.value
+
+		await refreshWorkspaceProjectsQuery(form.value.spaceId)
+		try {
+			const defaultProject = await getCreateFlowDefaultProject(form.value.spaceId)
+			defaultProjectId.value = defaultProject.id
+
+			const candidateProjectId = props.projectId ?? null
+			const projectsOfSpace = getWorkspaceProjectsSnapshot(form.value.spaceId)
+			const hasCandidate = !!candidateProjectId && projectsOfSpace.some((p) => p.id === candidateProjectId)
+			form.value.projectId = hasCandidate ? candidateProjectId : defaultProjectId.value
+		} catch (error) {
+			console.error('加载默认项目失败:', error)
+			form.value.projectId = defaultProjectId.value
+		}
+	})
+
+	async function handleSubmit() {
+		if (!canSubmit.value || loading.value) return
+		const validation = validateWithZod(taskSubmitSchema, { title: form.value.title })
+		if (!validation.ok) {
+			toast.add({ title: validation.message, color: 'error' })
+			return
+		}
+
+		loading.value = true
+		try {
+			const tags = normalizeTags(form.value.tags)
+			const links = normalizeLinks(form.value.links)
+			const customFields = normalizeCustomFields(form.value.customFields)
+			const deadlineAt = form.value.deadlineDate
+				? (() => {
+						const date = new Date(form.value.deadlineDate)
+						date.setHours(0, 0, 0, 0)
+						return date.getTime()
+					})()
+				: null
+
+			const task = await createTaskFromModal({
+				spaceId: form.value.spaceId,
+				title: form.value.title.trim(),
+				projectId: form.value.projectId,
+				status: form.value.status,
+				doneReason: form.value.doneReason,
+				priority: form.value.priority,
+				note: form.value.note?.trim() ? form.value.note.trim() : null,
+				deadlineAt,
+				tags: tags.length > 0 ? tags : undefined,
+				links: links.length > 0 ? links : undefined,
+				customFields: customFields.length > 0 ? { fields: customFields } : null,
+			})
+
+			emit('created', task)
+			close()
+		} catch (error) {
+			toast.add({
+				title: t('toast.common.createTaskFailed'),
+				description: resolveErrorMessage(error, t),
+				color: 'error',
+			})
+			console.error('创建任务失败:', error)
+		} finally {
+			loading.value = false
+		}
+	}
+
+	function close() {
+		isOpen.value = false
+	}
+
+	return {
+		isOpen,
+		form,
+		tagInput,
+		advancedOpen,
+		loading,
+		canSubmit,
+		spaceOptions,
+		projectOptions,
+		statusOptionsArray,
+		priorityOptions,
+		doneReasonOptions,
+		linkKindOptions,
+		defaultProjectLabel,
+		toggleAdvanced,
+		addTag,
+		removeTag,
+		addLink,
+		removeLink,
+		addCustomField,
+		removeCustomField,
+		handleSubmit,
+		close,
+	}
+}

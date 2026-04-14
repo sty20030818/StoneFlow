@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset } from '@/shared/composables/base/motion'
 
 	const tagInputModel = defineModel<string>('tagInput', { required: true })
 	const tagHoverMotion = useCardHoverMotionPreset()

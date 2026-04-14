@@ -1,4 +1,4 @@
-import { listTasks } from '@/services/api/tasks'
+import { listTasks } from '@/infra/api/tasks'
 
 import { mapWorkspaceTasksDtoToDomain, type WorkspaceTask } from '../model'
 

@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset } from '@/shared/composables/base/motion'
 	import { SettingsSectionCard } from '../../../shared'
 
 	type AboutLink = {

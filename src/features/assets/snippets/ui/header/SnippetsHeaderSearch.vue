@@ -19,9 +19,9 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 
-	import { HEADER_CAPSULE_INPUT, HEADER_CAPSULE_INPUT_ICON } from '@/config/ui/capsule'
+	import { HEADER_CAPSULE_INPUT, HEADER_CAPSULE_INPUT_ICON } from '@/shared/config/ui/capsule'
 
-	import { useAssetsSnippetsHeaderBridge } from '../../composables/useAssetsSnippetsHeaderBridge'
+	import { useAssetsSnippetsHeaderBridge } from '../../logic/useAssetsSnippetsHeaderBridge'
 
 	const { t } = useI18n({ useScope: 'global' })
 	const { searchKeyword } = useAssetsSnippetsHeaderBridge()

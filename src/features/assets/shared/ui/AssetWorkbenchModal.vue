@@ -23,7 +23,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	import { createModalLayerUi } from '@/config/ui-layer'
+	import { createModalLayerUi } from '@/shared/config/ui-layer'
 
 	type Props = {
 		title?: string

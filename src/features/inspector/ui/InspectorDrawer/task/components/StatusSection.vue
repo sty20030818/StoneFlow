@@ -48,7 +48,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
-	import type { DoneReasonOption, StatusSegmentOption, TaskDoneReasonValue, TaskStatusValue } from '@/config/task'
+	import type { DoneReasonOption, StatusSegmentOption, TaskDoneReasonValue, TaskStatusValue } from '@/shared/config/task'
 
 	type Props = {
 		statusLocal: TaskStatusValue

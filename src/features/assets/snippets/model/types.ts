@@ -1,4 +1,4 @@
-import type { SnippetDto } from '@/services/api/snippets'
+import type { SnippetDto } from '@/infra/api/snippets'
 
 export type AssetSnippet = {
 	id: string

@@ -1,8 +1,8 @@
 import { useQuery } from '@pinia/colada'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
-import { listTasks, type TaskStatus } from '@/services/api/tasks'
-import { useStoneFlowQueryCache } from '@/features/shared'
+import { listTasks, type TaskStatus } from '@/infra/api/tasks'
+import { useStoneFlowQueryCache } from '@/shared/query'
 import { useWorkspaceEntityRepository } from '../../entities/repository'
 import { createWorkspaceTaskScopeKey } from '../../entities/indexes'
 import { useWorkspaceTaskScopeSelector } from '../../entities/selectors'

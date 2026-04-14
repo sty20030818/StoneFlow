@@ -1,4 +1,4 @@
-import { listNotes } from '@/services/api/notes'
+import { listNotes } from '@/infra/api/notes'
 
 import { mapAssetNotesDtoToDomain, type AssetNote } from './model'
 

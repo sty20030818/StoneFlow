@@ -1,5 +1,5 @@
-import { listDiaryEntries } from '@/services/api/diary'
-import { listTasks } from '@/services/api/tasks'
+import { listDiaryEntries } from '@/infra/api/diary'
+import { listTasks } from '@/infra/api/tasks'
 
 import {
 	mapAssetDiaryEntriesDtoToDomain,

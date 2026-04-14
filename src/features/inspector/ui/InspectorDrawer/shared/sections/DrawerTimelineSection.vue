@@ -79,7 +79,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { computed } from 'vue'
 
-	import { toDrawerTimelineItems } from '../../../../composables/shared/useDrawerShared'
+	import { toDrawerTimelineItems } from '../../../../logic/shared/useDrawerShared'
 	import type { DrawerTimelineLogEntry } from '../types'
 
 	type Props = {

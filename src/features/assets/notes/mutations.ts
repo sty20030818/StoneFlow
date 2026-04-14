@@ -1,4 +1,4 @@
-import { createNote, deleteNote, updateNote } from '@/services/api/notes'
+import { createNote, deleteNote, updateNote } from '@/infra/api/notes'
 
 import { mapAssetNoteDtoToDomain, mapAssetNotePatchToDto, type AssetNote, type AssetNotePatch } from './model'
 

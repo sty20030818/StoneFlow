@@ -1,4 +1,4 @@
-import type { NoteDto } from '@/services/api/notes'
+import type { NoteDto } from '@/infra/api/notes'
 
 export type AssetNote = {
 	id: string

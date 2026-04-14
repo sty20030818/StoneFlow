@@ -1,7 +1,7 @@
 export {
 	useSettingsNav,
 	useSettingsLocaleControl,
-	useSettingsShellHeader,
+	useSettingsAppHeader,
 	useSettingsSystemActions,
 	SettingsSectionCard,
 } from './shared'

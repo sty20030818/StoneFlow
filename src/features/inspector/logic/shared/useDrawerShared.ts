@@ -1,0 +1,62 @@
+import { computed } from 'vue'
+
+import type { DrawerLinkKindOption, DrawerTimelineLogEntry } from '../../ui/InspectorDrawer/shared/types'
+import { i18n } from '@/i18n'
+import { formatDateTime } from '@/shared/lib/time'
+
+const ACTION_ICON_MAP: Record<string, string> = {
+	task_created: 'i-lucide-circle-plus',
+	task_completed: 'i-lucide-check-circle-2',
+	task_status_changed: 'i-lucide-refresh-cw',
+	task_field_updated: 'i-lucide-pencil-line',
+	task_deleted: 'i-lucide-trash-2',
+	task_restored: 'i-lucide-undo-2',
+	project_created: 'i-lucide-circle-plus',
+	project_deleted: 'i-lucide-trash-2',
+	project_restored: 'i-lucide-undo-2',
+	project_field_updated: 'i-lucide-pencil-line',
+	project_archived: 'i-lucide-archive',
+	project_unarchived: 'i-lucide-folder-open',
+}
+
+export function formatDrawerDateTime(
+	ts: number | null | undefined,
+	options: { fallback?: string; includeWeekday?: boolean } = {},
+): string {
+	const fallback = options.fallback ?? i18n.global.t('inspector.time.unknown')
+	if (ts === null || ts === undefined) return fallback
+
+	return formatDateTime(ts, {
+		locale: String(i18n.global.locale.value || 'zh-CN'),
+		fallback,
+		weekday: options.includeWeekday ? 'long' : undefined,
+	})
+}
+
+export function resolveDrawerActivityIcon(action: string): string {
+	return ACTION_ICON_MAP[action] ?? 'i-lucide-history'
+}
+
+export function useDrawerLinkKindLabelMap(options: () => DrawerLinkKindOption[]) {
+	return computed(() => {
+		return new Map(options().map((item) => [item.value, item.label]))
+	})
+}
+
+export type DrawerTimelineUiItem = {
+	title: string
+	description: string
+	date: string
+	icon: string
+}
+
+export function toDrawerTimelineItems(logs: DrawerTimelineLogEntry[]): DrawerTimelineUiItem[] {
+	return logs.map((item) => {
+		return {
+			title: item.actionLabel,
+			description: item.detail || i18n.global.t('inspector.timeline.noDetail'),
+			date: formatDrawerDateTime(item.createdAt),
+			icon: resolveDrawerActivityIcon(item.action),
+		}
+	})
+}

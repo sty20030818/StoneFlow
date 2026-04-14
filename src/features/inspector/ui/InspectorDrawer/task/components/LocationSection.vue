@@ -48,13 +48,13 @@
 	import { useI18n } from 'vue-i18n'
 	import { computed, ref } from 'vue'
 
-	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset } from '@/shared/composables/base/motion'
 	import DrawerAttributeCardShell from '../../shared/attributes/DrawerAttributeCardShell.vue'
 	import DrawerAttributeOptionList, {
 		type DrawerAttributeOptionItem,
 	} from '../../shared/attributes/DrawerAttributeOptionList.vue'
 	import DrawerAttributePopoverCard from '../../shared/attributes/DrawerAttributePopoverCard.vue'
-	import { createDrawerPopoverLayerUi } from '@/config/ui-layer'
+	import { createDrawerPopoverLayerUi } from '@/shared/config/ui-layer'
 
 	type SpaceOption = {
 		value: string

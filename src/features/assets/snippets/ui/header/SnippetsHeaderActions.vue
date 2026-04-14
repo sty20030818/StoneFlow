@@ -108,17 +108,17 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 
-	import { createPopoverLayerUi } from '@/config/ui-layer'
+	import { createPopoverLayerUi } from '@/shared/config/ui-layer'
 	import {
 		HEADER_CAPSULE_BASE,
 		HEADER_CAPSULE_ICON,
 		HEADER_CAPSULE_NEUTRAL,
 		HEADER_CAPSULE_TONE_EMERALD,
 		joinCapsuleClass,
-	} from '@/config/ui/capsule'
+	} from '@/shared/config/ui/capsule'
 	import { assetModalSelectMenuUi } from '@/features/assets'
 
-	import { useAssetsSnippetsHeaderBridge } from '../../composables/useAssetsSnippetsHeaderBridge'
+	import { useAssetsSnippetsHeaderBridge } from '../../logic/useAssetsSnippetsHeaderBridge'
 
 	const { t } = useI18n({ useScope: 'global' })
 	const {

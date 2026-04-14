@@ -1,7 +1,7 @@
 import { PiniaColada } from '@pinia/colada'
 import type { App as VueApp } from 'vue'
 
-import { createStoneFlowColadaOptions, createStoneFlowQueryHooksPlugin } from '@/features/shared'
+import { createStoneFlowColadaOptions, createStoneFlowQueryHooksPlugin } from '@/shared/query'
 
 export function installQueryRuntimePlugins(app: VueApp) {
 	app.use(
@@ -9,7 +9,7 @@ export function installQueryRuntimePlugins(app: VueApp) {
 		createStoneFlowColadaOptions({
 			plugins: [
 				createStoneFlowQueryHooksPlugin({
-					onError(error) {
+					onError(error: unknown) {
 						console.error('[colada-query]', error)
 					},
 				}),

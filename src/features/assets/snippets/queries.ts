@@ -1,4 +1,4 @@
-import { listSnippets } from '@/services/api/snippets'
+import { listSnippets } from '@/infra/api/snippets'
 
 import { mapAssetSnippetsDtoToDomain, type AssetSnippet } from './model'
 

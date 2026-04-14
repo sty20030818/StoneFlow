@@ -1,5 +1,40 @@
 /**
  * Workspace 套件共享能力入口。
  */
-export * from './model'
-export * from './queries'
+export {
+	invalidateWorkspaceProjectQueries,
+	invalidateWorkspaceTaskAndProjectQueries,
+	invalidateWorkspaceTaskQueries,
+	mapWorkspaceProjectDtoToDomain,
+	mapWorkspaceProjectsDtoToDomain,
+	mapWorkspaceTaskDtoToDomain,
+	mapWorkspaceTaskPatchToDto,
+	mapWorkspaceTasksDtoToDomain,
+	workspaceQueryKeys,
+	type WorkspaceCustomField,
+	type WorkspaceCustomFields,
+	type WorkspaceLink,
+	type WorkspaceLinkInput,
+	type WorkspaceProject,
+	type WorkspaceProjectListScope,
+	type WorkspaceTask,
+	type WorkspaceTaskListArgs,
+	type WorkspaceTaskListScope,
+	type WorkspaceTaskPatch,
+} from './model'
+export {
+	PROJECTS_QUERY_GC_TIME,
+	PROJECTS_QUERY_STALE_TIME,
+	getWorkspaceProjectById,
+	getWorkspaceProjectsSnapshot,
+	patchWorkspaceProjectSnapshot,
+	patchWorkspaceTaskSnapshot,
+	refreshWorkspaceProjectsQuery,
+	refreshWorkspaceTaskScopes,
+	useProjectsMutations,
+	useProjectsQuery,
+	useWorkspaceTaskBoardQuery,
+	warmupWorkspaceProjectsQuery,
+	type UseProjectsQueryOptions,
+	type WorkspaceTaskTransportStatus,
+} from './queries'

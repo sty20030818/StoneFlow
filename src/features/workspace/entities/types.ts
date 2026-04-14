@@ -4,9 +4,9 @@ import type {
 	LinkDto as WorkspaceLinkDto,
 	TaskDto as WorkspaceTaskDto,
 	TaskStatus,
-} from '@/services/api/tasks'
-import type { ProjectDto as WorkspaceProjectDto } from '@/services/api/projects'
-import { getDefaultProjectId, isDefaultProjectId } from '@/config/project'
+} from '@/infra/api/tasks'
+import type { ProjectDto as WorkspaceProjectDto } from '@/infra/api/projects'
+import { getDefaultProjectId, isDefaultProjectId } from '@/shared/config/project'
 
 export type WorkspaceEntityLink = WorkspaceLinkDto
 export type WorkspaceEntityCustomField = WorkspaceCustomFieldDto

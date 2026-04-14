@@ -6,9 +6,9 @@ import type {
 	ListTasksArgs as WorkspaceTaskListArgsDto,
 	TaskDto as WorkspaceTaskDto,
 	UpdateTaskPatch as WorkspaceTaskPatchDto,
-} from '@/services/api/tasks'
-import type { ProjectDto as WorkspaceProjectDto } from '@/services/api/projects'
-import { getDefaultProjectLabel, isDefaultProjectId } from '@/config/project'
+} from '@/infra/api/tasks'
+import type { ProjectDto as WorkspaceProjectDto } from '@/infra/api/projects'
+import { getDefaultProjectLabel, isDefaultProjectId } from '@/shared/config/project'
 
 export type WorkspaceLink = WorkspaceLinkDto
 export type WorkspaceLinkInput = WorkspaceLinkInputDto

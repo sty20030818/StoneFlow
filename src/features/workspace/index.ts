@@ -3,11 +3,11 @@
  * 仅暴露外层调用需要的用例能力与稳定类型契约。
  */
 export { useSpaceProjectsState } from './spaces'
-export { useWorkspaceProjectView } from './projects'
-export { DraggableProjectTree, ProjectHeaderCard, WorkspaceLayout, type ProjectTreeItem } from './projects'
-export { TaskColumn } from './tasks'
-export { listWorkspaceProjects } from './projects'
-export { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from './projects'
+export { useWorkspaceProjectView } from './project-view'
+export { DraggableProjectTree, ProjectHeaderCard, WorkspaceLayout, type ProjectTreeItem } from './project-view'
+export { TaskColumn } from './task-board'
+export { listWorkspaceProjects } from './project-view'
+export { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from './project-view'
 export {
 	getWorkspaceProjectById,
 	getWorkspaceProjectsSnapshot,

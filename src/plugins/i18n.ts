@@ -5,7 +5,7 @@ import { usePreferredLanguages } from '@vueuse/core'
 import { createI18n } from 'vue-i18n'
 import type { App as VueApp } from 'vue'
 
-import { settingsStore } from '@/services/tauri/store'
+import { settingsStore } from '@/infra/tauri/store'
 import { buildRuntimeMessages, DEFAULT_LOCALE, normalizeAppLocale, type AppLocale } from '@/i18n/messages'
 
 const nuxtUiEnUSLocale = extendLocale(en, {

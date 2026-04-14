@@ -1,4 +1,4 @@
-import { createSnippet, deleteSnippet, updateSnippet } from '@/services/api/snippets'
+import { createSnippet, deleteSnippet, updateSnippet } from '@/infra/api/snippets'
 
 import {
 	mapAssetSnippetDtoToDomain,

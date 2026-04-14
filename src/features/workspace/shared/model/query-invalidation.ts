@@ -1,4 +1,4 @@
-import { useStoneFlowQueryCache } from '@/features/shared'
+import { useStoneFlowQueryCache } from '@/shared/query'
 
 export async function invalidateWorkspaceTaskQueries() {
 	const queryCache = useStoneFlowQueryCache()

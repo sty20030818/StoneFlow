@@ -1,4 +1,4 @@
-export { useRemoteSyncOverview, useRemoteSyncPageFacade } from './composables'
+export { useRemoteSyncOverview, useRemoteSyncPageFacade } from './logic'
 export {
 	RemoteSyncActionsCard,
 	RemoteSyncAutoSyncCard,

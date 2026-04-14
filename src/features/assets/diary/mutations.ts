@@ -1,4 +1,4 @@
-import { createDiaryEntry, deleteDiaryEntry, updateDiaryEntry } from '@/services/api/diary'
+import { createDiaryEntry, deleteDiaryEntry, updateDiaryEntry } from '@/infra/api/diary'
 
 import {
 	mapAssetDiaryEntryDtoToDomain,

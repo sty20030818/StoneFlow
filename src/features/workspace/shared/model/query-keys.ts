@@ -1,5 +1,5 @@
-import { createQueryKey } from '@/features/shared'
-import type { TaskStatus } from '@/types/domain/task'
+import { createQueryKey } from '@/shared/query'
+import type { TaskStatus } from '@/shared/types/domain/task'
 
 type QueryKeyLike = readonly unknown[]
 

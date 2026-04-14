@@ -153,7 +153,7 @@
 		DrawerTimelineSection,
 		DrawerTitleInputSection,
 	} from '../shared/sections'
-	import { getProjectMotionPhaseDelay, useProjectInteractionMotionPreset } from '@/composables/base/motion'
+	import { getProjectMotionPhaseDelay, useProjectInteractionMotionPreset } from '@/shared/composables/base/motion'
 	import AdvancedSection from './components/AdvancedSection.vue'
 	import LocationSection from './components/LocationSection.vue'
 	import PriorityDeadlineSection from './components/PriorityDeadlineSection.vue'
@@ -162,7 +162,7 @@
 		useTaskDrawerInteractions,
 		useTaskDrawerPresentation,
 		useTaskInspectorDrawer,
-	} from '../../../composables/task'
+	} from '../../../logic/task'
 	const { t } = useI18n({ useScope: 'global' })
 
 	const {

@@ -1,2 +1,2 @@
 export { default } from './index.vue'
-export { useProjectInspectorDrawer } from '../../../composables/project'
+export { useProjectInspectorDrawer } from '../../../logic/project'

@@ -126,7 +126,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import type { UpdateState } from '@/composables/useUpdater'
+	import type { UpdateState } from '@/features/system/updater/logic/useUpdater'
 	import avatarUrl from '@/assets/avatar.png'
 	import { SettingsSectionCard } from '../../../shared'
 

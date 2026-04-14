@@ -1,4 +1,4 @@
-import { listVaultEntries } from '@/services/api/vault'
+import { listVaultEntries } from '@/infra/api/vault'
 
 import { mapAssetVaultEntriesDtoToDomain, type AssetVaultEntry } from './model'
 

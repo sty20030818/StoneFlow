@@ -1,4 +1,4 @@
-import { updateTask } from '@/services/api/tasks'
+import { updateTask } from '@/infra/api/tasks'
 
 import { mapInspectorTaskPatchToDto, type InspectorTaskPatch } from '../model'
 

@@ -172,8 +172,8 @@
 	import { computed, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 
-	import { createPopoverLayerUi } from '@/config/ui-layer'
-	import type { RemoteSyncPolicy } from '@/types/shared/remote-sync'
+	import { createPopoverLayerUi } from '@/shared/config/ui-layer'
+	import type { RemoteSyncPolicy } from '@/shared/types/shared/remote-sync'
 
 	import { SettingsSectionCard } from '../../../shared'
 

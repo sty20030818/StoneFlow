@@ -81,9 +81,9 @@
 
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useCardHoverMotionPreset } from '@/composables/base/motion'
+	import { useCardHoverMotionPreset } from '@/shared/composables/base/motion'
 	import { SettingsSectionCard } from '../../../shared'
-	import type { RemoteDbProfile } from '@/types/shared/remote-sync'
+	import type { RemoteDbProfile } from '@/shared/types/shared/remote-sync'
 
 	const profileItemHoverMotion = useCardHoverMotionPreset()
 	const { t } = useI18n({ useScope: 'global' })

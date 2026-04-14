@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-	import { createDrawerLayerUi } from '@/config/ui-layer'
+	import { createDrawerLayerUi } from '@/shared/config/ui-layer'
 	import { DRAWER_CONTENT_CLASS } from './constants'
 
 	const openModel = defineModel<boolean>('open', { required: true })

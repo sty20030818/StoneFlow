@@ -1,4 +1,4 @@
-import type { TaskStatus } from '@/services/api/tasks'
+import type { TaskStatus } from '@/infra/api/tasks'
 
 export const WORKSPACE_UNASSIGNED_PROJECT_INDEX_KEY = '__workspace_unassigned_project__'
 

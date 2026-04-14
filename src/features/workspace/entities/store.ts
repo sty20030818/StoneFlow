@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { TaskStatus } from '@/services/api/tasks'
+import type { TaskStatus } from '@/infra/api/tasks'
 
 import {
 	createEmptyWorkspaceTaskIdsByStatus,

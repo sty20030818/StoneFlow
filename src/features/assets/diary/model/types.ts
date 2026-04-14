@@ -1,5 +1,5 @@
-import type { DiaryEntryDto } from '@/services/api/diary'
-import type { TaskDto } from '@/services/api/tasks'
+import type { DiaryEntryDto } from '@/infra/api/diary'
+import type { TaskDto } from '@/infra/api/tasks'
 
 export type AssetDiaryEntry = {
 	id: string

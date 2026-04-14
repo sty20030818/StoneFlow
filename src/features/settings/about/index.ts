@@ -1,2 +1,8 @@
-export { useSettingsAboutPage } from './composables/useSettingsAboutPage'
-export * from './ui'
+export { useSettingsAboutPage } from './logic/useSettingsAboutPage'
+export {
+	AboutChangelogSection,
+	AboutDownloadInstallSection,
+	AboutHeaderCard,
+	AboutLegalSection,
+	AboutLinksSection,
+} from './ui'

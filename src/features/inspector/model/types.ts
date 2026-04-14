@@ -2,7 +2,7 @@ import type {
 	ActivityLogEntityType as InspectorActivityLogEntityTypeDto,
 	ActivityLogEntry as InspectorActivityLogDto,
 	ListActivityLogsArgs as InspectorActivityLogsArgsDto,
-} from '@/services/api/logs'
+} from '@/infra/api/logs'
 import type {
 	CustomFieldItem as InspectorCustomFieldDto,
 	CustomFields as InspectorCustomFieldsDto,
@@ -10,11 +10,11 @@ import type {
 	LinkInput as InspectorLinkInputDto,
 	TaskDto as InspectorTaskDto,
 	UpdateTaskPatch as InspectorTaskPatchDto,
-} from '@/services/api/tasks'
+} from '@/infra/api/tasks'
 import type {
 	ProjectDto as InspectorProjectDto,
 	UpdateProjectPatch as InspectorProjectPatchDto,
-} from '@/services/api/projects'
+} from '@/infra/api/projects'
 
 export type InspectorActivityLogEntityType = InspectorActivityLogEntityTypeDto
 export type InspectorActivityLog = InspectorActivityLogDto
