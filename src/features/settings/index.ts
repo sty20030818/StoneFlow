@@ -14,6 +14,7 @@ export {
 	useSettingsAboutPage,
 } from './about'
 export {
+	AutoSyncCard,
 	RemoteSyncActionsCard,
 	RemoteSyncAutoSyncCard,
 	RemoteSyncCreateForm,

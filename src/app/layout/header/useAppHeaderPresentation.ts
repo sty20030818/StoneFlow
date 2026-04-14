@@ -8,7 +8,7 @@ import { DEFAULT_SPACE_DISPLAY, SPACE_DISPLAY } from '@/shared/config/space'
 import { HEADER_CAPSULE_DANGER, HEADER_CAPSULE_NEUTRAL } from '@/shared/config/ui/capsule'
 import { useProjectInteractionMotionPreset, useProjectShellMotionPreset } from '@/shared/composables/base/motion'
 import { useSettingsStore } from '@/app/stores/settings'
-import { useWorkspaceEditStore } from '@/features/workspace/project-view/store/workspace-edit'
+import { useWorkspaceEditStore } from '@/features/workspace'
 
 import type { AppHeaderLeadingPill } from './types'
 import { useAppHeaderController } from './useAppHeader'

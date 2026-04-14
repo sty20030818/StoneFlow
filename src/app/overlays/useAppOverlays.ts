@@ -12,10 +12,10 @@ import type { CreateFlowProject, CreateFlowTask } from '@/features/workspace/cre
 import {
 	getWorkspaceProjectsSnapshot,
 	refreshWorkspaceProjectsQuery,
+	useInlineCreateFocusStore,
+	useProjectTreeStore,
 	useSpaceProjectsState,
 } from '@/features/workspace'
-import { useInlineCreateFocusStore } from '@/features/workspace/task-board/store/inline-create-focus'
-import { useProjectTreeStore } from '@/features/workspace/project-tree/store/project-tree'
 import { useSettingsStore } from '@/app/stores/settings'
 
 export function useAppOverlays() {

@@ -1,3 +1,4 @@
+export { default as AutoSyncCard } from './AutoSyncCard.vue'
 export { default as RemoteSyncActionsCard } from './partials/RemoteSyncActionsCard.vue'
 export { default as RemoteSyncAutoSyncCard } from './partials/RemoteSyncAutoSyncCard.vue'
 export { default as RemoteSyncCreateForm } from './partials/RemoteSyncCreateForm.vue'

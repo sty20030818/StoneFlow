@@ -172,15 +172,14 @@
 	import { useRoute } from 'vue-router'
 
 	import { OPEN_CREATE_PROJECT_MODAL_KEY } from '@/app/injection-keys'
+	import { AutoSyncCard } from '@/features/settings'
 	import { useProjectShellMotionPreset } from '@/shared/composables/base/motion'
-	import AutoSyncCard from '@/features/settings/remote-sync/ui/AutoSyncCard.vue'
 	import { useNullableStringRouteQuery } from '@/shared/composables/base/route-query'
 	import BrandLogo from '@/shared/ui/BrandLogo.vue'
-	import { DraggableProjectTree, type ProjectTreeItem, useSpaceProjectsState } from '@/features/workspace'
+	import { DraggableProjectTree, type ProjectTreeItem, useProjectTreeStore, useSpaceProjectsState } from '@/features/workspace'
 	import { LIBRARY_NAV_ITEMS, PAGE_NAV_CONFIG } from '@/shared/config/page-nav'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/shared/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/shared/config/space'
-	import { useProjectTreeStore } from '@/features/workspace/project-tree/store/project-tree'
 	import { useViewStateStore } from '@/app/stores/view-state'
 	const props = defineProps<{
 		space?: string | null

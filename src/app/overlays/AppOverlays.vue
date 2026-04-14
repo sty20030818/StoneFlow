@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-	import UpdateNotification from '@/features/system/updater/ui/UpdateNotification.vue'
+	import { UpdateNotification } from '@/features/system'
 	import { CreateProjectModal, CreateTaskModal } from '@/features/workspace/create-flow'
 
 	import { useAppOverlays } from './useAppOverlays'

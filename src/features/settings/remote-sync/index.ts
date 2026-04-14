@@ -1,5 +1,6 @@
 export { useRemoteSyncOverview, useRemoteSyncPageFacade } from './logic'
 export {
+	AutoSyncCard,
 	RemoteSyncActionsCard,
 	RemoteSyncAutoSyncCard,
 	RemoteSyncCreateForm,
