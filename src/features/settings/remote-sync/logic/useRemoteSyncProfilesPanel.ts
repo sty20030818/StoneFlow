@@ -1,7 +1,11 @@
 import { computed, ref, type Ref } from 'vue'
 
 import { validateWithZod } from '@/shared/composables/base/zod'
-import { postgresUrlSchema, remoteImportListSchema, remoteProfileSchema } from '@/shared/composables/domain/validation/forms'
+import {
+	postgresUrlSchema,
+	remoteImportListSchema,
+	remoteProfileSchema,
+} from '@/shared/composables/domain/validation/forms'
 import { testRemoteSyncConnection } from '@/infra/sync/remote-sync-runtime'
 import { useRemoteSyncStore } from '../store'
 import type { RemoteDbProfile, RemoteDbProfileInput } from '@/shared/types/shared/remote-sync'
@@ -24,15 +28,8 @@ export function useRemoteSyncProfilesPanel(options: {
 	log: Logger
 	logError: Logger
 }) {
-	const {
-		t,
-		locale,
-		setStatus,
-		refreshStatusByActiveProfileCache,
-		persistConnectionHealthSafely,
-		log,
-		logError,
-	} = options
+	const { t, locale, setStatus, refreshStatusByActiveProfileCache, persistConnectionHealthSafely, log, logError } =
+		options
 	const remoteSyncStore = useRemoteSyncStore()
 	const toast = useToast()
 

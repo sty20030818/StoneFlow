@@ -32,10 +32,7 @@ type RemoteSyncActionsLike = {
 }
 
 type RemoteSyncCoordinatorEventTarget = {
-	addEventListener: (
-		type: 'focus' | 'online',
-		listener: () => void,
-	) => void
+	addEventListener: (type: 'focus' | 'online', listener: () => void) => void
 }
 
 type IntervalHandle = ReturnType<typeof setInterval>

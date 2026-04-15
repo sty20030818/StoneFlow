@@ -50,7 +50,9 @@
 									size="sm"
 									icon="i-lucide-clock-3"
 									trailing-icon="i-lucide-chevron-down"
-									:disabled="!props.hasActiveProfile || !props.syncPreferences.enabled || !props.syncPreferences.runOnInterval">
+									:disabled="
+										!props.hasActiveProfile || !props.syncPreferences.enabled || !props.syncPreferences.runOnInterval
+									">
 									{{ intervalLabel }}
 								</UButton>
 
@@ -79,7 +81,6 @@
 						</div>
 					</div>
 				</div>
-
 			</div>
 
 			<div class="rounded-2xl border border-default/70 bg-elevated/20 px-3 py-3">
@@ -94,7 +95,13 @@
 						</div>
 					</div>
 					<div class="flex items-center gap-1 text-[10px] text-muted">
-						<div>{{ showAdvanced ? t('settings.remoteSync.autoSync.hideAdvanced') : t('settings.remoteSync.autoSync.showAdvanced') }}</div>
+						<div>
+							{{
+								showAdvanced
+									? t('settings.remoteSync.autoSync.hideAdvanced')
+									: t('settings.remoteSync.autoSync.showAdvanced')
+							}}
+						</div>
 						<UIcon
 							name="i-lucide-chevron-down"
 							class="h-4 w-4 transition-transform"
@@ -200,13 +207,17 @@
 	const retryPopoverOpen = ref(false)
 
 	const intervalLabel = computed(() => {
-		return props.autoSyncIntervalOptions.find((option) => option.value === props.syncPreferences.intervalMinutes)?.label
-			?? t('settings.remoteSync.autoSync.intervalOption', { minutes: props.syncPreferences.intervalMinutes })
+		return (
+			props.autoSyncIntervalOptions.find((option) => option.value === props.syncPreferences.intervalMinutes)?.label ??
+			t('settings.remoteSync.autoSync.intervalOption', { minutes: props.syncPreferences.intervalMinutes })
+		)
 	})
 
 	const retryLabel = computed(() => {
-		return props.autoSyncRetryOptions.find((option) => option.value === props.syncPreferences.retryCount)?.label
-			?? t('settings.remoteSync.autoSync.retryOption', { count: props.syncPreferences.retryCount })
+		return (
+			props.autoSyncRetryOptions.find((option) => option.value === props.syncPreferences.retryCount)?.label ??
+			t('settings.remoteSync.autoSync.retryOption', { count: props.syncPreferences.retryCount })
+		)
 	})
 
 	function toggleAdvanced() {

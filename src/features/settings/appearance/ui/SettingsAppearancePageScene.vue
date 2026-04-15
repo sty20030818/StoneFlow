@@ -154,7 +154,11 @@
 
 	import LocaleFlag from '@/shared/ui/shared/LocaleFlag.vue'
 	import { useAppTheme } from '@/app/logic/useAppTheme'
-	import { createStaggeredEnterMotions, getAppStaggerDelay, useContentMotionPreset } from '@/shared/composables/base/motion'
+	import {
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useContentMotionPreset,
+	} from '@/shared/composables/base/motion'
 	import { THEME_PREFERENCE_ICONS } from '@/shared/config/theme'
 	import { SettingsSectionCard, useSettingsLocaleControl } from '@/features/settings'
 	import type { AppLocale } from '@/i18n/messages'

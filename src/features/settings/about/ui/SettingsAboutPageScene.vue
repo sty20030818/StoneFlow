@@ -52,7 +52,11 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	import { createStaggeredEnterMotions, getAppStaggerDelay, useContentMotionPreset } from '@/shared/composables/base/motion'
+	import {
+		createStaggeredEnterMotions,
+		getAppStaggerDelay,
+		useContentMotionPreset,
+	} from '@/shared/composables/base/motion'
 	import {
 		AboutChangelogSection,
 		// AboutDownloadInstallSection,

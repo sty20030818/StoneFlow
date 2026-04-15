@@ -17,11 +17,7 @@ export {
 	type WorkspaceTaskIdsBySpaceStatus,
 	type WorkspaceTaskIdsByStatus,
 } from './indexes'
-export {
-	createWorkspaceRequestToken,
-	useWorkspaceEntityRepository,
-	type WorkspaceTaskScope,
-} from './repository'
+export { createWorkspaceRequestToken, useWorkspaceEntityRepository, type WorkspaceTaskScope } from './repository'
 export {
 	getWorkspaceProjectByIdSnapshot,
 	getWorkspaceProjectEntitiesBySpace,

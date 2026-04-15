@@ -94,9 +94,7 @@ export function useRemoteSyncOverview(): AutoSyncCardOverview {
 			case 'syncing':
 				return t('sidebar.autoSyncCard.summary.syncing')
 			case 'error':
-				return loadFailed.value
-					? t('sidebar.autoSyncCard.summary.loadFailed')
-					: t('sidebar.autoSyncCard.summary.error')
+				return loadFailed.value ? t('sidebar.autoSyncCard.summary.loadFailed') : t('sidebar.autoSyncCard.summary.error')
 			case 'success':
 				// 显式依赖 now，保证“上次同步”相对时间会按分钟自动刷新。
 				void now.value

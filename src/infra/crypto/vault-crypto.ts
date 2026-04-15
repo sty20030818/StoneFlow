@@ -111,13 +111,9 @@ async function decryptText(payload: { iv: string; ciphertext: string }, key: str
 }
 
 async function deriveExportKey(password: string, salt: Uint8Array) {
-	const baseKey = await crypto.subtle.importKey(
-		'raw',
-		toArrayBuffer(encoder.encode(password)),
-		'PBKDF2',
-		false,
-		['deriveKey'],
-	)
+	const baseKey = await crypto.subtle.importKey('raw', toArrayBuffer(encoder.encode(password)), 'PBKDF2', false, [
+		'deriveKey',
+	])
 	return await crypto.subtle.deriveKey(
 		{
 			name: 'PBKDF2',

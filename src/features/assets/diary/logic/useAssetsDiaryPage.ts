@@ -169,12 +169,7 @@ export function useAssetsDiaryPage() {
 	}
 
 	function entryPreview(content: string) {
-		return content
-			.split('\n')
-			.filter(Boolean)
-			.slice(0, 3)
-			.join(' ')
-			.trim()
+		return content.split('\n').filter(Boolean).slice(0, 3).join(' ').trim()
 	}
 
 	function deriveSubtitle(entry: AssetDiaryEntry) {

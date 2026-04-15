@@ -38,16 +38,15 @@ export function useRemoteSyncHistoryPanel(options: {
 		return diagnostic.steps
 			.filter((step) => step.type !== 'ensure')
 			.map((step, index) => ({
-			id: `${diagnostic.action}-${step.type}-${index}`,
-			label:
-				step.type === 'pull'
-					? t('common.actions.download')
-					: t('common.actions.upload'),
-			status: step.status,
-			error: step.error,
-			errorCode: step.errorCode ?? null,
-			summary: step.report ? summarizeRemoteSyncReport(step.report, t('settings.remoteSync.history.noStats'), t) : null,
-		}))
+				id: `${diagnostic.action}-${step.type}-${index}`,
+				label: step.type === 'pull' ? t('common.actions.download') : t('common.actions.upload'),
+				status: step.status,
+				error: step.error,
+				errorCode: step.errorCode ?? null,
+				summary: step.report
+					? summarizeRemoteSyncReport(step.report, t('settings.remoteSync.history.noStats'), t)
+					: null,
+			}))
 	})
 
 	const hasDiagnostic = computed(() => latestDiagnosticSteps.value.length > 0)

@@ -10,10 +10,7 @@ import type { AssetSnippet } from '../model'
 import { createAssetSnippet, deleteAssetSnippet, updateAssetSnippet } from '../mutations'
 import { listAssetSnippets } from '../queries'
 import { useAssetClipboardFeedback } from '../../shared/logic'
-import {
-	useAssetsSnippetsHeaderBridge,
-	type SnippetFilterOption,
-} from './useAssetsSnippetsHeaderBridge'
+import { useAssetsSnippetsHeaderBridge, type SnippetFilterOption } from './useAssetsSnippetsHeaderBridge'
 
 function createEmptySnippet(): AssetSnippet {
 	const now = Date.now()

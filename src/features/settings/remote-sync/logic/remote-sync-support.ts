@@ -1,9 +1,6 @@
 import { toRaw } from 'vue'
 
-import {
-	DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS,
-	DEFAULT_REMOTE_SYNC_POLICY,
-} from '@/infra/tauri/remote-sync-store'
+import { DEFAULT_REMOTE_SYNC_CONNECTION_TTL_MS, DEFAULT_REMOTE_SYNC_POLICY } from '@/infra/tauri/remote-sync-store'
 import type {
 	RemoteDbProfile,
 	RemoteSyncCommandReport,
@@ -121,7 +118,10 @@ function normalizeLatestResult(input: unknown): RemoteSyncLatestResult | null {
 	if (!isRecord(input)) return null
 	const action = input.action
 	const status = input.status
-	if ((action !== 'push' && action !== 'pull' && action !== 'syncNow') || (status !== 'idle' && status !== 'success' && status !== 'failed')) {
+	if (
+		(action !== 'push' && action !== 'pull' && action !== 'syncNow') ||
+		(status !== 'idle' && status !== 'success' && status !== 'failed')
+	) {
 		return null
 	}
 	const reportsSource = isRecord(input.reports) ? input.reports : {}
@@ -142,7 +142,10 @@ function normalizeExecutionSummary(input: unknown): RemoteSyncExecutionSummary |
 	if (!isRecord(input)) return null
 	const action = input.action
 	const status = input.status
-	if ((action !== 'push' && action !== 'pull' && action !== 'syncNow') || (status !== 'success' && status !== 'failed' && status !== 'skipped')) {
+	if (
+		(action !== 'push' && action !== 'pull' && action !== 'syncNow') ||
+		(status !== 'success' && status !== 'failed' && status !== 'skipped')
+	) {
 		return null
 	}
 	const reportsSource = isRecord(input.reports) ? input.reports : {}
@@ -159,16 +162,15 @@ function normalizeExecutionSummary(input: unknown): RemoteSyncExecutionSummary |
 			push: isRecord(reportsSource.push) ? (structuredClone(reportsSource.push) as RemoteSyncCommandReport) : null,
 			pull: isRecord(reportsSource.pull) ? (structuredClone(reportsSource.pull) as RemoteSyncCommandReport) : null,
 		},
-		steps: stepsSource
-			.filter(isRecord)
-			.map((step) => ({
-				type: step.type === 'ensure' || step.type === 'pull' || step.type === 'push' ? step.type : 'ensure',
-				status: step.status === 'success' || step.status === 'failed' || step.status === 'skipped' ? step.status : 'skipped',
-				error: typeof step.error === 'string' ? step.error : null,
-				errorCode: typeof step.errorCode === 'string' ? step.errorCode : null,
-				report: isRecord(step.report) ? (structuredClone(step.report) as RemoteSyncCommandReport) : null,
-				fromCache: typeof step.fromCache === 'boolean' ? step.fromCache : null,
-			})),
+		steps: stepsSource.filter(isRecord).map((step) => ({
+			type: step.type === 'ensure' || step.type === 'pull' || step.type === 'push' ? step.type : 'ensure',
+			status:
+				step.status === 'success' || step.status === 'failed' || step.status === 'skipped' ? step.status : 'skipped',
+			error: typeof step.error === 'string' ? step.error : null,
+			errorCode: typeof step.errorCode === 'string' ? step.errorCode : null,
+			report: isRecord(step.report) ? (structuredClone(step.report) as RemoteSyncCommandReport) : null,
+			fromCache: typeof step.fromCache === 'boolean' ? step.fromCache : null,
+		})),
 	}
 }
 
@@ -199,12 +201,12 @@ export function cloneProfileState(input: RemoteSyncProfileState): RemoteSyncProf
 		consecutiveFailures: input.consecutiveFailures,
 		latestResult: input.latestResult
 			? {
-				...toRaw(input.latestResult),
-				reports: {
-					push: input.latestResult.reports.push ? structuredClone(toRaw(input.latestResult.reports.push)) : null,
-					pull: input.latestResult.reports.pull ? structuredClone(toRaw(input.latestResult.reports.pull)) : null,
-				},
-			}
+					...toRaw(input.latestResult),
+					reports: {
+						push: input.latestResult.reports.push ? structuredClone(toRaw(input.latestResult.reports.push)) : null,
+						pull: input.latestResult.reports.pull ? structuredClone(toRaw(input.latestResult.reports.pull)) : null,
+					},
+				}
 			: null,
 		latestDiagnostic: input.latestDiagnostic ? structuredClone(toRaw(input.latestDiagnostic)) : null,
 	}
@@ -263,7 +265,9 @@ export function buildProfileStateFromLegacy(options: {
 	return {
 		profileId: profile.id,
 		connectionHealth:
-			normalizeConnectionHealthEntry(profile.id, parsedState.connectionHealth) ?? legacyConnectionHealth[profile.id] ?? null,
+			normalizeConnectionHealthEntry(profile.id, parsedState.connectionHealth) ??
+			legacyConnectionHealth[profile.id] ??
+			null,
 		syncPolicy: normalizeSyncPolicy(parsedState.syncPolicy ?? legacySyncPolicy),
 		syncTime,
 		lastRunAt: toNonNegativeNumber(parsedState.lastRunAt ?? lastSuccessAt, 0),

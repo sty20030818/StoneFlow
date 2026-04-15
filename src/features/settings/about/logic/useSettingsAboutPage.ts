@@ -62,12 +62,7 @@ function parseChangelogSummary(markdown: string): ChangelogEntry[] {
 export function useSettingsAboutPage() {
 	const toast = useToast()
 	const { t, locale } = useI18n({ useScope: 'global' })
-	const {
-		state,
-		checkForUpdate,
-		downloadAndInstall,
-		restartApp,
-	} = useUpdater()
+	const { state, checkForUpdate, downloadAndInstall, restartApp } = useUpdater()
 	const { copy, openUrl, openPath } = useSettingsSystemActions()
 
 	const appName = ref('StoneFlow')

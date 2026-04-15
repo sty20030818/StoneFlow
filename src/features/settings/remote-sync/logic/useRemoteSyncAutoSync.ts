@@ -9,11 +9,7 @@ type Translate = (key: string, params?: Record<string, unknown>) => string
 
 type Logger = (...args: unknown[]) => void
 
-export function useRemoteSyncAutoSync(options: {
-	t: Translate
-	locale: Ref<string>
-	logError: Logger
-}) {
+export function useRemoteSyncAutoSync(options: { t: Translate; locale: Ref<string>; logError: Logger }) {
 	const { t, locale, logError } = options
 	const remoteSyncStore = useRemoteSyncStore()
 	const toast = useToast()
@@ -39,7 +35,11 @@ export function useRemoteSyncAutoSync(options: {
 	const autoSyncStatusText = computed(() => {
 		if (!hasActiveProfile.value) return t('settings.remoteSync.autoSync.status.noProfile')
 		if (!syncPreferences.value.enabled) return t('settings.remoteSync.autoSync.meta.disabled')
-		if (!syncPreferences.value.runOnInterval && !syncPreferences.value.runOnAppStart && !syncPreferences.value.runOnWindowFocus) {
+		if (
+			!syncPreferences.value.runOnInterval &&
+			!syncPreferences.value.runOnAppStart &&
+			!syncPreferences.value.runOnWindowFocus
+		) {
 			return t('settings.remoteSync.autoSync.status.noTrigger')
 		}
 		if (latestResult.value?.status === 'failed') return t('settings.remoteSync.autoSync.status.failed')
@@ -51,7 +51,11 @@ export function useRemoteSyncAutoSync(options: {
 		if (!hasActiveProfile.value) return t('settings.remoteSync.autoSync.meta.noProfile')
 		if (!syncPreferences.value.enabled) return t('settings.remoteSync.autoSync.meta.disabled')
 		if (!online.value) return t('settings.remoteSync.autoSync.meta.offline')
-		if (!syncPreferences.value.runOnInterval && !syncPreferences.value.runOnAppStart && !syncPreferences.value.runOnWindowFocus) {
+		if (
+			!syncPreferences.value.runOnInterval &&
+			!syncPreferences.value.runOnAppStart &&
+			!syncPreferences.value.runOnWindowFocus
+		) {
 			return t('settings.remoteSync.autoSync.meta.noTrigger')
 		}
 		const lastRunAt = activeProfileState.value?.lastRunAt ?? 0

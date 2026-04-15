@@ -99,7 +99,9 @@
 						<AssetLibraryEmptyState
 							icon="i-lucide-notebook-tabs"
 							:title="t('assets.notes.emptyTitle')"
-							:description="hasActiveFilters ? t('assets.notes.emptyFilteredDescription') : t('assets.notes.emptyIdleDescription')">
+							:description="
+								hasActiveFilters ? t('assets.notes.emptyFilteredDescription') : t('assets.notes.emptyIdleDescription')
+							">
 							<template #action>
 								<UButton
 									v-if="hasActiveFilters"

@@ -49,7 +49,8 @@ export function summarizeRemoteSyncReport(
 	const taskLogsMetrics = normalizeTableReportMetrics(report.tables.taskActivityLogs)
 	const projectLogsMetrics = normalizeTableReportMetrics(report.tables.projectActivityLogs)
 	const tasksWrites = tasksMetrics.inserted + tasksMetrics.updated
-	const logsWrites = taskLogsMetrics.inserted + taskLogsMetrics.updated + projectLogsMetrics.inserted + projectLogsMetrics.updated
+	const logsWrites =
+		taskLogsMetrics.inserted + taskLogsMetrics.updated + projectLogsMetrics.inserted + projectLogsMetrics.updated
 	return t('settings.remoteSync.report.summary', {
 		tasks: tasksWrites,
 		logs: logsWrites,

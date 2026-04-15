@@ -674,7 +674,8 @@ export default {
 			empty: 'No snippets yet',
 			emptyTitle: 'No snippets yet',
 			emptyIdleDescription: 'Save one useful piece of code and this repository starts becoming valuable.',
-			emptyFilteredDescription: 'No snippet matches the current filters. Try a different language, tag, or favorite state.',
+			emptyFilteredDescription:
+				'No snippet matches the current filters. Try a different language, tag, or favorite state.',
 			emptyLoadingDescription: 'Loading your code repository. Please wait a moment.',
 			modal: {
 				newTitle: 'New Snippet',
@@ -856,7 +857,8 @@ export default {
 			empty: 'No vault entries',
 			emptyTitle: 'No vault entries yet',
 			emptyIdleDescription: 'Save a real credential or config first, and future copy or lookup flows get much faster.',
-			emptyFilteredDescription: 'No result matches the current filters. Try a different environment, type, or favorite state.',
+			emptyFilteredDescription:
+				'No result matches the current filters. Try a different environment, type, or favorite state.',
 			emptyLoadingDescription: 'Loading your secure repository. Please wait a moment.',
 			copyValueAction: 'Copy value',
 			toggleSensitive: 'Toggle sensitive value visibility',
@@ -1317,4 +1319,3 @@ export default {
 		unknownError: 'Unknown error',
 	},
 } as const
-

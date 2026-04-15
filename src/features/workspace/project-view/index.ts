@@ -1,11 +1,7 @@
 /**
  * Workspace projects 子域入口。
  */
-export {
-	deleteWorkspaceProject,
-	rebalanceWorkspaceProjectRanks,
-	reorderWorkspaceProject,
-} from './mutations'
+export { deleteWorkspaceProject, rebalanceWorkspaceProjectRanks, reorderWorkspaceProject } from './mutations'
 export { listWorkspaceProjects } from './queries'
 export {
 	DraggableProjectTree,

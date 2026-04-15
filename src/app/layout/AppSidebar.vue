@@ -176,7 +176,12 @@
 	import { useProjectShellMotionPreset } from '@/shared/composables/base/motion'
 	import { useNullableStringRouteQuery } from '@/shared/composables/base/route-query'
 	import BrandLogo from '@/shared/ui/BrandLogo.vue'
-	import { DraggableProjectTree, type ProjectTreeItem, useProjectTreeStore, useSpaceProjectsState } from '@/features/workspace'
+	import {
+		DraggableProjectTree,
+		type ProjectTreeItem,
+		useProjectTreeStore,
+		useSpaceProjectsState,
+	} from '@/features/workspace'
 	import { LIBRARY_NAV_ITEMS, PAGE_NAV_CONFIG } from '@/shared/config/page-nav'
 	import { PROJECT_ICON, PROJECT_LEVEL_TEXT_CLASSES, isDefaultProjectId } from '@/shared/config/project'
 	import { SPACE_DISPLAY, SPACE_IDS } from '@/shared/config/space'

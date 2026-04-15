@@ -42,7 +42,9 @@
 				{{ t('settings.remoteSync.actionsCard.lastSynced', { text: lastSyncedText }) }}
 			</div>
 			<div class="text-[10px] leading-5 text-muted/80">
-				{{ t('settings.remoteSync.actionsCard.syncNowSummary', { pull: lastPullSummaryText, push: lastPushSummaryText }) }}
+				{{
+					t('settings.remoteSync.actionsCard.syncNowSummary', { pull: lastPullSummaryText, push: lastPushSummaryText })
+				}}
 			</div>
 		</div>
 
@@ -55,7 +57,11 @@
 					<div class="text-[11px] text-muted">{{ t('settings.remoteSync.actionsCard.advancedTitle') }}</div>
 					<div class="flex items-center gap-1">
 						<div class="text-[10px] text-muted">
-							{{ showAdvancedActions ? t('settings.remoteSync.actionsCard.hideAdvanced') : t('settings.remoteSync.actionsCard.showAdvanced') }}
+							{{
+								showAdvancedActions
+									? t('settings.remoteSync.actionsCard.hideAdvanced')
+									: t('settings.remoteSync.actionsCard.showAdvanced')
+							}}
 						</div>
 						<UIcon
 							name="i-lucide-chevron-down"
@@ -122,13 +128,17 @@
 					</div>
 				</div>
 			</button>
-			<div v-if="showDiagnostics" class="mt-2 space-y-3">
+			<div
+				v-if="showDiagnostics"
+				class="mt-2 space-y-3">
 				<div
 					v-if="!hasDiagnostic"
 					class="rounded-xl border border-default/70 bg-default px-3 py-2 text-[11px] text-muted/80">
 					{{ t('settings.remoteSync.history.empty') }}
 				</div>
-				<div v-if="latestDiagnosticSteps.length > 0" class="space-y-2">
+				<div
+					v-if="latestDiagnosticSteps.length > 0"
+					class="space-y-2">
 					<div
 						v-for="step in latestDiagnosticSteps"
 						:key="step.id"
@@ -137,9 +147,16 @@
 							<div>{{ step.label }}</div>
 							<div class="shrink-0">{{ step.status }}</div>
 						</div>
-						<div v-if="step.summary" class="mt-1 text-[10px] leading-5 text-muted/80">{{ step.summary }}</div>
-						<div v-if="step.error" class="mt-1 text-[10px] leading-5 text-error">
-							{{ step.error }}<span v-if="step.errorCode"> · {{ step.errorCode }}</span>
+						<div
+							v-if="step.summary"
+							class="mt-1 text-[10px] leading-5 text-muted/80">
+							{{ step.summary }}
+						</div>
+						<div
+							v-if="step.error"
+							class="mt-1 text-[10px] leading-5 text-error">
+							{{ step.error }}
+							<span v-if="step.errorCode">· {{ step.errorCode }}</span>
 						</div>
 					</div>
 				</div>

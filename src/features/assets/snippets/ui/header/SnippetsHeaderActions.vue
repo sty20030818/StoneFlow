@@ -25,7 +25,11 @@
 								color="neutral"
 								variant="soft"
 								size="sm">
-								{{ activeFilterCount > 0 ? `${activeFilterCount} ${t('assets.snippets.header.filterActive')}` : t('assets.snippets.header.filterIdle') }}
+								{{
+									activeFilterCount > 0
+										? `${activeFilterCount} ${t('assets.snippets.header.filterActive')}`
+										: t('assets.snippets.header.filterIdle')
+								}}
 							</UBadge>
 						</div>
 						<UButton

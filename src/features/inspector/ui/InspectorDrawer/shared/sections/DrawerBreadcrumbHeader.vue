@@ -3,8 +3,7 @@
 		v-motion="headerMotion"
 		class="px-5 py-4 border-b border-default/80 flex items-center justify-between gap-3 shrink-0">
 		<div class="flex items-center gap-1.5 min-w-0 flex-1 leading-tight">
-			<span
-				:class="[HEADER_CAPSULE_BASE, spacePillClass]">
+			<span :class="[HEADER_CAPSULE_BASE, spacePillClass]">
 				<UIcon
 					:name="currentSpaceIcon"
 					:class="HEADER_CAPSULE_ICON" />

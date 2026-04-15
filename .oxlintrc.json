@@ -1,0 +1,324 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["typescript", "oxc", "unicorn", "vue"],
+	"categories": {
+		"correctness": "off"
+	},
+	"env": {
+		"builtin": true,
+		"browser": true,
+		"node": true,
+		"vue": true
+	},
+	"globals": {},
+	"ignorePatterns": [
+		".agent/**",
+		".codex/**",
+		".cursor/**",
+		".git/**",
+		".vscode/**",
+		"Documents/**",
+		"auto-imports.d.ts",
+		"bun.lock*",
+		"components.d.ts",
+		"dist/**",
+		"node_modules/**",
+		"openspec/**",
+		"release-output/**",
+		"src-tauri/**",
+		"tsconfig*.tsbuildinfo",
+		".DS_Store"
+	],
+	"rules": {
+		"typescript/consistent-type-imports": [
+			"warn",
+			{
+				"prefer": "type-imports",
+				"disallowTypeAnnotations": false,
+				"fixStyle": "separate-type-imports"
+			}
+		],
+		"typescript/consistent-type-definitions": ["warn", "type"],
+		"typescript/no-non-null-assertion": "warn",
+		"typescript/no-explicit-any": "warn",
+		"typescript/ban-ts-comment": [
+			"warn",
+			{
+				"ts-ignore": "allow-with-description",
+				"ts-expect-error": "allow-with-description",
+				"ts-nocheck": "allow-with-description",
+				"ts-check": false,
+				"minimumDescriptionLength": 3
+			}
+		],
+		"typescript/prefer-ts-expect-error": "warn"
+	},
+	"overrides": [
+		{
+			"files": ["**/*.d.ts"],
+			"rules": {
+				"typescript/no-explicit-any": "off",
+				"typescript/ban-ts-comment": "off"
+			}
+		},
+		{
+			"files": [
+				"src/*.{ts,tsx,vue}",
+				"src/{app,assets,i18n,infra,pages,plugins,shared}/**/*.{ts,tsx,vue}"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": [
+									"@/services/api",
+									"@/services/api/*",
+									"@/services/api/**"
+								],
+								"message": "页面层禁止直接导入 services/api，请改为通过 features 公开入口访问数据能力。"
+							},
+							{
+								"regex": "^(?:\\.{1,2}/)+(?:.*?/)?services/api(?:/.*)?$",
+								"message": "页面层禁止通过相对路径导入 services/api，请改为通过 features 公开入口访问数据能力。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": ["src/pages/**/*.{ts,tsx,vue}"],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": [
+									"@/services/api",
+									"@/services/api/*",
+									"@/services/api/**"
+								],
+								"message": "页面层禁止直接导入 services/api，请改为通过 features 公开入口访问数据能力。"
+							},
+							{
+								"regex": "^(?:\\.{1,2}/)+(?:.*?/)?services/api(?:/.*)?$",
+								"message": "页面层禁止通过相对路径导入 services/api，请改为通过 features 公开入口访问数据能力。"
+							},
+							{
+								"group": ["@/stores", "@/stores/*", "@/stores/**"],
+								"message": "页面层应优先通过 features 编排能力访问状态，避免直接耦合 store。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": [
+				"src/*.{ts,tsx,vue}",
+				"src/{app,assets,i18n,infra,pages,plugins,shared}/**/*.{ts,tsx,vue}",
+				"src/features/**/*.{ts,tsx,vue}"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"regex": "^@/app/shell-header/(?!index(?:\\.ts)?$).+",
+								"message": "套件外禁止直接导入 shell-header 内部实现，请改用 @/app/shell-header 公开入口。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": [
+				"src/*.{ts,tsx,vue}",
+				"src/{app,assets,i18n,infra,pages,plugins,shared}/**/*.{ts,tsx,vue}",
+				"src/features/{assets,inspector,review,system,workspace}/**/*.{ts,tsx,vue}"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": [
+									"@/features/settings-core",
+									"@/features/settings-core/*",
+									"@/features/settings-core/**",
+									"@/features/settings-about",
+									"@/features/settings-about/*",
+									"@/features/settings-about/**",
+									"@/features/remote-sync",
+									"@/features/remote-sync/*",
+									"@/features/remote-sync/**"
+								],
+								"message": "旧 settings feature 已废弃，请改用 @/features/settings 公开入口。"
+							},
+							{
+								"regex": "^@/features/settings/(?!index(?:\\.ts)?$).+",
+								"message": "套件外禁止直接导入 settings 内部实现，请改用 @/features/settings 公开入口。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": [
+				"src/*.{ts,tsx,vue}",
+				"src/{app,assets,i18n,infra,pages,plugins,shared}/**/*.{ts,tsx,vue}",
+				"src/features/{inspector,review,settings,system,workspace}/**/*.{ts,tsx,vue}"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": [
+									"@/features/assets-diary",
+									"@/features/assets-diary/*",
+									"@/features/assets-diary/**",
+									"@/features/assets-notes",
+									"@/features/assets-notes/*",
+									"@/features/assets-notes/**",
+									"@/features/assets-snippets",
+									"@/features/assets-snippets/*",
+									"@/features/assets-snippets/**",
+									"@/features/assets-vault",
+									"@/features/assets-vault/*",
+									"@/features/assets-vault/**",
+									"@/features/assets-shared",
+									"@/features/assets-shared/*",
+									"@/features/assets-shared/**"
+								],
+								"message": "旧 assets feature 已废弃，请改用 @/features/assets 公开入口。"
+							},
+							{
+								"regex": "^@/features/assets/(?!index(?:\\.ts)?$).+",
+								"message": "套件外禁止直接导入 assets 内部实现，请改用 @/features/assets 公开入口。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": [
+				"src/*.{ts,tsx,vue}",
+				"src/{app,assets,i18n,infra,pages,plugins,shared}/**/*.{ts,tsx,vue}",
+				"src/features/{assets,inspector,review,settings,system}/**/*.{ts,tsx,vue}"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": [
+									"@/features/workspace/composables",
+									"@/features/workspace/composables/*",
+									"@/features/workspace/composables/**",
+									"@/features/workspace/model",
+									"@/features/workspace/model/*",
+									"@/features/workspace/model/**",
+									"@/features/workspace/queries",
+									"@/features/workspace/queries/*",
+									"@/features/workspace/queries/**",
+									"@/features/workspace/mutations",
+									"@/features/workspace/mutations/*",
+									"@/features/workspace/mutations/**",
+									"@/features/workspace/ui",
+									"@/features/workspace/ui/*",
+									"@/features/workspace/ui/**"
+								],
+								"message": "旧 workspace 根层内部目录已废弃，请改用 @/features/workspace 或 @/features/workspace/shared/model。"
+							},
+							{
+								"regex": "^@/features/workspace/(?!index(?:\\.ts)?$|shared/model(?:/index(?:\\.ts)?)?$).+",
+								"message": "套件外禁止直接导入 workspace 内部实现，请改用 @/features/workspace 或 @/features/workspace/shared/model。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": [
+				"src/pages/ReviewLogsPage.vue",
+				"src/pages/ReviewStatsPage.vue",
+				"src/pages/ReviewFinishListPage.vue",
+				"src/pages/SettingsRemoteSyncPage.vue",
+				"src/pages/AssetsDiaryPage.vue",
+				"src/pages/AssetsNotesPage.vue",
+				"src/pages/AssetsSnippetsPage.vue",
+				"src/pages/AssetsVaultPage.vue",
+				"src/pages/TrashPage.vue"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"regex": "^(?:\\.{1,2}/)+(?:.*?/)?partials(?:/.*)?$",
+								"message": "页面 index 迁移后禁止直接依赖 partials，请改为使用 feature 页面内容组件。"
+							},
+							{
+								"regex": "^@/pages/.+/partials(?:/.*)?$",
+								"message": "页面 index 迁移后禁止直接依赖 partials，请改为使用 feature 页面内容组件。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": ["src/shared/config/**/*.{ts,tsx,vue}"],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": ["@/i18n", "@/i18n/*", "@/i18n/**"],
+								"message": "config 层禁止直接导入 i18n 实例，请改用 key 或中立翻译桥接函数。"
+							},
+							{
+								"group": [
+									"@/plugins/i18n",
+									"@/plugins/i18n/*",
+									"@/plugins/i18n/**"
+								],
+								"message": "config 层禁止直接导入 i18n 插件实例，请改用 key 或中立翻译桥接函数。"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"files": ["src/features/**/*.{ts,tsx,vue}"],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"regex": "^@/features/[^/]+/(?!index(?:\\.ts)?$|(?:[^/]+/)?model(?:/index(?:\\.ts)?)?$).+",
+								"message": "跨 feature 只能导入公开入口：@/features/<domain> 或 @/features/<domain>/<subdomain>/model"
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

@@ -94,9 +94,9 @@ export function useAssetsVaultPage() {
 
 	const canExport = computed(() => {
 		return (
-			exportPassword.value.trim().length > 0
-			&& exportPasswordConfirm.value.trim().length > 0
-			&& exportPassword.value === exportPasswordConfirm.value
+			exportPassword.value.trim().length > 0 &&
+			exportPasswordConfirm.value.trim().length > 0 &&
+			exportPassword.value === exportPasswordConfirm.value
 		)
 	})
 
@@ -104,13 +104,21 @@ export function useAssetsVaultPage() {
 		return importPassword.value.trim().length > 0 && importFileContent.value.trim().length > 0
 	})
 
-	const { start: hideCardValueLater, stop: stopCardHideTimer } = useTimeoutFn(() => {
-		revealedEntryId.value = null
-	}, 2400, { immediate: false })
+	const { start: hideCardValueLater, stop: stopCardHideTimer } = useTimeoutFn(
+		() => {
+			revealedEntryId.value = null
+		},
+		2400,
+		{ immediate: false },
+	)
 
-	const { start: hideModalValueLater, stop: stopModalHideTimer } = useTimeoutFn(() => {
-		showValue.value = false
-	}, 3200, { immediate: false })
+	const { start: hideModalValueLater, stop: stopModalHideTimer } = useTimeoutFn(
+		() => {
+			showValue.value = false
+		},
+		3200,
+		{ immediate: false },
+	)
 
 	const editForm = ref({
 		name: '',
@@ -169,11 +177,11 @@ export function useAssetsVaultPage() {
 
 	const hasActiveFilters = computed(() => {
 		return (
-			selectedType.value !== 'all'
-			|| selectedEnvironment.value !== 'all'
-			|| selectedFavoriteFilter.value !== 'all'
-			|| selectedSort.value !== 'updated_desc'
-			|| debouncedSearchKeyword.value.trim().length > 0
+			selectedType.value !== 'all' ||
+			selectedEnvironment.value !== 'all' ||
+			selectedFavoriteFilter.value !== 'all' ||
+			selectedSort.value !== 'updated_desc' ||
+			debouncedSearchKeyword.value.trim().length > 0
 		)
 	})
 
@@ -418,9 +426,7 @@ export function useAssetsVaultPage() {
 				favorite: !entry.favorite,
 			})
 			handleSuccess(
-				entry.favorite
-					? t('assets.vault.toast.favoriteRemovedTitle')
-					: t('assets.vault.toast.favoriteAddedTitle'),
+				entry.favorite ? t('assets.vault.toast.favoriteRemovedTitle') : t('assets.vault.toast.favoriteAddedTitle'),
 			)
 			await refresh()
 		} catch (error) {

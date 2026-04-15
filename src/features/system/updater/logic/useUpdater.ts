@@ -24,7 +24,10 @@ export type UpdateState = {
 	lastCheckedAt: number | null
 }
 
-type PersistedUpdateState = Pick<UpdateState, 'available' | 'version' | 'notes' | 'date' | 'error' | 'lastCheckedAt'> & {
+type PersistedUpdateState = Pick<
+	UpdateState,
+	'available' | 'version' | 'notes' | 'date' | 'error' | 'lastCheckedAt'
+> & {
 	status: 'idle' | 'error'
 }
 
@@ -59,7 +62,8 @@ function readCachedState(): UpdateState {
 			progress: 0,
 			status: parsed.status === 'error' ? 'error' : 'idle',
 			error: typeof parsed.error === 'string' ? parsed.error : null,
-			lastCheckedAt: typeof parsed.lastCheckedAt === 'number' && Number.isFinite(parsed.lastCheckedAt) ? parsed.lastCheckedAt : null,
+			lastCheckedAt:
+				typeof parsed.lastCheckedAt === 'number' && Number.isFinite(parsed.lastCheckedAt) ? parsed.lastCheckedAt : null,
 		}
 	} catch {
 		return createDefaultState()
@@ -282,7 +286,9 @@ export function useUpdater() {
 	const autoCheckEnabled = computed(() => settingsStore.settings.updaterAutoCheck)
 	const promptInstallEnabled = computed(() => settingsStore.settings.updaterPromptInstall)
 	const shouldPromptInstall = computed(() => {
-		return promptInstallEnabled.value && state.value.available && state.value.status !== 'checking' && !promptDismissed.value
+		return (
+			promptInstallEnabled.value && state.value.available && state.value.status !== 'checking' && !promptDismissed.value
+		)
 	})
 
 	onMounted(() => {

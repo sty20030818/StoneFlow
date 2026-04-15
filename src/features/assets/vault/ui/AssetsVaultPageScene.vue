@@ -138,7 +138,9 @@
 				<AssetLibraryEmptyState
 					icon="i-lucide-lock-keyhole-open"
 					:title="t('assets.vault.emptyTitle')"
-					:description="hasActiveFilters ? t('assets.vault.emptyFilteredDescription') : t('assets.vault.emptyIdleDescription')">
+					:description="
+						hasActiveFilters ? t('assets.vault.emptyFilteredDescription') : t('assets.vault.emptyIdleDescription')
+					">
 					<template #action>
 						<UButton
 							v-if="hasActiveFilters"

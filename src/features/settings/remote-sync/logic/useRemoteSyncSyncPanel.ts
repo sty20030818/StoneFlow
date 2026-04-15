@@ -226,9 +226,9 @@ export function useRemoteSyncSyncPanel(options: {
 			successTitle: t('settings.remoteSync.toast.pushSuccessTitle'),
 			successDescription: report
 				? t('settings.remoteSync.toast.syncAtDescription', {
-					time: formatDateTime(report.syncedAt, { locale: locale.value }),
-					summary: summarizeRemoteSyncReport(report, '', t),
-				})
+						time: formatDateTime(report.syncedAt, { locale: locale.value }),
+						summary: summarizeRemoteSyncReport(report, '', t),
+					})
 				: '',
 			failedTitle: t('settings.remoteSync.toast.pushFailedTitle'),
 			logTag: 'sync:push',
@@ -250,9 +250,9 @@ export function useRemoteSyncSyncPanel(options: {
 			successTitle: t('settings.remoteSync.toast.pullSuccessTitle'),
 			successDescription: report
 				? t('settings.remoteSync.toast.syncAtDescription', {
-					time: formatDateTime(report.syncedAt, { locale: locale.value }),
-					summary: summarizeRemoteSyncReport(report, '', t),
-				})
+						time: formatDateTime(report.syncedAt, { locale: locale.value }),
+						summary: summarizeRemoteSyncReport(report, '', t),
+					})
 				: '',
 			failedTitle: t('settings.remoteSync.toast.pullFailedTitle'),
 			logTag: 'sync:pull',

@@ -219,13 +219,13 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		profileState.syncTime =
 			direction === 'push'
 				? {
-					lastPushedAt: toNonNegativeNumber(syncedAt, 0),
-					lastPulledAt: profileState.syncTime.lastPulledAt,
-				}
+						lastPushedAt: toNonNegativeNumber(syncedAt, 0),
+						lastPulledAt: profileState.syncTime.lastPulledAt,
+					}
 				: {
-					lastPushedAt: profileState.syncTime.lastPushedAt,
-					lastPulledAt: toNonNegativeNumber(syncedAt, 0),
-				}
+						lastPushedAt: profileState.syncTime.lastPushedAt,
+						lastPulledAt: toNonNegativeNumber(syncedAt, 0),
+					}
 		next.profileStates[profileId] = profileState
 		await commitSettings(next)
 	}
@@ -430,11 +430,7 @@ export const useRemoteSyncStore = defineStore('remote-sync', () => {
 		if (!summary.profileId) return
 		const next = cloneSettings(state)
 		const profileState = next.profileStates[summary.profileId] ?? createDefaultProfileState(summary.profileId)
-		const syncedAt = Math.max(
-			summary.reports.push?.syncedAt ?? 0,
-			summary.reports.pull?.syncedAt ?? 0,
-			Date.now(),
-		)
+		const syncedAt = Math.max(summary.reports.push?.syncedAt ?? 0, summary.reports.pull?.syncedAt ?? 0, Date.now())
 		profileState.lastRunAt = syncedAt
 		profileState.latestDiagnostic = structuredClone(summary)
 		if (summary.reports.push) {

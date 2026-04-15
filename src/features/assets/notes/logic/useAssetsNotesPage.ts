@@ -143,7 +143,11 @@ export function useAssetsNotesPage() {
 	})
 
 	const hasActiveFilters = computed(() => {
-		return selectedTag.value !== 'all' || selectedFavoriteFilter.value !== 'all' || debouncedSearchKeyword.value.trim().length > 0
+		return (
+			selectedTag.value !== 'all' ||
+			selectedFavoriteFilter.value !== 'all' ||
+			debouncedSearchKeyword.value.trim().length > 0
+		)
 	})
 
 	const favoriteCount = computed(() => notes.value.filter((note) => note.favorite).length)
@@ -168,19 +172,11 @@ export function useAssetsNotesPage() {
 	}
 
 	function notePreview(content: string) {
-		return content
-			.split('\n')
-			.filter(Boolean)
-			.slice(0, 3)
-			.join(' ')
-			.trim()
+		return content.split('\n').filter(Boolean).slice(0, 3).join(' ').trim()
 	}
 
 	function buildExcerpt(content: string) {
-		const excerpt = content
-			.replace(/\s+/g, ' ')
-			.trim()
-			.slice(0, 140)
+		const excerpt = content.replace(/\s+/g, ' ').trim().slice(0, 140)
 
 		return excerpt || null
 	}
@@ -379,9 +375,7 @@ export function useAssetsNotesPage() {
 			}
 
 			handleSuccess(
-				note.favorite
-					? t('assets.notes.toast.favoriteRemovedTitle')
-					: t('assets.notes.toast.favoriteAddedTitle'),
+				note.favorite ? t('assets.notes.toast.favoriteRemovedTitle') : t('assets.notes.toast.favoriteAddedTitle'),
 			)
 		} catch (error) {
 			handleApiError(error, {
@@ -432,17 +426,14 @@ export function useAssetsNotesPage() {
 		{ immediate: true },
 	)
 
-	watch(
-		filteredNotes,
-		(currentNotes) => {
-			if (!selectedNote.value?.id) return
-			if (currentNotes.some((note) => note.id === selectedNote.value?.id)) return
-			const fallback = currentNotes[0] ?? null
-			if (fallback) {
-				hydrateForm(fallback)
-			}
-		},
-	)
+	watch(filteredNotes, (currentNotes) => {
+		if (!selectedNote.value?.id) return
+		if (currentNotes.some((note) => note.id === selectedNote.value?.id)) return
+		const fallback = currentNotes[0] ?? null
+		if (fallback) {
+			hydrateForm(fallback)
+		}
+	})
 
 	watchDebounced(
 		() => buildSignature(buildPayload()),
