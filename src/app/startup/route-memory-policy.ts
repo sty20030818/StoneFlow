@@ -8,7 +8,9 @@ export type StartupRouteTarget = {
 	query?: Record<string, string>
 }
 
-const LIBRARY_ROUTES = new Set(['/finish-list', '/stats', '/logs', '/snippets', '/vault', '/notes', '/diary'])
+export const DEFAULT_LIBRARY_ROUTE = '/assets' as const
+
+const LIBRARY_ROUTES = new Set(['/finish-list', '/stats', '/logs', DEFAULT_LIBRARY_ROUTE])
 
 function isKnownSpaceId(value: string): value is SpaceId {
 	return (SPACE_IDS as readonly string[]).includes(value)

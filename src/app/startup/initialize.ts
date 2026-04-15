@@ -5,6 +5,7 @@ import { SPACE_IDS } from '@/shared/config/space'
 import { warmupWorkspaceProjectsQuery } from '@/features/workspace'
 import { initializeAssetsMigration } from '@/infra/api/assets-migration'
 import {
+	DEFAULT_LIBRARY_ROUTE,
 	resolveLaunchHashTarget,
 	toLibraryRouteTarget,
 	toWorkspaceRouteTarget,
@@ -32,6 +33,10 @@ function normalizeSpaceId(value: string | null | undefined): (typeof SPACE_IDS)[
 function resolveFallbackTarget(spaceId: string | null | undefined): StartupRouteTarget {
 	const sid = normalizeSpaceId(spaceId)
 	return { path: `/space/${sid}` }
+}
+
+function resolveLibraryFallbackTarget(): StartupRouteTarget {
+	return { path: DEFAULT_LIBRARY_ROUTE }
 }
 
 function resolveValidatedStartupTarget(router: Router, target: StartupRouteTarget, fallbackSpaceId: string) {
@@ -80,7 +85,7 @@ function resolveStartupTargetFromMemory(viewStateStore: ReturnType<typeof useVie
 		if (libraryTarget) {
 			return toLibraryRouteTarget(libraryTarget)
 		}
-		return resolveFallbackTarget(activeSpaceId)
+		return resolveLibraryFallbackTarget()
 	}
 
 	return resolveFallbackTarget(activeSpaceId)

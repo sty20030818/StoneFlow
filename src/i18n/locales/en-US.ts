@@ -103,6 +103,10 @@ export default {
 				title: 'Logs',
 				description: 'Operation logs',
 			},
+			assets: {
+				title: 'Assets',
+				description: 'Unified rebuild entry',
+			},
 			snippets: {
 				title: 'Snippets',
 				description: 'Code snippets',
@@ -151,6 +155,7 @@ export default {
 			finishList: 'Finish List',
 			stats: 'Stats',
 			logs: 'Logs',
+			assets: 'Assets',
 			snippets: 'Snippets',
 			vault: 'Vault',
 			notes: 'Notes',
@@ -657,6 +662,35 @@ export default {
 		},
 	},
 	assets: {
+		placeholder: {
+			badge: 'Assets Transition',
+			title: 'Assets Is Being Rebuilt',
+			description:
+				'The old split-page entry points are offline for now. Data foundations and migration remain in place so the next rewrite can reconnect here cleanly.',
+			emptyTitle: 'Only one unified placeholder shell remains',
+			emptyDescription:
+				'The legacy Snippets, Vault, Notes, and Diary pages are out of navigation so they stop shaping the next information architecture.',
+			preservedTitle: 'What stays after this cleanup',
+			preservedDescription:
+				'Only the foundations that matter to the next rewrite stay alive, while the old entry-layer mental load is removed first.',
+			cards: {
+				migration: {
+					title: 'Legacy migration still stays',
+					description:
+						'The startup migration flow is still available, so historical asset data can remain a valid source for the next version.',
+				},
+				storage: {
+					title: 'Storage capabilities remain intact',
+					description:
+						'Local asset storage and vault-related lower layers stay available instead of being deleted with the old pages.',
+				},
+				legacy: {
+					title: 'Legacy implementation stays in the repo',
+					description:
+						'For now only the product entry points are removed, so you can still review fields, flows, and interaction references during the rewrite.',
+				},
+			},
+		},
 		common: {
 			untitled: 'Untitled',
 			toast: {

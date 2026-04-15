@@ -103,6 +103,10 @@ export default {
 				title: '日志',
 				description: '操作日志',
 			},
+			assets: {
+				title: '资产库',
+				description: '重建中的统一入口',
+			},
 			snippets: {
 				title: '代码片段',
 				description: '代码片段',
@@ -151,6 +155,7 @@ export default {
 			finishList: '完成列表',
 			stats: '统计',
 			logs: '日志',
+			assets: '资产库',
 			snippets: '代码片段',
 			vault: '密钥库',
 			notes: '笔记',
@@ -657,6 +662,29 @@ export default {
 		},
 	},
 	assets: {
+		placeholder: {
+			badge: 'Assets 过渡页',
+			title: '资产库正在重建',
+			description: '旧的细分页入口已经下线，先保留底层数据与迁移能力，等你开始重写时再从这里重新接回。',
+			emptyTitle: '当前只保留一个统一占位壳页',
+			emptyDescription: 'Snippets、Vault、Notes、Diary 的旧页面已退出导航，避免继续干扰新的信息架构与交互方案。',
+			preservedTitle: '这次清理后仍被保留的部分',
+			preservedDescription: '只留下未来重写真正有价值的底座，先把入口层和旧心智负担降下来。',
+			cards: {
+				migration: {
+					title: '旧数据迁移仍然保留',
+					description: '启动时的迁移流程没有移除，历史资产数据后续仍能作为新版本的底座来源。',
+				},
+				storage: {
+					title: '底层存储能力继续可用',
+					description: '包括本地资产存储与密钥相关底层能力，先不跟着旧页面一起删除。',
+				},
+				legacy: {
+					title: '旧实现暂时留在仓库里',
+					description: '现阶段只让旧页面退出产品入口，后面重写时还能回看字段、流程和交互参考。',
+				},
+			},
+		},
 		common: {
 			untitled: '未命名',
 			toast: {

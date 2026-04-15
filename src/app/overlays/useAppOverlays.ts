@@ -78,11 +78,7 @@ export function useAppOverlays() {
 		{
 			id: 'assets',
 			label: t('nav.groups.assets'),
-			items: [
-				{ label: t('commandPalette.items.snippets'), icon: 'i-lucide-code', to: '/snippets' },
-				{ label: t('commandPalette.items.vault'), icon: 'i-lucide-lock', to: '/vault' },
-				{ label: t('commandPalette.items.notes'), icon: 'i-lucide-notebook', to: '/notes' },
-			],
+			items: [{ label: t('commandPalette.items.assets'), icon: 'i-lucide-library-big', to: '/assets' }],
 		},
 		{
 			id: 'settings',

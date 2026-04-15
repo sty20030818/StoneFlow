@@ -8,10 +8,7 @@ const FinishList = () => import('@/pages/ReviewFinishListPage.vue')
 const Stats = () => import('@/pages/ReviewStatsPage.vue')
 const Logs = () => import('@/pages/ReviewLogsPage.vue')
 
-const Snippets = () => import('@/pages/AssetsSnippetsPage.vue')
-const Vault = () => import('@/pages/AssetsVaultPage.vue')
-const Notes = () => import('@/pages/AssetsNotesPage.vue')
-const Diary = () => import('@/pages/AssetsDiaryPage.vue')
+const Assets = () => import('@/pages/AssetsPage.vue')
 const Trash = () => import('@/pages/TrashPage.vue')
 
 const Settings = () => import('@/pages/SettingsPage.vue')
@@ -67,24 +64,25 @@ export const routes = [
 
 	// Assets Library
 	{
+		path: PAGE_NAV_CONFIG.assets.path,
+		component: Assets,
+		meta: toRouteMeta(PAGE_NAV_CONFIG.assets),
+	},
+	{
 		path: PAGE_NAV_CONFIG.snippets.path,
-		component: Snippets,
-		meta: toRouteMeta(PAGE_NAV_CONFIG.snippets),
+		redirect: PAGE_NAV_CONFIG.assets.path,
 	},
 	{
 		path: PAGE_NAV_CONFIG.vault.path,
-		component: Vault,
-		meta: toRouteMeta(PAGE_NAV_CONFIG.vault),
+		redirect: PAGE_NAV_CONFIG.assets.path,
 	},
 	{
 		path: PAGE_NAV_CONFIG.notes.path,
-		component: Notes,
-		meta: toRouteMeta(PAGE_NAV_CONFIG.notes),
+		redirect: PAGE_NAV_CONFIG.assets.path,
 	},
 	{
 		path: PAGE_NAV_CONFIG.diary.path,
-		component: Diary,
-		meta: toRouteMeta(PAGE_NAV_CONFIG.diary),
+		redirect: PAGE_NAV_CONFIG.assets.path,
 	},
 	{
 		path: PAGE_NAV_CONFIG.trash.path,

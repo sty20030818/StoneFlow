@@ -58,6 +58,15 @@ export const PAGE_NAV_CONFIG = {
 		pillClass: HEADER_CAPSULE_TONE_ORANGE,
 		leadingMode: 'page',
 	},
+	assets: {
+		path: '/assets',
+		titleKey: 'nav.pages.assets.title',
+		descriptionKey: 'nav.pages.assets.description',
+		icon: 'i-lucide-library-big',
+		iconClass: 'text-cyan-500',
+		pillClass: HEADER_CAPSULE_TONE_CYAN,
+		leadingMode: 'page',
+	},
 	snippets: {
 		path: '/snippets',
 		titleKey: 'nav.pages.snippets.title',
@@ -123,10 +132,7 @@ const LIBRARY_PAGE_KEYS = [
 	'finishList',
 	'stats',
 	'logs',
-	'snippets',
-	'vault',
-	'notes',
-	'diary',
+	'assets',
 ] as const satisfies readonly PageNavKey[]
 const SYSTEM_PAGE_KEYS = ['allTasks', 'trash'] as const satisfies readonly PageNavKey[]
 
