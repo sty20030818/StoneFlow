@@ -43,8 +43,13 @@ use serde_json::Value;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Manager, WebviewUrl, WebviewWindowBuilder,
 };
+
+#[cfg(target_os = "macos")]
+use tauri::TitleBarStyle;
+
+const MAIN_WINDOW_LABEL: &str = "main";
 
 const TRAY_MENU_SHOW_MAIN: &str = "show_main_window";
 const TRAY_MENU_QUIT_APP: &str = "quit_app";
@@ -111,11 +116,37 @@ fn resolve_tray_menu_labels(locale: TrayLocale) -> (&'static str, &'static str) 
 }
 
 fn restore_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     }
+}
+
+fn build_main_window(app: &tauri::App) -> tauri::Result<()> {
+    if app.get_webview_window(MAIN_WINDOW_LABEL).is_some() {
+        return Ok(());
+    }
+
+    let window_builder = WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, WebviewUrl::default())
+        .title("StoneFlow")
+        .inner_size(1360.0, 960.0)
+        .min_inner_size(1080.0, 800.0)
+        .resizable(true)
+        .fullscreen(false);
+
+    #[cfg(target_os = "macos")]
+    let window_builder = window_builder
+        .decorations(true)
+        .title_bar_style(TitleBarStyle::Overlay)
+        .hidden_title(true);
+
+    #[cfg(not(target_os = "macos"))]
+    let window_builder = window_builder.decorations(false);
+
+    window_builder.build()?;
+
+    Ok(())
 }
 
 fn resolve_tray_icon<R: tauri::Runtime>(
@@ -143,6 +174,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
+            build_main_window(app)?;
+
             // 托盘菜单语言策略：应用启动时读取 locale，运行中切换语言后重启生效。
             let tray_locale = resolve_tray_locale(app.handle());
             let (show_main_label, quit_label) = resolve_tray_menu_labels(tray_locale);

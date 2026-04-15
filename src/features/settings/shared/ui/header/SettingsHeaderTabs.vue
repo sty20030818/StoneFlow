@@ -1,5 +1,6 @@
 <template>
 	<UTabs
+		class="app-desktop-no-drag"
 		:items="settingsTabItems"
 		:model-value="activeSettingsTab"
 		:content="false"

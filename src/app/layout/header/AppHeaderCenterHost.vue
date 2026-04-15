@@ -1,17 +1,20 @@
 <template>
 	<div
 		v-if="component"
-		class="pointer-events-none absolute left-1/2 -translate-x-1/2">
-		<div class="pointer-events-auto">
+		data-tauri-drag-region
+		class="app-desktop-drag pointer-events-none absolute inset-y-0 left-1/2 flex w-full -translate-x-1/2 items-center justify-center"
+		:style="overlayStyle">
+		<div class="app-desktop-no-drag pointer-events-auto min-w-0 max-w-full">
 			<component :is="component" />
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import type { Component } from 'vue'
+	import type { Component, StyleValue } from 'vue'
 
 	defineProps<{
 		component: Component | null
+		overlayStyle?: StyleValue
 	}>()
 </script>

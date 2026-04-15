@@ -1,10 +1,13 @@
 <template>
-	<div class="flex items-center gap-2 shrink-0">
+	<div
+		data-tauri-drag-region
+		class="app-desktop-drag flex items-center gap-2 shrink-0">
 		<UPopover
 			:ui="popoverUi"
 			:popper="{ placement: 'bottom-end', strategy: 'fixed' }">
 			<button
 				type="button"
+				class="app-desktop-no-drag"
 				:class="filterButtonClass">
 				<UIcon
 					name="i-lucide-sliders-horizontal"
@@ -98,6 +101,7 @@
 
 		<button
 			type="button"
+			class="app-desktop-no-drag"
 			:class="newButtonClass"
 			@click="triggerSnippetCreateAction">
 			<UIcon

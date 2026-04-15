@@ -1,9 +1,11 @@
 <template>
-	<div class="flex items-center gap-2 min-w-0 flex-1">
+	<div
+		data-tauri-drag-region
+		class="app-desktop-drag flex min-w-0 max-w-full items-center gap-2">
 		<RouterLink
 			v-if="leadingPill?.to"
 			:to="leadingPill.to"
-			:class="[HEADER_CAPSULE_BASE, leadingPill.pillClass]">
+			:class="['app-desktop-no-drag', HEADER_CAPSULE_BASE, leadingPill.pillClass]">
 			<UIcon
 				:name="leadingPill.icon"
 				:class="HEADER_CAPSULE_ICON" />
@@ -28,7 +30,7 @@
 				<RouterLink
 					v-if="index < items.length - 1 && item.to"
 					:to="item.to"
-					:class="[HEADER_CAPSULE_BASE, pillClass(index)]">
+					:class="['app-desktop-no-drag', HEADER_CAPSULE_BASE, pillClass(index)]">
 					<UIcon
 						v-if="item.icon"
 						:name="item.icon"
@@ -46,10 +48,12 @@
 				</span>
 				<span
 					v-else
-					class="text-base font-bold text-default truncate max-w-100 flex items-baseline gap-2">
+					data-tauri-drag-region
+					class="app-desktop-drag text-base font-bold text-default flex max-w-100 items-baseline gap-2 truncate">
 					<span
 						v-if="item.icon"
-						class="inline-flex items-center gap-2">
+						data-tauri-drag-region
+						class="app-desktop-drag inline-flex items-center gap-2">
 						<UIcon
 							:name="item.icon"
 							class="size-4 text-muted" />

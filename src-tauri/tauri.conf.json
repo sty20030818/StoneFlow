@@ -10,16 +10,7 @@
 		"frontendDist": "../dist"
 	},
 	"app": {
-		"windows": [
-			{
-				"label": "main",
-				"title": "StoneFlow",
-				"width": 1360,
-				"height": 960,
-				"minWidth": 1080,
-				"minHeight": 800
-			}
-		],
+		"windows": [],
 		"security": {
 			"csp": null,
 			"capabilities": ["default", "desktop-capability"]

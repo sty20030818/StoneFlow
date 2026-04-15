@@ -1,5 +1,5 @@
 <template>
-	<div class="relative w-64 shrink-0">
+	<div class="app-desktop-no-drag relative w-64 shrink-0">
 		<UInput
 			v-model="searchQuery"
 			:placeholder="t('header.searchPlaceholder')"

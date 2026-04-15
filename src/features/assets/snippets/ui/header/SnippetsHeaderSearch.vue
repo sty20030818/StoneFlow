@@ -1,5 +1,5 @@
 <template>
-	<div class="relative w-[18rem] shrink-0">
+	<div class="app-desktop-no-drag relative w-[18rem] shrink-0">
 		<UInput
 			v-model="searchKeyword"
 			:placeholder="t('assets.snippets.searchPlaceholder')"

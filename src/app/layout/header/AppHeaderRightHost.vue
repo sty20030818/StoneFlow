@@ -1,5 +1,7 @@
 <template>
-	<div class="flex items-center gap-2 shrink-0">
+	<div
+		data-tauri-drag-region
+		class="app-desktop-drag flex items-center gap-2 shrink-0">
 		<component
 			:is="rightPrimaryComponent"
 			v-if="rightPrimaryComponent" />
@@ -13,7 +15,7 @@
 			<button
 				type="button"
 				v-motion="editButtonMotion"
-				class="ml-1"
+				class="app-desktop-no-drag ml-1"
 				:class="[HEADER_CAPSULE_BASE, editButtonClass]"
 				@click="onToggleEditMode">
 				<UIcon

@@ -1,5 +1,6 @@
 <template>
 	<UTabs
+		class="app-desktop-no-drag"
 		:items="viewTabItems"
 		:model-value="viewMode"
 		:content="false"
